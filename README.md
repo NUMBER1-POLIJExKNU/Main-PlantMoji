@@ -13,7 +13,7 @@
 ![Arduino](https://img.shields.io/badge/Arduino-00878F?style=for-the-badge&logo=arduino&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
 
-**KNU WFK IT Program · Number One Team · Jember, Indonesia**
+**Number One Team · Jember, Indonesia / POLIJE x KNU WFK IT Program · **
 
 </div>
 
