@@ -51,4 +51,40 @@ export const BADGE_DEFINITIONS: Record<BadgeKey, BadgeDefinition> = {
     description: "Reached a 7-day care streak.",
     emoji: "📅",
   },
+  HUMIDITY_HERO: {
+    key: "HUMIDITY_HERO",
+    name: "Humidity Hero",
+    description: "Completed the Humidify My Air quest 5 times.",
+    emoji: "💦",
+  },
+  MOOD_SCHOLAR: {
+    key: "MOOD_SCHOLAR",
+    name: "Mood Scholar",
+    description: "Discovered all six plant moods.",
+    emoji: "🎓",
+  },
+  CARE_VETERAN: {
+    key: "CARE_VETERAN",
+    name: "Care Veteran",
+    description: "Completed 25 quests in total.",
+    emoji: "🎖️",
+  },
+  CHRONICLER: {
+    key: "CHRONICLER",
+    name: "Chronicler",
+    description: "Logged 5 growth records.",
+    emoji: "📓",
+  },
+  STREAK_30: {
+    key: "STREAK_30",
+    name: "Monthly Devotion",
+    description: "Reached a 30-day care streak.",
+    emoji: "🗓️",
+  },
+  LEVEL_10_BOND: {
+    key: "LEVEL_10_BOND",
+    name: "Deep Roots",
+    description: "Reached Bond Level 10 together.",
+    emoji: "🌳",
+  },
 };

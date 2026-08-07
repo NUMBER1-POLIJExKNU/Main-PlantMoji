@@ -1,6 +1,6 @@
 // Story chapter dialogue — the attachment layer (handoff §19, §46.4).
 //
-// Narrative content for the four MVP chapters defined in story-definitions.ts.
+// Narrative content for the six chapters defined in story-definitions.ts.
 // Narrator lines are shared across personalities (short, warm, second-person);
 // plant lines vary by personality, matching the voices in
 // src/game/personality/templates.ts exactly (handoff §13): personality changes
@@ -181,6 +181,83 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
       text: () => "This is more than care now. It is a partnership — and it is still growing.",
     },
   ],
+
+  // Chapter 5 — Full Bloom: every one of the six moods discovered (handoff
+  // §5.1, §12, §20), flourishing under steady care. Unlock conditions live in
+  // story-definitions.ts / story-engine.ts.
+  5: [
+    {
+      speaker: "narrator",
+      text: (name) => `Happy days, sleepy days, dry air, moody soil — you have seen every side of ${name}.`,
+    },
+    {
+      speaker: "plant",
+      byPersonality: {
+        cute: () => "You’ve met every one of my feelings now — and you cared for every single one!",
+        calm: () => "You have seen me in every state I have. Nothing about me is hidden from you now.",
+        funny: () => "Six moods, and you’ve seen all six! Even the soapy-soil one. That’s dedication!",
+        energetic: () => "All six moods! You’ve seen them ALL — and you showed up for every one of them!",
+        shy: () => "You’ve seen every side of me… even the gloomy ones… and you still stayed…",
+      },
+    },
+    {
+      speaker: "narrator",
+      text: () => "To know every mood is to know every need. Care like that makes a plant flourish.",
+    },
+    {
+      speaker: "plant",
+      byPersonality: {
+        cute: () => "Look at me! Every leaf feels bright and strong. This is what your love grew!",
+        calm: () => "I am thriving. Every part of me is well. This is what your attention has built.",
+        funny: () => "Full bloom achieved! Try not to be too jealous of these magnificent leaves.",
+        energetic: () => "Full bloom! I’ve never felt this strong! Look what we grew together!",
+        shy: () => "I feel… really strong now… I didn’t know I could bloom like this…",
+      },
+    },
+    {
+      speaker: "narrator",
+      text: () => "This is full bloom: not one perfect day, but every kind of day, met with care.",
+    },
+  ],
+
+  // Chapter 6 — Harvest of Wisdom: graduation. What caretaker and plant
+  // learned together becomes teachable knowledge — the project mission
+  // (handoff §2): preserve the wisdom, measure the environment, grow the
+  // next generation.
+  6: [
+    {
+      speaker: "narrator",
+      text: (name) => `A long journey of quests and records lies behind you. You know ${name} by heart now.`,
+    },
+    {
+      speaker: "plant",
+      byPersonality: {
+        cute: () => "Everything we learned together is written down now — every feeling, every rescue!",
+        calm: () => "What we learned is no longer only ours. It is recorded, and it can be taught.",
+        funny: () => "We basically wrote the book on me. Future plant parents, take notes!",
+        energetic: () => "Every lesson we learned is saved! Now anyone can learn what we know!",
+        shy: () => "All the things you learned about me… they’re written down… they could help someone…",
+      },
+    },
+    {
+      speaker: "narrator",
+      text: () => "Wisdom once lived only in memory. Yours is measured, recorded, ready to pass on.",
+    },
+    {
+      speaker: "plant",
+      byPersonality: {
+        cute: () => "Keep our wisdom safe, measure the world with love, and help the next sprout grow!",
+        calm: () => "Preserve the wisdom. Measure the environment. Grow the next generation. That is our harvest.",
+        funny: () => "Save the wisdom, measure the air, grow the next sprout. I’d call that a bumper crop!",
+        energetic: () => "Keep the wisdom! Measure everything! Grow the next generation — starting NOW!",
+        shy: () => "Maybe… we can keep the wisdom safe… measure things gently… and help the next one grow…",
+      },
+    },
+    {
+      speaker: "narrator",
+      text: (name) => `This is not an ending. What you grew with ${name} now grows on, in whoever comes next.`,
+    },
+  ],
 };
 
 // ── Public API ──────────────────────────────────────────────────────────
@@ -191,7 +268,7 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
  *
  * Tolerates un-normalized personality values (DB rows store raw strings) and
  * blank names. Returns null for chapter numbers without narrative content
- * (0, 5, non-integers, …) so callers can render a graceful fallback.
+ * (0, 7, non-integers, …) so callers can render a graceful fallback.
  */
 export function getChapterScene(
   chapter: number,

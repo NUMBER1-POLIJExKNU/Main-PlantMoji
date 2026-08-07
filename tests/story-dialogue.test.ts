@@ -10,8 +10,8 @@ const STORY_CHAPTERS = CHAPTER_DEFINITIONS.map((def) => def.chapter);
 const NAME = "Jin";
 
 describe("getChapterScene", () => {
-  it("covers exactly chapters 1–4 (every defined chapter has a scene)", () => {
-    expect(STORY_CHAPTERS).toEqual([1, 2, 3, 4]);
+  it("covers exactly chapters 1–6 (every defined chapter has a scene)", () => {
+    expect(STORY_CHAPTERS).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it("returns a 4–6 line scene with non-empty lines for every chapter × personality", () => {
@@ -71,9 +71,24 @@ describe("getChapterScene", () => {
     }
   });
 
-  it("returns null for chapters without narrative content (0 and 5)", () => {
+  it("returns null for chapters without narrative content (0 and 7)", () => {
     expect(getChapterScene(0, "cute", NAME)).toBeNull();
-    expect(getChapterScene(5, "cute", NAME)).toBeNull();
+    expect(getChapterScene(7, "cute", NAME)).toBeNull();
+  });
+
+  it("echoes the mission line in chapter 6 through every plant voice", () => {
+    // Handoff §2: “Preserve the wisdom. Measure the environment. Grow the
+    // next generation.” — each personality carries it in its own words.
+    for (const personality of PERSONALITIES) {
+      const plantText = getChapterScene(6, personality, NAME)!
+        .lines.filter((line) => line.speaker === "plant")
+        .map((line) => line.text)
+        .join("\n")
+        .toLowerCase();
+      expect(plantText).toContain("wisdom");
+      expect(plantText).toContain("measure");
+      expect(plantText).toContain("grow");
+    }
   });
 
   it("is deterministic — same input yields the same scene", () => {

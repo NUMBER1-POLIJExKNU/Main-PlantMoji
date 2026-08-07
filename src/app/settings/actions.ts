@@ -13,6 +13,12 @@ import { revalidatePath } from "next/cache";
 import { parseGrowthInput } from "@/lib/growth";
 import { normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import {
+  GROWTH_RECORD_XP,
+  growthWeekRewardKey,
+  isoWeekString,
+} from "@/game/progression/bonus-xp";
+import { awardXp } from "@/game/progression/xp-engine";
 import { normalizePersonality } from "@/types/game";
 
 /**
@@ -90,6 +96,23 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   if (insertError) {
     console.error(`addGrowthRecord(${plantId}) insert failed:`, insertError.message);
     return;
+  }
+
+  // Growth journaling bonus (handoff §28): the persisted record is the
+  // verified outcome, and the ISO-week reward key caps the bonus at one award
+  // per week no matter how many records are logged — the award_xp ledger
+  // makes every repeat a no-op. The record insert above already succeeded, so
+  // an award failure must never fail the action: log and continue.
+  try {
+    await awardXp(
+      supabase,
+      plantId,
+      growthWeekRewardKey(plantId, isoWeekString(new Date())),
+      GROWTH_RECORD_XP,
+      "growth-record",
+    );
+  } catch (error) {
+    console.error(`addGrowthRecord(${plantId}) weekly bonus XP failed:`, error);
   }
 
   const { error: updateError } = await supabase

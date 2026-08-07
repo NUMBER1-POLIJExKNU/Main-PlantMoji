@@ -27,6 +27,18 @@ export const CHAPTER_DEFINITIONS: ChapterDefinition[] = [
     description:
       "Unlocked at Bond Level 5 with 10 quests completed, including at least one recovery quest.",
   },
+  {
+    chapter: 5,
+    title: "Full Bloom",
+    description:
+      "Unlocked at Bond Level 7 with all six moods discovered and 15 quests completed.",
+  },
+  {
+    chapter: 6,
+    title: "Harvest of Wisdom",
+    description:
+      "Unlocked at Bond Level 10 with 30 quests completed and 5 growth records logged.",
+  },
 ];
 
 /** Title lookup with a safe fallback for out-of-range chapter numbers. */

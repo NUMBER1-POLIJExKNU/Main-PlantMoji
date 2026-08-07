@@ -28,6 +28,8 @@ export const QUEST_KEYS = [
   "GIVE_ME_MORE_LIGHT",
   "BALANCE_SOIL_ACIDIC",
   "BALANCE_SOIL_ALKALINE",
+  "HUMIDIFY_MY_AIR",
+  "STAY_COMFY",
 ] as const;
 export type QuestKey = (typeof QUEST_KEYS)[number];
 
@@ -112,6 +114,12 @@ export const BADGE_KEYS = [
   "COOL_KEEPER",
   "PH_GUARDIAN",
   "STREAK_7",
+  "HUMIDITY_HERO",
+  "MOOD_SCHOLAR",
+  "CARE_VETERAN",
+  "CHRONICLER",
+  "STREAK_30",
+  "LEVEL_10_BOND",
 ] as const;
 export type BadgeKey = (typeof BADGE_KEYS)[number];
 

@@ -42,4 +42,64 @@ describe("RECOVERY_QUEST_KEYS", () => {
     expect(RECOVERY_QUEST_KEYS).toContain("COOL_ME_DOWN");
     expect(RECOVERY_QUEST_KEYS).toContain("GIVE_ME_MORE_LIGHT");
   });
+
+  it("excludes HUMIDIFY_MY_AIR (tracked by HUMIDITY_HERO, not a recovery quest)", () => {
+    expect(RECOVERY_QUEST_KEYS).not.toContain("HUMIDIFY_MY_AIR");
+  });
+});
+
+describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
+  it("defines HUMIDITY_HERO", () => {
+    expect(BADGE_DEFINITIONS.HUMIDITY_HERO).toEqual({
+      key: "HUMIDITY_HERO",
+      name: "Humidity Hero",
+      description: "Completed the Humidify My Air quest 5 times.",
+      emoji: "💦",
+    });
+  });
+
+  it("defines MOOD_SCHOLAR", () => {
+    expect(BADGE_DEFINITIONS.MOOD_SCHOLAR).toEqual({
+      key: "MOOD_SCHOLAR",
+      name: "Mood Scholar",
+      description: "Discovered all six plant moods.",
+      emoji: "🎓",
+    });
+  });
+
+  it("defines CARE_VETERAN", () => {
+    expect(BADGE_DEFINITIONS.CARE_VETERAN).toEqual({
+      key: "CARE_VETERAN",
+      name: "Care Veteran",
+      description: "Completed 25 quests in total.",
+      emoji: "🎖️",
+    });
+  });
+
+  it("defines CHRONICLER", () => {
+    expect(BADGE_DEFINITIONS.CHRONICLER).toEqual({
+      key: "CHRONICLER",
+      name: "Chronicler",
+      description: "Logged 5 growth records.",
+      emoji: "📓",
+    });
+  });
+
+  it("defines STREAK_30", () => {
+    expect(BADGE_DEFINITIONS.STREAK_30).toEqual({
+      key: "STREAK_30",
+      name: "Monthly Devotion",
+      description: "Reached a 30-day care streak.",
+      emoji: "🗓️",
+    });
+  });
+
+  it("defines LEVEL_10_BOND", () => {
+    expect(BADGE_DEFINITIONS.LEVEL_10_BOND).toEqual({
+      key: "LEVEL_10_BOND",
+      name: "Deep Roots",
+      description: "Reached Bond Level 10 together.",
+      emoji: "🌳",
+    });
+  });
 });

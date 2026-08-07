@@ -2,10 +2,21 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { normalizeMood, type DeviceEvent, type PlantMood } from "@/types/events";
-import type { QuestRow } from "@/types/game";
+import type { BadgeKey, QuestRow } from "@/types/game";
 import { evaluateQuests, handleStateChange } from "@/game/quests/quest-engine";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
-import { awardXp } from "@/game/progression/xp-engine";
+import { awardXp, getBondState } from "@/game/progression/xp-engine";
+import {
+  BADGE_BONUS_XP,
+  CHAPTER_BONUS_XP,
+  MOOD_DISCOVERY_XP,
+  STREAK_MILESTONE_XP,
+  badgeRewardKey,
+  chapterRewardKey,
+  milestonesReached,
+  moodRewardKey,
+  streakMilestoneRewardKey,
+} from "@/game/progression/bonus-xp";
 import { recordQualifyingCare } from "@/game/progression/streak-engine";
 import { evaluateBadges } from "@/game/badges/badge-engine";
 import { evaluateChapters } from "@/game/story/story-engine";
@@ -84,7 +95,22 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
       }
 
       // Streak counts days with at least one qualifying care quest (§21).
-      await recordQualifyingCare(supabase, plantId, completedAt.toISOString());
+      const streak = await recordQualifyingCare(supabase, plantId, completedAt.toISOString());
+
+      // Streak milestone bonuses: award EVERY milestone at or below the
+      // current streak on every settle — milestonesReached(0, n) lists all of
+      // them, and the reward_key ledger turns repeats into no-ops. That makes
+      // the sweep idempotent AND self-healing: a crash after the streak
+      // credit but before an award is repaired by the next settle.
+      for (const days of milestonesReached(0, streak.currentStreak)) {
+        await awardXp(
+          supabase,
+          plantId,
+          streakMilestoneRewardKey(plantId, days),
+          STREAK_MILESTONE_XP,
+          `streak-milestone:${days}`,
+        );
+      }
 
       // Seasonal XP bonus (§23) — highest active multiplier, no stacking.
       const { amount } = applySeasonalMultiplier(quest.xp_reward, completedAt);
@@ -95,6 +121,52 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
 
   // Badges and story react to the new progression state; cheap enough to
   // evaluate on every settle, and both are replay-safe.
+  await evaluateBadges(supabase, plantId);
+  await evaluateChapters(supabase, plantId);
+
+  // Badge bonus XP — driven by PERSISTED unlocks, not by the evaluators'
+  // "newly unlocked" return values: a crash between the badge insert and a
+  // newness-gated award would orphan that bonus forever. Re-awarding every
+  // unlocked badge each settle (≤12 rows) is a no-op via the reward_key
+  // ledger and heals any such gap.
+  const { data: badgeRows, error: badgeError } = await supabase
+    .from("plant_badges")
+    .select("badge_key")
+    .eq("plant_id", plantId);
+  if (badgeError) {
+    throw new Error(`event-router: fetch plant_badges failed: ${badgeError.message}`);
+  }
+  for (const row of (badgeRows ?? []) as Array<{ badge_key: BadgeKey }>) {
+    await awardXp(
+      supabase,
+      plantId,
+      badgeRewardKey(plantId, row.badge_key),
+      BADGE_BONUS_XP,
+      `badge:${row.badge_key}`,
+    );
+  }
+
+  // Chapter bonus XP — same self-healing sweep, driven by the monotonic
+  // bond_state.current_chapter. No bond_state row means no progression has
+  // ever been recorded, so there is nothing to reward yet.
+  const bondState = await getBondState(supabase, plantId);
+  if (bondState) {
+    for (let chapter = 1; chapter <= bondState.current_chapter; chapter += 1) {
+      await awardXp(
+        supabase,
+        plantId,
+        chapterRewardKey(plantId, chapter),
+        CHAPTER_BONUS_XP,
+        `chapter:${chapter}`,
+      );
+    }
+  }
+
+  // The bonus XP above can raise bond_level, which can itself unlock LEVEL_*
+  // badges and level-gated chapters — but the evaluators ran BEFORE those
+  // awards landed. Re-run both (replay-safe) so level-triggered unlocks land
+  // in this tick instead of the next one; their own bonus XP is picked up by
+  // the next settle's self-healing sweeps, which keeps the cascade bounded.
   await evaluateBadges(supabase, plantId);
   await evaluateChapters(supabase, plantId);
 }
@@ -127,6 +199,18 @@ export async function processDeviceEvent(
       currentState,
       event.occurredAt,
       event.data,
+    );
+
+    // Mood discovery bonus: the first time this plant ever shows a mood is a
+    // verified device outcome (§17). No seen-mood table or pre-check query —
+    // the xp_rewards row written under the deterministic moodRewardKey IS the
+    // discovery ledger, so replays and repeat moods are no-ops forever (§28).
+    await awardXp(
+      supabase,
+      event.plantId,
+      moodRewardKey(event.plantId, currentState),
+      MOOD_DISCOVERY_XP,
+      `mood:${currentState}`,
     );
   } else {
     // Stale state events and SENSOR_*/PLANT_RECOVERED still get the lazy

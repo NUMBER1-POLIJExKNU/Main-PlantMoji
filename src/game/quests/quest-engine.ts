@@ -24,11 +24,16 @@ function fail(context: string, message: string): never {
  * True when the event's sensor data proves the recovery has NOT happened,
  * even if another mood currently outranks the trigger (e.g. still 33°C while
  * the state machine shows SoilAcidic) — handoff §16's completion condition is
- * the sensor value, not the mood label. Blocks when EITHER:
+ * the sensor value, not the mood label. Blocks when ANY of:
  *   * def.verifyTemperatureMax is set and data.temperature is a finite number
  *     above it ("temperature <= 30°C and remains stable"), OR
  *   * def.verifyPhRange is set and data.soilPH is a finite number outside
- *     [min, max] ("calibrated pH returns to normal range and remains stable").
+ *     [min, max] ("calibrated pH returns to normal range and remains stable"), OR
+ *   * def.verifyHumidityMin is set and data.humidity is a finite number below
+ *     it (handoff §5.2 dry-air hysteresis: dry OFF at >= 45% — anything drier
+ *     means the air has NOT recovered).
+ * Each clause reads its live threshold from the plant's crop profile; the
+ * QuestDefinition field is the opt-in flag carrying the handoff demo value.
  * Exported for tests only — the engine is the sole runtime caller.
  */
 export function sensorBlocksRecovery(
@@ -55,6 +60,17 @@ export function sensorBlocksRecovery(
       typeof soilPH === "number" &&
       Number.isFinite(soilPH) &&
       (soilPH < profile.soilPh.recommended.min || soilPH > profile.soilPh.recommended.max)
+    ) {
+      return true;
+    }
+  }
+
+  if (def.verifyHumidityMin !== undefined) {
+    const humidity = data.humidity;
+    if (
+      typeof humidity === "number" &&
+      Number.isFinite(humidity) &&
+      humidity < profile.airHumidity.dryAir.recoverAtOrAbove
     ) {
       return true;
     }

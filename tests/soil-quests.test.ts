@@ -16,6 +16,27 @@ describe("QUEST_DEFINITIONS completeness", () => {
     }
   });
 
+  it("defines HUMIDIFY_MY_AIR as the DryAir recovery quest (handoff §5.2 dry-OFF at 45%)", () => {
+    const def = QUEST_DEFINITIONS.HUMIDIFY_MY_AIR;
+    expect(def.title).toBe("Humidify My Air");
+    expect(def.kind).toBe("recovery");
+    expect(def.triggerMood).toBe("DryAir");
+    expect(def.requiredSeconds).toBe(300);
+    expect(def.xpReward).toBe(20);
+    expect(def.emoji).toBe("💦");
+    expect(def.verifyHumidityMin).toBe(45);
+  });
+
+  it("defines STAY_COMFY as a two-hour Happy maintain quest", () => {
+    const def = QUEST_DEFINITIONS.STAY_COMFY;
+    expect(def.title).toBe("Stay Comfy");
+    expect(def.kind).toBe("maintain");
+    expect(def.triggerMood).toBe("Happy");
+    expect(def.requiredSeconds).toBe(7200);
+    expect(def.xpReward).toBe(40);
+    expect(def.emoji).toBe("🛋️");
+  });
+
   it("defines the two soil quests per handoff §16 / §5.2", () => {
     for (const key of ["BALANCE_SOIL_ACIDIC", "BALANCE_SOIL_ALKALINE"] as const) {
       const def = QUEST_DEFINITIONS[key];
@@ -41,11 +62,26 @@ describe("questsTriggeredBy soil moods", () => {
       "BALANCE_SOIL_ALKALINE",
     ]);
   });
+
+  it("DryAir triggers exactly HUMIDIFY_MY_AIR", () => {
+    expect(questsTriggeredBy("DryAir").map((def) => def.key)).toEqual([
+      "HUMIDIFY_MY_AIR",
+    ]);
+  });
+
+  it("Happy triggers BOTH maintain quests (per-key unique index lets them coexist)", () => {
+    expect(
+      questsTriggeredBy("Happy")
+        .map((def) => def.key)
+        .sort(),
+    ).toEqual(["KEEP_ME_HAPPY", "STAY_COMFY"]);
+  });
 });
 
 describe("sensorBlocksRecovery", () => {
   const acidic = QUEST_DEFINITIONS.BALANCE_SOIL_ACIDIC;
   const coolDown = QUEST_DEFINITIONS.COOL_ME_DOWN;
+  const humidify = QUEST_DEFINITIONS.HUMIDIFY_MY_AIR;
 
   it("blocks BALANCE_SOIL_ACIDIC below the strawberry range", () => {
     expect(sensorBlocksRecovery(acidic, { soilPH: 5.49 })).toBe(true);
@@ -74,5 +110,19 @@ describe("sensorBlocksRecovery", () => {
   it("uses the strawberry recovery threshold for COOL_ME_DOWN", () => {
     expect(sensorBlocksRecovery(coolDown, { temperature: 27 })).toBe(true);
     expect(sensorBlocksRecovery(coolDown, { temperature: 26 })).toBe(false);
+  });
+
+  it("blocks HUMIDIFY_MY_AIR while the air is still dry (30% < dry-OFF 45%)", () => {
+    expect(sensorBlocksRecovery(humidify, { humidity: 30 })).toBe(true);
+  });
+
+  it("does not block HUMIDIFY_MY_AIR once humidity recovered (50%)", () => {
+    expect(sensorBlocksRecovery(humidify, { humidity: 50 })).toBe(false);
+  });
+
+  it("does not block HUMIDIFY_MY_AIR when the event carries no humidity", () => {
+    expect(sensorBlocksRecovery(humidify, { temperature: 25 })).toBe(false);
+    expect(sensorBlocksRecovery(humidify, {})).toBe(false);
+    expect(sensorBlocksRecovery(humidify, undefined)).toBe(false);
   });
 });

@@ -73,6 +73,10 @@ export const QUEST_WHY: Record<QuestKey, string> = {
     "Cooling the air lets the leaves stop emergency water loss and reopen their pores, so water transport and photosynthesis can restart.",
   GIVE_ME_MORE_LIGHT:
     "Light is the energy source of photosynthesis — restoring it lets the plant make food again instead of idling on its reserves.",
+  HUMIDIFY_MY_AIR:
+    "Moistening the air around the leaves lowers the vapor pressure deficit (VPD), so water stops being pulled out of the leaves faster than the roots can replace it — it is the air that needs humidity here, not the soil.",
+  STAY_COMFY:
+    "Two unbroken hours in the comfort zone lets the plant settle into stable homeostasis, spending its energy on growth instead of constantly readjusting to swinging conditions.",
   BALANCE_SOIL_ACIDIC:
     "Bringing pH back toward the 6.0–7.0 range unlocks the phosphorus, calcium, and magnesium that acidic soil keeps chemically out of the roots’ reach.",
   BALANCE_SOIL_ALKALINE:

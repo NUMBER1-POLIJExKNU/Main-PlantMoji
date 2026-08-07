@@ -10,7 +10,16 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BadgeKey, BondEventRow, PlantBadgeRow, QuestKey } from "@/types/game";
+import { normalizeMood, PLANT_MOODS, type PlantMood } from "@/types/events";
 import { BADGE_DEFINITIONS, RECOVERY_QUEST_KEYS } from "./badge-definitions";
+
+/** PostgREST's "table missing from schema cache" — the migration hasn't been
+ *  run in this Supabase project yet. Duplicated from lib/plants.ts (same
+ *  reasoning as its other duplicates in lib/queries.ts / lib/growth.ts): this
+ *  engine stays self-contained rather than importing server-only helpers. */
+function isMissingTableError(error: { code?: string; message: string }): boolean {
+  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
+}
 
 /**
  * Evaluates all badge conditions for a plant, persists any earned badges,
@@ -23,23 +32,32 @@ export async function evaluateBadges(
   supabase: SupabaseClient,
   plantId: string,
 ): Promise<BadgeKey[]> {
-  // One read covers both quest-based conditions.
+  // One read covers every quest-based condition (recovery, light, cool,
+  // humidity, and the total-completed count) — fetch quest_key of every
+  // COMPLETED row once and count each condition in TS instead of adding a
+  // query per badge.
   const { data: questRows, error: questError } = await supabase
     .from("quests")
     .select("quest_key")
     .eq("plant_id", plantId)
-    .eq("status", "COMPLETED")
-    .in("quest_key", [...RECOVERY_QUEST_KEYS]);
+    .eq("status", "COMPLETED");
   if (questError) {
     throw new Error(`badge-engine: failed to read quests: ${questError.message}`);
   }
-  const completedRecovery = (questRows ?? []) as Array<{ quest_key: QuestKey }>;
+  const completedQuests = (questRows ?? []) as Array<{ quest_key: QuestKey }>;
+  const totalCompletedCount = completedQuests.length;
+  const completedRecovery = completedQuests.filter((row) =>
+    (RECOVERY_QUEST_KEYS as readonly QuestKey[]).includes(row.quest_key),
+  );
   const recoveryCount = completedRecovery.length;
-  const lightCount = completedRecovery.filter(
+  const lightCount = completedQuests.filter(
     (row) => row.quest_key === "GIVE_ME_MORE_LIGHT",
   ).length;
-  const coolCount = completedRecovery.filter(
+  const coolCount = completedQuests.filter(
     (row) => row.quest_key === "COOL_ME_DOWN",
+  ).length;
+  const humidifyCount = completedQuests.filter(
+    (row) => row.quest_key === "HUMIDIFY_MY_AIR",
   ).length;
 
   // bond_level covers LEVEL_5_BOND; longest_streak (not current_streak) covers
@@ -85,6 +103,55 @@ export async function evaluateBadges(
   }
   const phGuardian = (recentEventCount ?? 0) >= 1 && (soilEventCount ?? 0) === 0;
 
+  // MOOD_SCHOLAR: every distinct mood ever observed, mirroring
+  // lib/queries.ts's getSeenMoods (duplicated here rather than imported so
+  // this engine stays self-contained — see the isMissingTableError comment
+  // above) — every distinct PLANT_STATE_CHANGED data->>currentState, plus the
+  // live plants.current_state (covers a fresh seed row predating any event).
+  const [moodEventsResult, moodPlantResult] = await Promise.all([
+    supabase
+      .from("device_events")
+      .select("currentState:data->>currentState")
+      .eq("plant_id", plantId)
+      .eq("type", "PLANT_STATE_CHANGED")
+      .limit(5000),
+    supabase.from("plants").select("current_state").eq("id", plantId).maybeSingle(),
+  ]);
+  if (moodEventsResult.error) {
+    throw new Error(
+      `badge-engine: failed to read device_events for moods: ${moodEventsResult.error.message}`,
+    );
+  }
+  if (moodPlantResult.error) {
+    throw new Error(
+      `badge-engine: failed to read plants for moods: ${moodPlantResult.error.message}`,
+    );
+  }
+  const seenMoods = new Set<PlantMood>();
+  for (const row of (moodEventsResult.data ?? []) as Array<{ currentState: string | null }>) {
+    const mood = normalizeMood(row.currentState);
+    if (mood) seenMoods.add(mood);
+  }
+  const liveMood = normalizeMood(
+    (moodPlantResult.data as { current_state?: string } | null)?.current_state,
+  );
+  if (liveMood) seenMoods.add(liveMood);
+  const moodScholar = PLANT_MOODS.every((mood) => seenMoods.has(mood));
+
+  // CHRONICLER: growth records logged for this plant. head:true count;
+  // tolerate a not-yet-migrated schema (growth_records table missing) by
+  // treating it as zero, same as lib/growth.ts's fetchGrowthRecords.
+  const { count: growthRecordCount, error: growthRecordsError } = await supabase
+    .from("growth_records")
+    .select("id", { count: "exact", head: true })
+    .eq("plant_id", plantId);
+  if (growthRecordsError && !isMissingTableError(growthRecordsError)) {
+    throw new Error(
+      `badge-engine: failed to count growth_records: ${growthRecordsError.message}`,
+    );
+  }
+  const growthRecordsTotal = growthRecordsError ? 0 : (growthRecordCount ?? 0);
+
   const earned: BadgeKey[] = [];
   if (recoveryCount >= 1) earned.push("FIRST_RESCUE");
   if (lightCount >= 5) earned.push("LIGHT_MASTER");
@@ -92,6 +159,12 @@ export async function evaluateBadges(
   if (coolCount >= 5) earned.push("COOL_KEEPER");
   if (longestStreak >= 7) earned.push("STREAK_7");
   if (phGuardian) earned.push("PH_GUARDIAN");
+  if (humidifyCount >= 5) earned.push("HUMIDITY_HERO");
+  if (moodScholar) earned.push("MOOD_SCHOLAR");
+  if (totalCompletedCount >= 25) earned.push("CARE_VETERAN");
+  if (growthRecordsTotal >= 5) earned.push("CHRONICLER");
+  if (longestStreak >= 30) earned.push("STREAK_30");
+  if (bondLevel >= 10) earned.push("LEVEL_10_BOND");
   if (earned.length === 0) return [];
 
   // Ignore-duplicates upsert + select: only rows actually inserted come back,

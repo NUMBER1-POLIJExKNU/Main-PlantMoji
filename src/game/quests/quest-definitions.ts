@@ -2,7 +2,9 @@
 //
 // Two quest kinds:
 //   * 'maintain'  — hold the trigger mood continuously for requiredSeconds
-//                   (Keep Me Happy: Happy for 30 minutes).
+//                   (Keep Me Happy: Happy for 30 minutes; Stay Comfy: Happy
+//                   for 2 hours — both run side by side, the partial unique
+//                   index on quests is per key).
 //   * 'recovery'  — the trigger mood starts the quest; leaving it begins a
 //                   VERIFYING window of requiredSeconds that must pass without
 //                   relapse before completion (handoff §17: reward verified
@@ -38,6 +40,13 @@ export interface QuestDefinition {
    * returns to normal range and remains stable").
    */
   verifyPhRange?: { min: number; max: number };
+  /**
+   * recovery only: when an event carries data.humidity below this value, the
+   * AIR is still too dry even if another mood outranks the trigger —
+   * verification must not start / must relapse (handoff §5.2 dry-air
+   * hysteresis: dry OFF at >= 45% air humidity).
+   */
+  verifyHumidityMin?: number;
 }
 
 export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
@@ -50,6 +59,16 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "maintain",
     triggerMood: "Happy",
     requiredSeconds: 1800,
+  },
+  STAY_COMFY: {
+    key: "STAY_COMFY",
+    title: "Stay Comfy",
+    description: "Keep me in my comfort zone for two hours straight.",
+    emoji: "🛋️",
+    xpReward: 40,
+    kind: "maintain",
+    triggerMood: "Happy",
+    requiredSeconds: 7200,
   },
   COOL_ME_DOWN: {
     key: "COOL_ME_DOWN",
@@ -73,6 +92,20 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "Sleepy",
     requiredSeconds: 300,
+  },
+  // DryAir is about AIR humidity, never soil moisture (handoff §3: DHT11
+  // measures air humidity — never coach watering the soil for this mood).
+  HUMIDIFY_MY_AIR: {
+    key: "HUMIDIFY_MY_AIR",
+    title: "Humidify My Air",
+    description:
+      "The AIR around my leaves is too dry — my soil is fine, so please don't water it. Mist the air gently or move me away from heaters and drafts, then keep it steady for 5 minutes.",
+    emoji: "💦",
+    xpReward: 20,
+    kind: "recovery",
+    triggerMood: "DryAir",
+    requiredSeconds: 300,
+    verifyHumidityMin: 45,
   },
   // Soil quests coach gentle, everyday care only — NEVER chemical dosing
   // (handoff §16: "Do not have AI prescribe dangerous chemical dosing").
