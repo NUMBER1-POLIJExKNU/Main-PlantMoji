@@ -7,7 +7,8 @@
 //
 // Props cross the RSC boundary, so timestamps arrive as ISO strings.
 
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export interface QuestProgressProps {
   /** maintain: count up toward requiredSeconds. verifying: count down. */
@@ -15,6 +16,8 @@ export interface QuestProgressProps {
   /** ISO timestamp the window is measured from (started_at / verifying_since). */
   sinceIso: string;
   requiredSeconds: number;
+  /** Plant whose quest this bar tracks — the completion sweep needs it. */
+  plantId: string;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -23,12 +26,20 @@ function formatClock(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-export default function QuestProgress({ mode, sinceIso, requiredSeconds }: QuestProgressProps) {
+export default function QuestProgress({
+  mode,
+  sinceIso,
+  requiredSeconds,
+  plantId,
+}: QuestProgressProps) {
+  const router = useRouter();
   const sinceMs = Date.parse(sinceIso);
   // "Now" lives in state so render stays pure (no Date.now() during render).
   // It starts pinned to the start timestamp — server and hydration render the
   // identical zero-state — then the rAF/interval callbacks swap in live time.
   const [nowMs, setNowMs] = useState(sinceMs);
+  // Guards the completion sweep so it fires at most once per mount.
+  const firedRef = useRef(false);
 
   useEffect(() => {
     const update = () => setNowMs(Date.now());
@@ -40,11 +51,26 @@ export default function QuestProgress({ mode, sinceIso, requiredSeconds }: Quest
     };
   }, []);
 
-  if (!Number.isFinite(sinceMs) || requiredSeconds <= 0) return null;
   const elapsedSeconds = Math.max(
     0,
     Math.min(requiredSeconds, Math.floor((nowMs - sinceMs) / 1000)),
   );
+
+  // Once the bar visually completes, run the server-side lazy sweep so the
+  // quest resolves without a manual reload. The sweep is idempotent — a
+  // duplicate tick (e.g. a second open tab) is safe.
+  useEffect(() => {
+    if (!Number.isFinite(sinceMs) || requiredSeconds <= 0) return;
+    if (elapsedSeconds < requiredSeconds || firedRef.current) return;
+    firedRef.current = true;
+    fetch("/api/game-tick", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plantId }),
+    }).finally(() => router.refresh());
+  }, [sinceMs, elapsedSeconds, requiredSeconds, plantId, router]);
+
+  if (!Number.isFinite(sinceMs) || requiredSeconds <= 0) return null;
   const percent = (elapsedSeconds / requiredSeconds) * 100;
 
   const label =
