@@ -1,6 +1,7 @@
 // Weekly report (handoff §22, §33, Phase 15) — plain stat tiles computed
 // from history on every open. No weekly_reports table, no chart library.
 
+import Link from "next/link";
 import Notice from "@/components/notice";
 import { runGameTick } from "@/game/events/event-router";
 import { fetchPlant } from "@/lib/plants";
@@ -167,6 +168,14 @@ export default async function ReportsPage() {
           tint="border-indigo-200/70 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40"
         />
       </section>
+
+      <Link
+        href="/monitoring"
+        className="mt-4 flex items-center justify-between rounded-2xl border border-sky-200/70 bg-sky-50/70 px-4 py-3 text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-sky-100/70 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-900/40"
+      >
+        <span>Live monitoring</span>
+        <span aria-hidden="true">→</span>
+      </Link>
 
       <p className="mt-6 text-center text-xs leading-5 text-zinc-400 dark:text-zinc-500">
         Computed live from this week&apos;s history — healthy time excludes
