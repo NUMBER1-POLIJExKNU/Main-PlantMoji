@@ -33,4 +33,22 @@ export const BADGE_DEFINITIONS: Record<BadgeKey, BadgeDefinition> = {
     description: "Reached Bond Level 5 together.",
     emoji: "💚",
   },
+  COOL_KEEPER: {
+    key: "COOL_KEEPER",
+    name: "Cool Keeper",
+    description: "Completed the Cool Me Down quest 5 times.",
+    emoji: "🧊",
+  },
+  PH_GUARDIAN: {
+    key: "PH_GUARDIAN",
+    name: "pH Guardian",
+    description: "Kept the soil pH healthy for the last 7 days straight.",
+    emoji: "🛡️",
+  },
+  STREAK_7: {
+    key: "STREAK_7",
+    name: "7 Days Care Streak",
+    description: "Reached a 7-day care streak.",
+    emoji: "📅",
+  },
 };

@@ -38,21 +38,60 @@ export async function evaluateBadges(
   const lightCount = completedRecovery.filter(
     (row) => row.quest_key === "GIVE_ME_MORE_LIGHT",
   ).length;
+  const coolCount = completedRecovery.filter(
+    (row) => row.quest_key === "COOL_ME_DOWN",
+  ).length;
 
+  // bond_level covers LEVEL_5_BOND; longest_streak (not current_streak) covers
+  // STREAK_7 so a later broken streak can never un-earn an already-earned
+  // badge — same reasoning as the story engine's chapter 3 (handoff §19).
   const { data: bond, error: bondError } = await supabase
     .from("bond_state")
-    .select("bond_level")
+    .select("bond_level, longest_streak")
     .eq("plant_id", plantId)
     .maybeSingle();
   if (bondError) {
     throw new Error(`badge-engine: failed to read bond_state: ${bondError.message}`);
   }
   const bondLevel: number = bond?.bond_level ?? 1;
+  const longestStreak: number = bond?.longest_streak ?? 0;
+
+  // PH_GUARDIAN: sustained healthy soil, not repeated repair (handoff §18) —
+  // at least one device event in the last 7 days, and none of them are a
+  // PLANT_STATE_CHANGED entry into SoilAcidic/SoilAlkaline. Two cheap
+  // head:true counts instead of fetching rows.
+  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count: recentEventCount, error: recentEventsError } = await supabase
+    .from("device_events")
+    .select("event_id", { count: "exact", head: true })
+    .eq("plant_id", plantId)
+    .gte("occurred_at", sevenDaysAgoIso);
+  if (recentEventsError) {
+    throw new Error(
+      `badge-engine: failed to count recent device_events: ${recentEventsError.message}`,
+    );
+  }
+  const { count: soilEventCount, error: soilEventsError } = await supabase
+    .from("device_events")
+    .select("event_id", { count: "exact", head: true })
+    .eq("plant_id", plantId)
+    .eq("type", "PLANT_STATE_CHANGED")
+    .in("data->>currentState", ["SoilAcidic", "SoilAlkaline"])
+    .gte("occurred_at", sevenDaysAgoIso);
+  if (soilEventsError) {
+    throw new Error(
+      `badge-engine: failed to count recent soil device_events: ${soilEventsError.message}`,
+    );
+  }
+  const phGuardian = (recentEventCount ?? 0) >= 1 && (soilEventCount ?? 0) === 0;
 
   const earned: BadgeKey[] = [];
   if (recoveryCount >= 1) earned.push("FIRST_RESCUE");
   if (lightCount >= 5) earned.push("LIGHT_MASTER");
   if (bondLevel >= 5) earned.push("LEVEL_5_BOND");
+  if (coolCount >= 5) earned.push("COOL_KEEPER");
+  if (longestStreak >= 7) earned.push("STREAK_7");
+  if (phGuardian) earned.push("PH_GUARDIAN");
   if (earned.length === 0) return [];
 
   // Ignore-duplicates upsert + select: only rows actually inserted come back,

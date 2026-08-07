@@ -4,14 +4,14 @@
     "type": "tab",
     "label": "PlantMoji · Game API Bridge",
     "disabled": false,
-    "info": "PlantMoji Phase 18 - v5 상태 변화를 게임 API로 전달하는 브리지.\n\nv5 흐름(\"LeafTalk Core Flow v5 · DB Persistence\")은 절대 수정하지 않는다.\n이 탭의 3개 노드 체인(Build Game Event → POST /api/device-events → Game API Response)을 v5 탭으로 복사한 뒤, v5의 \"Build Unified Device Command\" 출력 포트 1에서 \"Build Game Event\"로 병렬 와이어 1개만 추가한다.\n\nAPI 실패는 이 분기 안에서만 소비되므로 하드웨어 제어(LCD/LED/부저/서보)와 Supabase 저장 경로에 영향을 주지 않는다 (handoff §5.3).\n\n자세한 순서는 node-red/README.md 참고."
+    "info": "PlantMoji Phase 18 - v5 상태를 게임 API로 전달하는 브리지 (체인 2개).\n\nv5 흐름(\"LeafTalk Core Flow v5 · DB Persistence\")은 절대 수정하지 않는다. 각 체인의 3개 노드를 v5 탭으로 복사한 뒤, 에디터에서 병렬 와이어 1개씩만 추가한다.\n\n체인 1 · 플랜트 상태: Build Game Event → POST /api/device-events → Game API Response.\n  탭: v5 \"Build Unified Device Command\"(fn_command) 출력 포트 1 → Build Game Event (4번째 병렬 분기).\n체인 2 · 센서 상태: Build Sensor Status Event → POST /api/device-events (sensor) → Sensor Status API Response.\n  탭: v5 \"Sensor Watchdog\"(fn_watch) 출력 포트 1 → Build Sensor Status Event (2번째 병렬 분기 — 기존 System Event Preview 와이어는 유지).\n\nAPI 실패는 각 분기 안에서만 소비되므로 하드웨어 제어(LCD/LED/부저/서보)와 Supabase 저장 경로에 영향을 주지 않는다 (handoff §5.3).\n\n자세한 순서는 node-red/README.md 참고 (센서 상태 체인은 §8)."
   },
   {
     "id": "pm_c_title",
     "type": "comment",
     "z": "pm_bridge_tab",
     "name": "PHASE 18 · v5 → PlantMoji Game API Bridge (v5 흐름 무수정)",
-    "info": "연결 방법 (v5 흐름은 무수정):\n\n1. 아래 3개 노드(Build Game Event / POST /api/device-events / Game API Response)를 선택해 복사(Ctrl+C).\n2. v5 탭 \"LeafTalk Core Flow v5 · DB Persistence\"에 붙여넣기(Ctrl+V). (Node-RED는 탭 사이에 와이어를 그릴 수 없다.)\n3. v5 function 노드 \"Build Unified Device Command\"(id: fn_command)의 유일한 출력 포트(1번)에서 \"Build Game Event\" 입력으로 와이어를 1개 추가한다.\n   이 포트는 이미 \"Final Command Preview\", \"Readings Log Preview\", \"Build DB Operations\" 3곳으로 팬아웃되어 있으며, 브리지는 4번째 병렬 분기가 된다.\n4. Deploy.\n\nTEST 인젝트는 v5 없이 브리지 체인만 검증하는 용도다 (Happy ↔ DryAir 토글).",
+    "info": "연결 방법 (v5 흐름은 무수정):\n\n1. 체인별 3개 노드를 선택해 복사(Ctrl+C).\n   - 체인 1: Build Game Event / POST /api/device-events / Game API Response\n   - 체인 2: Build Sensor Status Event / POST /api/device-events (sensor) / Sensor Status API Response\n2. v5 탭 \"LeafTalk Core Flow v5 · DB Persistence\"에 붙여넣기(Ctrl+V). (Node-RED는 탭 사이에 와이어를 그릴 수 없다.)\n3. 병렬 와이어를 1개씩 추가:\n   - \"Build Unified Device Command\"(id: fn_command) 출력 포트 1 → \"Build Game Event\". 이 포트는 이미 3곳으로 팬아웃되어 있으며 브리지는 4번째 병렬 분기가 된다.\n   - \"Sensor Watchdog\"(id: fn_watch) 출력 포트 1 → \"Build Sensor Status Event\". 이 포트는 현재 \"System Event Preview\" 1곳으로만 나가며 브리지는 2번째 병렬 분기가 된다.\n4. Deploy.\n\nTEST 인젝트 2개는 v5 없이 각 체인만 검증하는 용도다 (Happy ↔ DryAir / sensorOffline ↔ sensorRecovered 토글).",
     "x": 330,
     "y": 60,
     "wires": []
@@ -130,6 +130,122 @@
     "statusType": "auto",
     "x": 930,
     "y": 280,
+    "wires": []
+  },
+  {
+    "id": "pm_c_wire_sensor",
+    "type": "comment",
+    "z": "pm_bridge_tab",
+    "name": "WIRE ME: v5 'Sensor Watchdog' 출력 1 → 'Build Sensor Status Event' (2번째 병렬 와이어)",
+    "info": "연결 방법 (v5 흐름은 무수정):\n\n1. 브리지 탭에서 'Build Sensor Status Event', 'POST /api/device-events (sensor)', 'Sensor Status API Response' 3개 노드를 선택해 복사(Ctrl+C).\n2. v5 탭 \"LeafTalk Core Flow v5 · DB Persistence\"에 붙여넣기(Ctrl+V).\n3. v5 function 노드 \"Sensor Watchdog\"(id: fn_watch)의 유일한 출력 포트(1번)에서 \"Build Sensor Status Event\" 입력으로 와이어를 1개 추가한다.\n   이 포트는 현재 \"System Event Preview\"(debug) 1곳으로만 나가며, 브리지는 2번째 병렬 분기가 된다. 기존 와이어는 그대로 둔다.\n4. Deploy.\n\nfn_watch는 오프라인↔온라인 전환에서만 메시지를 방출하므로 이 와이어에는 전환 메시지만 흐른다. 다만 v5 RESET이 sensorOffline 플래그를 초기화해 복구 없이 sensorOffline을 재방출할 수 있어, 브리지가 flow.bridgeLastSensorStatus로 마지막 전송 상태를 자체 추적한다.\n\nTEST 인젝트(Simulated Watchdog Event)는 v5 없이 이 체인만 검증하는 용도다 (offline ↔ recovered 토글).",
+    "x": 400,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "pm_inj_test_sensor",
+    "type": "inject",
+    "z": "pm_bridge_tab",
+    "name": "TEST → Simulated Watchdog Event",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 200,
+    "y": 440,
+    "wires": [
+      [
+        "pm_fn_test_watchdog"
+      ]
+    ]
+  },
+  {
+    "id": "pm_fn_test_watchdog",
+    "type": "function",
+    "z": "pm_bridge_tab",
+    "name": "Build Test Watchdog Event (v5 shape)",
+    "func": "// Fabricates a v5-shaped watchdog systemEvent so the sensor-status chain can\n// be tested WITHOUT the v5 flow or hardware. Alternates\n// sensorOffline <-> sensorRecovered on every press, so each press is a\n// genuine connectivity transition with a unique eventId.\nconst previous = flow.get(\"bridgeTestSensorState\") || \"sensorRecovered\";\nconst next = previous === \"sensorRecovered\" ? \"sensorOffline\" : \"sensorRecovered\";\nflow.set(\"bridgeTestSensorState\", next);\n\nmsg.payload = {\n    type: \"systemEvent\",\n    event: { type: next, timestamp: Date.now() }\n};\nif (next === \"sensorOffline\") {\n    // fn_watch attaches a local device output on the offline edge; mirror it\n    // so the test message has the exact v5 shape.\n    msg.payload.output = {\n        lcd: { line1: \"Sensor offline\", line2: \"Check connection\" },\n        ledColor: \"red\",\n        buzzer: true,\n        servoAction: \"hold\"\n    };\n}\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 490,
+    "y": 440,
+    "wires": [
+      [
+        "pm_fn_build_sensor_status"
+      ]
+    ]
+  },
+  {
+    "id": "pm_fn_build_sensor_status",
+    "type": "function",
+    "z": "pm_bridge_tab",
+    "name": "Build Sensor Status Event",
+    "func": "// PHASE 18 BRIDGE - taps the v5 sensor watchdog.\n// Wire the single output (port 1) of the v5 function node \"Sensor Watchdog\"\n// (id: fn_watch, tab \"LeafTalk Core Flow v5 · DB Persistence\") into this node\n// as an ADDITIONAL parallel wire. That port currently feeds only the\n// \"System Event Preview\" debug node - this becomes the 2nd parallel branch.\n// Expected msg.payload (built by fn_watch):\n//   { type:\"systemEvent\",\n//     event:{ type:\"sensorOffline\"|\"sensorRecovered\", timestamp }, output? }\n//\n// fn_watch already emits ONLY on transitions (it tracks flow.sensorOffline\n// and returns null on repeated 10s ticks). But v5 \"RESET · Runtime State\"\n// clears that flag, so a still-dead sensor would produce a SECOND\n// sensorOffline with no sensorRecovered in between. This node therefore\n// tracks the last status it forwarded (bridge-owned flow key\n// \"bridgeLastSensorStatus\" - never touches v5 keys) and forwards\n// TRANSITIONS ONLY. The API also dedups by eventId, but we do not rely on it.\n\nconst cmd = msg.payload;\n\nif (!cmd || cmd.type !== \"systemEvent\" || !cmd.event || typeof cmd.event.type !== \"string\") {\n    node.warn(\"Build Sensor Status Event: expected the v5 watchdog systemEvent payload - check the wiring (tap 'Sensor Watchdog').\");\n    return null;\n}\n\nlet status = null;\nif (cmd.event.type === \"sensorOffline\") status = \"offline\";\nelse if (cmd.event.type === \"sensorRecovered\") status = \"online\";\nif (status === null) {\n    // Some other/future systemEvent type - not a connectivity transition.\n    return null;\n}\n\n// fn_watch sets event.timestamp = Date.now() (epoch ms).\nconst ts = Number(cmd.event.timestamp);\nif (!Number.isFinite(ts)) {\n    node.warn(\"Build Sensor Status Event: watchdog event has no numeric timestamp - event skipped.\");\n    return null;\n}\n\n// Transition-only gate (see header comment). Checked AFTER validation so a\n// malformed message can never consume a real transition.\nconst last = flow.get(\"bridgeLastSensorStatus\");\nif (last === status) {\n    return null;\n}\nflow.set(\"bridgeLastSensorStatus\", status);\n\nmsg.payload = {\n    eventId: \"evt-plant-01-\" + ts + \"-sensor-\" + status,\n    plantId: \"plant-01\",\n    type: status === \"offline\" ? \"SENSOR_OFFLINE\" : \"SENSOR_ONLINE\",\n    occurredAt: new Date(ts).toISOString(),\n    data: {}\n};\n\nmsg.headers = { \"Content-Type\": \"application/json\" };\nconst token = env.get(\"DEVICE_API_TOKEN\");\nif (token) {\n    msg.headers.Authorization = \"Bearer \" + token;\n}\n\n// Keep the outgoing HTTP message clean.\ndelete msg.topic;\n\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 520,
+    "wires": [
+      [
+        "pm_http_sensor_api"
+      ]
+    ]
+  },
+  {
+    "id": "pm_http_sensor_api",
+    "type": "http request",
+    "z": "pm_bridge_tab",
+    "name": "POST /api/device-events (sensor)",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://localhost:3000/api/device-events",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 720,
+    "y": 520,
+    "wires": [
+      [
+        "pm_dbg_sensor_response"
+      ]
+    ]
+  },
+  {
+    "id": "pm_dbg_sensor_response",
+    "type": "debug",
+    "z": "pm_bridge_tab",
+    "name": "Sensor Status API Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload",
+    "statusType": "auto",
+    "x": 970,
+    "y": 520,
     "wires": []
   }
 ]

@@ -22,19 +22,42 @@ function fail(context: string, message: string): never {
  * True when the event's sensor data proves the recovery has NOT happened,
  * even if another mood currently outranks the trigger (e.g. still 33°C while
  * the state machine shows SoilAcidic) — handoff §16's completion condition is
- * the sensor value, not the mood label.
+ * the sensor value, not the mood label. Blocks when EITHER:
+ *   * def.verifyTemperatureMax is set and data.temperature is a finite number
+ *     above it ("temperature <= 30°C and remains stable"), OR
+ *   * def.verifyPhRange is set and data.soilPH is a finite number outside
+ *     [min, max] ("calibrated pH returns to normal range and remains stable").
+ * Exported for tests only — the engine is the sole runtime caller.
  */
-function temperatureBlocksRecovery(
+export function sensorBlocksRecovery(
   def: QuestDefinition,
   data?: Record<string, unknown>,
 ): boolean {
-  if (def.kind !== "recovery" || def.verifyTemperatureMax === undefined || !data) return false;
-  const temperature = data.temperature;
-  return (
-    typeof temperature === "number" &&
-    Number.isFinite(temperature) &&
-    temperature > def.verifyTemperatureMax
-  );
+  if (def.kind !== "recovery" || !data) return false;
+
+  if (def.verifyTemperatureMax !== undefined) {
+    const temperature = data.temperature;
+    if (
+      typeof temperature === "number" &&
+      Number.isFinite(temperature) &&
+      temperature > def.verifyTemperatureMax
+    ) {
+      return true;
+    }
+  }
+
+  if (def.verifyPhRange !== undefined) {
+    const soilPH = data.soilPH;
+    if (
+      typeof soilPH === "number" &&
+      Number.isFinite(soilPH) &&
+      (soilPH < def.verifyPhRange.min || soilPH > def.verifyPhRange.max)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function emitQuestEvent(
@@ -267,9 +290,10 @@ export async function handleStateChange(
       continue;
     }
 
-    // The sensor value can contradict the mood label: still-hot air while a
-    // different mood outranks Overheating must relapse / block verification.
-    if (quest.status === "VERIFYING" && temperatureBlocksRecovery(def, data)) {
+    // The sensor value can contradict the mood label: still-hot air (or
+    // still-unbalanced soil pH) while a different mood outranks the trigger
+    // must relapse / block verification.
+    if (quest.status === "VERIFYING" && sensorBlocksRecovery(def, data)) {
       await transition(supabase, quest.id, "VERIFYING", {
         status: "ACTIVE",
         verifying_since: null,
@@ -301,7 +325,7 @@ export async function handleStateChange(
           await emitQuestEvent(supabase, updated, "expired", occurredAt);
         }
       }
-    } else if (!temperatureBlocksRecovery(def, data)) {
+    } else if (!sensorBlocksRecovery(def, data)) {
       await transition(supabase, quest.id, "ACTIVE", {
         status: "VERIFYING",
         verifying_since: occurredAt,

@@ -22,7 +22,13 @@ export function normalizePersonality(value: unknown): PersonalityId {
 
 // ── Quests (handoff §16–§17) ────────────────────────────────────────────
 
-export const QUEST_KEYS = ["KEEP_ME_HAPPY", "COOL_ME_DOWN", "GIVE_ME_MORE_LIGHT"] as const;
+export const QUEST_KEYS = [
+  "KEEP_ME_HAPPY",
+  "COOL_ME_DOWN",
+  "GIVE_ME_MORE_LIGHT",
+  "BALANCE_SOIL_ACIDIC",
+  "BALANCE_SOIL_ALKALINE",
+] as const;
 export type QuestKey = (typeof QUEST_KEYS)[number];
 
 export const QUEST_STATUSES = [
@@ -99,7 +105,14 @@ export interface StreakResult {
 
 // ── Badges (handoff §18) ────────────────────────────────────────────────
 
-export const BADGE_KEYS = ["FIRST_RESCUE", "LIGHT_MASTER", "LEVEL_5_BOND"] as const;
+export const BADGE_KEYS = [
+  "FIRST_RESCUE",
+  "LIGHT_MASTER",
+  "LEVEL_5_BOND",
+  "COOL_KEEPER",
+  "PH_GUARDIAN",
+  "STREAK_7",
+] as const;
 export type BadgeKey = (typeof BADGE_KEYS)[number];
 
 export interface BadgeDefinition {

@@ -31,6 +31,13 @@ export interface QuestDefinition {
    * "temperature <= 30°C and remains stable").
    */
   verifyTemperatureMax?: number;
+  /**
+   * recovery only: when an event carries data.soilPH outside [min, max], the
+   * soil is NOT balanced even if another mood outranks the trigger —
+   * verification must not start / must relapse (handoff §16: "calibrated pH
+   * returns to normal range and remains stable").
+   */
+  verifyPhRange?: { min: number; max: number };
 }
 
 export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
@@ -66,6 +73,32 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "Sleepy",
     requiredSeconds: 300,
+  },
+  // Soil quests coach gentle, everyday care only — NEVER chemical dosing
+  // (handoff §16: "Do not have AI prescribe dangerous chemical dosing").
+  BALANCE_SOIL_ACIDIC: {
+    key: "BALANCE_SOIL_ACIDIC",
+    title: "Balance My Soil",
+    description:
+      "My soil feels too sour. Try a gentle rinse with plain water or mix in some fresh potting soil, then keep me steady for 5 minutes.",
+    emoji: "🧪",
+    xpReward: 25,
+    kind: "recovery",
+    triggerMood: "SoilAcidic",
+    requiredSeconds: 300,
+    verifyPhRange: { min: 6.0, max: 7.0 },
+  },
+  BALANCE_SOIL_ALKALINE: {
+    key: "BALANCE_SOIL_ALKALINE",
+    title: "Balance My Soil",
+    description:
+      "My soil feels too chalky. Try a gentle rinse with plain water or mix in some fresh potting soil, then keep me steady for 5 minutes.",
+    emoji: "🧪",
+    xpReward: 25,
+    kind: "recovery",
+    triggerMood: "SoilAlkaline",
+    requiredSeconds: 300,
+    verifyPhRange: { min: 6.0, max: 7.0 },
   },
 };
 

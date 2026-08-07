@@ -132,6 +132,17 @@
                     </button>
                 </div>
 
+                <!-- DEV ADDITION (game data — quest panel). Text is filled by
+                     /farm/live.js from the quests table; its few layout rules
+                     are injected by live.js so style.css stays untouched.
+                     Designer: restyle freely — just keep the #quest-panel id
+                     and the .quest-title / .quest-progress hooks. -->
+                <div class="panel-glass quest-panel" id="quest-panel">
+                    <h3><i class="icon">📜</i> Current Quest</h3>
+                    <div class="quest-title">No active quest — keep caring 🌿</div>
+                    <div class="quest-progress"></div>
+                </div>
+
                 <div class="mini-sensors panel-glass">
                     <h3><i class="icon">📊</i> Plant Vitals</h3>
                     <div class="vital-item">
