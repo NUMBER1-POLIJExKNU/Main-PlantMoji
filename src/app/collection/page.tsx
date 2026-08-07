@@ -19,6 +19,8 @@ import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { getChapterScene } from "@/game/story/story-dialogue";
 import { getSeenMoods, getUnlockedBadges } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { BADGE_COPY_ID, MOOD_COPY, MOOD_EDUCATION_ID } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/i18n-server";
 import { MOOD_LABELS, PLANT_MOODS, type PlantMood } from "@/types/events";
 import { STREAK_TIMEZONE, normalizePersonality } from "@/types/game";
 
@@ -37,13 +39,13 @@ const MOOD_EMOJI: Record<PlantMood, string> = {
   SoilAlkaline: "🧪",
 };
 
-const unlockDateFormat = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: STREAK_TIMEZONE,
-});
-
 export default async function CollectionPage() {
+  const locale = await getRequestLocale();
+  const unlockDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: STREAK_TIMEZONE,
+  });
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -99,12 +101,12 @@ export default async function CollectionPage() {
     const discovered = seenMoods.includes(mood);
     return {
       mood,
-      label: MOOD_LABELS[mood],
+      label: locale === "id" ? MOOD_COPY.id[mood] : MOOD_LABELS[mood],
       emoji: MOOD_EMOJI[mood],
       discovered,
       // The science card unlocks with discovery — undiscovered moods never
       // ship their explanation to the client (handoff §20: collect to learn).
-      whyCard: discovered ? WHY_CARDS[mood] : null,
+      whyCard: discovered ? (locale === "id" ? MOOD_EDUCATION_ID[mood] : WHY_CARDS[mood]) : null,
     };
   });
 
@@ -122,8 +124,8 @@ export default async function CollectionPage() {
     const unlockedMs = row ? Date.parse(row.unlocked_at) : Number.NaN;
     return {
       key: definition.key,
-      name: definition.name,
-      description: definition.description,
+      name: locale === "id" ? BADGE_COPY_ID[definition.key].name : definition.name,
+      description: locale === "id" ? BADGE_COPY_ID[definition.key].description : definition.description,
       emoji: definition.emoji,
       unlockedLabel:
         row != null
@@ -154,14 +156,14 @@ export default async function CollectionPage() {
           📖
         </span>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Collection
+          {locale === "id" ? "Koleksi" : "Collection"}
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Everything we&apos;ve discovered together.
+          {locale === "id" ? "Semua yang sudah kita temukan bersama." : "Everything we've discovered together."}
         </p>
       </header>
 
-      <CollectionTabs moods={moods} badges={badges} chapters={chapters} wisdom={wisdom} />
+      <CollectionTabs locale={locale} moods={moods} badges={badges} chapters={chapters} wisdom={wisdom} />
     </main>
   );
 }

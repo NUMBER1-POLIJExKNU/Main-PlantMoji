@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,15 +30,19 @@
                 <h1>PLANT<br>EMOJI</h1>
             </div>
             <nav class="nav-links">
-                <a href="/" class="nav-item active"><i class="icon">🏠</i> Dashboard</a>
-                <a href="/settings" class="nav-item"><i class="icon">🌱</i> Plants</a>
-                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> Monitoring</a>
-                <a href="#" class="nav-item"><i class="icon">📷</i> Camera AI</a>
-                <a href="/quests" class="nav-item"><i class="icon">📜</i> History</a>
-                <a href="/collection" class="nav-item"><i class="icon">🏆</i> Achievements</a>
-                <a href="#" class="nav-item"><i class="icon">🛒</i> Shop</a>
-                <a href="/settings" class="nav-item"><i class="icon">⚙️</i> Settings</a>
+                <a href="/" class="nav-item active"><i class="icon">🏠</i> <span data-i18n="nav.dashboard">Beranda</span></a>
+                <a href="/plants" class="nav-item"><i class="icon">🌱</i> <span data-i18n="nav.plants">Tanaman</span></a>
+                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> <span data-i18n="nav.monitoring">Pemantauan</span></a>
+                <span class="nav-item nav-disabled" aria-disabled="true"><i class="icon">📷</i> <span data-i18n="nav.camera">Kamera AI</span></span>
+                <a href="/quests" class="nav-item"><i class="icon">📜</i> <span data-i18n="nav.quests">Misi</span></a>
+                <a href="/collection" class="nav-item"><i class="icon">🏆</i> <span data-i18n="nav.collection">Koleksi</span></a>
+                <span class="nav-item nav-disabled" aria-disabled="true"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></span>
+                <a href="/settings" class="nav-item"><i class="icon">⚙️</i> <span data-i18n="nav.settings">Pengaturan</span></a>
             </nav>
+            <div class="locale-switch" role="group" aria-label="Language / Bahasa">
+                <button type="button" data-locale="id" aria-pressed="true">ID</button>
+                <button type="button" data-locale="en" aria-pressed="false">EN</button>
+            </div>
         </aside>
 
         <!-- Main Content Area: The Game World -->
@@ -91,10 +95,13 @@
                 </div>
 
                 <div class="weather-widget panel-glass">
-                    <div class="weather-icon sunny">☀️</div>
+                    <div class="weather-icon">🌤️</div>
                     <div class="weather-text">
-                        <span class="temp">27°C</span>
-                        <span class="desc">Sunny & Optimal</span>
+                        <span class="weather-source"><span data-i18n="weather.outdoor">Luar ruang Jember</span> · <a href="https://data.bmkg.go.id/prakiraan-cuaca/" target="_blank" rel="noreferrer">BMKG</a></span>
+                        <span class="temp">--°C</span>
+                        <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>
+                        <span class="forecast-time"></span>
+                        <span class="indoor-reading"><span data-i18n="weather.indoor">Ruang tanaman</span>: --°C · --% RH</span>
                     </div>
                 </div>
             </div>
@@ -107,7 +114,7 @@
                 <!-- Mascot -->
                 <div class="mascot-container">
                     <div class="speech-bubble animated-bounce">
-                        "I'm feeling so healthy!<br>Thanks for the care."
+                        "Aku merasa sehat!<br>Terima kasih sudah merawatku."
                     </div>
                     <div class="mascot-wrapper animated-breath">
                         <svg viewBox="0 0 300 350" class="mascot-svg">
@@ -157,37 +164,37 @@
                 
                 <div class="actions-panel">
                     <button class="pixel-btn water-btn">
-                        <i class="icon">💧</i> WATER
+                        <i class="icon">💧</i> <span data-i18n="action.water">SIRAM</span>
                     </button>
                     <button class="pixel-btn feed-btn">
-                        <i class="icon">🧪</i> FERTILIZE
+                        <i class="icon">🧪</i> <span data-i18n="action.fertilize">PUPUK</span>
                     </button>
                 </div>
 
                 <div class="mini-sensors panel-glass">
-                    <h3><i class="icon">📊</i> Plant Vitals</h3>
+                    <h3><i class="icon">📊</i> <span data-i18n="vitals.title">Kondisi Tanaman</span></h3>
                     <div class="vital-item" data-vital="hp">
-                        <span class="v-label">HP</span>
+                        <span class="v-label" data-i18n="vitals.health">Kesehatan</span>
                         <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-grass-light);"></div></div>
                         <span class="v-perc">--</span>
                     </div>
                     <div class="vital-item" data-vital="temperature">
-                        <span class="v-label">Temperature</span>
+                        <span class="v-label" data-i18n="vitals.temperature">Suhu</span>
                         <div class="v-bar"><div class="fill" style="width: 0%; background: #FF9C4B;"></div></div>
                         <span class="v-perc">--°C</span>
                     </div>
                     <div class="vital-item" data-vital="humidity">
-                        <span class="v-label">Air Humidity</span>
+                        <span class="v-label" data-i18n="vitals.humidity">Kelembapan Udara</span>
                         <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-water);"></div></div>
                         <span class="v-perc">--%</span>
                     </div>
                     <div class="vital-item" data-vital="soil-ph">
-                        <span class="v-label">Soil pH</span>
+                        <span class="v-label" data-i18n="vitals.soilPh">pH Tanah</span>
                         <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-soil-light);"></div></div>
                         <span class="v-perc">--</span>
                     </div>
                     <div class="vital-item" data-vital="light">
-                        <span class="v-label">Light</span>
+                        <span class="v-label" data-i18n="vitals.light">Cahaya</span>
                         <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-yellow);"></div></div>
                         <span class="v-perc">--</span>
                     </div>

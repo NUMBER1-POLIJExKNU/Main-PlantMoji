@@ -9,6 +9,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { AppLocale } from "@/lib/i18n";
 
 export interface QuestProgressProps {
   /** maintain: count up toward requiredSeconds. verifying: count down. */
@@ -18,6 +19,7 @@ export interface QuestProgressProps {
   requiredSeconds: number;
   /** Plant whose quest this bar tracks — the completion sweep needs it. */
   plantId: string;
+  locale: AppLocale;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -31,6 +33,7 @@ export default function QuestProgress({
   sinceIso,
   requiredSeconds,
   plantId,
+  locale,
 }: QuestProgressProps) {
   const router = useRouter();
   const sinceMs = Date.parse(sinceIso);
@@ -75,8 +78,10 @@ export default function QuestProgress({
 
   const label =
     mode === "maintain"
-      ? `${Math.floor(elapsedSeconds / 60)} / ${Math.round(requiredSeconds / 60)} min`
-      : `Verifying… ${formatClock(requiredSeconds - elapsedSeconds)} left`;
+      ? `${Math.floor(elapsedSeconds / 60)} / ${Math.round(requiredSeconds / 60)} ${locale === "id" ? "mnt" : "min"}`
+      : locale === "id"
+        ? `Memeriksa… tersisa ${formatClock(requiredSeconds - elapsedSeconds)}`
+        : `Verifying… ${formatClock(requiredSeconds - elapsedSeconds)} left`;
 
   return (
     <div className="mt-3">

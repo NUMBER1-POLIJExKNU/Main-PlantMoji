@@ -3,6 +3,14 @@
 작성 기준일: 2026-08-07  
 대상: Jember 현지 교육용 키트, 3일 데모 스프린트 이후 현장 확장
 
+## 현재 구현된 기반 (2026-08-07)
+
+- Home, Quests, Badges/Collection, Plants, 공통 내비게이션과 Demo Control Center는 Bahasa Indonesia를 기본으로 사용하며 ID/EN 전환을 공유한다.
+- `GET /api/local-context`는 Tegalgede의 공식 BMKG 마을 예보(기본 `35.09.21.1005`)를 30분 캐시하고 프로세스 내 마지막 성공값을 보존한다.
+- Home은 BMKG를 Jember 실외 참고 정보로 표시하고 실내 식물 공간의 온도·습도를 별도 줄에 표시한다. BMKG 값은 무드·퀘스트·XP·하드웨어 동작에 사용하지 않는다.
+- Settings는 현재 레벨·XP·스트릭·뱃지·스토리 장을 보여주며 `DEMO_CHEAT_CODE` 하나로 전체 해금과 안전한 게임 진행 초기화를 지원한다.
+- 이 문서의 DB 기반 작물/사이트 레지스트리, 인도네시아 추가 작물, Node-RED 영속 재전송 큐는 후속 범위다.
+
 ## 1. 목표
 
 PlantMoji를 단순히 Jember 지명을 사용하는 데모가 아니라 다음 조건을 만족하는 현지 교육용 키트로 만든다.
@@ -393,4 +401,3 @@ flowchart LR
 - Hari 3: uji demo penuh dan kondisi gagal jaringan/sensor.
 - Melon/cabai baru boleh diaktifkan setelah nama spesies/tahap tumbuh jelas, minimal dua sumber tersedia, dan reviewer pertanian POLIJE menyetujui.
 - Kopi robusta dan kakao tetap draft sampai syarat bibit, kelembapan, dan naungan dapat diukur dengan sensor kit.
-

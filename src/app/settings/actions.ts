@@ -12,7 +12,9 @@
 import { revalidatePath } from "next/cache";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { applyDemoMaxState } from "@/game/demo/demo-max";
+import { resetDemoProgress } from "@/game/demo/demo-reset";
 import { parseGrowthInput } from "@/lib/growth";
+import { normalizeLocale, type AppLocale } from "@/lib/i18n";
 import { normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import {
@@ -23,15 +25,54 @@ import {
 import { awardXp } from "@/game/progression/xp-engine";
 import { normalizePersonality } from "@/types/game";
 
-export interface DemoMaxActionState {
+export interface DemoActionState {
   status: "idle" | "success" | "error";
   message: string;
 }
+
+/** Kept as an alias for older imports while the demo panel is upgraded. */
+export type DemoMaxActionState = DemoActionState;
 
 function matchesDemoCode(submitted: string, configured: string): boolean {
   const submittedHash = createHash("sha256").update(submitted).digest();
   const configuredHash = createHash("sha256").update(configured).digest();
   return timingSafeEqual(submittedHash, configuredHash);
+}
+
+function demoLocale(formData: FormData): AppLocale {
+  return normalizeLocale(formData.get("locale"));
+}
+
+function validateDemoCode(formData: FormData, locale: AppLocale): string | DemoActionState {
+  const configuredCode = process.env.DEMO_CHEAT_CODE;
+  if (!configuredCode || configuredCode.length < 8) {
+    return {
+      status: "error",
+      message:
+        locale === "id"
+          ? "Kode demo belum diatur. Tambahkan DEMO_CHEAT_CODE (minimal 8 karakter) di Vercel."
+          : "Demo code is not configured. Set DEMO_CHEAT_CODE (8+ characters) in Vercel.",
+    };
+  }
+
+  const rawCode = formData.get("demoCode");
+  const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
+  if (!submittedCode || !matchesDemoCode(submittedCode, configuredCode)) {
+    return {
+      status: "error",
+      message: locale === "id" ? "Kode demo tidak cocok." : "That demo code is not correct.",
+    };
+  }
+  return submittedCode;
+}
+
+function revalidateDemoRoutes() {
+  revalidatePath("/");
+  revalidatePath("/settings");
+  revalidatePath("/quests");
+  revalidatePath("/collection");
+  revalidatePath("/reports");
+  revalidatePath("/plants");
 }
 
 /**
@@ -146,46 +187,79 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
  * but never sensor truth, crop thresholds, or hardware control.
  */
 export async function activateDemoMaxMode(
-  _previousState: DemoMaxActionState,
+  _previousState: DemoActionState,
   formData: FormData,
-): Promise<DemoMaxActionState> {
-  const configuredCode = process.env.DEMO_CHEAT_CODE;
-  if (!configuredCode || configuredCode.length < 8) {
-    return {
-      status: "error",
-      message: "Demo code is not configured. Set DEMO_CHEAT_CODE (8+ characters) in Vercel.",
-    };
-  }
-
-  const rawCode = formData.get("demoCode");
-  const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
-  if (!submittedCode || !matchesDemoCode(submittedCode, configuredCode)) {
-    return { status: "error", message: "That demo code is not correct." };
-  }
+): Promise<DemoActionState> {
+  const locale = demoLocale(formData);
+  const validation = validateDemoCode(formData, locale);
+  if (typeof validation !== "string") return validation;
 
   const supabase = getServerSupabase();
   if (!supabase) {
-    return { status: "error", message: "Supabase is not configured." };
+    return {
+      status: "error",
+      message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured.",
+    };
   }
 
   try {
     const result = await applyDemoMaxState(supabase, "plant-01");
-    revalidatePath("/");
-    revalidatePath("/settings");
-    revalidatePath("/quests");
-    revalidatePath("/collection");
-    revalidatePath("/reports");
-    revalidatePath("/plants");
+    revalidateDemoRoutes();
 
     return {
       status: "success",
-      message: `Max mode on! Lv.${result.level} · ${result.moods} moods · ${result.badges} badges · ${result.chapters} stories unlocked.`,
+      message:
+        locale === "id"
+          ? `Mode maksimal aktif! Lv.${result.level} · ${result.moods} suasana · ${result.badges} lencana · ${result.chapters} cerita terbuka.`
+          : `Max mode on! Lv.${result.level} · ${result.moods} moods · ${result.badges} badges · ${result.chapters} stories unlocked.`,
     };
   } catch (cause) {
     console.error("activateDemoMaxMode failed:", cause);
     return {
       status: "error",
-      message: "Max unlock failed. Check the Supabase migrations, then try again.",
+      message:
+        locale === "id"
+          ? "Gagal membuka semuanya. Periksa migrasi Supabase lalu coba lagi."
+          : "Max unlock failed. Check the Supabase migrations, then try again.",
+    };
+  }
+}
+
+/** Restores the presentation storyline to its beginning with the same code. */
+export async function resetDemoMode(
+  _previousState: DemoActionState,
+  formData: FormData,
+): Promise<DemoActionState> {
+  const locale = demoLocale(formData);
+  const validation = validateDemoCode(formData, locale);
+  if (typeof validation !== "string") return validation;
+
+  const supabase = getServerSupabase();
+  if (!supabase) {
+    return {
+      status: "error",
+      message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured.",
+    };
+  }
+
+  try {
+    await resetDemoProgress(supabase, "plant-01");
+    revalidateDemoRoutes();
+    return {
+      status: "success",
+      message:
+        locale === "id"
+          ? "Demo kembali ke awal: Lv.1, 0 XP, tanpa lencana atau riwayat misi."
+          : "Demo reset to the beginning: Lv.1, 0 XP, with no badges or quest history.",
+    };
+  } catch (cause) {
+    console.error("resetDemoMode failed:", cause);
+    return {
+      status: "error",
+      message:
+        locale === "id"
+          ? "Gagal mengatur ulang demo. Periksa migrasi Supabase lalu coba lagi."
+          : "Demo reset failed. Check the Supabase migrations, then try again.",
     };
   }
 }

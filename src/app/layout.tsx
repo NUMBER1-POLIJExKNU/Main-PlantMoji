@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
 import RenoAppShell from "@/components/reno-app-shell";
+import { getRequestLocale } from "@/lib/i18n-server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,14 +31,15 @@ export const metadata: Metadata = {
   description: "Sensor-verified plant companion — real plant care as a game",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const locale = await getRequestLocale();
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${vt323.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <RenoAppShell>{children}</RenoAppShell>
+        <RenoAppShell locale={locale}>{children}</RenoAppShell>
       </body>
     </html>
   );

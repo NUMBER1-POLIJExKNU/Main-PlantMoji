@@ -7,6 +7,7 @@
 import { useState } from "react";
 import StoryChapterCard from "@/components/story-chapter-card";
 import type { ChapterScene } from "@/game/story/story-dialogue";
+import type { AppLocale } from "@/lib/i18n";
 
 export interface MoodCollectionItem {
   mood: string;
@@ -46,6 +47,7 @@ export interface StoryCollectionItem {
 }
 
 export interface CollectionTabsProps {
+  locale: AppLocale;
   moods: MoodCollectionItem[];
   badges: BadgeCollectionItem[];
   chapters: StoryCollectionItem[];
@@ -53,16 +55,19 @@ export interface CollectionTabsProps {
 }
 
 const TABS = [
-  { id: "moods", label: "Moods", emoji: "🎭" },
-  { id: "badges", label: "Badges", emoji: "🏅" },
-  { id: "story", label: "Story", emoji: "📜" },
-  { id: "wisdom", label: "Wisdom", emoji: "🌾" },
+  { id: "moods", emoji: "🎭" },
+  { id: "badges", emoji: "🏅" },
+  { id: "story", emoji: "📜" },
+  { id: "wisdom", emoji: "🌾" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
-export default function CollectionTabs({ moods, badges, chapters, wisdom }: CollectionTabsProps) {
+export default function CollectionTabs({ locale, moods, badges, chapters, wisdom }: CollectionTabsProps) {
   const [tab, setTab] = useState<TabId>("moods");
+  const copy = locale === "id"
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Terbuka", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran" }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Unlocked", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements" };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
   const unlockedBadges = badges.filter((badge) => badge.unlockedLabel !== null).length;
@@ -94,7 +99,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
               <span className="mr-1" role="img" aria-hidden="true">
                 {entry.emoji}
               </span>
-              {entry.label}
+              {copy[entry.id]}
             </button>
           );
         })}
@@ -103,7 +108,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
           <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {discoveredMoods} of {moods.length} moods discovered
+            {discoveredMoods} / {moods.length} {copy.discovered}
           </p>
           <ul className="grid grid-cols-3 gap-3">
             {moods.map((mood) => (
@@ -137,7 +142,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
                       ? "text-green-600 dark:text-green-400"
                       : "text-zinc-300 dark:text-zinc-600"
                   }`}
-                  aria-label={mood.discovered ? "Discovered" : "Not discovered yet"}
+                  aria-label={mood.discovered ? copy.unlocked : copy.locked}
                 >
                   {mood.discovered ? "✓" : "?"}
                 </span>
@@ -151,7 +156,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
           {moods.some((mood) => mood.discovered && mood.whyCard) && (
             <>
               <p className="mb-3 mt-6 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-                What we&apos;ve learned
+                {copy.learned}
               </p>
               <ul className="flex flex-col gap-3">
                 {moods
@@ -190,7 +195,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
       {tab === "badges" && (
         <section id="collection-panel-badges" role="tabpanel" className="mt-5">
           <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {unlockedBadges} of {badges.length} badges unlocked
+            {unlockedBadges} / {badges.length} {copy.unlockedBadges}
           </p>
           <ul className="flex flex-col gap-3">
             {badges.map((badge) => {
@@ -229,7 +234,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
                             : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
                         }`}
                       >
-                        {unlocked ? "Unlocked" : "Locked"}
+                        {unlocked ? copy.unlocked : copy.locked}
                       </span>
                     </div>
                     <p className="mt-0.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
@@ -237,7 +242,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
                     </p>
                     {badge.unlockedLabel && (
                       <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                        Unlocked {badge.unlockedLabel}
+                        {copy.unlockedOn} {badge.unlockedLabel}
                       </p>
                     )}
                   </div>
@@ -251,7 +256,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
       {tab === "story" && (
         <section id="collection-panel-story" role="tabpanel" className="mt-5">
           <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {unlockedChapters} of {chapters.length} chapters unlocked
+            {unlockedChapters} / {chapters.length} {copy.chapters}
           </p>
           <ol className="flex flex-col gap-3">
             {chapters.map((chapter) => (
@@ -274,7 +279,7 @@ export default function CollectionTabs({ moods, badges, chapters, wisdom }: Coll
       {tab === "wisdom" && (
         <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
           <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            Traditional knowledge, translated into measurements
+            {copy.wisdomIntro}
           </p>
           <ul className="flex flex-col gap-3">
             {wisdom.map((entry) => (

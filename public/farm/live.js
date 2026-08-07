@@ -7,14 +7,93 @@
 // never decides XP or truth (handoff rules) — it only displays.
 
 const PLANT_ID = "plant-01";
+const LOCALE_KEY = "plantmoji_locale";
+
+const COPY = {
+  id: {
+    "nav.dashboard": "Beranda",
+    "nav.plants": "Tanaman",
+    "nav.monitoring": "Pemantauan",
+    "nav.camera": "Kamera AI",
+    "nav.quests": "Misi",
+    "nav.collection": "Koleksi",
+    "nav.shop": "Toko",
+    "nav.settings": "Pengaturan",
+    "weather.outdoor": "Luar ruang Jember",
+    "weather.indoor": "Ruang tanaman",
+    "weather.loading": "Memuat prakiraan...",
+    "weather.unavailable": "Prakiraan belum tersedia",
+    "weather.forecast": "Prakiraan",
+    "weather.stale": "data terakhir",
+    "sensor.unavailable": "Sensor dalam ruang belum terhubung",
+    "action.water": "SIRAM",
+    "action.fertilize": "PUPUK",
+    "vitals.title": "Kondisi Tanaman",
+    "vitals.health": "Kesehatan",
+    "vitals.temperature": "Suhu",
+    "vitals.humidity": "Kelembapan Udara",
+    "vitals.soilPh": "pH Tanah",
+    "vitals.light": "Cahaya",
+    bright: "Terang",
+    dark: "Gelap",
+    days: "Hari",
+    bond: "Ikatan",
+    levelUp: "NAIK LEVEL!",
+    carePays: "perawatanmu membuahkan hasil",
+    questComplete: "Misi selesai!",
+  },
+  en: {
+    "nav.dashboard": "Dashboard",
+    "nav.plants": "Plants",
+    "nav.monitoring": "Monitoring",
+    "nav.camera": "Camera AI",
+    "nav.quests": "Quests",
+    "nav.collection": "Collection",
+    "nav.shop": "Shop",
+    "nav.settings": "Settings",
+    "weather.outdoor": "Jember outdoor",
+    "weather.indoor": "Plant room",
+    "weather.loading": "Loading forecast...",
+    "weather.unavailable": "Forecast unavailable",
+    "weather.forecast": "Forecast",
+    "weather.stale": "last available data",
+    "sensor.unavailable": "Indoor sensor not connected",
+    "action.water": "WATER",
+    "action.fertilize": "FERTILIZE",
+    "vitals.title": "Plant Vitals",
+    "vitals.health": "Health",
+    "vitals.temperature": "Temperature",
+    "vitals.humidity": "Air Humidity",
+    "vitals.soilPh": "Soil pH",
+    "vitals.light": "Light",
+    bright: "Bright",
+    dark: "Dark",
+    days: "Days",
+    bond: "Bond",
+    levelUp: "LEVEL UP!",
+    carePays: "your care is paying off",
+    questComplete: "Quest complete!",
+  },
+};
+
+function initialLocale() {
+  const cookie = document.cookie.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${LOCALE_KEY}=`));
+  const fromCookie = cookie?.split("=")[1];
+  let stored = null;
+  try { stored = window.localStorage.getItem(LOCALE_KEY); } catch {}
+  return fromCookie === "en" || (!fromCookie && stored === "en") ? "en" : "id";
+}
+
+let appLocale = initialLocale();
+const t = (key) => COPY[appLocale][key] ?? key;
 
 const MOODS = {
-  Happy: { icon: "☀️", label: "Sunny & Optimal", bubble: "\"I'm feeling so healthy!<br>Thanks for the care.\"" },
-  Overheating: { icon: "🔥", label: "Too Hot!", bubble: "\"It's too hot...<br>please cool me down!\"" },
-  DryAir: { icon: "💨", label: "Dry Air", bubble: "\"The air feels so dry...<br>a little humidity please?\"" },
-  Sleepy: { icon: "🌙", label: "Too Dark", bubble: "\"So dark... I'm getting sleepy.<br>More light please!\"" },
-  SoilAcidic: { icon: "🧪", label: "Soil Too Acidic", bubble: "\"My soil feels sour...<br>can you check the pH?\"" },
-  SoilAlkaline: { icon: "🧪", label: "Soil Too Alkaline", bubble: "\"My soil feels off...<br>can you check the pH?\"" },
+  Happy: { icon: "☀️", label: { id: "Sehat", en: "Happy" }, bubble: { id: "\"Aku merasa sehat!<br>Terima kasih sudah merawatku.\"", en: "\"I'm feeling so healthy!<br>Thanks for the care.\"" } },
+  Overheating: { icon: "🔥", label: { id: "Terlalu Panas", en: "Too Hot!" }, bubble: { id: "\"Terlalu panas...<br>tolong sejukkan aku!\"", en: "\"It's too hot...<br>please cool me down!\"" } },
+  DryAir: { icon: "💨", label: { id: "Udara Kering", en: "Dry Air" }, bubble: { id: "\"Udaranya kering...<br>tolong lembapkan udara di sekitarku.\"", en: "\"The air feels so dry...<br>a little humidity please?\"" } },
+  Sleepy: { icon: "🌙", label: { id: "Kurang Cahaya", en: "Too Dark" }, bubble: { id: "\"Gelap sekali...<br>tolong beri aku cahaya!\"", en: "\"So dark... I'm getting sleepy.<br>More light please!\"" } },
+  SoilAcidic: { icon: "🧪", label: { id: "Tanah Terlalu Asam", en: "Soil Too Acidic" }, bubble: { id: "\"Tanahku terlalu asam...<br>tolong periksa pH-nya.\"", en: "\"My soil feels sour...<br>can you check the pH?\"" } },
+  SoilAlkaline: { icon: "🧪", label: { id: "Tanah Terlalu Basa", en: "Soil Too Alkaline" }, bubble: { id: "\"Tanahku terlalu basa...<br>tolong periksa pH-nya.\"", en: "\"My soil feels off...<br>can you check the pH?\"" } },
 };
 
 // HP is a friendly summary of the plant's CURRENT mood — the only honest
@@ -31,13 +110,13 @@ const HP_BY_MOOD = {
 
 // Display metadata for quest keys (mirrors src/game/quests/quest-definitions.ts).
 const QUEST_META = {
-  KEEP_ME_HAPPY: { title: "Keep Me Happy", emoji: "🌱" },
-  STAY_COMFY: { title: "Stay Comfy", emoji: "🛋️" },
-  COOL_ME_DOWN: { title: "Cool Me Down", emoji: "❄️" },
-  GIVE_ME_MORE_LIGHT: { title: "Give Me More Light", emoji: "☀️" },
-  HUMIDIFY_MY_AIR: { title: "Humidify My Air", emoji: "💦" },
-  BALANCE_SOIL_ACIDIC: { title: "Balance My Soil", emoji: "🧪" },
-  BALANCE_SOIL_ALKALINE: { title: "Balance My Soil", emoji: "🧪" },
+  KEEP_ME_HAPPY: { title: { id: "Jaga Aku Tetap Sehat", en: "Keep Me Happy" }, emoji: "🌱" },
+  STAY_COMFY: { title: { id: "Tetap Nyaman", en: "Stay Comfy" }, emoji: "🛋️" },
+  COOL_ME_DOWN: { title: { id: "Sejukkan Aku", en: "Cool Me Down" }, emoji: "❄️" },
+  GIVE_ME_MORE_LIGHT: { title: { id: "Beri Aku Cahaya", en: "Give Me More Light" }, emoji: "☀️" },
+  HUMIDIFY_MY_AIR: { title: { id: "Lembapkan Udaraku", en: "Humidify My Air" }, emoji: "💦" },
+  BALANCE_SOIL_ACIDIC: { title: { id: "Seimbangkan Tanahku", en: "Balance My Soil" }, emoji: "🧪" },
+  BALANCE_SOIL_ALKALINE: { title: { id: "Seimbangkan Tanahku", en: "Balance My Soil" }, emoji: "🧪" },
 };
 
 // Cross-render state for speech-bubble request de-duplication.
@@ -49,6 +128,26 @@ function setText(selector, text) {
   const el = $(selector);
   if (el && text != null) el.textContent = text;
 }
+
+function applyLocale() {
+  document.documentElement.lang = appLocale;
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-locale]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.locale === appLocale));
+  });
+}
+
+document.querySelectorAll("[data-locale]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const next = button.dataset.locale === "en" ? "en" : "id";
+    document.cookie = `${LOCALE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
+    try { window.localStorage.setItem(LOCALE_KEY, next); } catch {}
+    window.location.reload();
+  });
+});
+applyLocale();
 
 // ── DEV ADDITION: reward-feedback FX (dopamine-friendly, ethically) ─────
 //
@@ -288,7 +387,8 @@ function fxXpGain(delta) {
 function fxStreakUp(days) {
   const streakEl = $(".badge.streak");
   if (!streakEl) return;
-  floatChip(days === 1 ? "+1 day" : `+${days} days`, streakEl.getBoundingClientRect(), "fx-chip-streak");
+  const suffix = appLocale === "id" ? "hari" : days === 1 ? "day" : "days";
+  floatChip(`+${days} ${suffix}`, streakEl.getBoundingClientRect(), "fx-chip-streak");
   if (!prefersReducedMotion()) {
     animateSafe(
       streakEl,
@@ -310,8 +410,8 @@ function fxLevelUp(level) {
   const card = document.createElement("div");
   card.className = "fx-levelup-card";
   card.innerHTML =
-    `<div class="fx-levelup-title">LEVEL UP!</div>` +
-    `<div class="fx-levelup-sub">Bond Lv.${Number(level) || 0} — your care is paying off</div>`;
+    `<div class="fx-levelup-title">${t("levelUp")}</div>` +
+    `<div class="fx-levelup-sub">${t("bond")} Lv.${Number(level) || 0} — ${t("carePays")}</div>`;
   overlay.appendChild(card);
   layer.appendChild(overlay);
   const reduce = prefersReducedMotion();
@@ -349,13 +449,13 @@ function prettifyKey(key) {
 function celebrateQuest(quest) {
   const layer = ensureFxLayer();
   if (!layer || !fxBannerStack) return;
-  const meta = QUEST_META[quest.quest_key] ?? { title: prettifyKey(quest.quest_key), emoji: "🌟" };
+  const meta = QUEST_META[quest.quest_key] ?? { title: { id: prettifyKey(quest.quest_key), en: prettifyKey(quest.quest_key) }, emoji: "🌟" };
   const xp = Number(quest.xp_reward) || 0;
   const banner = document.createElement("div");
   banner.className = "fx-banner";
   banner.innerHTML =
-    `<div class="fx-banner-title">🏆 Quest complete!</div>` +
-    `<div class="fx-banner-detail">${meta.emoji} ${meta.title} · <span class="fx-xp">+${xp} XP</span></div>`;
+    `<div class="fx-banner-title">🏆 ${t("questComplete")}</div>` +
+    `<div class="fx-banner-detail">${meta.emoji} ${meta.title[appLocale]} · <span class="fx-xp">+${xp} XP</span></div>`;
   while (fxBannerStack.children.length >= 3) fxBannerStack.firstChild.remove();
   fxBannerStack.appendChild(banner);
   const reduce = prefersReducedMotion();
@@ -538,16 +638,20 @@ function renderPlant(plant) {
     const state = plant.current_state;
     lastMoodFetched = state;
     const bubble = $(".speech-bubble");
-    if (bubble) bubble.innerHTML = mood.bubble;
-    fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data || typeof data.message !== "string") return;
-        if (lastMoodFetched !== state) return; // mood moved on mid-flight
-        const el = $(".speech-bubble");
-        if (el) el.textContent = `"${data.message}"`;
-      })
-      .catch(() => {});
+    if (bubble) bubble.innerHTML = mood.bubble[appLocale];
+    // The current AI prompt is English-only. Keep the verified Indonesian
+    // fallback on the default locale instead of replacing it with English.
+    if (appLocale === "en") {
+      fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data || typeof data.message !== "string") return;
+          if (lastMoodFetched !== state) return; // mood moved on mid-flight
+          const el = $(".speech-bubble");
+          if (el) el.textContent = `"${data.message}"`;
+        })
+        .catch(() => {});
+    }
   }
   // DEV ADDITION (reward FX): sparkle + bubble bounce + HP pulse when the
   // plant RECOVERS to Happy (real sensor-verified transition; the first
@@ -557,12 +661,9 @@ function renderPlant(plant) {
   }
   prevMoodFx = plant.current_state;
   renderHp(plant.current_state);
-  const icon = $(".weather-icon");
-  if (icon) icon.textContent = mood.icon;
-  setText(".weather-text .desc", mood.label);
   const nameEl = $(".username");
   if (nameEl && nameEl.dataset.level != null) {
-    nameEl.textContent = `${plant.name} · Bond Lv.${nameEl.dataset.level}`;
+    nameEl.textContent = `${plant.name} · ${t("bond")} Lv.${nameEl.dataset.level}`;
   } else if (nameEl) {
     nameEl.textContent = plant.name;
   }
@@ -585,7 +686,7 @@ function renderBond(bond, plantName) {
   const nameEl = $(".username");
   if (nameEl) {
     nameEl.dataset.level = String(bond.bond_level);
-    if (plantName) nameEl.textContent = `${plantName} · Bond Lv.${bond.bond_level}`;
+    if (plantName) nameEl.textContent = `${plantName} · ${t("bond")} Lv.${bond.bond_level}`;
   }
   setXpBar(totalXp % 100, leveledUp);
   const numEl = ensureCoinNumber();
@@ -600,7 +701,7 @@ function renderBond(bond, plantName) {
   }
   const streak = $(".badge.streak");
   if (streak) {
-    streak.innerHTML = `<i class="icon">🔥</i> ${streakDays} Days`;
+    streak.innerHTML = `<i class="icon">🔥</i> ${streakDays} ${t("days")}`;
     streak.style.display = streakDays > 0 ? "" : "none";
   }
 
@@ -626,7 +727,6 @@ function renderSensors(reading) {
   const temperature = Number(reading?.temperature);
   if (reading?.temperature != null && Number.isFinite(temperature)) {
     const label = `${temperature.toFixed(1)}°C`;
-    setText(".weather-text .temp", label);
     updateVital("temperature", (temperature / 40) * 100, label);
   }
 
@@ -642,11 +742,67 @@ function renderSensors(reading) {
 
   const light = Number(reading?.light);
   if (reading?.light != null && (light === 0 || light === 1)) {
-    updateVital("light", light * 100, light === 1 ? "Bright" : "Dark");
+    updateVital("light", light * 100, light === 1 ? t("bright") : t("dark"));
+  }
+
+  const indoorParts = [];
+  if (reading?.temperature != null && Number.isFinite(temperature)) indoorParts.push(`${temperature.toFixed(1)}°C`);
+  if (reading?.humidity != null && Number.isFinite(humidity)) indoorParts.push(`${Math.round(humidity)}% RH`);
+  if (indoorParts.length > 0) setText(".indoor-reading", `${t("weather.indoor")}: ${indoorParts.join(" · ")}`);
+}
+
+function weatherIcon(description) {
+  const normalized = String(description ?? "").toLowerCase();
+  if (normalized.includes("petir") || normalized.includes("thunder")) return "⛈️";
+  if (normalized.includes("hujan") || normalized.includes("rain")) return "🌧️";
+  if (normalized.includes("kabut") || normalized.includes("mist") || normalized.includes("fog")) return "🌫️";
+  if (normalized.includes("berawan") || normalized.includes("cloud")) return "☁️";
+  if (normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
+  return "🌤️";
+}
+
+function renderWeather(context) {
+  const widget = $(".weather-widget");
+  if (!context?.ok) {
+    setText(".weather-text .desc", t("weather.unavailable"));
+    setText(".weather-text .forecast-time", "");
+    widget?.classList.add("weather-stale");
+    return;
+  }
+  const description = appLocale === "id" ? context.forecast.descriptionId : context.forecast.descriptionEn;
+  setText(".weather-text .temp", `${Math.round(Number(context.forecast.temperatureC))}°C`);
+  const outdoorHumidity = Number(context.forecast.humidityPct);
+  setText(
+    ".weather-text .desc",
+    Number.isFinite(outdoorHumidity) ? `${description} · ${Math.round(outdoorHumidity)}% RH` : description,
+  );
+  const icon = $(".weather-icon");
+  if (icon) icon.textContent = weatherIcon(description);
+  const forecastDate = new Date(context.forecast.forecastAt);
+  const time = Number.isNaN(forecastDate.getTime())
+    ? ""
+    : new Intl.DateTimeFormat(appLocale === "id" ? "id-ID" : "en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Asia/Jakarta",
+      }).format(forecastDate);
+  const staleSuffix = context.stale ? ` · ${t("weather.stale")}` : "";
+  setText(".weather-text .forecast-time", time ? `${t("weather.forecast")} ${time} WIB${staleSuffix}` : staleSuffix);
+  widget?.classList.toggle("weather-stale", Boolean(context.stale));
+}
+
+async function refreshWeather() {
+  try {
+    const response = await fetch("/api/local-context");
+    renderWeather(await response.json());
+  } catch {
+    renderWeather(null);
   }
 }
 
 async function main() {
+  refreshWeather();
+  setInterval(refreshWeather, 30 * 60_000);
   let config;
   try {
     config = await (await fetch("/api/public-config")).json();
@@ -654,7 +810,7 @@ async function main() {
     return;
   }
   if (!config?.url || !config?.key) {
-    setText(".weather-text .desc", "Supabase not configured");
+    setText(".indoor-reading", t("sensor.unavailable"));
     return;
   }
 

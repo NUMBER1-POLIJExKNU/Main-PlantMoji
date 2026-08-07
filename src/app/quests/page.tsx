@@ -10,6 +10,8 @@ import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
 import { getDailyEvent, type DailyEvent } from "@/game/random/daily-events";
 import { getServerSupabase } from "@/lib/supabase/server";
+import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, type AppLocale } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/i18n-server";
 import { MOOD_LABELS } from "@/types/events";
 import { STREAK_TIMEZONE, type QuestRow, type QuestStatus } from "@/types/game";
 
@@ -18,20 +20,14 @@ export const dynamic = "force-dynamic";
 
 const PLANT_ID = "plant-01";
 
-const historyDateFormat = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: STREAK_TIMEZONE,
-});
-
-function formatWhen(iso: string | null): string | null {
+function formatWhen(iso: string | null, locale: AppLocale): string | null {
   if (!iso) return null;
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return null;
-  return historyDateFormat.format(new Date(ms));
+  return new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    hour12: false, timeZone: STREAK_TIMEZONE,
+  }).format(new Date(ms));
 }
 
 const FALLBACK_PILL = {
@@ -51,8 +47,9 @@ const STATUS_PILL: Partial<Record<QuestStatus, { label: string; className: strin
   },
 };
 
-function ActiveQuestCard({ quest }: { quest: QuestRow }) {
+function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
+  const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
 
   return (
@@ -64,14 +61,14 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {def.title}
+              {localized.title}
             </h2>
             <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
               +{quest.xp_reward} XP
             </span>
           </div>
           <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">
-            {def.description}
+            {localized.description}
           </p>
         </div>
       </div>
@@ -82,6 +79,7 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
           sinceIso={quest.started_at}
           requiredSeconds={def.requiredSeconds}
           plantId={PLANT_ID}
+          locale={locale}
         />
       )}
 
@@ -91,13 +89,15 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
           sinceIso={quest.verifying_since as string}
           requiredSeconds={def.requiredSeconds}
           plantId={PLANT_ID}
+          locale={locale}
         />
       )}
 
       {quest.status === "ACTIVE" && def.kind === "recovery" && (
         <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">
-          Still {MOOD_LABELS[def.triggerMood]} — once I feel better, a{" "}
-          {Math.round(def.requiredSeconds / 60)}-minute check confirms the rescue.
+          {locale === "id"
+            ? `Masih ${MOOD_COPY.id[def.triggerMood]} — setelah kondisinya membaik, sensor akan memeriksa kestabilan selama ${Math.round(def.requiredSeconds / 60)} menit.`
+            : `Still ${MOOD_LABELS[def.triggerMood]} — once I feel better, a ${Math.round(def.requiredSeconds / 60)}-minute check confirms the rescue.`}
         </p>
       )}
 
@@ -105,11 +105,11 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
           quest, not just the reward. Collapsible so the card stays compact. */}
       <details className="mt-3">
         <summary className="cursor-pointer select-none text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300">
-          Why this matters
+          {locale === "id" ? "Mengapa ini penting" : "Why this matters"}
         </summary>
         <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs leading-5 text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">
-          <p>{QUEST_WHY[quest.quest_key]}</p>
-          <p className="mt-1.5">{WHY_CARDS[def.triggerMood].why}</p>
+          <p>{locale === "id" ? QUEST_COPY_ID[quest.quest_key].why : QUEST_WHY[quest.quest_key]}</p>
+          {locale === "en" && <p className="mt-1.5">{WHY_CARDS[def.triggerMood].why}</p>}
         </div>
       </details>
     </article>
@@ -122,7 +122,8 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
  * concerns. Challenges show their reward; boosts show their multiplier;
  * flavor days are dialogue-only and show no pill.
  */
-function DailyEventBanner({ event }: { event: DailyEvent }) {
+function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLocale }) {
+  const localized = locale === "id" ? DAILY_EVENT_COPY_ID[event.id] : null;
   const pill =
     event.kind === "daily_challenge" && event.challengeXp
       ? `+${event.challengeXp} XP`
@@ -142,7 +143,7 @@ function DailyEventBanner({ event }: { event: DailyEvent }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-              Today&apos;s Event
+              {locale === "id" ? "Acara Hari Ini" : "Today's Event"}
             </p>
             {pill && (
               <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
@@ -150,9 +151,9 @@ function DailyEventBanner({ event }: { event: DailyEvent }) {
               </span>
             )}
           </div>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{event.name}</p>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{localized?.name ?? event.name}</p>
           <p className="mt-0.5 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
-            {event.description}
+            {localized?.description ?? event.description}
           </p>
         </div>
       </div>
@@ -160,10 +161,14 @@ function DailyEventBanner({ event }: { event: DailyEvent }) {
   );
 }
 
-function HistoryItem({ quest }: { quest: QuestRow }) {
+function HistoryItem({ quest, locale }: { quest: QuestRow; locale: AppLocale }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
-  const pill = STATUS_PILL[quest.status] ?? FALLBACK_PILL;
-  const when = formatWhen(quest.completed_at ?? quest.expired_at ?? quest.created_at);
+  const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
+  const defaultPill = STATUS_PILL[quest.status] ?? FALLBACK_PILL;
+  const pill = locale === "id"
+    ? { ...defaultPill, label: quest.status === "COMPLETED" ? "✓ Selesai" : quest.status === "FAILED" ? "Gagal" : "Kedaluwarsa" }
+    : defaultPill;
+  const when = formatWhen(quest.completed_at ?? quest.expired_at ?? quest.created_at, locale);
 
   return (
     <li className="flex items-center gap-3 rounded-2xl border border-zinc-200/70 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -172,7 +177,7 @@ function HistoryItem({ quest }: { quest: QuestRow }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          {def.title}
+          {localized.title}
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
           {when ?? "—"}
@@ -187,6 +192,7 @@ function HistoryItem({ quest }: { quest: QuestRow }) {
 }
 
 export default async function QuestsPage() {
+  const locale = await getRequestLocale();
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -235,14 +241,14 @@ export default async function QuestsPage() {
           🎯
         </span>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Quests
+          {locale === "id" ? "Misi" : "Quests"}
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Real care, verified by sensors — no tap-to-win.
+          {locale === "id" ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol." : "Real care, verified by sensors — no tap-to-win."}
         </p>
       </header>
 
-      <DailyEventBanner event={getDailyEvent(PLANT_ID)} />
+      <DailyEventBanner event={getDailyEvent(PLANT_ID)} locale={locale} />
 
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (
@@ -251,29 +257,29 @@ export default async function QuestsPage() {
               🌿
             </span>
             <p className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-              No active quest right now — I&apos;m just vibing.
+              {locale === "id" ? "Belum ada misi aktif — tanaman sedang nyaman." : "No active quest right now — I'm just vibing."}
             </p>
             <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-              A new quest appears when my mood changes.
+              {locale === "id" ? "Misi baru muncul saat kondisi tanaman berubah." : "A new quest appears when my mood changes."}
             </p>
           </div>
         ) : (
-          active.map((quest) => <ActiveQuestCard key={quest.id} quest={quest} />)
+          active.map((quest) => <ActiveQuestCard key={quest.id} quest={quest} locale={locale} />)
         )}
       </section>
 
       <section aria-label="Quest history" className="mt-8">
         <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-          History
+          {locale === "id" ? "Riwayat" : "History"}
         </h2>
         {history.length === 0 ? (
           <p className="rounded-2xl border border-zinc-200/70 bg-white p-5 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500">
-            No completed quests yet — our story starts soon!
+            {locale === "id" ? "Belum ada misi selesai — cerita kita segera dimulai!" : "No completed quests yet — our story starts soon!"}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
             {history.map((quest) => (
-              <HistoryItem key={quest.id} quest={quest} />
+              <HistoryItem key={quest.id} quest={quest} locale={locale} />
             ))}
           </ul>
         )}

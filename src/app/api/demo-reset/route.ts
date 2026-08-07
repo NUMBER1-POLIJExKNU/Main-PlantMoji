@@ -1,4 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase/server";
+import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
 
 /**
  * POST /api/demo-reset — wipes game progress for one plant so the filming
@@ -19,20 +20,6 @@ import { getServerSupabase } from "@/lib/supabase/server";
  * NEVER touched — growth_records (real-world growth log) and sensor_readings
  * (Node-RED's table).
  */
-
-const EPOCH = "1970-01-01T00:00:00Z";
-
-// All five tables reference plants directly (no FKs between them), so any
-// order satisfies the constraints — but the XP ledger and event log go first
-// so a mid-reset failure can never leave reward history pointing at quests
-// that are already gone.
-const TABLES_TO_CLEAR = [
-  "xp_rewards",
-  "bond_events",
-  "plant_badges",
-  "quests",
-  "device_events",
-] as const;
 
 export async function POST(request: Request) {
   // Hard auth gate: a destructive endpoint must never run open. If the token
@@ -88,83 +75,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: plant, error: plantError } = await supabase
-    .from("plants")
-    .select("id")
-    .eq("id", plantId)
-    .maybeSingle();
-
-  if (plantError) {
-    console.error("demo-reset: plant lookup failed:", plantError.message);
-    return Response.json(
-      { ok: false, error: `plant lookup failed: ${plantError.message}` },
-      { status: 500 },
-    );
-  }
-  if (!plant) {
-    return Response.json(
-      { ok: false, error: `unknown plantId: ${plantId}` },
-      { status: 404 },
-    );
-  }
-
-  // 1) Clear game history. delete({ count: "exact" })...select() reports how
-  // many rows each table actually dropped, for the response summary.
-  const cleared: Record<string, number> = {};
-  for (const table of TABLES_TO_CLEAR) {
-    const { data, count, error } = await supabase
-      .from(table)
-      .delete({ count: "exact" })
-      .eq("plant_id", plantId)
-      .select("*");
-
-    if (error) {
-      console.error(`demo-reset: clearing ${table} failed:`, error.message);
+  try {
+    const result = await resetDemoProgress(supabase, plantId);
+    return Response.json({ ok: true, ...result });
+  } catch (cause) {
+    console.error("demo-reset failed:", cause);
+    if (cause instanceof DemoResetError) {
       return Response.json(
-        { ok: false, error: `failed to clear ${table}: ${error.message}` },
-        { status: 500 },
+        { ok: false, error: cause.message },
+        { status: cause.kind === "unknown-plant" ? 404 : 500 },
       );
     }
-    cleared[table] = count ?? data?.length ?? 0;
+    return Response.json({ ok: false, error: "demo reset failed" }, { status: 500 });
   }
-
-  // 2) Reset progression to the fresh-install baseline (milestone3.sql
-  // defaults). Upsert covers a plant that never had a bond_state row.
-  const { error: bondError } = await supabase.from("bond_state").upsert(
-    {
-      plant_id: plantId,
-      total_xp: 0,
-      bond_level: 1,
-      current_streak: 0,
-      longest_streak: 0,
-      last_qualified_date: null,
-      current_chapter: 1,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "plant_id" },
-  );
-  if (bondError) {
-    console.error("demo-reset: bond_state reset failed:", bondError.message);
-    return Response.json(
-      { ok: false, error: `failed to reset bond_state: ${bondError.message}` },
-      { status: 500 },
-    );
-  }
-
-  // 3) Return the plant to Happy with an epoch timestamp — matching the
-  // milestone1.sql column default — so the "only newer events win" guard
-  // (state_changed_at <= occurredAt) always accepts the next real event.
-  const { error: plantsError } = await supabase
-    .from("plants")
-    .update({ current_state: "Happy", state_changed_at: EPOCH })
-    .eq("id", plantId);
-  if (plantsError) {
-    console.error("demo-reset: plants reset failed:", plantsError.message);
-    return Response.json(
-      { ok: false, error: `failed to reset plants: ${plantsError.message}` },
-      { status: 500 },
-    );
-  }
-
-  return Response.json({ ok: true, plantId, cleared });
 }

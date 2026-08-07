@@ -6,7 +6,7 @@
 // Soil guidance stays at gentle everyday care (plain-water rinse, fresh
 // potting soil) — the same limits as the quest catalog.
 //
-// All text is user-facing and must stay in English.
+// English source copy. The Indonesian UI uses its localized companion catalog.
 
 import type { PlantMood } from "@/types/events";
 import type { QuestKey } from "@/types/game";
@@ -24,14 +24,14 @@ export const WHY_CARDS: Record<PlantMood, WhyCard> = {
   Happy: {
     title: "In the Comfort Zone",
     why:
-      "“Happy” means every reading sits inside the plant’s profile: air below the heat threshold, comfortable air humidity, light available, and soil pH in the 6.0–7.0 range. Inside that window photosynthesis, water transport, and nutrient uptake all run at full speed.",
+      "“Happy” means every reading sits inside the strawberry profile: comfortable temperature and air humidity, light available during lighting hours, and soil pH in the 5.5–6.5 range. Inside that window photosynthesis, water transport, and nutrient uptake can run steadily.",
     action:
       "Keep conditions steady. Stability over time helps a plant far more than short bursts of perfect care.",
   },
   Overheating: {
     title: "Too Hot to Work",
     why:
-      "Above roughly 32°C, basil-class herbs lose water through their leaves faster than the roots can replace it, so the leaves wilt to reduce exposure. Sustained heat also slows the enzymes that drive photosynthesis, so the plant stops growing while it fights to stay cool.",
+      "At the profile's overheating threshold, strawberries can lose water through their leaves faster than the roots replace it. Sustained heat also slows photosynthesis, so the plant spends more energy coping with heat instead of growing.",
     action:
       "Add shade, move the plant away from hot glass, or improve airflow — then let the sensor confirm the air actually cooled and stayed cool.",
   },
@@ -78,7 +78,7 @@ export const QUEST_WHY: Record<QuestKey, string> = {
   STAY_COMFY:
     "Two unbroken hours in the comfort zone lets the plant settle into stable homeostasis, spending its energy on growth instead of constantly readjusting to swinging conditions.",
   BALANCE_SOIL_ACIDIC:
-    "Bringing pH back toward the 6.0–7.0 range unlocks the phosphorus, calcium, and magnesium that acidic soil keeps chemically out of the roots’ reach.",
+    "Bringing pH back toward the strawberry profile's 5.5–6.5 range helps roots access nutrients that overly acidic soil can keep out of reach.",
   BALANCE_SOIL_ALKALINE:
     "Lowering pH back toward the normal range makes iron and other micronutrients soluble again, so the roots can actually absorb them.",
 };

@@ -305,6 +305,9 @@ Live screens:
              ├── Jamkachu mascot + AI/template speech bubble (realtime mood)
              ├── Bond Level · XP · Care Streak
              ├── Plant Vitals: HP · Temperature · Air Humidity · Soil pH · Light
+             ├── BMKG Jember outdoor forecast, separated from the indoor
+             │   plant-room temperature/humidity sensor
+             ├── Bahasa Indonesia default UI with an ID / EN switch
              └── Reward FX: +XP toasts, XP count-up, level-up confetti,
                  quest-complete banners, streak pulses, recovery sparkles
                  (only for real backend-verified transitions; reduced-motion safe)
@@ -315,7 +318,7 @@ Live screens:
 /collection  Collection Book — Moods · Badges · Story · Wisdom
 /reports     Weekly Report
 /plants      Crop profile view (per-crop preferred ranges)
-/settings    Plant name, personality, growth records, demo tools
+/settings    Plant name, personality, growth records, Demo Control Center
 ```
 
 PlantMoji is designed as a **plant companion first** and a sensor dashboard second.
@@ -361,9 +364,12 @@ SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
 # accepts requests without auth (local prototype mode).
 DEVICE_API_TOKEN=
 
-# Optional — Settings → Demo Max Mode. Use 8+ characters and keep it
-# server-side. Entering it unlocks Lv.10 and the full collection for a demo.
+# Optional — Settings → Demo Control Center. Use 8+ characters and keep it
+# server-side. The same code can reset the story or unlock the full Lv.10 demo.
 DEMO_CHEAT_CODE=
+
+# Optional — BMKG village code. Defaults to Tegalgede, Sumbersari, Jember.
+BMKG_ADM4_CODE=35.09.21.1005
 
 # Optional — enables the AI personality layer (server-side only). When unset,
 # or when a call fails, the game always falls back to the deterministic
@@ -374,9 +380,16 @@ ANTHROPIC_API_KEY=
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
 For a presentation, set `DEMO_CHEAT_CODE` in Vercel, redeploy, then open
-**Settings → Demo Max Mode** and enter the code. This creates a replay-safe
-Lv.10 showcase state with every mood, badge, story chapter, and quest type
-visible. It never changes sensor readings, crop thresholds, or hardware control.
+**Settings → Demo Control Center** and enter the code. **Unlock everything**
+creates a replay-safe Lv.10 showcase with every mood, badge, story chapter,
+and quest type. **Reset to start** restores Lv.1 / 0 XP and clears game
+progress for another rehearsal. Neither action changes sensor readings,
+growth records, crop thresholds, or hardware control.
+
+The home weather card calls `GET /api/local-context`, which proxies and caches
+the official BMKG forecast for the configured `BMKG_ADM4_CODE`. BMKG is
+learning context only: mood, quests, XP, and device control continue to use
+the indoor sensor plus the active crop profile.
 
 ### 4. Database schema
 
@@ -454,6 +467,7 @@ plantmoji/
 │   │       ├── device-events/    Node-RED → game engine (idempotent)
 │   │       ├── sensor-history/   monitoring dashboard feed
 │   │       ├── game-tick/  mood-message/  public-config/  demo-reset/
+│   │       └── local-context/   cached BMKG outdoor forecast
 │   │
 │   ├── components/
 │   ├── game/
@@ -471,7 +485,7 @@ plantmoji/
 ├── supabase/             SQL migrations (milestone1 … milestone7)
 ├── node-red/             bridge flow + trilingual guide
 ├── docs/                 setup + integration + gameplay plans (EN/ID/KO)
-├── tests/                Vitest suites (190+ tests)
+├── tests/                Vitest suites (200+ tests)
 └── README.md
 ```
 

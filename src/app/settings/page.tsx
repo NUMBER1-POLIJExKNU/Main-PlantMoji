@@ -2,9 +2,13 @@
 // and manual growth stage (§14: sensors cannot infer real growth in MVP).
 
 import Notice from "@/components/notice";
-import DemoMaxForm from "@/components/demo-max-form";
+import DemoControlCenter from "@/components/demo-control-center";
+import { BADGE_KEYS } from "@/types/game";
+import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
+import { getBondState } from "@/game/progression/xp-engine";
 import { fetchGrowthRecords } from "@/lib/growth";
-import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
+import { getPlant, getUnlockedBadges, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
+import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { normalizePersonality, PERSONALITIES, STREAK_TIMEZONE, type PersonalityId } from "@/types/game";
 import { addGrowthRecord, updatePlantSettings } from "./actions";
@@ -35,6 +39,7 @@ const growthDateFormat = new Intl.DateTimeFormat("en-US", {
 });
 
 export default async function SettingsPage() {
+  const locale = await getRequestLocale();
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -95,6 +100,31 @@ export default async function SettingsPage() {
   // Manual growth log (handoff §14, §35). Empty when milestone5 hasn't been
   // run yet — fetchGrowthRecords tolerates the missing table on its own.
   const growthRecords = await fetchGrowthRecords(plant.id);
+  let demoProgress = {
+    level: 1,
+    totalXp: 0,
+    streak: 0,
+    badges: 0,
+    totalBadges: BADGE_KEYS.length,
+    chapter: 1,
+    totalChapters: CHAPTER_DEFINITIONS.length,
+  };
+  try {
+    const [bond, badges] = await Promise.all([
+      getBondState(supabase, plant.id),
+      getUnlockedBadges(supabase, plant.id),
+    ]);
+    demoProgress = {
+      ...demoProgress,
+      level: bond?.bond_level ?? 1,
+      totalXp: bond?.total_xp ?? 0,
+      streak: bond?.current_streak ?? 0,
+      chapter: bond?.current_chapter ?? 1,
+      badges: badges.length,
+    };
+  } catch (cause) {
+    console.error("SettingsPage demo progress failed:", cause);
+  }
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
@@ -298,15 +328,16 @@ export default async function SettingsPage() {
           </span>
           <div>
             <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
-              Demo Max Mode
+              {locale === "id" ? "Pusat Kontrol Demo" : "Demo Control Center"}
             </h2>
             <p className="mt-1 text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
-              Presentation only: unlocks Lv.10, every mood, badge, story, and quest type.
-              Sensor readings and hardware safety rules do not change.
+              {locale === "id"
+                ? "Untuk presentasi: periksa status, kembali ke awal, atau buka Lv.10 beserta semua koleksi. Data sensor, catatan pertumbuhan, dan aturan keselamatan tidak berubah."
+                : "For presentations: check status, reset to the beginning, or unlock Lv.10 and every collection item. Sensor data, growth records, and safety rules do not change."}
             </p>
           </div>
         </div>
-        <DemoMaxForm />
+        <DemoControlCenter locale={locale} progress={demoProgress} />
       </section>
     </main>
   );
