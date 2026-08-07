@@ -27,6 +27,7 @@ import {
   getDailyEvent,
   wibHour,
 } from "@/game/random/daily-events";
+import { isLuckyQuest, luckyRewardKey } from "@/game/random/lucky";
 
 /**
  * Game Event Processor (handoff §25): the single orchestration point where a
@@ -243,6 +244,23 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
       const amount = Math.max(seasonalAmount, boostedAmount);
       // rewardKey per handoff §28 — a replay can never double-award.
       await awardXp(supabase, plantId, rewardKeyFor(quest), amount, quest.quest_key);
+
+      // Lucky Sprout ×2 (spec D2): a deterministic ~1/8 roll on the quest's
+      // primary key grants a second award of the SAME final composed amount
+      // (net ×2 including whichever seasonal/daily bonus won above — both
+      // inputs are pure functions of completedAt, so a replay recomputes the
+      // identical amount). Strictly additive, odds disclosed in Collection
+      // help, and idempotent via its own reward_key, so a replayed settle of
+      // an unsettled quest can never double-grant the bonus.
+      if (isLuckyQuest(quest.id)) {
+        await awardXp(
+          supabase,
+          plantId,
+          luckyRewardKey(quest.id),
+          amount,
+          `lucky-bonus:${quest.quest_key}`,
+        );
+      }
     }
   }
 
