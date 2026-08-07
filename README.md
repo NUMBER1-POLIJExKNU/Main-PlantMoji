@@ -527,6 +527,6 @@ We want to explore how technology can help make agricultural knowledge:
 Grow the virtual companion.  
 Build the bond together.**
 
-Made by **Number One Team** during the **KNU WFK IT Program** in Jember, Indonesia.
+Made by **Number One Team** during the **WFK IT Program** in Jember, Indonesia.
 
 </div>
