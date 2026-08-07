@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
-import BottomNav from "@/components/bottom-nav";
+import RenoAppShell from "@/components/reno-app-shell";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,9 +36,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${vt323.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {children}
-        <BottomNav />
+      <body className="min-h-full">
+        <RenoAppShell>{children}</RenoAppShell>
       </body>
     </html>
   );

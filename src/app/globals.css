@@ -240,3 +240,348 @@ body {
   from { transform: translateX(-120vw); }
   to { transform: translateX(120vw); }
 }
+
+/* ------------------------------------------------------------------ */
+/* RENO application shell — shared by every React-backed tab          */
+/* ------------------------------------------------------------------ */
+
+.reno-app-shell {
+  --reno-ui-bg: rgba(255, 255, 255, 0.72);
+  --reno-ui-border: 2px solid rgba(255, 255, 255, 0.9);
+  --reno-ui-radius: 20px;
+  --reno-ui-shadow: 0 8px 32px rgba(43, 58, 39, 0.1);
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--color-outline);
+  color-scheme: light;
+  background: radial-gradient(circle at 50% 30%, #d4f0ff 0%, var(--color-sky) 100%);
+  font-family: var(--font-vt323), "VT323", monospace;
+}
+
+.reno-env-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.reno-env-sun {
+  position: absolute;
+  top: 80px;
+  right: 120px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--color-yellow);
+  box-shadow: 0 0 60px rgba(255, 222, 106, 0.8);
+}
+
+.reno-env-cloud {
+  position: absolute;
+  left: -300px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(4px);
+}
+
+.reno-env-cloud-1 { top: 12%; width: 160px; height: 50px; }
+.reno-env-cloud-2 { top: 28%; width: 220px; height: 70px; }
+.reno-env-cloud-3 { top: 18%; width: 120px; height: 40px; }
+
+.reno-env-particles {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.6) 3px, transparent 3px);
+  background-size: 120px 120px;
+}
+
+.reno-app-layout {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  max-width: 1800px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.reno-sidebar {
+  z-index: 20;
+  display: flex;
+  flex: 0 0 280px;
+  flex-direction: column;
+  gap: 32px;
+  height: 100%;
+  padding: 24px;
+  border: var(--reno-ui-border);
+  border-radius: var(--reno-ui-radius);
+  background: var(--reno-ui-bg);
+  box-shadow: var(--reno-ui-shadow);
+  backdrop-filter: blur(12px);
+}
+
+.reno-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 24px;
+  border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
+  color: var(--color-forest);
+  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.reno-logo {
+  width: 54px;
+  height: 54px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.reno-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.reno-nav-links::-webkit-scrollbar { display: none; }
+
+.reno-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  color: var(--color-outline);
+  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.reno-nav-item i {
+  font-family: sans-serif;
+  font-size: 18px;
+  font-style: normal;
+}
+
+.reno-nav-item:hover:not(.reno-nav-disabled) {
+  transform: translateX(6px);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.reno-nav-item.active {
+  color: white;
+  background: var(--color-grass);
+  box-shadow: 0 8px 16px rgba(105, 196, 85, 0.4);
+}
+
+.reno-nav-disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.reno-route-content {
+  min-width: 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(57, 122, 43, 0.35) transparent;
+}
+
+.reno-route-content > main:not(.pm-scene) {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  margin: 0;
+  padding: 34px 38px 72px;
+  border: var(--reno-ui-border);
+  border-radius: var(--reno-ui-radius);
+  color: var(--color-outline);
+  background:
+    linear-gradient(180deg, rgba(212, 240, 255, 0.72) 0%, rgba(163, 228, 255, 0.5) 42%, rgba(105, 196, 85, 0.22) 100%);
+  box-shadow: var(--reno-ui-shadow);
+  backdrop-filter: blur(12px);
+}
+
+/* The dashboard owns its sky/grass scene. The generic route panel must not
+   paint a white sheet or padding over it. */
+.reno-route-content > .pm-scene {
+  width: 100%;
+  min-height: 100%;
+  border: var(--reno-ui-border);
+  border-radius: var(--reno-ui-radius);
+  box-shadow: var(--reno-ui-shadow);
+}
+
+.reno-route-content > main:not(.pm-scene)::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  height: 90px;
+  border-radius: 0 0 var(--reno-ui-radius) var(--reno-ui-radius);
+  background: linear-gradient(180deg, rgba(105, 196, 85, 0.25), rgba(57, 122, 43, 0.34));
+  content: "";
+  pointer-events: none;
+}
+
+.reno-route-content > main:not(.pm-scene) {
+  position: relative;
+  isolation: isolate;
+}
+
+.reno-route-content > main:not(.pm-scene) > header {
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px dashed rgba(43, 58, 39, 0.18);
+  text-align: left;
+}
+
+.reno-route-content > main:not(.pm-scene) h1,
+.reno-route-content > main:not(.pm-scene) h2 {
+  color: var(--color-forest) !important;
+  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  line-height: 1.6;
+}
+
+.reno-route-content > main:not(.pm-scene) h1 { font-size: 20px !important; }
+.reno-route-content > main:not(.pm-scene) h2 { font-size: 12px !important; }
+
+.reno-route-content > main:not(.pm-scene) p,
+.reno-route-content > main:not(.pm-scene) label,
+.reno-route-content > main:not(.pm-scene) input,
+.reno-route-content > main:not(.pm-scene) select {
+  font-family: var(--font-vt323), "VT323", monospace;
+}
+
+.reno-route-content > main:not(.pm-scene) p,
+.reno-route-content > main:not(.pm-scene) label {
+  color: #445340;
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.reno-route-content > main:not(.pm-scene) [class*="rounded-2xl"][class*="border"] {
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 9px 0 rgba(57, 122, 43, 0.12), 0 14px 28px rgba(43, 58, 39, 0.09);
+  backdrop-filter: blur(8px);
+}
+
+.reno-route-content > main:not(.pm-scene) section,
+.reno-route-content > main:not(.pm-scene) article {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+@media (hover: hover) {
+  .reno-route-content > main:not(.pm-scene) article:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.reno-route-content > main:not(.pm-scene) input,
+.reno-route-content > main:not(.pm-scene) select {
+  border: 2px solid rgba(57, 122, 43, 0.2) !important;
+  border-radius: 10px !important;
+  color: var(--color-outline) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  font-size: 20px !important;
+}
+
+.reno-route-content > main:not(.pm-scene) button[type="submit"] {
+  border: 3px solid var(--color-forest);
+  border-radius: 10px;
+  color: white;
+  background: var(--color-grass);
+  box-shadow: 0 6px 0 var(--color-forest);
+  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  font-size: 10px;
+}
+
+.reno-route-content > main:not(.pm-scene) button[type="submit"]:active {
+  transform: translateY(6px);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reno-env-sun { animation: pm-sun-pulse 6s ease-in-out infinite alternate; }
+  .reno-env-cloud-1 { animation: pm-cloud-drift 70s linear -35s infinite; }
+  .reno-env-cloud-2 { animation: pm-cloud-drift 95s linear -38s infinite; }
+  .reno-env-cloud-3 { animation: pm-cloud-drift 55s linear -22s infinite; }
+  .reno-env-particles { animation: reno-particle-drift 30s linear infinite; }
+}
+
+@keyframes reno-particle-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-60px, -120px); }
+}
+
+@media (max-width: 800px) {
+  .reno-app-shell { overflow-y: auto; }
+
+  .reno-app-layout {
+    flex-direction: column;
+    gap: 18px;
+    height: auto;
+    min-height: 100vh;
+    padding: 14px;
+  }
+
+  .reno-sidebar {
+    position: static;
+    flex: none;
+    width: 100%;
+    height: auto;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .reno-brand {
+    padding-bottom: 12px;
+  }
+
+  .reno-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .reno-brand { font-size: 12px; }
+
+  .reno-nav-links {
+    flex-direction: row;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .reno-nav-item {
+    flex: 0 0 auto;
+    padding: 12px;
+    font-size: 9px;
+  }
+
+  .reno-nav-item:hover:not(.reno-nav-disabled) { transform: translateY(-2px); }
+
+  .reno-route-content { overflow: visible; }
+
+  .reno-route-content > main:not(.pm-scene) {
+    min-height: 0;
+    padding: 24px 18px 40px;
+  }
+
+  .reno-route-content > .pm-scene { min-height: 760px; }
+}
