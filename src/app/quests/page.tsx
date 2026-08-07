@@ -8,6 +8,7 @@ import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { runGameTick } from "@/game/events/event-router";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
+import { getDailyEvent, type DailyEvent } from "@/game/random/daily-events";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { MOOD_LABELS } from "@/types/events";
 import { STREAK_TIMEZONE, type QuestRow, type QuestStatus } from "@/types/game";
@@ -115,6 +116,50 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
   );
 }
 
+/**
+ * "Today's Event" banner — deterministic per (plant, WIB day), so this server
+ * component renders the same event on every request today with no hydration
+ * concerns. Challenges show their reward; boosts show their multiplier;
+ * flavor days are dialogue-only and show no pill.
+ */
+function DailyEventBanner({ event }: { event: DailyEvent }) {
+  const pill =
+    event.kind === "daily_challenge" && event.challengeXp
+      ? `+${event.challengeXp} XP`
+      : event.kind === "xp_boost" && event.xpMultiplier
+        ? `×${event.xpMultiplier} quest XP today`
+        : null;
+
+  return (
+    <section
+      aria-label="Today's event"
+      className="mb-4 rounded-2xl border border-amber-200/70 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40"
+    >
+      <div className="flex items-start gap-3">
+        <span className="text-3xl leading-none" role="img" aria-hidden="true">
+          {event.emoji}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+              Today&apos;s Event
+            </p>
+            {pill && (
+              <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                {pill}
+              </span>
+            )}
+          </div>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{event.name}</p>
+          <p className="mt-0.5 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+            {event.description}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function HistoryItem({ quest }: { quest: QuestRow }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const pill = STATUS_PILL[quest.status] ?? FALLBACK_PILL;
@@ -196,6 +241,8 @@ export default async function QuestsPage() {
           Real care, verified by sensors — no tap-to-win.
         </p>
       </header>
+
+      <DailyEventBanner event={getDailyEvent(PLANT_ID)} />
 
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (

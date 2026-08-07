@@ -17,10 +17,16 @@ import {
   moodRewardKey,
   streakMilestoneRewardKey,
 } from "@/game/progression/bonus-xp";
-import { recordQualifyingCare } from "@/game/progression/streak-engine";
+import { dayString, recordQualifyingCare } from "@/game/progression/streak-engine";
 import { evaluateBadges } from "@/game/badges/badge-engine";
 import { evaluateChapters } from "@/game/story/story-engine";
 import { applySeasonalMultiplier } from "@/game/seasonal/seasonal-events";
+import {
+  dailyBoostMultiplier,
+  dailyChallengeRewardKey,
+  getDailyEvent,
+  wibHour,
+} from "@/game/random/daily-events";
 
 /**
  * Game Event Processor (handoff §25): the single orchestration point where a
@@ -30,6 +36,117 @@ import { applySeasonalMultiplier } from "@/game/seasonal/seasonal-events";
  */
 
 const rewardKeyFor = (quest: QuestRow) => `quest:${quest.id}:completion`;
+
+const DAY_MS = 86_400_000;
+
+/** PostgREST's "table missing from schema cache" — the migration hasn't been
+ *  run in this Supabase project yet. Duplicated from badge-engine.ts (which
+ *  duplicates lib/plants.ts) for the same reason: this router stays
+ *  self-contained rather than importing server-only helpers. */
+function isMissingTableError(error: { code?: string; message: string }): boolean {
+  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
+}
+
+/**
+ * Verifies today's daily challenge (if today IS a challenge day for this
+ * plant) against PERSISTED data and awards its XP when the condition holds.
+ *
+ * Same design as every other sweep in this router — idempotent AND
+ * self-healing: it re-checks on every settle, and the deterministic
+ * dailyChallengeRewardKey makes repeat awards no-ops (§28). §23 discipline:
+ * every condition below is a verified outcome read from the database — no
+ * award is ever based on an assumed or fabricated plant state.
+ */
+async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): Promise<void> {
+  const now = new Date();
+  const event = getDailyEvent(plantId, now);
+  if (event.kind !== "daily_challenge" || !event.challengeXp) return;
+
+  // Today's WIB calendar day as a half-open UTC instant range
+  // [00:00, next 00:00) — WIB is fixed-offset (no DST), so +24h is exact.
+  const today = dayString(now);
+  const dayStartMs = Date.parse(`${today}T00:00:00+07:00`);
+  const dayStartIso = new Date(dayStartMs).toISOString();
+  const dayEndIso = new Date(dayStartMs + DAY_MS).toISOString();
+
+  let satisfied = false;
+
+  if (event.id === "JOURNAL_DAY") {
+    // A growth record logged on today's WIB date. Tolerate a not-yet-migrated
+    // schema (growth_records table missing) by skipping — no data, no claim.
+    const { count, error } = await supabase
+      .from("growth_records")
+      .select("id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .gte("recorded_at", dayStartIso)
+      .lt("recorded_at", dayEndIso);
+    if (error) {
+      if (isMissingTableError(error)) return;
+      throw new Error(`event-router: daily challenge growth_records failed: ${error.message}`);
+    }
+    satisfied = (count ?? 0) >= 1;
+  } else if (event.id === "QUEST_FINISHER") {
+    // Any quest completed on today's WIB date.
+    const { count, error } = await supabase
+      .from("quests")
+      .select("id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .eq("status", "COMPLETED")
+      .gte("completed_at", dayStartIso)
+      .lt("completed_at", dayEndIso);
+    if (error) {
+      throw new Error(`event-router: daily challenge quests failed: ${error.message}`);
+    }
+    satisfied = (count ?? 0) >= 1;
+  } else if (event.id === "STEADY_DAY") {
+    // Award only after the daytime window (WIB 06:00–18:00) is fully over —
+    // never claim "you stayed steady all day" while the day could still sour.
+    if (wibHour(now) < 18) return;
+
+    // No data, no claim (§23): require at least one device event today so a
+    // dead pipeline can't masquerade as a perfectly steady plant...
+    const { count: anyToday, error: anyError } = await supabase
+      .from("device_events")
+      .select("event_id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .gte("occurred_at", dayStartIso)
+      .lt("occurred_at", dayEndIso);
+    if (anyError) {
+      throw new Error(`event-router: daily challenge device_events failed: ${anyError.message}`);
+    }
+
+    // ...and zero PLANT_STATE_CHANGED entries into a non-Happy mood during
+    // the daytime window. currentState is normalized to canonical casing at
+    // the trust boundary (parseDeviceEvent), so an exact 'Happy' compare is
+    // safe — same convention as badge-engine's soil-event count.
+    const windowStartIso = new Date(Date.parse(`${today}T06:00:00+07:00`)).toISOString();
+    const windowEndIso = new Date(Date.parse(`${today}T18:00:00+07:00`)).toISOString();
+    const { count: problemCount, error: problemError } = await supabase
+      .from("device_events")
+      .select("event_id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .eq("type", "PLANT_STATE_CHANGED")
+      .neq("data->>currentState", "Happy")
+      .gte("occurred_at", windowStartIso)
+      .lt("occurred_at", windowEndIso);
+    if (problemError) {
+      throw new Error(
+        `event-router: daily challenge problem-mood count failed: ${problemError.message}`,
+      );
+    }
+    satisfied = (anyToday ?? 0) >= 1 && (problemCount ?? 0) === 0;
+  }
+
+  if (!satisfied) return;
+
+  await awardXp(
+    supabase,
+    plantId,
+    dailyChallengeRewardKey(plantId, today, event.id),
+    event.challengeXp,
+    `daily:${event.id}`,
+  );
+}
 
 /**
  * Settlement is derived from PERSISTED state, not from the in-memory list of
@@ -112,12 +229,26 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
         );
       }
 
-      // Seasonal XP bonus (§23) — highest active multiplier, no stacking.
-      const { amount } = applySeasonalMultiplier(quest.xp_reward, completedAt);
+      // Seasonal XP bonus (§23) and daily-event boost: the HIGHER of the two
+      // amounts wins, never the product — the same no-stacking rationale as
+      // overlapping seasonal events (a weekend inside Hot Weather month is
+      // ×1.2, not ×1.32): bonuses stay predictable and can't compound into
+      // runaway XP. Both are pure functions of completedAt (persisted on the
+      // quest row), so a replayed settle recomputes the identical amount and
+      // the reward_key ledger keeps it single-award.
+      const { amount: seasonalAmount } = applySeasonalMultiplier(quest.xp_reward, completedAt);
+      const boostedAmount = Math.round(
+        quest.xp_reward * dailyBoostMultiplier(getDailyEvent(plantId, completedAt)),
+      );
+      const amount = Math.max(seasonalAmount, boostedAmount);
       // rewardKey per handoff §28 — a replay can never double-award.
       await awardXp(supabase, plantId, rewardKeyFor(quest), amount, quest.quest_key);
     }
   }
+
+  // Daily challenge sweep — runs on every settle (device events AND page-load
+  // ticks) so a challenge earned without any quest activity still pays out.
+  await settleDailyChallenge(supabase, plantId);
 
   // Badges and story react to the new progression state; cheap enough to
   // evaluate on every settle, and both are replay-safe.
