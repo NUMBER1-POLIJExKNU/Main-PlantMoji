@@ -9,10 +9,10 @@ Node-RED TEST · Overheating
 → POST /api/device-events
 → Next.js가 이벤트 검증
 → Supabase에 기록
-→ 브라우저에서 Jin이 Happy → Overheating으로 새로고침 없이 변경
+→ 브라우저에서 Jamkachu가 Happy → Overheating으로 새로고침 없이 변경
 ```
 
-Quest / XP / AI / UI 폴리시는 **아직 구현 대상이 아닙니다** (Milestone 1·2 안정화 후 진행).
+Quest / XP / AI / UI 폴리시는 **이미 구현되어 있습니다** — 설정과 운영 방법은 [`docs/SETUP-game-systems.md`](./SETUP-game-systems.md)를 참고하세요.
 
 ---
 
@@ -21,7 +21,7 @@ Quest / XP / AI / UI 폴리시는 **아직 구현 대상이 아닙니다** (Mile
 1. 기존 LeafTalk Supabase 프로젝트 대시보드 접속 (Node-RED v5가 쓰는 프로젝트 그대로 사용)
 2. **SQL Editor** → `supabase/milestone1.sql` 내용 붙여넣기 → **Run**
    - 기존 v5 테이블(sensor_readings 등)은 건드리지 않는 **추가 전용** 스크립트이며, 두 번 실행해도 안전합니다.
-   - 생성되는 것: `plants` 테이블(+ Jin 시드), `device_events` 테이블, 읽기 전용 RLS 정책, Realtime 발행 설정
+   - 생성되는 것: `plants` 테이블(+ Jamkachu 시드), `device_events` 테이블, 읽기 전용 RLS 정책, Realtime 발행 설정
 3. **Project Settings → API**에서 키 3개 확인:
    - Project URL
    - Publishable key (`sb_publishable_...`) — 브라우저용, 읽기 전용
@@ -53,7 +53,7 @@ npm run dev
 
 - env 미설정 → "Connecting..." 안내 화면
 - SQL 미실행 → "plant-01 데이터가 없습니다" 안내 화면
-- 정상 → **Jin · Happy** 홈 화면 + 좌하단 LIVE 표시
+- 정상 → **Jamkachu · Happy** 홈 화면 + 좌하단 LIVE 표시
 
 ## 4. API 스펙 — `POST /api/device-events`
 
@@ -115,7 +115,7 @@ curl -X POST http://localhost:3000/api/device-events \
   -d '{"eventId":"evt-test-1","plantId":"plant-01","type":"PLANT_STATE_CHANGED","occurredAt":"2026-08-07T12:00:00+07:00","data":{"currentState":"Overheating"}}'
 ```
 
-브라우저를 열어 둔 채 실행하면 **새로고침 없이** Jin이 Overheating(🔥)으로 바뀌어야 합니다.
+브라우저를 열어 둔 채 실행하면 **새로고침 없이** Jamkachu가 Overheating(🔥)으로 바뀌어야 합니다.
 같은 명령을 그대로 한 번 더 보내면 `duplicate:true`가 와야 합니다 (같은 eventId).
 
 ## 6. Node-RED 연동
@@ -146,7 +146,7 @@ Node-RED 메뉴 → Import → 아래 JSON 붙여넣기:
 ]
 ```
 
-`TEST · Overheating` 인젝트 버튼 클릭 → debug 창에 `{ok: true, duplicate: false, applied: true}` → 브라우저의 Jin이 🔥 Overheating으로 변경.
+`TEST · Overheating` 인젝트 버튼 클릭 → debug 창에 `{ok: true, duplicate: false, applied: true}` → 브라우저의 Jamkachu가 🔥 Overheating으로 변경.
 
 `DEVICE_API_TOKEN`을 쓰는 경우 Node-RED 실행 전에:
 
@@ -165,7 +165,7 @@ node-red
 
 ```text
 □ Next.js 프로젝트 실행됨 (localhost:3000)
-□ Supabase 연결됨 (Jin · Happy 홈 화면 표시)
+□ Supabase 연결됨 (Jamkachu · Happy 홈 화면 표시)
 □ plants / device_events 테이블 존재
 □ POST /api/device-events 동작 (5장 수동 테스트)
 □ Node-RED 테스트 플로우가 API 호출 성공

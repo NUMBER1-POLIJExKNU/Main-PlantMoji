@@ -3,6 +3,8 @@
 
 import Notice from "@/components/notice";
 import { runGameTick } from "@/game/events/event-router";
+import { fetchPlant } from "@/lib/plants";
+import { getWeeklyReportNarration } from "@/lib/plant-messages";
 import { computeWeeklyReport } from "@/lib/weekly-report";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE, type WeeklyReport } from "@/types/game";
@@ -97,6 +99,16 @@ export default async function ReportsPage() {
     );
   }
 
+  // AI-personalized when ANTHROPIC_API_KEY is set (cached per report shape,
+  // handoff §24); deterministic template otherwise — never blocks on
+  // failure. No plant row (e.g. schema not seeded yet) simply skips the
+  // narration — the stat tiles below still render from `report`.
+  const plantResult = await fetchPlant(PLANT_ID);
+  const narration =
+    plantResult.status === "ok"
+      ? await getWeeklyReportNarration(plantResult.plant, report)
+      : null;
+
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
       <header className="mb-6 flex flex-col items-center gap-1 text-center">
@@ -108,6 +120,19 @@ export default async function ReportsPage() {
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">{formatWeekRange(report)}</p>
       </header>
+
+      {narration && plantResult.status === "ok" && (
+        <section aria-label="Plant's note" className="mb-6">
+          <p className="mb-1.5 text-center text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            {plantResult.plant.name}의 한마디
+          </p>
+          <div className="relative rounded-2xl border border-emerald-200/70 bg-emerald-50/70 px-4 py-3 text-center text-sm leading-6 text-zinc-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-zinc-200">
+            <span aria-hidden="true">&ldquo;</span>
+            {narration}
+            <span aria-hidden="true">&rdquo;</span>
+          </div>
+        </section>
+      )}
 
       <section aria-label="Weekly stats" className="grid grid-cols-2 gap-3">
         <StatTile

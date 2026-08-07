@@ -10,14 +10,17 @@ import { getMoodMessage } from "@/game/personality/templates";
 import BondPanel from "@/components/bond-panel";
 import HomeQuestCard from "@/components/home-quest-card";
 import LevelUpOverlay from "@/components/level-up-overlay";
+import Mascot from "@/components/mascot";
 
-const MOOD_META: Record<PlantMood, { emoji: string; card: string; badge: string }> = {
-  Happy: { emoji: "😊", card: "bg-green-50 dark:bg-green-950", badge: "bg-green-200 text-green-900" },
-  Overheating: { emoji: "🔥", card: "bg-red-50 dark:bg-red-950", badge: "bg-red-200 text-red-900" },
-  DryAir: { emoji: "💨", card: "bg-amber-50 dark:bg-amber-950", badge: "bg-amber-200 text-amber-900" },
-  Sleepy: { emoji: "🌙", card: "bg-indigo-50 dark:bg-indigo-950", badge: "bg-indigo-200 text-indigo-900" },
-  SoilAcidic: { emoji: "🧪", card: "bg-orange-50 dark:bg-orange-950", badge: "bg-orange-200 text-orange-900" },
-  SoilAlkaline: { emoji: "🧪", card: "bg-purple-50 dark:bg-purple-950", badge: "bg-purple-200 text-purple-900" },
+// Scene tint + badge styling per mood. The scene classes (globals.css) shift
+// the pixel-farm sky/grass palette; the badge keeps its per-mood color chip.
+const MOOD_META: Record<PlantMood, { scene: string; badge: string }> = {
+  Happy: { scene: "pm-scene-happy", badge: "bg-green-200 text-green-900" },
+  Overheating: { scene: "pm-scene-overheating", badge: "bg-red-200 text-red-900" },
+  DryAir: { scene: "pm-scene-dryair", badge: "bg-amber-200 text-amber-900" },
+  Sleepy: { scene: "pm-scene-sleepy", badge: "bg-indigo-200 text-indigo-900" },
+  SoilAcidic: { scene: "pm-scene-soilacidic", badge: "bg-orange-200 text-orange-900" },
+  SoilAlkaline: { scene: "pm-scene-soilalkaline", badge: "bg-purple-200 text-purple-900" },
 };
 
 type Connection = "connecting" | "live" | "offline";
@@ -224,62 +227,83 @@ export default function PlantHome({
       : null;
 
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-center gap-5 px-6 pb-28 transition-colors duration-700 ${mood.card}`}
-    >
+    <main className={`pm-scene relative flex min-h-screen flex-col overflow-x-clip ${mood.scene}`}>
+      {/* Sky decorations — pure CSS, clipped so cloud drift never causes
+          horizontal scroll. Sleepy swaps the sun for a moon + stars. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {plant.current_state === "Sleepy" ? (
+          <>
+            <div className="pm-stars" />
+            <div className="pm-moon" />
+          </>
+        ) : (
+          <div className="pm-sun" />
+        )}
+        <div className="pm-cloud pm-cloud-1" />
+        <div className="pm-cloud pm-cloud-2" />
+        <div className="pm-cloud pm-cloud-3" />
+      </div>
+
       <LevelUpOverlay
         level={levelUp.level}
         show={levelUp.show}
         onDone={() => setLevelUp((prev) => ({ ...prev, show: false }))}
       />
 
-      <span className="text-8xl" role="img" aria-label={moodLabel}>
-        {mood.emoji}
-      </span>
+      {/* Sky stage: name, mood badge, speech bubble, mascot */}
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-10">
+        <h1 className="pm-pixel-title font-pixel max-w-full break-words text-center text-xl leading-relaxed">
+          {plant.name}
+        </h1>
 
-      <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-        {plant.name}
-      </h1>
+        <span className={`font-pixel mt-3 rounded-full px-4 py-2 text-[10px] leading-none ${mood.badge}`}>
+          {moodLabel}
+        </span>
 
-      <span className={`rounded-full px-4 py-1.5 text-lg font-semibold ${mood.badge}`}>
-        {moodLabel}
-      </span>
+        <div className="mt-auto flex w-full flex-col items-center pt-8">
+          <p className="pm-bubble pm-bounce">“{moodMessage}”</p>
+          <div className="-mb-7 w-60 max-w-[70vw]">
+            <Mascot mood={plant.current_state} />
+          </div>
+        </div>
+      </div>
 
-      <p className="max-w-xs text-center text-sm italic leading-6 text-zinc-600 dark:text-zinc-300">
-        “{moodMessage}”
-      </p>
+      {/* Grass floor — the panels sit on the lawn, glass-style */}
+      <div className="pm-grass relative w-full pb-28">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 px-6 pt-14">
+          {bond && (
+            <BondPanel
+              bondLevel={bond.bond_level}
+              totalXp={bond.total_xp}
+              xpInLevel={bond.total_xp % XP_PER_LEVEL}
+              xpRequired={XP_PER_LEVEL}
+              streakDays={bond.current_streak}
+            />
+          )}
 
-      {bond && (
-        <BondPanel
-          bondLevel={bond.bond_level}
-          totalXp={bond.total_xp}
-          xpInLevel={bond.total_xp % XP_PER_LEVEL}
-          xpRequired={XP_PER_LEVEL}
-          streakDays={bond.current_streak}
-        />
-      )}
+          <HomeQuestCard quest={questCardProps(quest, nowMs)} />
 
-      <HomeQuestCard quest={questCardProps(quest, nowMs)} />
+          {plant.species && (
+            <p className="pm-grass-text font-pixel-body text-lg">
+              {plant.species}
+              {plant.personality ? ` · ${plant.personality}` : ""}
+            </p>
+          )}
 
-      {plant.species && (
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {plant.species}
-          {plant.personality ? ` · ${plant.personality}` : ""}
-        </p>
-      )}
-
-      <div className="flex items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
-        <span
-          className={`inline-block h-2 w-2 rounded-full ${
-            connection === "live"
-              ? "bg-green-500"
-              : connection === "connecting"
-                ? "animate-pulse bg-amber-400"
-                : "bg-zinc-400"
-          }`}
-        />
-        {connection === "live" ? "LIVE" : connection === "connecting" ? "Connecting..." : "Offline"}
-        {changedAt && <span>· state changed {changedAt}</span>}
+          <div className="pm-grass-text font-pixel-body flex items-center gap-2 text-lg">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                connection === "live"
+                  ? "bg-green-500"
+                  : connection === "connecting"
+                    ? "animate-pulse bg-amber-400"
+                    : "bg-zinc-400"
+              }`}
+            />
+            {connection === "live" ? "LIVE" : connection === "connecting" ? "Connecting..." : "Offline"}
+            {changedAt && <span>· state changed {changedAt}</span>}
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -348,6 +348,16 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 
 # Server-side only — NEVER expose this in browser code.
 SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
+
+# Optional — shared token for POST /api/device-events. When set, Node-RED
+# must send it as `Authorization: Bearer <value>`; when unset, the endpoint
+# accepts requests without auth (local prototype mode).
+DEVICE_API_TOKEN=
+
+# Optional — enables the AI personality layer (server-side only). When unset,
+# or when a call fails, the game always falls back to the deterministic
+# personality templates.
+ANTHROPIC_API_KEY=
 ```
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
@@ -439,33 +449,33 @@ plantmoji/
 - [x] Hardware prototype
 - [x] Node-RED plant-state architecture
 - [x] Supabase persistence architecture
-- [ ] Next.js application skeleton
-- [ ] Node-RED → Next.js event API
-- [ ] Realtime web mood update
+- [x] Next.js application skeleton
+- [x] Node-RED → Next.js event API
+- [x] Realtime web mood update
 
 ### Phase 2 — Core Game Loop
 
-- [ ] Quest Engine
-- [ ] Sensor-verified quest completion
-- [ ] XP Engine
-- [ ] Bond Level
-- [ ] Level Up
+- [x] Quest Engine
+- [x] Sensor-verified quest completion
+- [x] XP Engine
+- [x] Bond Level
+- [x] Level Up
 
 ### Phase 3 — Game Content
 
-- [ ] Personality templates
-- [ ] Badge System
-- [ ] Story Chapters
-- [ ] Collection Book
-- [ ] Care Streak
-- [ ] Weekly Report
+- [x] Personality templates
+- [x] Badge System
+- [x] Story Chapters
+- [x] Collection Book
+- [x] Care Streak
+- [x] Weekly Report
 
 ### Phase 4 — Experience
 
 - [ ] UI/UX polish
 - [ ] Character animations
-- [ ] AI-personalized dialogue
-- [ ] Seasonal Events
+- [x] AI-personalized dialogue (optional, template fallback)
+- [x] Seasonal Events
 - [ ] Growth Records
 
 ### Phase 5 — Future Research

@@ -1,0 +1,135 @@
+[
+  {
+    "id": "pm_bridge_tab",
+    "type": "tab",
+    "label": "PlantMoji · Game API Bridge",
+    "disabled": false,
+    "info": "PlantMoji Phase 18 - v5 상태 변화를 게임 API로 전달하는 브리지.\n\nv5 흐름(\"LeafTalk Core Flow v5 · DB Persistence\")은 절대 수정하지 않는다.\n이 탭의 3개 노드 체인(Build Game Event → POST /api/device-events → Game API Response)을 v5 탭으로 복사한 뒤, v5의 \"Build Unified Device Command\" 출력 포트 1에서 \"Build Game Event\"로 병렬 와이어 1개만 추가한다.\n\nAPI 실패는 이 분기 안에서만 소비되므로 하드웨어 제어(LCD/LED/부저/서보)와 Supabase 저장 경로에 영향을 주지 않는다 (handoff §5.3).\n\n자세한 순서는 node-red/README.md 참고."
+  },
+  {
+    "id": "pm_c_title",
+    "type": "comment",
+    "z": "pm_bridge_tab",
+    "name": "PHASE 18 · v5 → PlantMoji Game API Bridge (v5 흐름 무수정)",
+    "info": "연결 방법 (v5 흐름은 무수정):\n\n1. 아래 3개 노드(Build Game Event / POST /api/device-events / Game API Response)를 선택해 복사(Ctrl+C).\n2. v5 탭 \"LeafTalk Core Flow v5 · DB Persistence\"에 붙여넣기(Ctrl+V). (Node-RED는 탭 사이에 와이어를 그릴 수 없다.)\n3. v5 function 노드 \"Build Unified Device Command\"(id: fn_command)의 유일한 출력 포트(1번)에서 \"Build Game Event\" 입력으로 와이어를 1개 추가한다.\n   이 포트는 이미 \"Final Command Preview\", \"Readings Log Preview\", \"Build DB Operations\" 3곳으로 팬아웃되어 있으며, 브리지는 4번째 병렬 분기가 된다.\n4. Deploy.\n\nTEST 인젝트는 v5 없이 브리지 체인만 검증하는 용도다 (Happy ↔ DryAir 토글).",
+    "x": 330,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "pm_c_wire",
+    "type": "comment",
+    "z": "pm_bridge_tab",
+    "name": "WIRE ME: v5 'Build Unified Device Command' 출력 1 → 'Build Game Event' (4번째 병렬 와이어)",
+    "info": "연결 방법 (v5 흐름은 무수정):\n\n1. 아래 3개 노드(Build Game Event / POST /api/device-events / Game API Response)를 선택해 복사(Ctrl+C).\n2. v5 탭 \"LeafTalk Core Flow v5 · DB Persistence\"에 붙여넣기(Ctrl+V). (Node-RED는 탭 사이에 와이어를 그릴 수 없다.)\n3. v5 function 노드 \"Build Unified Device Command\"(id: fn_command)의 유일한 출력 포트(1번)에서 \"Build Game Event\" 입력으로 와이어를 1개 추가한다.\n   이 포트는 이미 \"Final Command Preview\", \"Readings Log Preview\", \"Build DB Operations\" 3곳으로 팬아웃되어 있으며, 브리지는 4번째 병렬 분기가 된다.\n4. Deploy.\n\nTEST 인젝트는 v5 없이 브리지 체인만 검증하는 용도다 (Happy ↔ DryAir 토글).",
+    "x": 430,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "pm_inj_test",
+    "type": "inject",
+    "z": "pm_bridge_tab",
+    "name": "TEST → Simulated State Change",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 190,
+    "y": 180,
+    "wires": [
+      [
+        "pm_fn_test_command"
+      ]
+    ]
+  },
+  {
+    "id": "pm_fn_test_command",
+    "type": "function",
+    "z": "pm_bridge_tab",
+    "name": "Build Test Command (v5 shape)",
+    "func": "// Fabricates a v5-shaped unified command so the bridge chain can be tested\n// WITHOUT the v5 flow or hardware. Alternates Happy <-> DryAir on every press,\n// so each press is a genuine state transition with a unique eventId.\nconst previous = flow.get(\"bridgeTestState\") || \"Happy\";\nconst next = previous === \"Happy\" ? \"DryAir\" : \"Happy\";\nflow.set(\"bridgeTestState\", next);\n\nmsg.payload = {\n    type: \"plantCommand\",\n    plant: \"BridgeTest\",\n    timestamp: Date.now(),\n    readings: {\n        temperature: 26.5,\n        humidity: next === \"DryAir\" ? 32 : 55,\n        light: 1,\n        soilPH: 6.5\n    },\n    status: {\n        primaryState: next,\n        soilStatus: \"Optimal\",\n        healthy: next === \"Happy\",\n        warnings: next === \"DryAir\"\n            ? [\"Air humidity is low; check soil moisture before watering\"]\n            : [],\n        stateChanged: true,\n        previousPrimaryState: previous\n    },\n    game: { totalXP: 0, level: 1 },\n    output: {}\n};\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 470,
+    "y": 180,
+    "wires": [
+      [
+        "pm_fn_build_game_event"
+      ]
+    ]
+  },
+  {
+    "id": "pm_fn_build_game_event",
+    "type": "function",
+    "z": "pm_bridge_tab",
+    "name": "Build Game Event",
+    "func": "// PHASE 18 BRIDGE - taps the v5 unified device command.\n// Wire the single output (port 1) of the v5 function node\n// \"Build Unified Device Command\" (tab \"LeafTalk Core Flow v5 · DB Persistence\")\n// into this node as an ADDITIONAL parallel wire. Expected msg.payload:\n//   { type:\"plantCommand\", timestamp, readings:{temperature,humidity,light,soilPH},\n//     status:{stateChanged, previousPrimaryState, primaryState, ...}, game, output }\n// Emits a PLANT_STATE_CHANGED device event ONLY when status.stateChanged is\n// true; returns null otherwise so nothing reaches the game API in between.\n\nconst cmd = msg.payload;\n\nif (!cmd || cmd.type !== \"plantCommand\" || !cmd.status || !cmd.readings) {\n    node.warn(\"Build Game Event: expected the v5 unified plantCommand payload - check the wiring (tap 'Build Unified Device Command').\");\n    return null;\n}\n\nif (cmd.status.stateChanged !== true) {\n    return null;\n}\n\n// v5 primaryState codes (\"Happy\",\"Overheating\",\"DryAir\",\"Sleepy\",\"SoilAcidic\",\n// \"SoilAlkaline\" - see v5 \"Combine Plant State\") match PLANT_MOODS in\n// src/types/events.ts exactly. Normalize defensively with the same rule as the\n// API's normalizeMood() so a future label tweak (\"Dry Air\") cannot break us.\nconst PLANT_MOODS = [\"Happy\", \"Overheating\", \"DryAir\", \"Sleepy\", \"SoilAcidic\", \"SoilAlkaline\"];\nfunction normalizeMood(value) {\n    if (typeof value !== \"string\") return null;\n    const compact = value.replace(/[\\s_-]/g, \"\").toLowerCase();\n    for (const mood of PLANT_MOODS) {\n        if (mood.toLowerCase() === compact) return mood;\n    }\n    return null;\n}\n\nconst currentState = normalizeMood(cmd.status.primaryState);\nif (!currentState) {\n    node.warn(\"Build Game Event: unknown primaryState '\" + cmd.status.primaryState + \"' - event skipped.\");\n    return null;\n}\n\n// previousPrimaryState is null on the first command after a Node-RED restart\n// or runtime reset - the game API accepts a null/omitted previousState.\nconst previousState = normalizeMood(cmd.status.previousPrimaryState);\n\n// v5 sets timestamp = Date.now() (epoch ms) in \"Validate & Normalize Sensor Data\".\nconst ts = Number(cmd.timestamp);\nif (!Number.isFinite(ts)) {\n    node.warn(\"Build Game Event: command has no numeric timestamp - event skipped.\");\n    return null;\n}\n\nconst readings = cmd.readings;\n\nmsg.payload = {\n    eventId: \"evt-plant-01-\" + ts + \"-\" + currentState.toLowerCase(),\n    plantId: \"plant-01\",\n    type: \"PLANT_STATE_CHANGED\",\n    occurredAt: new Date(ts).toISOString(),\n    data: {\n        previousState: previousState,\n        currentState: currentState,\n        temperature: readings.temperature,\n        humidity: readings.humidity,\n        light: readings.light,\n        soilPH: readings.soilPH\n    }\n};\n\nmsg.headers = { \"Content-Type\": \"application/json\" };\nconst token = env.get(\"DEVICE_API_TOKEN\");\nif (token) {\n    msg.headers.Authorization = \"Bearer \" + token;\n}\n\n// Drop v5 internals so the outgoing HTTP message stays small and clean.\ndelete msg.profile;\ndelete msg.plantState;\ndelete msg.game;\ndelete msg.device;\ndelete msg.event;\ndelete msg.analysis;\ndelete msg.stateChanged;\ndelete msg.previousPrimaryState;\ndelete msg.topic;\n\nreturn msg;\n",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 280,
+    "wires": [
+      [
+        "pm_http_game_api"
+      ]
+    ]
+  },
+  {
+    "id": "pm_http_game_api",
+    "type": "http request",
+    "z": "pm_bridge_tab",
+    "name": "POST /api/device-events",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "http://localhost:3000/api/device-events",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 690,
+    "y": 280,
+    "wires": [
+      [
+        "pm_dbg_response"
+      ]
+    ]
+  },
+  {
+    "id": "pm_dbg_response",
+    "type": "debug",
+    "z": "pm_bridge_tab",
+    "name": "Game API Response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": true,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "payload",
+    "statusType": "auto",
+    "x": 930,
+    "y": 280,
+    "wires": []
+  }
+]

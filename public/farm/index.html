@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Plant - Cozy Pixel Farm</title>
+    <!-- Pixel Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Environment (Decorations) -->
+    <div class="env-background">
+        <div class="env-sky"></div>
+        <div class="env-sun"></div>
+        <div class="env-clouds">
+            <div class="cloud cloud-1"></div>
+            <div class="cloud cloud-2"></div>
+            <div class="cloud cloud-3"></div>
+        </div>
+        <div class="env-particles"></div>
+    </div>
+
+    <!-- Main App Layout -->
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="assets/logo.png" alt="Logo" class="logo-img">
+                <h1>PLANT<br>EMOJI</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="/" class="nav-item active"><i class="icon">🏠</i> Dashboard</a>
+                <a href="/settings" class="nav-item"><i class="icon">🌱</i> Plants</a>
+                <a href="/reports" class="nav-item"><i class="icon">📈</i> Monitoring</a>
+                <a href="#" class="nav-item"><i class="icon">📷</i> Camera AI</a>
+                <a href="/quests" class="nav-item"><i class="icon">📜</i> History</a>
+                <a href="/collection" class="nav-item"><i class="icon">🏆</i> Achievements</a>
+                <a href="#" class="nav-item"><i class="icon">🛒</i> Shop</a>
+                <a href="/settings" class="nav-item"><i class="icon">⚙️</i> Settings</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area: The Game World -->
+        <main class="game-world">
+            
+            <!-- HUD Top: Profile & Weather -->
+            <div class="hud-top">
+                <div class="user-gamification panel-glass">
+                    <div class="avatar"><div class="avatar-img"></div></div>
+                    <div class="user-details">
+                        <span class="username">Lvl 15 Farmer</span>
+                        <div class="xp-bar-wrap"><div class="xp-bar" style="width: 80%;"></div></div>
+                    </div>
+                    <div class="badges">
+                        <div class="badge coin"><i class="icon">🪙</i> 2,450</div>
+                        <div class="badge streak"><i class="icon">🔥</i> 12 Days</div>
+                    </div>
+                </div>
+
+                <div class="weather-widget panel-glass">
+                    <div class="weather-icon sunny">☀️</div>
+                    <div class="weather-text">
+                        <span class="temp">27°C</span>
+                        <span class="desc">Sunny & Optimal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Stage: Plant & Grass -->
+            <div class="mascot-stage">
+                <!-- Grass Floor -->
+                <div class="grass-floor"></div>
+                
+                <!-- Mascot -->
+                <div class="mascot-container">
+                    <div class="speech-bubble animated-bounce">
+                        "I'm feeling so healthy!<br>Thanks for the care."
+                    </div>
+                    <div class="mascot-wrapper animated-breath">
+                        <svg viewBox="0 0 300 350" class="mascot-svg">
+                            <!-- Pot (Clay) -->
+                            <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke="var(--color-outline)" stroke-width="8"/>
+                            <rect x="60" y="190" width="180" height="30" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="8"/>
+                            <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
+                            
+                            <!-- Stem -->
+                            <rect x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="8"/>
+                            
+                            <g class="animated-leaves">
+                                <!-- Leaf Left -->
+                                <rect x="70" y="140" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
+                                <!-- Leaf Right -->
+                                <rect x="160" y="120" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
+                                
+                                <!-- Head/Flower Base -->
+                                <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke="var(--color-outline)" stroke-width="8"/>
+                                
+                                <!-- Face (Happy) -->
+                                <g class="mascot-face">
+                                    <!-- Eyes -->
+                                    <rect x="110" y="45" width="15" height="15" fill="var(--color-outline)"/>
+                                    <rect x="112" y="47" width="5" height="5" fill="#FFF"/>
+                                    
+                                    <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/>
+                                    <rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                    
+                                    <!-- Cheeks -->
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    
+                                    <!-- Smile -->
+                                    <rect x="125" y="70" width="30" height="8" fill="var(--color-outline)"/>
+                                    <rect x="120" y="62" width="8" height="8" fill="var(--color-outline)"/>
+                                    <rect x="152" y="62" width="8" height="8" fill="var(--color-outline)"/>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HUD Bottom: Vitals & Actions -->
+            <div class="hud-bottom">
+                
+                <div class="actions-panel">
+                    <button class="pixel-btn water-btn">
+                        <i class="icon">💧</i> WATER
+                    </button>
+                    <button class="pixel-btn feed-btn">
+                        <i class="icon">🧪</i> FERTILIZE
+                    </button>
+                </div>
+
+                <div class="mini-sensors panel-glass">
+                    <h3><i class="icon">📊</i> Plant Vitals</h3>
+                    <div class="vital-item">
+                        <span class="v-label">Air Humidity</span>
+                        <div class="v-bar"><div class="fill" style="width: 65%; background: var(--color-sky);"></div></div>
+                        <span class="v-perc">65%</span>
+                    </div>
+                    <div class="vital-item">
+                        <span class="v-label">Sunlight</span>
+                        <div class="v-bar"><div class="fill" style="width: 85%; background: var(--color-yellow);"></div></div>
+                        <span class="v-perc">85%</span>
+                    </div>
+                    <div class="vital-item">
+                        <span class="v-label">Health</span>
+                        <div class="v-bar"><div class="fill" style="width: 98%; background: var(--color-grass-light);"></div></div>
+                        <span class="v-perc">98%</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+    </div>
+    <script type="module" src="/farm/live.js"></script>
+</body>
+</html>

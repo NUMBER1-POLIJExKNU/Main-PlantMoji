@@ -81,7 +81,14 @@ Node-RED v5가 쓰던 `game_state` / `game_events`(그리고 `sensor_readings`,
 | `GIVE_ME_MORE_LIGHT` ☀️ | recovery | `Sleepy` 진입 | Sleepy에서 벗어난 뒤 **5분(300초)** 재발 없이 안정 (VERIFYING) | **+20 XP** |
 
 - recovery 퀘스트는 §17 철학 그대로: 버튼 누름이 아니라 **센서로 검증된
-  회복 + 안정 유지**에만 보상합니다. 안정 구간 중 재발하면 VERIFYING이 풀립니다.
+  회복 + 안정 유지**에만 보상합니다. 안정 유지 시간(예: 5분)이 **다 차기 전에**
+  트리거 무드로 재진입하면 VERIFYING이 풀리고 ACTIVE로 되돌아갑니다. 반대로
+  창이 **이미 다 지난 뒤**에 재진입한 경우에는 회복이 이미 증명된 것이므로
+  되돌리지 않고 그대로 COMPLETED 처리합니다 (재진입 자체는 같은 트리거로
+  새 퀘스트를 하나 더 만듭니다). 지연된 이벤트가 늦게 도착해도 마찬가지입니다:
+  이미 적용된 최신 상태를 덮어쓰지 못한(`applied:false`) 오래된/순서가 뒤바뀐
+  이벤트는 퀘스트 상태 머신을 직접 움직이지 않고, 저장된 타임스탬프 기반의
+  lazy sweep(`evaluateQuests`)만 다시 돌립니다.
 - 보상 키는 `quest:<퀘스트 id>:completion` (§28) — 재전송돼도 XP는 한 번.
 
 ### 3.2 XP / Bond Level (§14–§15)
@@ -193,8 +200,8 @@ Invoke-RestMethod -Uri http://localhost:3000/api/game-tick -Method Post `
 
 | 순서 | 이벤트 | 하드웨어(Node-RED 로컬 제어) | 웹 |
 |---|---|---|---|
-| 0 | 시작 상태 | — | Jin · Happy, Bond Lv.2 · 70/100 XP |
-| 1 | 온도 34°C → `PLANT_STATE_CHANGED` (Overheating) | RGB 빨강, 서보 열림, LCD "Too Hot" | Jin이 🔥 Overheating으로 전환 + **NEW QUEST: Cool Me Down (+30 XP)** 카드 |
+| 0 | 시작 상태 | — | Jamkachu · Happy, Bond Lv.2 · 70/100 XP |
+| 1 | 온도 34°C → `PLANT_STATE_CHANGED` (Overheating) | RGB 빨강, 서보 열림, LCD "Too Hot" | Jamkachu가 🔥 Overheating으로 전환 + **NEW QUEST: Cool Me Down (+30 XP)** 카드 |
 | 2 | 29°C로 회복 → Overheating 이탈 이벤트 | RGB/LCD 정상 복귀 | 퀘스트가 VERIFYING — "Verifying… 5:00 left" 카운트다운 |
 | 3 | 5분 안정 유지 (게임 틱이 완료 판정) | — | **Quest Complete + XP 획득**, Bond 게이지 상승 |
 | 4 | XP가 100 경계를 넘음 | RGB·부저·LCD 축하 (Node-RED) | **LEVEL UP → Bond Lv.3** 오버레이 |
@@ -213,7 +220,8 @@ Hot Weather Challenge(×1.2) 기간에는 `COOL_ME_DOWN`이 30이 아니라
 □ supabase/milestone3.sql 실행됨 (bond_state / quests / plant_badges /
   bond_events / xp_rewards + award_xp RPC 존재)
 □ Quest Engine — Overheating 진입 시 COOL_ME_DOWN이 ACTIVE로 생성됨
-□ Quest 검증 — 회복 후 5분 안정 유지 시에만 COMPLETED (VERIFYING 중 재발하면 원복)
+□ Quest 검증 — 회복 후 5분 안정 유지 시에만 COMPLETED (창이 끝나기 전에
+  VERIFYING 중 재발하면 ACTIVE로 원복 / 창이 끝난 뒤 재진입하면 COMPLETED 유지)
 □ XP 엔진 — 완료 시 award_xp RPC로 XP 지급, 같은 완료 재전송 시 duplicate
 □ Bond Level — 100 XP마다 레벨 상승 (levelForXp와 SQL 공식 일치)
 □ Level-up — 경계 통과 시 LEVEL_UP 이벤트 + 웹 오버레이
