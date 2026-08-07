@@ -1,16 +1,29 @@
 "use client";
 
-// Collection book tabs (handoff §20, §33 — Mood / Badges / Story).
+// Collection book tabs (handoff §20, §33 — Mood / Badges / Story / Wisdom).
 // Purely presentational: the server page queries everything and passes plain
 // serializable props across the RSC boundary (dates preformatted as strings).
 
 import { useState } from "react";
+import StoryChapterCard from "@/components/story-chapter-card";
+import type { ChapterScene } from "@/game/story/story-dialogue";
 
 export interface MoodCollectionItem {
   mood: string;
   label: string;
   emoji: string;
   discovered: boolean;
+  /** Plant-science why-card, present only once the mood is discovered. */
+  whyCard: { title: string; why: string; action: string } | null;
+}
+
+export interface WisdomCollectionItem {
+  id: string;
+  saying: string;
+  source: string;
+  translation: string;
+  metric: string;
+  example: string;
 }
 
 export interface BadgeCollectionItem {
@@ -28,23 +41,27 @@ export interface StoryCollectionItem {
   /** Doubles as the unlock condition for locked chapters (handoff §19). */
   description: string;
   unlocked: boolean;
+  /** Personality-flavored chapter dialogue; null while locked (spoiler-free). */
+  scene: ChapterScene | null;
 }
 
 export interface CollectionTabsProps {
   moods: MoodCollectionItem[];
   badges: BadgeCollectionItem[];
   chapters: StoryCollectionItem[];
+  wisdom: WisdomCollectionItem[];
 }
 
 const TABS = [
   { id: "moods", label: "Moods", emoji: "🎭" },
   { id: "badges", label: "Badges", emoji: "🏅" },
   { id: "story", label: "Story", emoji: "📜" },
+  { id: "wisdom", label: "Wisdom", emoji: "🌾" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
-export default function CollectionTabs({ moods, badges, chapters }: CollectionTabsProps) {
+export default function CollectionTabs({ moods, badges, chapters, wisdom }: CollectionTabsProps) {
   const [tab, setTab] = useState<TabId>("moods");
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
@@ -127,6 +144,46 @@ export default function CollectionTabs({ moods, badges, chapters }: CollectionTa
               </li>
             ))}
           </ul>
+
+          {/* Educational layer (handoff §2, §51): once a mood is discovered,
+              its plant-science why-card unlocks. Undiscovered moods stay
+              hidden until the sensors have actually seen them. */}
+          {moods.some((mood) => mood.discovered && mood.whyCard) && (
+            <>
+              <p className="mb-3 mt-6 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                What we&apos;ve learned
+              </p>
+              <ul className="flex flex-col gap-3">
+                {moods
+                  .filter((mood) => mood.discovered && mood.whyCard != null)
+                  .map((mood) => (
+                    <li
+                      key={mood.mood}
+                      className="rounded-2xl border border-green-200/70 bg-green-50/70 p-4 dark:border-green-900/60 dark:bg-green-950/40"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl leading-none" role="img" aria-hidden="true">
+                          {mood.emoji}
+                        </span>
+                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                          {mood.label}
+                          <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                            {" "}
+                            · {mood.whyCard?.title}
+                          </span>
+                        </p>
+                      </div>
+                      <p className="mt-1.5 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+                        {mood.whyCard?.why}
+                      </p>
+                      <p className="mt-1.5 text-xs font-medium leading-5 text-green-700 dark:text-green-400">
+                        {mood.whyCard?.action}
+                      </p>
+                    </li>
+                  ))}
+              </ul>
+            </>
+          )}
         </section>
       )}
 
@@ -198,34 +255,53 @@ export default function CollectionTabs({ moods, badges, chapters }: CollectionTa
           </p>
           <ol className="flex flex-col gap-3">
             {chapters.map((chapter) => (
-              <li
-                key={chapter.chapter}
-                className={`rounded-2xl border p-4 ${
-                  chapter.unlocked
-                    ? "border-indigo-200/70 bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/30"
-                    : "border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p
-                    className={`text-sm font-bold ${
-                      chapter.unlocked
-                        ? "text-zinc-900 dark:text-zinc-50"
-                        : "text-zinc-500 dark:text-zinc-400"
-                    }`}
-                  >
-                    Chapter {chapter.chapter} · {chapter.title}
-                  </p>
-                  <span className="shrink-0 text-sm" role="img" aria-hidden="true">
-                    {chapter.unlocked ? "✨" : "🔒"}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-                  {chapter.description}
-                </p>
+              <li key={chapter.chapter}>
+                <StoryChapterCard
+                  chapter={{
+                    chapter: chapter.chapter,
+                    title: chapter.title,
+                    description: chapter.description,
+                  }}
+                  unlocked={chapter.unlocked}
+                  scene={chapter.scene}
+                />
               </li>
             ))}
           </ol>
+        </section>
+      )}
+
+      {tab === "wisdom" && (
+        <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
+          <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
+            Traditional knowledge, translated into measurements
+          </p>
+          <ul className="flex flex-col gap-3">
+            {wisdom.map((entry) => (
+              <li
+                key={entry.id}
+                className="rounded-2xl border border-teal-200/70 bg-teal-50/60 p-4 dark:border-teal-900/60 dark:bg-teal-950/30"
+              >
+                <p className="text-sm font-semibold italic leading-5 text-zinc-900 dark:text-zinc-50">
+                  &ldquo;{entry.saying}&rdquo;
+                </p>
+                <p className="mt-2 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+                  {entry.translation}
+                </p>
+                <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 dark:bg-zinc-900/50">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700 dark:text-teal-400">
+                    {entry.metric}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-zinc-600 dark:text-zinc-300">
+                    {entry.example}
+                  </p>
+                </div>
+                <p className="mt-2 text-[10px] font-medium leading-4 text-zinc-400 dark:text-zinc-500">
+                  {entry.source}
+                </p>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </div>

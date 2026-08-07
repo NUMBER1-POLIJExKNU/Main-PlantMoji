@@ -4,6 +4,7 @@
 
 import Notice from "@/components/notice";
 import QuestProgress from "@/components/quest-progress";
+import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { runGameTick } from "@/game/events/event-router";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
@@ -98,6 +99,18 @@ function ActiveQuestCard({ quest }: { quest: QuestRow }) {
           {Math.round(def.requiredSeconds / 60)}-minute check confirms the rescue.
         </p>
       )}
+
+      {/* Educational layer (handoff §2, §51): teach the science behind the
+          quest, not just the reward. Collapsible so the card stays compact. */}
+      <details className="mt-3">
+        <summary className="cursor-pointer select-none text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300">
+          Why this matters
+        </summary>
+        <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs leading-5 text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">
+          <p>{QUEST_WHY[quest.quest_key]}</p>
+          <p className="mt-1.5">{WHY_CARDS[def.triggerMood].why}</p>
+        </div>
+      </details>
     </article>
   );
 }

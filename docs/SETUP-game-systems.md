@@ -214,6 +214,34 @@ Hot Weather Challenge(×1.2) 기간에는 `COOL_ME_DOWN`이 30이 아니라
 같은 이벤트를 실수로 두 번 보내도(`eventId` 동일) `duplicate: true`로
 무시되고 XP는 한 번만 지급됩니다 — 카메라 앞에서 재전송해도 안전합니다.
 
+### 6.1 데모 리셋 — `POST /api/demo-reset` (촬영 재시도용)
+
+KBS 다큐 촬영에서 같은 장면을 다시 찍을 때, DB를 손으로 고치지 않고
+게임 진행 상태를 처음으로 되돌리는 **파괴적** 엔드포인트입니다.
+
+- **토큰 필수** — `/api/device-events`의 선택적 인증과 달리, 서버에
+  `DEVICE_API_TOKEN`이 설정되어 있지 않으면 **403으로 거부**합니다
+  (`demo-reset disabled: set DEVICE_API_TOKEN`). 요청에는 항상
+  `Authorization: Bearer <토큰>` 헤더가 필요합니다.
+- **지워지는 것** (해당 plant의 행만): `quests` / `xp_rewards` / `bond_events` /
+  `plant_badges` / `device_events`. 이어서 `bond_state`를 초기값
+  (Lv.1 · 0 XP · 스트릭 0 · 챕터 1)으로 되돌리고,
+  `plants.current_state = 'Happy'` + `state_changed_at = epoch`로 설정해
+  다음 실제 이벤트가 항상 적용되게 합니다.
+- **지워지지 않는 것**: `growth_records`(실제 성장 기록)와
+  `sensor_readings`(Node-RED 소유 테이블)는 절대 건드리지 않습니다.
+- 리셋 후에는 Lv.1 · 0 XP에서 시작하므로, 6장 시나리오의 베이스라인
+  (Lv.2 · 70 XP)이 필요하면 촬영 전에 별도로 다시 맞춰야 합니다.
+
+스크립트 사용 (확인 프롬프트가 뜨며, `-Force`로 생략):
+
+```powershell
+pwsh -File scripts/demo-reset.ps1 -Token <DEVICE_API_TOKEN 값> `
+  [-PlantId plant-01] [-BaseUrl http://localhost:3000] [-Force]
+```
+
+성공 시 `{ ok: true, cleared: { quests: n, ... } }` 형태로 지운 행 수를 보여줍니다.
+
 ## 7. 인수 기준 체크리스트 (§40 Core Game)
 
 ```text

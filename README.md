@@ -476,7 +476,7 @@ plantmoji/
 - [ ] Character animations
 - [x] AI-personalized dialogue (optional, template fallback)
 - [x] Seasonal Events
-- [ ] Growth Records
+- [x] Growth Records (manual, settings page — never inferred from sensors)
 
 ### Phase 5 — Future Research
 
