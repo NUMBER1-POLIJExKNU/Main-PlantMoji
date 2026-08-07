@@ -61,7 +61,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "Overheating",
     requiredSeconds: 300,
-    verifyTemperatureMax: 30,
+    verifyTemperatureMax: 26,
   },
   GIVE_ME_MORE_LIGHT: {
     key: "GIVE_ME_MORE_LIGHT",
@@ -86,7 +86,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "SoilAcidic",
     requiredSeconds: 300,
-    verifyPhRange: { min: 6.0, max: 7.0 },
+    verifyPhRange: { min: 5.5, max: 6.5 },
   },
   BALANCE_SOIL_ALKALINE: {
     key: "BALANCE_SOIL_ALKALINE",
@@ -98,7 +98,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "SoilAlkaline",
     requiredSeconds: 300,
-    verifyPhRange: { min: 6.0, max: 7.0 },
+    verifyPhRange: { min: 5.5, max: 6.5 },
   },
 };
 

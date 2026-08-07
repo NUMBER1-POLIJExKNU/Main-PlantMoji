@@ -5,6 +5,7 @@ export interface Plant {
   id: string;
   name: string;
   species: string | null;
+  crop_profile_key: string | null;
   personality: string | null;
   growth_stage: string | null;
   current_state: PlantMood;

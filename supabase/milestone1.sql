@@ -13,6 +13,7 @@ create table if not exists public.plants (
   id text primary key,
   name text not null,
   species text,
+  crop_profile_key text default 'strawberry',
   personality text,
   growth_stage text,
   current_state text not null default 'Happy'
@@ -40,8 +41,8 @@ create index if not exists device_events_plant_occurred_idx
 
 -- ── Seed: Jamkachu — PlantMoji's first companion, named after Jember ────
 -- (Team branding decision; the handoff §36 "Jin" was an example.)
-insert into public.plants (id, name, species, personality, growth_stage)
-values ('plant-01', 'Jamkachu', 'Basil', 'funny', 'growing')
+insert into public.plants (id, name, species, crop_profile_key, personality, growth_stage)
+values ('plant-01', 'Jamkachu', 'Strawberry', 'strawberry', 'funny', 'growing')
 on conflict (id) do nothing;
 
 -- ── RLS (handoff §9) ────────────────────────────────────────────────────

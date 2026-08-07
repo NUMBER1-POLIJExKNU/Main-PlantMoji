@@ -24,7 +24,7 @@ describe("QUEST_DEFINITIONS completeness", () => {
       expect(def.requiredSeconds).toBe(300);
       expect(def.xpReward).toBe(25);
       expect(def.emoji).toBe("🧪");
-      expect(def.verifyPhRange).toEqual({ min: 6.0, max: 7.0 });
+      expect(def.verifyPhRange).toEqual({ min: 5.5, max: 6.5 });
     }
   });
 });
@@ -47,8 +47,8 @@ describe("sensorBlocksRecovery", () => {
   const acidic = QUEST_DEFINITIONS.BALANCE_SOIL_ACIDIC;
   const coolDown = QUEST_DEFINITIONS.COOL_ME_DOWN;
 
-  it("blocks BALANCE_SOIL_ACIDIC while pH is still 5.5", () => {
-    expect(sensorBlocksRecovery(acidic, { soilPH: 5.5 })).toBe(true);
+  it("blocks BALANCE_SOIL_ACIDIC below the strawberry range", () => {
+    expect(sensorBlocksRecovery(acidic, { soilPH: 5.49 })).toBe(true);
   });
 
   it("does not block once pH is back in range (6.5)", () => {
@@ -56,8 +56,8 @@ describe("sensorBlocksRecovery", () => {
   });
 
   it("treats the range as inclusive at both bounds", () => {
-    expect(sensorBlocksRecovery(acidic, { soilPH: 6.0 })).toBe(false);
-    expect(sensorBlocksRecovery(acidic, { soilPH: 7.0 })).toBe(false);
+    expect(sensorBlocksRecovery(acidic, { soilPH: 5.5 })).toBe(false);
+    expect(sensorBlocksRecovery(acidic, { soilPH: 6.5 })).toBe(false);
   });
 
   it("does not block when the event carries no soilPH", () => {
@@ -71,8 +71,8 @@ describe("sensorBlocksRecovery", () => {
     expect(sensorBlocksRecovery(acidic, { soilPH: "5.5" })).toBe(false);
   });
 
-  it("still blocks COOL_ME_DOWN when temperature is 31", () => {
-    expect(sensorBlocksRecovery(coolDown, { temperature: 31 })).toBe(true);
-    expect(sensorBlocksRecovery(coolDown, { temperature: 30 })).toBe(false);
+  it("uses the strawberry recovery threshold for COOL_ME_DOWN", () => {
+    expect(sensorBlocksRecovery(coolDown, { temperature: 27 })).toBe(true);
+    expect(sensorBlocksRecovery(coolDown, { temperature: 26 })).toBe(false);
   });
 });

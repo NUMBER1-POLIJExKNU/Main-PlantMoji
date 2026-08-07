@@ -1,5 +1,22 @@
 # PlantMoji · Node-RED Game API Bridge (Phase 18) — English · Bahasa Indonesia · 한국어
 
+## Crop profile synchronization
+
+Import `crop-profile-sync-flow.json` alongside the existing v5 flow. Set
+`PLANTMOJI_API_URL` to the deployed Next.js origin and, when enabled, set the
+same `DEVICE_API_TOKEN` in Node-RED. The sync tab calls
+`GET /api/crop-profile?plantId=plant-01` at startup and every 60 seconds.
+
+A valid response replaces `flow.cropProfile`. A temporary failure keeps the
+last successful profile; only a cold start without one uses the embedded
+strawberry v1 fallback. The imported `REPLACE: Combine Plant State` function
+is deliberately disconnected. Copy its body into v5's combining function and
+retain the existing outgoing wire. The next sensor sample then uses the new
+thresholds. The Phase 18 event bridge remains unchanged.
+
+Verify API success, failure after a success, cold-start fallback after clearing
+context, and classification on the first sample after a profile/version change.
+
 This document exists in three languages — jump to the section you need using the table of contents below.
 Dokumen ini tersedia dalam tiga bahasa — gunakan daftar isi di bawah untuk langsung menuju bagian yang Anda butuhkan.
 이 문서는 세 가지 언어로 제공됩니다 — 아래 목차에서 필요한 섹션으로 바로 이동하세요.

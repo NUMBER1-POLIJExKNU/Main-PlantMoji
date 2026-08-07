@@ -10,6 +10,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlantMood } from "@/types/events";
 import type { QuestEngineResult, QuestRow } from "@/types/game";
+import { getPlantCropProfile } from "@/lib/crop-profile-data";
+import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
 import { QUEST_DEFINITIONS, questsTriggeredBy, type QuestDefinition } from "./quest-definitions";
 
 const LIVE_STATUSES = ["ACTIVE", "VERIFYING"];
@@ -32,6 +34,7 @@ function fail(context: string, message: string): never {
 export function sensorBlocksRecovery(
   def: QuestDefinition,
   data?: Record<string, unknown>,
+  profile: CropProfile = getCropProfile(null),
 ): boolean {
   if (def.kind !== "recovery" || !data) return false;
 
@@ -40,7 +43,7 @@ export function sensorBlocksRecovery(
     if (
       typeof temperature === "number" &&
       Number.isFinite(temperature) &&
-      temperature > def.verifyTemperatureMax
+      temperature > profile.temperature.overheating.recoverAtOrBelow
     ) {
       return true;
     }
@@ -51,7 +54,7 @@ export function sensorBlocksRecovery(
     if (
       typeof soilPH === "number" &&
       Number.isFinite(soilPH) &&
-      (soilPH < def.verifyPhRange.min || soilPH > def.verifyPhRange.max)
+      (soilPH < profile.soilPh.recommended.min || soilPH > profile.soilPh.recommended.max)
     ) {
       return true;
     }
@@ -258,6 +261,7 @@ export async function handleStateChange(
 ): Promise<QuestEngineResult> {
   const result: QuestEngineResult = { created: [], completed: [], expired: [] };
   const occurredMs = Date.parse(occurredAt);
+  const profile = (await getPlantCropProfile(supabase, plantId)) ?? getCropProfile(null);
 
   for (const quest of await fetchLiveQuests(supabase, plantId)) {
     const def = QUEST_DEFINITIONS[quest.quest_key];
@@ -293,7 +297,7 @@ export async function handleStateChange(
     // The sensor value can contradict the mood label: still-hot air (or
     // still-unbalanced soil pH) while a different mood outranks the trigger
     // must relapse / block verification.
-    if (quest.status === "VERIFYING" && sensorBlocksRecovery(def, data)) {
+    if (quest.status === "VERIFYING" && sensorBlocksRecovery(def, data, profile)) {
       await transition(supabase, quest.id, "VERIFYING", {
         status: "ACTIVE",
         verifying_since: null,
@@ -325,7 +329,7 @@ export async function handleStateChange(
           await emitQuestEvent(supabase, updated, "expired", occurredAt);
         }
       }
-    } else if (!sensorBlocksRecovery(def, data)) {
+    } else if (!sensorBlocksRecovery(def, data, profile)) {
       await transition(supabase, quest.id, "ACTIVE", {
         status: "VERIFYING",
         verifying_since: occurredAt,
