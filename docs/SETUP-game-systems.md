@@ -98,13 +98,22 @@ Node-RED v5가 쓰던 `game_state` / `game_events`(그리고 `sensor_readings`,
   SQL의 `award_xp()`와 반드시 같은 공식을 씁니다.
 - XP 증가는 **오직** `award_xp` RPC를 통해서만 (read-modify-write 금지, §29).
 
-### 3.3 배지 3종 (`src/game/badges/badge-definitions.ts`, §18)
+### 3.3 배지 (`src/game/badges/badge-definitions.ts`, §18)
 
 | 키 | 이름 | 해금 조건 |
 |---|---|---|
-| `FIRST_RESCUE` 🚑 | First Rescue | 회복(recovery) 퀘스트 첫 완료 (`COOL_ME_DOWN` 또는 `GIVE_ME_MORE_LIGHT`) |
-| `LIGHT_MASTER` ☀️ | Light Master | `GIVE_ME_MORE_LIGHT` 완료 **5회** |
-| `LEVEL_5_BOND` 💚 | Level 5 Bond | Bond Level **5** 도달 |
+| `FIRST_RESCUE` 🚑 | First Help | 회복(recovery) 퀘스트 첫 완료 (`COOL_ME_DOWN` 또는 `GIVE_ME_MORE_LIGHT`) |
+| `LIGHT_MASTER` ☀️ | Light Helper | `GIVE_ME_MORE_LIGHT` 완료 **5회** |
+| `LEVEL_5_BOND` 💚 | Good Friends | Bond Level **5** 도달 |
+| `COOL_KEEPER` 🧊 | Cool Helper | `COOL_ME_DOWN` 완료 **5회** |
+| `PH_GUARDIAN` 🛡️ | Happy Soil | 최근 7일 동안 토양 pH 문제 상태 없음 |
+| `STREAK_7` 📅 | 7-Day Care | 돌봄 스트릭 **7일** 도달 |
+| `HUMIDITY_HERO` 💦 | Air Helper | `HUMIDIFY_MY_AIR` 완료 **5회** |
+| `MOOD_SCHOLAR` 🎓 | Mood Finder | 6개 식물 무드 모두 발견 |
+| `CARE_VETERAN` 🎖️ | Quest Star | 퀘스트 **25회** 완료 |
+| `CHRONICLER` 📓 | Plant Writer | 성장 기록 **5개** 작성 |
+| `STREAK_30` 🗓️ | 30-Day Care | 돌봄 스트릭 **30일** 도달 |
+| `LEVEL_10_BOND` 🌳 | Best Friends | Bond Level **10** 도달 |
 
 ### 3.4 스토리 챕터 4개 (`src/game/story/story-definitions.ts`, §19)
 

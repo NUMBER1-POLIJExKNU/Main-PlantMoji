@@ -10,6 +10,8 @@
 // the same way a user would write a new line in a paper growth journal.
 
 import { revalidatePath } from "next/cache";
+import { createHash, timingSafeEqual } from "node:crypto";
+import { applyDemoMaxState } from "@/game/demo/demo-max";
 import { parseGrowthInput } from "@/lib/growth";
 import { normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -20,6 +22,17 @@ import {
 } from "@/game/progression/bonus-xp";
 import { awardXp } from "@/game/progression/xp-engine";
 import { normalizePersonality } from "@/types/game";
+
+export interface DemoMaxActionState {
+  status: "idle" | "success" | "error";
+  message: string;
+}
+
+function matchesDemoCode(submitted: string, configured: string): boolean {
+  const submittedHash = createHash("sha256").update(submitted).digest();
+  const configuredHash = createHash("sha256").update(configured).digest();
+  return timingSafeEqual(submittedHash, configuredHash);
+}
 
 /**
  * Validates and persists the plant's editable settings (name, personality,
@@ -125,4 +138,54 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/settings");
+}
+
+/**
+ * Presentation-only max unlock. The code is configured server-side and is
+ * never shipped to the browser bundle. It changes game/collection progress,
+ * but never sensor truth, crop thresholds, or hardware control.
+ */
+export async function activateDemoMaxMode(
+  _previousState: DemoMaxActionState,
+  formData: FormData,
+): Promise<DemoMaxActionState> {
+  const configuredCode = process.env.DEMO_CHEAT_CODE;
+  if (!configuredCode || configuredCode.length < 8) {
+    return {
+      status: "error",
+      message: "Demo code is not configured. Set DEMO_CHEAT_CODE (8+ characters) in Vercel.",
+    };
+  }
+
+  const rawCode = formData.get("demoCode");
+  const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
+  if (!submittedCode || !matchesDemoCode(submittedCode, configuredCode)) {
+    return { status: "error", message: "That demo code is not correct." };
+  }
+
+  const supabase = getServerSupabase();
+  if (!supabase) {
+    return { status: "error", message: "Supabase is not configured." };
+  }
+
+  try {
+    const result = await applyDemoMaxState(supabase, "plant-01");
+    revalidatePath("/");
+    revalidatePath("/settings");
+    revalidatePath("/quests");
+    revalidatePath("/collection");
+    revalidatePath("/reports");
+    revalidatePath("/plants");
+
+    return {
+      status: "success",
+      message: `Max mode on! Lv.${result.level} · ${result.moods} moods · ${result.badges} badges · ${result.chapters} stories unlocked.`,
+    };
+  } catch (cause) {
+    console.error("activateDemoMaxMode failed:", cause);
+    return {
+      status: "error",
+      message: "Max unlock failed. Check the Supabase migrations, then try again.",
+    };
+  }
 }

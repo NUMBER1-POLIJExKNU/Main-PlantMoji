@@ -52,8 +52,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines HUMIDITY_HERO", () => {
     expect(BADGE_DEFINITIONS.HUMIDITY_HERO).toEqual({
       key: "HUMIDITY_HERO",
-      name: "Humidity Hero",
-      description: "Completed the Humidify My Air quest 5 times.",
+      name: "Air Helper",
+      description: "Helped dry air feel better 5 times.",
       emoji: "💦",
     });
   });
@@ -61,8 +61,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines MOOD_SCHOLAR", () => {
     expect(BADGE_DEFINITIONS.MOOD_SCHOLAR).toEqual({
       key: "MOOD_SCHOLAR",
-      name: "Mood Scholar",
-      description: "Discovered all six plant moods.",
+      name: "Mood Finder",
+      description: "Found all 6 plant moods.",
       emoji: "🎓",
     });
   });
@@ -70,8 +70,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines CARE_VETERAN", () => {
     expect(BADGE_DEFINITIONS.CARE_VETERAN).toEqual({
       key: "CARE_VETERAN",
-      name: "Care Veteran",
-      description: "Completed 25 quests in total.",
+      name: "Quest Star",
+      description: "Finished 25 quests.",
       emoji: "🎖️",
     });
   });
@@ -79,8 +79,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines CHRONICLER", () => {
     expect(BADGE_DEFINITIONS.CHRONICLER).toEqual({
       key: "CHRONICLER",
-      name: "Chronicler",
-      description: "Logged 5 growth records.",
+      name: "Plant Writer",
+      description: "Wrote 5 plant growth notes.",
       emoji: "📓",
     });
   });
@@ -88,8 +88,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines STREAK_30", () => {
     expect(BADGE_DEFINITIONS.STREAK_30).toEqual({
       key: "STREAK_30",
-      name: "Monthly Devotion",
-      description: "Reached a 30-day care streak.",
+      name: "30-Day Care",
+      description: "Cared for the plant 30 days in a row.",
       emoji: "🗓️",
     });
   });
@@ -97,8 +97,8 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
   it("defines LEVEL_10_BOND", () => {
     expect(BADGE_DEFINITIONS.LEVEL_10_BOND).toEqual({
       key: "LEVEL_10_BOND",
-      name: "Deep Roots",
-      description: "Reached Bond Level 10 together.",
+      name: "Best Friends",
+      description: "Reached friendship level 10.",
       emoji: "🌳",
     });
   });

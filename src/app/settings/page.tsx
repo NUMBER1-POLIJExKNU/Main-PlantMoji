@@ -2,6 +2,7 @@
 // and manual growth stage (§14: sensors cannot infer real growth in MVP).
 
 import Notice from "@/components/notice";
+import DemoMaxForm from "@/components/demo-max-form";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -288,6 +289,24 @@ export default async function SettingsPage() {
             })
           )}
         </div>
+      </section>
+
+      <section className="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 shadow-sm dark:border-amber-900/70 dark:bg-amber-950/30">
+        <div className="mb-4 flex items-start gap-3">
+          <span className="text-3xl leading-none" role="img" aria-hidden="true">
+            🎬
+          </span>
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+              Demo Max Mode
+            </h2>
+            <p className="mt-1 text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
+              Presentation only: unlocks Lv.10, every mood, badge, story, and quest type.
+              Sensor readings and hardware safety rules do not change.
+            </p>
+          </div>
+        </div>
+        <DemoMaxForm />
       </section>
     </main>
   );

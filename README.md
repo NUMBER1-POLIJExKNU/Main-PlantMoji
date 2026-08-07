@@ -133,7 +133,7 @@ Bond Level represents care and progression. It is intentionally separate from th
 ### Progression Systems (all implemented)
 
 - 🔥 **Care Streak** — consecutive qualifying-care days, counted in WIB (Asia/Jakarta); streak milestones at 3/7/14/30 days award bonus XP
-- 🏅 **Badges** — 12 badges (First Rescue, Light Master, Cool Keeper, pH Guardian, Humidity Hero, Mood Scholar, Care Veteran, Chronicler, streak & level milestones…), each +15 bonus XP
+- 🏅 **Badges** — 12 child-friendly badges (First Help, Light Helper, Cool Helper, Happy Soil, Air Helper, Mood Finder, Quest Star, Plant Writer, care & friendship milestones…), each +15 bonus XP
 - 📖 **Story Chapters** — 6 chapters set in Jember with per-personality dialogue, from *First Meeting in Jember* to *Harvest of Wisdom*; each unlock +25 bonus XP
 - 📚 **Collection Book** — Moods (with plant-science "why" cards), Badges, Story, and Farmer Wisdom tabs
 - 📊 **Weekly Report** — healthy time, quests completed, streak, and an AI-narrated (template-fallback) summary
@@ -361,6 +361,10 @@ SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
 # accepts requests without auth (local prototype mode).
 DEVICE_API_TOKEN=
 
+# Optional — Settings → Demo Max Mode. Use 8+ characters and keep it
+# server-side. Entering it unlocks Lv.10 and the full collection for a demo.
+DEMO_CHEAT_CODE=
+
 # Optional — enables the AI personality layer (server-side only). When unset,
 # or when a call fails, the game always falls back to the deterministic
 # personality templates.
@@ -368,6 +372,11 @@ ANTHROPIC_API_KEY=
 ```
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
+
+For a presentation, set `DEMO_CHEAT_CODE` in Vercel, redeploy, then open
+**Settings → Demo Max Mode** and enter the code. This creates a replay-safe
+Lv.10 showcase state with every mood, badge, story chapter, and quest type
+visible. It never changes sensor readings, crop thresholds, or hardware control.
 
 ### 4. Database schema
 
