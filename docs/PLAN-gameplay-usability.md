@@ -201,7 +201,32 @@ Also relevant to Workstream 8 (Classroom Ergonomics): the web app itself is **no
 
 ---
 
-### 10. Phased priority & effort estimates
+### 10. Reward Loop (Dopamine-Friendly Design)
+
+**Goal:** structure the reward loop so the real neuroscience of anticipation, immediate feedback, small frequent wins, gentle loss-aversion, completion drive, and celebration peaks all fire — but only ever around **real, sensor-verified care**, never around screen time, fake scarcity, or shame. This workstream is an ethics-first extension of Workstream 4 (Celebration), Workstream 3 (Always-Visible Progress), and Workstream 6 (Fail-Soft & Tone) — read those alongside this one.
+
+**Ethics guardrails (non-negotiable, must stay explicit in every task below):**
+- Every mechanic here pays out only for real, sensor-verified care — handoff §17: *"reward verified outcomes, never one good sample."* Never reward mere screen time, tap count, or session length on its own.
+- No fake scarcity ("only 2 left today!"), no pay-to-progress, no dark patterns of any kind.
+- No shame or guilt mechanics — ties directly to handoff principle §46.4, *"the user should feel attachment, not guilt,"* and to Workstream 6's fail-soft tone rules.
+- Designed for the healthy engagement of a 13–18-year-old, not for maximizing session count or time-on-app as an end in itself.
+
+**Tasks:**
+- [ ] **Anticipation / reward prediction error.** `src/game/random/daily-events.ts` already implements a deterministic-but-unpredictable-to-the-student daily event (`xp_boost` / `daily_challenge` / `flavor`, hashed per plant + WIB day — same day always resolves to the same event, but the student can't predict which), and `src/app/quests/page.tsx` already renders it as a `DailyEventBanner` ("Today's Event") at the top of the Quests page. Confirm the banner reads as a *reveal* (first thing seen, not buried), and add a small teaser pointing at "Today's Event" on whichever home screen wins Workstream 0, so the anticipation hook exists before a student even opens Quests — the "what did I get today?" moment shouldn't require an extra tap to discover.
+- [ ] **Immediate feedback (<1s).** No floating "+XP" toast exists anywhere today (checked `public/farm/live.js`, `plant-home.tsx`, `bond-panel.tsx`). Add one that fires the instant a qualifying action lands (quest completion, daily-challenge verification). `BondPanel`'s XP bar (`src/components/bond-panel.tsx`) already animates its fill (`transition-[width] duration-700 ease-out`) — pair that existing animation with a new floating "+20 XP" number and a brief count-up on the XP total, wired on both the canonical home and `public/farm/live.js`'s `.badge.coin` element.
+- [ ] **Small frequent wins between big ones.** `KEEP_ME_HAPPY` (30 min, +20 XP) and `STAY_COMFY` (2 hr, +40 XP) already layer a short and a long maintain-quest loop (`src/game/quests/quest-definitions.ts`) — good bones, but 30+ silent minutes in between needs a micro-acknowledgment. `src/game/emotions/event-emotions.ts` already defines a `Recovering` emotion for exactly the "problem mood → Happy" sensor-recovery moment (a sparkle-worthy small win) — verify it's actually wired end-to-end to a visible `EmotionBadge` pop on whichever home wins Workstream 0, not just defined and unused.
+- [ ] **Loss aversion, used gently.** `bond_state.current_streak` already exists and — per `streak-engine.ts` — only ever resets to 1 on a missed day, never punished further. Add a low-key "streak keeper" visual near end-of-day WIB (e.g. a soft Home reminder once today isn't qualified yet). Explicitly forbidden: red/urgent styling, "you'll lose your streak!" copy, or any push-notification-style pressure — this must read as an invitation, matching Workstream 6's tone rules, never as a threat.
+- [ ] **Completion drive (Zeigarnik / collection effect).** `src/components/collection-tabs.tsx` already shows "N of M discovered/unlocked" meters for Moods, Badges, and Chapters — add near-complete highlighting (e.g. "1 more to go!") when a student is one item away from finishing a tab, since the completion pull is strongest right before the finish line, not at the midpoint.
+- [ ] **Celebration peaks.** `LevelUpOverlay` (`src/components/level-up-overlay.tsx`) already delivers a pop/pulse peak for level-ups; quest completion today only gets the quieter `Proud` `EmotionBadge` chip with no equivalent visual peak. Add a lightweight celebratory moment on quest completion (confetti-style burst or similar), scaled visibly smaller than the level-up peak so the moment hierarchy (quest complete < level up < chapter unlock) stays legible at a glance. Confirm chapter unlocks (`story-engine.ts`, Collection's Story tab) get their own distinguishable narrative-peak moment rather than reading as just another list entry.
+- [ ] **Guardrail check before shipping.** Cross-check every mechanic above against handoff §17 (quest philosophy) and §45 (the "do not" list) — nothing here should ever reward a button tap that wasn't backed by a real, sensor-verified change in the plant's environment.
+
+**Owner:** Both — Engine wires the event-driven triggers (XP toast, quest-complete celebration, streak-keeper state, near-complete detection) since they all hang off existing `bond_events`/quest-completion plumbing; Design owns the visual weight, animation, and making sure the peak hierarchy (quest < level-up < chapter) and the streak-keeper's warm tone read correctly at a glance.
+
+**Acceptance test:** *A student who completes a quest can point to the exact moment — within 1 second — something rewarding happened on screen; can say out loud what tomorrow might bring before they've even opened the app twice in a row; and, when asked directly about the streak reminder, describes it as "inviting me back," never "threatening to take something away."*
+
+---
+
+### 11. Phased priority & effort estimates
 
 Effort key: **S** = under a day · **M** = 1–3 days · **L** = multi-day, crosses many files/owners.
 
@@ -214,6 +239,8 @@ Effort key: **S** = under a day · **M** = 1–3 days · **L** = multi-day, cros
 | 6 | Spot-check no-punishment rule holds in `streak-engine.ts` | Engine | S |
 | 2 | Build the per-screen jargon audit checklist (audit only, not fixes yet) | Design | S |
 | 9 | Write the 30-minute playtest script | Design | S |
+| 10 | Write and circulate the reward-loop ethics guardrails as a shared checklist | Both | S |
+| 10 | Verify the `Recovering` `EmotionBadge` is actually wired end-to-end, not just defined | Engine | S |
 
 **Before filming**
 
@@ -227,6 +254,11 @@ Effort key: **S** = under a day · **M** = 1–3 days · **L** = multi-day, cros
 | 6 | Student-facing friendly error/offline tier for `Notice` states | Design | M |
 | 8 | QR code, demo-reset rehearsal script, bundle-size check, contrast audit | Both | M |
 | 9 | Run the playtest with 3–5 students; fix the top findings | Both | M |
+| 10 | Home teaser pointing at "Today's Event" (`DailyEventBanner`) | Design | S |
+| 10 | Floating "+XP" toast + XP count-up on quest/daily-challenge completion | Both | M |
+| 10 | Gentle end-of-day "streak keeper" reminder on Home | Both | S |
+| 10 | "1 more to go!" near-complete highlighting in Collection tabs | Design | S |
+| 10 | Quest-complete celebration peak (smaller than level-up) + distinct chapter-unlock peak | Both | M |
 
 **Nice to have (post-filming / stretch)**
 
@@ -236,6 +268,7 @@ Effort key: **S** = under a day · **M** = 1–3 days · **L** = multi-day, cros
 | 5 | Design and build an actual lightweight daily-events system | Engine | L |
 | 4 | Optional sound design (default-off, opt-in) | Design | S/M |
 | 9 | Second, lighter playtest round after nice-to-have fixes | Both | S |
+| 10 | Extend micro-acknowledgment sparkles beyond recovery (e.g. every verified qualifying check) | Both | S |
 
 ---
 
@@ -426,7 +459,32 @@ Juga relevan untuk Workstream 8 (Ergonomi Ruang Kelas): aplikasi web itu sendiri
 
 ---
 
-### 10. Prioritas bertahap & perkiraan usaha
+### 10. Loop Reward (Desain Ramah-Dopamin)
+
+**Tujuan:** menyusun loop reward agar neurosains asli dari antisipasi, umpan balik langsung, kemenangan kecil yang sering, loss-aversion yang lembut, dorongan menyelesaikan (completion drive), dan puncak perayaan semuanya menyala — tetapi hanya pernah terjadi di sekitar **perawatan nyata yang diverifikasi sensor**, tidak pernah di sekitar screen time, kelangkaan palsu, atau rasa malu. Workstream ini adalah perluasan berbasis-etika dari Workstream 4 (Perayaan), Workstream 3 (Progres Selalu Terlihat), dan Workstream 6 (Gagal-dengan-Lembut & Nada Bicara) — baca ketiganya bersamaan dengan ini.
+
+**Pagar pengaman etika (tidak dapat ditawar, harus tetap eksplisit di setiap tugas di bawah):**
+- Setiap mekanik di sini hanya membayar untuk perawatan nyata yang diverifikasi sensor — handoff §17: *"reward verified outcomes, never one good sample."* Jangan pernah memberi reward untuk sekadar screen time, jumlah ketukan, atau lama sesi saja.
+- Tidak ada kelangkaan palsu ("hanya tersisa 2 hari ini!"), tidak ada pay-to-progress, tidak ada dark pattern dalam bentuk apa pun.
+- Tidak ada mekanik rasa malu atau bersalah — terhubung langsung ke prinsip handoff §46.4, *"pengguna harus merasakan keterikatan, bukan rasa bersalah,"* dan ke aturan nada bicara gagal-dengan-lembut Workstream 6.
+- Dirancang untuk keterlibatan sehat remaja 13–18 tahun, bukan untuk memaksimalkan jumlah sesi atau waktu-di-aplikasi sebagai tujuan itu sendiri.
+
+**Tugas:**
+- [ ] **Antisipasi / reward prediction error.** `src/game/random/daily-events.ts` sudah mengimplementasikan event harian yang deterministik namun tidak bisa diprediksi siswa (`xp_boost` / `daily_challenge` / `flavor`, di-hash per tanaman + hari WIB — hari yang sama selalu menghasilkan event yang sama, tapi siswa tidak bisa menebak yang mana), dan `src/app/quests/page.tsx` sudah me-render-nya sebagai `DailyEventBanner` ("Today's Event") di bagian atas halaman Quests. Pastikan banner ini terasa seperti *pengungkapan (reveal)* (hal pertama yang terlihat, bukan terkubur), dan tambahkan teaser kecil yang menunjuk ke "Today's Event" pada layar home mana pun yang menang dari Workstream 0, agar hook antisipasi ada bahkan sebelum siswa membuka Quests — momen "apa yang saya dapat hari ini?" tidak boleh membutuhkan satu ketukan ekstra untuk ditemukan.
+- [ ] **Umpan balik langsung (<1 detik).** Belum ada toast "+XP" mengambang di mana pun hari ini (sudah dicek `public/farm/live.js`, `plant-home.tsx`, `bond-panel.tsx`). Tambahkan satu yang muncul sesaat setelah aksi yang memenuhi syarat mendarat (penyelesaian quest, verifikasi daily-challenge). XP bar milik `BondPanel` (`src/components/bond-panel.tsx`) sudah beranimasi saat mengisi (`transition-[width] duration-700 ease-out`) — pasangkan animasi yang sudah ada ini dengan angka "+20 XP" mengambang yang baru dan hitungan-naik singkat pada total XP, disambungkan baik di home resmi maupun elemen `.badge.coin` milik `public/farm/live.js`.
+- [ ] **Kemenangan kecil yang sering di antara yang besar.** `KEEP_ME_HAPPY` (30 menit, +20 XP) dan `STAY_COMFY` (2 jam, +40 XP) sudah melapiskan loop maintain-quest pendek dan panjang (`src/game/quests/quest-definitions.ts`) — kerangka yang bagus, tapi 30+ menit hening di antaranya butuh pengakuan mikro (micro-acknowledgment). `src/game/emotions/event-emotions.ts` sudah mendefinisikan emosi `Recovering` tepat untuk momen "mood bermasalah → Happy" pemulihan-sensor (kemenangan kecil yang layak diberi sparkle) — verifikasi ini benar-benar tersambung ujung-ke-ujung ke pop `EmotionBadge` yang terlihat di layar home mana pun yang menang dari Workstream 0, bukan sekadar didefinisikan tapi tidak dipakai.
+- [ ] **Loss aversion, dipakai dengan lembut.** `bond_state.current_streak` sudah ada dan — sesuai `streak-engine.ts` — hanya pernah reset ke 1 pada hari yang terlewat, tidak pernah dihukum lebih jauh. Tambahkan visual "streak keeper" yang low-key menjelang akhir hari WIB (mis. pengingat lembut di Home saat hari ini belum memenuhi syarat). Secara eksplisit dilarang: styling merah/mendesak, copy "kamu akan kehilangan streak-mu!", atau tekanan bergaya push-notification apa pun — ini harus terasa seperti undangan, sesuai aturan nada bicara Workstream 6, tidak pernah seperti ancaman.
+- [ ] **Dorongan menyelesaikan (efek Zeigarnik / koleksi).** `src/components/collection-tabs.tsx` sudah menampilkan meter "N dari M ditemukan/dibuka" untuk Moods, Badges, dan Chapters — tambahkan highlight nyaris-selesai (mis. "Tinggal 1 lagi!") ketika siswa tinggal satu item lagi untuk menyelesaikan satu tab, karena dorongan menyelesaikan paling kuat tepat sebelum garis finis, bukan di tengah jalan.
+- [ ] **Puncak perayaan.** `LevelUpOverlay` (`src/components/level-up-overlay.tsx`) sudah memberikan puncak pop/pulse untuk level-up; penyelesaian quest hari ini hanya mendapat chip `EmotionBadge` `Proud` yang lebih tenang tanpa puncak visual yang setara. Tambahkan momen perayaan ringan pada penyelesaian quest (ledakan gaya confetti atau serupa), berskala terlihat lebih kecil dari puncak level-up agar hierarki momen (quest selesai < level up < chapter terbuka) tetap terbaca sekilas. Pastikan pembukaan chapter (`story-engine.ts`, tab Story di Collection) mendapat momen puncak naratifnya sendiri yang bisa dibedakan, bukan sekadar terbaca sebagai entri daftar biasa.
+- [ ] **Pengecekan pagar pengaman sebelum dirilis.** Silangkan setiap mekanik di atas dengan §17 handoff (filosofi quest) dan §45 (daftar "jangan lakukan") — tidak ada satu pun di sini yang boleh memberi reward untuk ketukan tombol yang tidak didukung oleh perubahan nyata yang diverifikasi sensor pada lingkungan tanaman.
+
+**Owner:** Both — Engine menyambungkan trigger berbasis-event (toast XP, perayaan quest-selesai, state streak-keeper, deteksi nyaris-selesai) karena semuanya bergantung pada plumbing `bond_events`/penyelesaian-quest yang sudah ada; Design memiliki bobot visual, animasi, dan memastikan hierarki puncak (quest < level-up < chapter) serta nada hangat streak-keeper terbaca dengan benar sekilas.
+
+**Uji penerimaan:** *Siswa yang menyelesaikan quest bisa menunjuk momen persis — dalam 1 detik — sesuatu yang me-reward terjadi di layar; bisa mengatakan dengan lisan apa yang mungkin dibawa esok hari bahkan sebelum membuka aplikasi dua kali berturut-turut; dan, ketika ditanya langsung tentang pengingat streak, mendeskripsikannya sebagai "mengundang saya kembali," tidak pernah "mengancam akan mengambil sesuatu."*
+
+---
+
+### 11. Prioritas bertahap & perkiraan usaha
 
 Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-hari, menyeberangi banyak berkas/owner.
 
@@ -439,6 +497,8 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 6 | Periksa sekilas aturan tanpa-hukuman berlaku di `streak-engine.ts` | Engine | S |
 | 2 | Buat checklist audit jargon per layar (audit saja, belum perbaikan) | Design | S |
 | 9 | Tulis naskah playtest 30 menit | Design | S |
+| 10 | Tulis dan sebarkan pagar pengaman etika reward-loop sebagai checklist bersama | Both | S |
+| 10 | Verifikasi `EmotionBadge` `Recovering` benar-benar tersambung ujung-ke-ujung, bukan hanya didefinisikan | Engine | S |
 
 **Sebelum syuting**
 
@@ -452,6 +512,11 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 6 | Tingkat error/offline ramah untuk siswa pada state `Notice` | Design | M |
 | 8 | Kode QR, naskah gladi bersih demo-reset, cek ukuran bundle, audit kontras | Both | M |
 | 9 | Jalankan playtest bersama 3–5 siswa; perbaiki temuan teratas | Both | M |
+| 10 | Teaser Home yang menunjuk ke "Today's Event" (`DailyEventBanner`) | Design | S |
+| 10 | Toast "+XP" mengambang + hitungan-naik XP saat quest/daily-challenge selesai | Both | M |
+| 10 | Pengingat "streak keeper" akhir-hari yang lembut di Home | Both | S |
+| 10 | Highlight nyaris-selesai "Tinggal 1 lagi!" di tab Collection | Design | S |
+| 10 | Puncak perayaan quest-selesai (lebih kecil dari level-up) + puncak pembukaan chapter yang berbeda | Both | M |
 
 **Bagus untuk dimiliki (pasca-syuting / stretch)**
 
@@ -461,6 +526,7 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 5 | Rancang dan bangun sistem daily-events ringan yang sesungguhnya | Engine | L |
 | 4 | Desain suara opsional (default-mati, opt-in) | Design | S/M |
 | 9 | Ronde playtest kedua yang lebih ringan setelah perbaikan nice-to-have | Both | S |
+| 10 | Perluas sparkle pengakuan-mikro melampaui recovery (mis. setiap pengecekan valid yang terverifikasi) | Both | S |
 
 ---
 
@@ -651,7 +717,32 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 
 ---
 
-### 10. 단계별 우선순위 & 작업량 추정
+### 10. 보상 루프 (도파민 친화적 설계)
+
+**목표:** 기대감, 즉각적 피드백, 작고 잦은 승리, 부드러운 손실회피, 완성 욕구, 축하의 정점이라는 실제 신경과학이 모두 작동하도록 보상 루프를 설계하되 — 이는 오직 **실제 센서로 검증된 돌봄** 주위에서만 일어나야 하며, 화면 사용 시간, 가짜 희소성, 수치심 주위에서는 절대 일어나지 않아야 합니다. 이 워크스트림은 워크스트림 4(축하), 워크스트림 3(항상 보이는 진행 상황), 워크스트림 6(실패해도 부드럽게 & 톤)을 윤리 우선으로 확장한 것입니다 — 이 셋을 함께 읽으세요.
+
+**윤리 가드레일(타협 불가, 아래 모든 작업에서 명시적으로 유지되어야 함):**
+- 여기 있는 모든 메커닉은 오직 실제 센서로 검증된 돌봄에 대해서만 보상합니다 — 인수인계 §17: *"검증된 결과에 보상하라, 단 한 번의 좋은 샘플에는 절대 보상하지 말라."* 단순한 화면 사용 시간, 탭 횟수, 세션 길이 자체에는 절대 보상하지 않습니다.
+- 가짜 희소성("오늘만 2개 남음!") 없음, pay-to-progress 없음, 어떤 형태의 다크 패턴도 없음.
+- 수치심이나 죄책감 메커닉 없음 — 인수인계 원칙 §46.4 *"사용자는 죄책감이 아니라 애착을 느껴야 한다"*와 워크스트림 6의 실패해도 부드러운 톤 규칙에 직접 연결됩니다.
+- 세션 수나 앱 사용 시간을 그 자체로 극대화하기 위해서가 아니라, 13–18세의 건강한 참여를 위해 설계됩니다.
+
+**작업:**
+- [ ] **기대감 / 보상 예측 오차.** `src/game/random/daily-events.ts`는 이미 결정론적이지만 학생은 예측할 수 없는 일일 이벤트(`xp_boost` / `daily_challenge` / `flavor`, 식물 + WIB 날짜별로 해시됨 — 같은 날은 항상 같은 이벤트로 귀결되지만 학생은 어떤 것인지 예측할 수 없음)를 구현하고 있고, `src/app/quests/page.tsx`는 이미 이것을 Quests 페이지 상단의 `DailyEventBanner`("Today's Event")로 렌더링하고 있습니다. 이 배너가 (묻혀 있지 않고) 가장 먼저 보이는 *공개(reveal)*로 읽히는지 확인하고, 워크스트림 0에서 승리한 홈 화면 어디든 "Today's Event"를 가리키는 작은 티저를 추가해, 학생이 Quests를 열기도 전에 기대감 훅이 존재하게 합니다 — "오늘 뭘 받았지?"라는 순간이 발견하는 데 추가 탭을 필요로 해서는 안 됩니다.
+- [ ] **즉각적 피드백(<1초).** 오늘 코드베이스 어디에도 떠다니는 "+XP" 토스트가 없습니다(`public/farm/live.js`, `plant-home.tsx`, `bond-panel.tsx` 확인함). 자격을 갖춘 행동(퀘스트 완료, 일일 챌린지 검증)이 도착하는 순간 나타나는 것을 추가합니다. `BondPanel`의 XP 바(`src/components/bond-panel.tsx`)는 이미 채워질 때 애니메이션됩니다(`transition-[width] duration-700 ease-out`) — 이 기존 애니메이션을 새로운 떠다니는 "+20 XP" 숫자와 XP 총합의 짧은 카운트업과 짝지어, 정식 홈과 `public/farm/live.js`의 `.badge.coin` 요소 양쪽에 배선합니다.
+- [ ] **큰 것 사이의 작고 잦은 승리.** `KEEP_ME_HAPPY`(30분, +20 XP)와 `STAY_COMFY`(2시간, +40 XP)는 이미 짧고 긴 maintain-퀘스트 루프를 층층이 쌓고 있습니다(`src/game/quests/quest-definitions.ts`) — 뼈대는 좋지만, 그 사이의 30분 이상의 침묵에는 마이크로 인정(micro-acknowledgment)이 필요합니다. `src/game/emotions/event-emotions.ts`는 이미 "문제 무드 → Happy" 센서 회복 순간(스파클을 줄 만한 작은 승리)에 정확히 맞는 `Recovering` 감정을 정의하고 있습니다 — 이것이 정의만 되고 쓰이지 않는 게 아니라, 워크스트림 0에서 승리한 홈 화면에서 눈에 보이는 `EmotionBadge` 팝으로 실제로 끝까지 배선되어 있는지 검증합니다.
+- [ ] **부드럽게 사용하는 손실 회피.** `bond_state.current_streak`는 이미 존재하며 — `streak-engine.ts`에 따라 — 놓친 날에는 오직 1로 리셋될 뿐 그 이상 벌주지 않습니다. WIB 기준 하루가 끝날 무렵 은은한 "스트릭 지킴이" 비주얼을 추가합니다(예: 오늘 아직 자격을 채우지 못했을 때 Home의 부드러운 리마인더). 명시적으로 금지: 빨간색/긴급 스타일링, "스트릭을 잃게 됩니다!" 같은 카피, 또는 어떤 형태든 푸시 알림 같은 압박 — 이것은 워크스트림 6의 톤 규칙에 맞춰 초대처럼 읽혀야 하며, 절대 위협처럼 읽혀서는 안 됩니다.
+- [ ] **완성 욕구(자이가르닉 효과 / 컬렉션 효과).** `src/components/collection-tabs.tsx`는 이미 Moods, Badges, Chapters에 대해 "N 중 M개 발견/해금" 미터를 보여줍니다 — 학생이 탭 하나를 완성하기까지 하나 남았을 때 나타나는 나머지 강조(예: "1개만 더!")를 추가합니다. 완성으로 끌어당기는 힘은 중간 지점이 아니라 결승선 바로 직전에 가장 강하기 때문입니다.
+- [ ] **축하의 정점.** `LevelUpOverlay`(`src/components/level-up-overlay.tsx`)는 이미 레벨업에 대해 팝/펄스 정점을 제공합니다; 오늘 퀘스트 완료는 동등한 시각적 정점 없이 더 조용한 `Proud` `EmotionBadge` 칩만 받습니다. 퀘스트 완료에 가벼운 축하 순간(컨페티 스타일 폭발 또는 유사한 것)을 추가하되, 레벨업 정점보다 눈에 띄게 작게 스케일링해 순간의 위계(퀘스트 완료 < 레벨업 < 챕터 해금)가 한눈에 읽히게 유지합니다. 챕터 해금(`story-engine.ts`, Collection의 Story 탭)이 그저 또 하나의 목록 항목처럼 읽히지 않고 그 자체로 구별되는 서사적 정점 순간을 갖는지 확인합니다.
+- [ ] **출시 전 가드레일 점검.** 위의 모든 메커닉을 인수인계 §17(퀘스트 철학)과 §45("하지 말 것" 목록)에 대조해 교차 확인합니다 — 여기 있는 그 무엇도 식물 환경의 실제 센서로 검증된 변화가 뒷받침되지 않은 버튼 탭에 보상해서는 안 됩니다.
+
+**Owner:** Both — Engine이 이벤트 기반 트리거(XP 토스트, 퀘스트 완료 축하, 스트릭 지킴이 상태, 나머지-강조 감지)를 배선합니다. 모두 기존 `bond_events`/퀘스트 완료 배선에 의존하기 때문입니다; Design이 시각적 무게감, 애니메이션, 그리고 정점 위계(퀘스트 < 레벨업 < 챕터)와 스트릭 지킴이의 따뜻한 톤이 한눈에 올바르게 읽히도록 하는 것을 담당합니다.
+
+**인수 테스트:** *퀘스트를 완료한 학생이 화면에서 보상적인 무언가가 일어난 정확한 순간을 1초 이내에 짚어낼 수 있고; 앱을 두 번 연속 열기도 전에 내일 무엇이 올지 소리 내어 말할 수 있으며; 스트릭 리마인더에 대해 직접 질문받았을 때 이를 "나를 다시 초대하는 것"이라고 묘사하지 "뭔가를 빼앗겠다고 위협하는 것"이라고는 절대 묘사하지 않는다.*
+
+---
+
+### 11. 단계별 우선순위 & 작업량 추정
 
 작업량 기준: **S** = 하루 미만 · **M** = 1–3일 · **L** = 여러 날, 다수의 파일/담당자를 넘나듦.
 
@@ -664,6 +755,8 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 6 | `streak-engine.ts`에서 처벌-없음 규칙이 지켜지는지 간단히 점검 | Engine | S |
 | 2 | 화면별 전문용어 감사 체크리스트 작성(감사만, 수정은 아직) | Design | S |
 | 9 | 30분 플레이테스트 스크립트 작성 | Design | S |
+| 10 | 보상 루프 윤리 가드레일을 팀 공용 체크리스트로 작성 및 공유 | Both | S |
+| 10 | `Recovering` `EmotionBadge`가 정의만 되어 있지 않고 실제로 끝까지 배선되어 있는지 검증 | Engine | S |
 
 **촬영 전**
 
@@ -677,6 +770,11 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 6 | `Notice` 상태에 학생 대상의 친근한 오류/오프라인 티어 | Design | M |
 | 8 | QR 코드, demo-reset 리허설 스크립트, 번들 크기 확인, 대비 감사 | Both | M |
 | 9 | 학생 3–5명과 플레이테스트 실행; 상위 발견 사항 수정 | Both | M |
+| 10 | "Today's Event"(`DailyEventBanner`)를 가리키는 Home 티저 | Design | S |
+| 10 | 퀘스트/일일 챌린지 완료 시 떠다니는 "+XP" 토스트 + XP 카운트업 | Both | M |
+| 10 | Home의 부드러운 하루-끝 "스트릭 지킴이" 리마인더 | Both | S |
+| 10 | Collection 탭의 "1개만 더!" 나머지-강조 | Design | S |
+| 10 | 퀘스트 완료 축하 정점(레벨업보다 작게) + 구별되는 챕터 해금 정점 | Both | M |
 
 **있으면 좋음(촬영 이후 / 스트레치)**
 
@@ -686,3 +784,4 @@ Kunci usaha: **S** = kurang dari sehari · **M** = 1–3 hari · **L** = multi-h
 | 5 | 실제로 동작하는 가벼운 일일 이벤트 시스템 설계 및 구축 | Engine | L |
 | 4 | 선택적 사운드 디자인(기본-꺼짐, opt-in) | Design | S/M |
 | 9 | nice-to-have 수정 이후 더 가벼운 2차 플레이테스트 라운드 | Both | S |
+| 10 | 마이크로 인정 스파클을 회복(recovery) 이외로 확장(예: 검증된 모든 자격 확인마다) | Both | S |

@@ -1,15 +1,18 @@
 // Farmer wisdom (handoff §2: "We are not replacing traditional farming
 // wisdom — we are translating it") — traditional heuristics paired with the
-// sensor measurement that expresses the same observation.
+// sensor measurement that expresses the same observation, framed for the
+// place the plant actually lives: Jember, East Java — volcanic soil, tropical
+// humidity, shaded coffee slopes, and a sharp wet/dry season rhythm.
 //
 // TEAM TODO — INTEGRITY RULE, read before shipping:
 // The §43 field interviews with Jember farmers have NOT been conducted yet.
 // Every entry below is therefore a deliberately GENERIC traditional-farming
-// heuristic with no named person attached. Do NOT attribute any saying to a
-// real farmer until the team has recorded actual interviews. Once the §43
-// visits happen, replace these placeholder entries with real material
-// (real saying, the farmer's consent, the matching sensor pairing) and
-// update each `source` field accordingly.
+// heuristic — reworded for Jember's climate and crops, but with no named
+// person attached and no claim of local authenticity. Do NOT attribute any
+// saying to a real farmer until the team has recorded actual interviews.
+// Once the §43 visits happen, replace these placeholder entries with real
+// material (real saying, the farmer's consent, the matching sensor pairing)
+// and update each `source` field accordingly.
 
 import type { PlantMood } from "@/types/events";
 
@@ -39,65 +42,82 @@ export const FARMER_WISDOM: WisdomEntry[] = [
   {
     id: "heavy-air-at-midday",
     saying:
-      "When the air feels heavy and hot at midday, the plants suffer even if the soil is wet.",
+      "When the midday air sits heavy on the valley, plants suffer even if the soil is wet.",
     source: PLACEHOLDER_SOURCE,
     translation:
-      "Hot, humid, still air stops leaves from cooling themselves: transpiration slows and heat stress builds even though water is available at the roots.",
+      "Tropical lowland air turns hot and humid by midday. Once a closed room passes 32°C, still humid air stops leaves from cooling themselves: transpiration slows and heat stress builds even though water is available at the roots — until the room is vented.",
     sensorLink: {
       mood: "Overheating",
       metric: "air temperature (°C) + air humidity (%)",
-      example: "“the air feels heavy and hot” ↔ temperature 34.2°C + humidity 85%",
+      example:
+        "“heavy midday air” ↔ temperature 34.2°C + humidity 85% — past the 32°C venting threshold",
     },
   },
   {
     id: "dry-lips-dry-leaves",
-    saying: "If your own lips feel dry indoors, the leaves are feeling it too.",
+    saying:
+      "If your own lips feel dry in the dry season, the leaves are feeling it too.",
     source: PLACEHOLDER_SOURCE,
     translation:
-      "Dry air pulls moisture out of leaves faster than the roots can supply it — a high vapor pressure deficit. It is the air around the plant, not the soil, that causes this stress.",
+      "In musim kemarau (the dry season), dry air and indoor fans pull moisture out of leaves faster than the roots can supply it — a high vapor pressure deficit. It is the air around the plant, not the soil, that causes this stress; it eases only once the air is humid again.",
     sensorLink: {
       mood: "DryAir",
       metric: "air humidity (%)",
-      example: "“the room feels dry” ↔ air humidity 36%, below the 40% dry-air threshold",
+      example:
+        "“dry-season lips” ↔ air humidity 36%, below the 40% dry-air threshold (recovered at 45%)",
     },
   },
   {
-    id: "stretching-for-light",
-    saying: "A stem that leans and stretches toward the window is asking for more light.",
+    id: "coffee-shade-lesson",
+    saying:
+      "Shade trees over the coffee rows are planted with care — enough to soften the sun, never enough to starve the leaves.",
     source: PLACEHOLDER_SOURCE,
     translation:
-      "In low light a plant cannot photosynthesize enough, so it spends its reserves growing long, pale stems toward the nearest light source.",
+      "On the coffee slopes around Jember, shade is managed, not accidental: with too little light a plant cannot photosynthesize enough, so it spends its reserves stretching long, pale stems toward the nearest brightness. A windowsill herb needs its bright hours just as deliberately.",
     sensorLink: {
       mood: "Sleepy",
       metric: "light level (LDR bright/dark)",
       example:
-        "“it keeps leaning toward the window” ↔ light sensor reading dark for most of the afternoon",
+        "“too much shade over the rows” ↔ light sensor reading dark for most of the afternoon",
     },
   },
   {
-    id: "sour-soil-smell",
-    saying: "Soil that smells sour after watering has turned sour itself.",
+    id: "sour-soil-after-rains",
+    saying: "Soil that smells sour after the rains has turned sour itself.",
     source: PLACEHOLDER_SOURCE,
     translation:
-      "A sharp, sour smell often accompanies acidic, poorly drained soil. Acidity locks nutrients away from the roots no matter how much food is in the ground.",
+      "Volcanic soil is fertile, but heavy rainy-season leaching and poor drainage can push it acidic. A sharp, sour smell often goes with that shift — and below pH 6.0, acidity locks nutrients away from the roots no matter how rich the ground is.",
     sensorLink: {
       mood: "SoilAcidic",
       metric: "calibrated soil pH",
-      example: "“it smells sour” ↔ soil pH 5.2, below the 6.0–7.0 normal range",
+      example: "“smells sour after the rains” ↔ soil pH 5.2, below the 6.0–7.0 healthy range",
     },
   },
   {
     id: "pale-leaves-green-veins",
     saying:
-      "Pale young leaves with green veins at dawn mean the food is in the soil but the plant cannot take it.",
+      "Pale young leaves with green veins mean the food is in the soil but the plant cannot take it.",
     source: PLACEHOLDER_SOURCE,
     translation:
-      "Yellowing between green veins (chlorosis) on new leaves is a classic sign of iron lock-out in alkaline soil — the nutrient is present but chemically unavailable to the roots.",
+      "Yellowing between green veins (chlorosis) on new leaves is a classic sign of iron lock-out in alkaline soil — common where hard tap water or over-liming pushes pH above 7.0. The nutrient is present but chemically unavailable to the roots.",
     sensorLink: {
       mood: "SoilAlkaline",
       metric: "calibrated soil pH",
       example:
-        "“new leaves look pale but the veins stay green” ↔ soil pH 7.8, above the 6.0–7.0 normal range",
+        "“pale leaves, green veins” ↔ soil pH 7.8, above the 6.0–7.0 healthy range",
+    },
+  },
+  {
+    id: "water-before-the-heat",
+    saying:
+      "In the dry season, water in the cool of morning, before the sun takes its share.",
+    source: PLACEHOLDER_SOURCE,
+    translation:
+      "During musim kemarau (the dry season), morning watering lets roots drink before midday heat drives evaporation and leaf stress. And when an afternoon reading passes 32°C, water alone is not enough — the room also needs venting so the leaves can cool.",
+    sensorLink: {
+      metric: "air temperature (°C)",
+      example:
+        "“before the sun takes its share” ↔ watering done before readings climb past the 32°C venting threshold",
     },
   },
 ];

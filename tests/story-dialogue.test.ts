@@ -71,6 +71,18 @@ describe("getChapterScene", () => {
     }
   });
 
+  it("anchors the story in Jember (chapters 1 and 6 name the place)", () => {
+    // The plant physically lives in Jember, East Java — the opening and the
+    // finale both say so, in the shared narration seen by every personality.
+    for (const chapter of [1, 6]) {
+      const narration = getChapterScene(chapter, "calm", NAME)!
+        .lines.filter((line) => line.speaker === "narrator")
+        .map((line) => line.text)
+        .join("\n");
+      expect(narration).toContain("Jember");
+    }
+  });
+
   it("returns null for chapters without narrative content (0 and 7)", () => {
     expect(getChapterScene(0, "cute", NAME)).toBeNull();
     expect(getChapterScene(7, "cute", NAME)).toBeNull();

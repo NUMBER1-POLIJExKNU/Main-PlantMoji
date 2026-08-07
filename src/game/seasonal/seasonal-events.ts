@@ -6,9 +6,15 @@
 // inside its inclusive start..end window, and — for recurring weekend-style
 // bonuses — the WIB weekday matches `daysOfWeek`.
 //
-// Deliberately NOT included (handoff §23 caution): a Rainy Day event. The
-// handoff forbids claiming rain exists without actual weather data, a rain
-// sensor, or manual activation.
+// Windows follow Jember's real climate calendar: musim kemarau (the dry
+// season) roughly May–October, musim hujan (the rainy season) roughly
+// November–April.
+//
+// Deliberately NOT included (handoff §23 caution): a live "Rainy Day" event.
+// The handoff forbids claiming rain is falling without actual weather data, a
+// rain sensor, or manual activation. The MUSIM_HUJAN event below stays inside
+// that rule: it is a fixed calendar-season window, framed as the season —
+// it never asserts rain at any particular moment.
 
 import { STREAK_TIMEZONE } from "@/types/game";
 
@@ -32,11 +38,12 @@ export interface SeasonalEvent {
 
 export const SEASONAL_EVENTS: SeasonalEvent[] = [
   {
-    // The handoff §23 example event, verbatim dates and multiplier.
+    // The handoff §23 example event — dates and multiplier kept verbatim,
+    // copy localized to Jember's dry season.
     id: "HOT_WEATHER",
-    name: "Hot Weather Challenge",
+    name: "Musim Kemarau Heat Challenge",
     description:
-      "Keep your plant cool through the August heat — care quests award 20% bonus XP all month.",
+      "August is deep musim kemarau (the dry season) in Jember. Keep your plant cool through the heat — care quests award 20% bonus XP all month.",
     start: "2026-08-01",
     end: "2026-08-31",
     xpMultiplier: 1.2,
@@ -45,11 +52,22 @@ export const SEASONAL_EVENTS: SeasonalEvent[] = [
     id: "WEEKEND_GROWTH",
     name: "Weekend Growth Bonus",
     description:
-      "Weekend care pays off — care quests award 10% bonus XP every Saturday and Sunday.",
+      "Slow weekend mornings are for tending — care quests award 10% bonus XP every Saturday and Sunday.",
     start: "2026-08-01",
     end: "2026-12-31",
     xpMultiplier: 1.1,
     daysOfWeek: [0, 6],
+  },
+  {
+    // Jember's rainy season, as a fixed calendar window (see header note —
+    // this is a season, never a claim that rain is falling right now).
+    id: "MUSIM_HUJAN",
+    name: "Musim Hujan Growing Season",
+    description:
+      "Musim hujan (the rainy season) settles over Jember. Out in the fields the rain does part of the watering — but growth still takes teamwork, and a windowsill plant counts on you. Care quests award 15% bonus XP all season.",
+    start: "2026-11-01",
+    end: "2027-04-30",
+    xpMultiplier: 1.15,
   },
 ];
 

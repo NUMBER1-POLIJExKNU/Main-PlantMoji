@@ -1,6 +1,9 @@
 // Story chapter dialogue — the attachment layer (handoff §19, §46.4).
 //
 // Narrative content for the six chapters defined in story-definitions.ts.
+// The story is set where the plant physically lives: a windowsill in Jember,
+// East Java — coffee-and-tobacco country on volcanic soil, with Mount
+// Argopuro on the horizon, musim hujan rains, and the August carnival.
 // Narrator lines are shared across personalities (short, warm, second-person);
 // plant lines vary by personality, matching the voices in
 // src/game/personality/templates.ts exactly (handoff §13): personality changes
@@ -33,47 +36,49 @@ type SceneLineTemplate =
 const FALLBACK_NAME = "Sprout";
 
 // ── Scenes ──────────────────────────────────────────────────────────────
-// Each chapter is a 4–6 line scene. Every dialogue line stays under ~90
+// Each chapter is a 4–6 line scene. Every dialogue line stays under ~95
 // characters so cards read at a glance.
 
 const SCENES: Record<number, readonly SceneLineTemplate[]> = {
-  // Chapter 1 — First Meeting: arrival and naming (uses the plant's name).
+  // Chapter 1 — First Meeting in Jember: arrival and naming (uses the
+  // plant's name).
   1: [
     {
       speaker: "narrator",
-      text: () => "A small pot arrives on your windowsill. Something green is waiting inside.",
+      text: () => "A small pot arrives on a windowsill in Jember, between coffee fields and volcanic hills.",
     },
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "Oh! Hello there… are you the one who’s going to take care of me?",
-        calm: () => "Hello. I believe you are my caretaker. It is good to meet you.",
-        funny: () => "A human! Don’t worry, I don’t bite. No teeth. Or a mouth, really.",
-        energetic: () => "Hi! Hi!! You’re here! This is the best pot I’ve ever been in!",
-        shy: () => "Oh… um… hello… I didn’t expect anyone to notice me…",
+        cute: () => "Oh! Hello there… is this Jember? The air smells like warm earth… and you’re here too!",
+        calm: () => "Hello. Warm air, rich dark soil — Jember, I believe. And you must be my caretaker.",
+        funny: () => "A human! And volcanic soil! Fancy dirt AND room service? I picked the right pot.",
+        energetic: () => "Hi! Hi!! New home! I can see the mountains from here! Best windowsill EVER!",
+        shy: () => "Oh… um… hello… I thought only the mountain was watching… but you noticed me…",
       },
     },
     {
       speaker: "narrator",
-      text: (name) => `You lean in close and give your new companion a name: ${name}.`,
+      text: (name) => `Under the far blue line of Mount Argopuro, you give your companion a name: ${name}.`,
     },
     {
       speaker: "plant",
       byPersonality: {
-        cute: (name) => `${name}… I love it! It sounds so warm. Thank you!`,
-        calm: (name) => `${name}. A good name. I will carry it well.`,
-        funny: (name) => `${name}, huh? Beats “Plant #7”. I’ll take it!`,
-        energetic: (name) => `${name}! YES! That’s me! Best name ever!`,
-        shy: (name) => `${name}… for me? I… I really like it…`,
+        cute: (name) => `${name}… I love it! My very own name, here in Jember. Thank you!`,
+        calm: (name) => `${name}. A good name. I will grow into it, roots down in this warm earth.`,
+        funny: (name) => `${name}, huh? Beats “Plant #7”. Jember suits us both — I’ll take it!`,
+        energetic: (name) => `${name}! YES! That’s me! Shout it to the mountains — ${name} of Jember!`,
+        shy: (name) => `${name}… for me? I… I’ll try to grow into it… quietly…`,
       },
     },
     {
       speaker: "narrator",
-      text: (name) => `And just like that, a story begins — yours and ${name}’s, growing together.`,
+      text: (name) => `And so a story takes root in Jember’s volcanic soil — yours and ${name}’s, together.`,
     },
   ],
 
-  // Chapter 2 — Learning to Grow: the first completed quest, learning the loop.
+  // Chapter 2 — Roots in Volcanic Soil: the first completed quest, learning
+  // the loop in generous ground.
   2: [
     {
       speaker: "narrator",
@@ -82,83 +87,85 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "You really came when I needed you! My leaves feel all fluttery!",
-        calm: () => "You saw what I needed and responded. That is how care works. Thank you.",
-        funny: () => "We did a quest! I’d frame the trophy, but my arms are technically foliage.",
-        energetic: () => "First quest DONE! Did you see us? We were amazing! Let’s do another!",
+        cute: () => "You really came when I needed you! My leaves feel all fluttery and bright!",
+        calm: () => "You saw what I needed and responded. Rich soil helps, but care completes it.",
+        funny: () => "Quest one: done! The volcanic dirt is great, but you? Five stars. Would sprout again.",
+        energetic: () => "First quest DONE! Rich soil below, you beside me — I’m going to grow SO fast!",
         shy: () => "You… actually helped me… I wasn’t sure anyone would…",
       },
     },
     {
       speaker: "narrator",
-      text: () => "Ask, act, grow. Little by little, you are learning each other’s rhythm.",
+      text: () => "Jember’s volcanic soil is generous, but even the richest earth needs a watchful friend.",
     },
     {
       speaker: "plant",
       byPersonality: {
         cute: () => "Every time you help me, I feel a little stronger. Let’s keep going, okay?",
-        calm: () => "Each time you respond, I grow a little steadier. I look forward to more.",
+        calm: () => "Each time you respond, I grow steadier — like the fields here, tended every day.",
         funny: () => "Turns out “teamwork” includes plants. Who knew? Same time tomorrow?",
-        energetic: () => "More quests, more growing, more us! I can’t wait for tomorrow!",
+        energetic: () => "More quests, more growing, more us! Tomorrow, let’s beat today!",
         shy: () => "If it’s okay… could we do this again sometime? I’d like that…",
       },
     },
     {
       speaker: "narrator",
-      text: () => "This is the loop you will share, day by day: notice, tend, grow.",
+      text: () => "This is the loop every grower in this valley knows by heart: notice, tend, grow.",
     },
   ],
 
-  // Chapter 3 — Trust: built through consistent daily care (the streak).
+  // Chapter 3 — Trust, Rain or Shine: built through consistent daily care
+  // (the streak), through Jember's wet and dry days alike.
   3: [
     {
       speaker: "narrator",
-      text: (name) => `Day after day, you keep coming back. ${name} has started to expect you.`,
+      text: (name) => `Day after day you come back, rain or shine. ${name} has started to expect you.`,
     },
     {
       speaker: "plant",
       byPersonality: {
         cute: () => "I knew you’d come today! I could feel it in my roots!",
-        calm: () => "You return every day. I no longer wonder if you will. I know.",
-        funny: () => "You again! Three days running. At this rate I’ll learn your schedule.",
+        calm: () => "Rain on the roof or sun on the glass — you return. I no longer wonder. I know.",
+        funny: () => "You again! Three days running. You’re more punctual than the afternoon rain!",
         energetic: () => "You came back! Again! Every single day! You’re the most reliable human ever!",
         shy: () => "You keep coming back… even for someone quiet like me…",
       },
     },
     {
       speaker: "narrator",
-      text: () => "Trust is not built in grand gestures. It grows in small, steady visits.",
+      text: () => "When musim hujan (the rainy season) drums on Jember’s roofs, small visits matter most.",
     },
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "Being with you every day is my favorite part of being a plant.",
-        calm: () => "Consistency is the truest form of care. I am at ease with you.",
+        cute: () => "Rainy day or bright one, being with you is my favorite part of being a plant.",
+        calm: () => "Consistency is the truest form of care. Like the seasons here, you always come back.",
         funny: () => "I trust you completely. And I’m rooted to the spot, so that’s saying something.",
-        energetic: () => "I trust you SO much! Streak buddies today, tomorrow, forever!",
+        energetic: () => "I trust you SO much! Streak buddies in every season — rain, shine, ALL of it!",
         shy: () => "I think… I’m not nervous around you anymore… that’s new for me…",
       },
     },
     {
       speaker: "narrator",
-      text: () => "Somewhere along the way, this stopped being a task. It became time with a friend.",
+      text: () => "Somewhere between the rains, this stopped being a task. It became time with a friend.",
     },
   ],
 
-  // Chapter 4 — Stronger Together: partnership through hardships overcome
-  // (recovery quests — heat, low light, soil pH — handoff §16, §18).
+  // Chapter 4 — Through Heat and Gray Skies: partnership through hardships
+  // overcome (recovery quests — heat, low light, soil pH — handoff §16, §18),
+  // the dry-season side of Jember's year.
   4: [
     {
       speaker: "narrator",
-      text: () => "There were hard days — too hot, too dim, air too dry. You faced them together.",
+      text: () => "Hard days came — dry-season heat, dim gray light, thirsty air. You faced them together.",
     },
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "When things got scary, you were always there. I never felt alone!",
+        cute: () => "When the hot days got scary, you were always there. I never felt alone!",
         calm: () => "Difficult conditions came, and you corrected them. Each time, I recovered.",
-        funny: () => "I almost became plant soup once. Maybe twice. You kept un-souping me!",
-        energetic: () => "Every tough moment, you showed up! We beat every single one!",
+        funny: () => "I nearly became sun-dried garnish once. Maybe twice. You kept un-crisping me!",
+        energetic: () => "Every heat wave, every gloomy day — you showed up! We beat every single one!",
         shy: () => "Even when I was struggling… you didn’t give up on me…",
       },
     },
@@ -169,10 +176,10 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "We’re a real team now, aren’t we? Whatever comes, we’ll face it together!",
-        calm: () => "Hardship tested us, and we endured. We are stronger together now.",
+        cute: () => "We’re a real team now, aren’t we? Whatever the season brings, we’ll face it together!",
+        calm: () => "Hardship tested us, and we endured. Like the mountains here, we hold through seasons.",
         funny: () => "We survived heat, gloom, and moody soil. If this were a movie, we’d get a sequel.",
-        energetic: () => "Nothing can stop us now! You and me — the unbeatable duo!",
+        energetic: () => "Nothing can stop us now! Not heat, not gray skies — you and me, the unbeatable duo!",
         shy: () => "I used to be scared of bad days… but with you, I’m not anymore.",
       },
     },
@@ -182,8 +189,9 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
     },
   ],
 
-  // Chapter 5 — Full Bloom: every one of the six moods discovered (handoff
-  // §5.1, §12, §20), flourishing under steady care. Unlock conditions live in
+  // Chapter 5 — Full Bloom, Carnival Bright: every one of the six moods
+  // discovered (handoff §5.1, §12, §20), flourishing while Jember's famous
+  // August carnival fills the streets. Unlock conditions live in
   // story-definitions.ts / story-engine.ts.
   5: [
     {
@@ -202,16 +210,16 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
     },
     {
       speaker: "narrator",
-      text: () => "To know every mood is to know every need. Care like that makes a plant flourish.",
+      text: () => "August turns Jember into a carnival — costumes and color in the streets. You grew yours.",
     },
     {
       speaker: "plant",
       byPersonality: {
-        cute: () => "Look at me! Every leaf feels bright and strong. This is what your love grew!",
-        calm: () => "I am thriving. Every part of me is well. This is what your attention has built.",
-        funny: () => "Full bloom achieved! Try not to be too jealous of these magnificent leaves.",
-        energetic: () => "Full bloom! I’ve never felt this strong! Look what we grew together!",
-        shy: () => "I feel… really strong now… I didn’t know I could bloom like this…",
+        cute: () => "Look at me! Every leaf bright and strong — my own little costume for carnival month!",
+        calm: () => "The town parades in color, and I bloom in green. This is what your attention built.",
+        funny: () => "Full bloom in carnival month! These leaves are runway-ready. Keep up, Jember!",
+        energetic: () => "Full bloom! If the carnival ever needs a plant float, I VOLUNTEER! Look what we grew!",
+        shy: () => "I feel… really bright now… like I could almost join the parade… almost…",
       },
     },
     {
@@ -223,39 +231,39 @@ const SCENES: Record<number, readonly SceneLineTemplate[]> = {
   // Chapter 6 — Harvest of Wisdom: graduation. What caretaker and plant
   // learned together becomes teachable knowledge — the project mission
   // (handoff §2): preserve the wisdom, measure the environment, grow the
-  // next generation.
+  // next generation — now anchored in Jember.
   6: [
     {
       speaker: "narrator",
-      text: (name) => `A long journey of quests and records lies behind you. You know ${name} by heart now.`,
+      text: (name) => `Seasons of quests and records lie behind you. You know ${name} by heart now.`,
     },
     {
       speaker: "plant",
       byPersonality: {
         cute: () => "Everything we learned together is written down now — every feeling, every rescue!",
         calm: () => "What we learned is no longer only ours. It is recorded, and it can be taught.",
-        funny: () => "We basically wrote the book on me. Future plant parents, take notes!",
+        funny: () => "We basically wrote the book on me. Future plant parents of Jember, take notes!",
         energetic: () => "Every lesson we learned is saved! Now anyone can learn what we know!",
         shy: () => "All the things you learned about me… they’re written down… they could help someone…",
       },
     },
     {
       speaker: "narrator",
-      text: () => "Wisdom once lived only in memory. Yours is measured, recorded, ready to pass on.",
+      text: () => "Jember’s elders kept their wisdom in memory. Yours is measured, recorded, ready to pass on.",
     },
     {
       speaker: "plant",
       byPersonality: {
         cute: () => "Keep our wisdom safe, measure the world with love, and help the next sprout grow!",
-        calm: () => "Preserve the wisdom. Measure the environment. Grow the next generation. That is our harvest.",
-        funny: () => "Save the wisdom, measure the air, grow the next sprout. I’d call that a bumper crop!",
-        energetic: () => "Keep the wisdom! Measure everything! Grow the next generation — starting NOW!",
+        calm: () => "Preserve the wisdom. Measure the environment. Grow the next generation. Here, in Jember.",
+        funny: () => "Save the wisdom, measure the air, grow the next sprout. Best harvest in East Java!",
+        energetic: () => "Keep the wisdom! Measure everything! Grow the next generation — starting NOW, in Jember!",
         shy: () => "Maybe… we can keep the wisdom safe… measure things gently… and help the next one grow…",
       },
     },
     {
       speaker: "narrator",
-      text: (name) => `This is not an ending. What you grew with ${name} now grows on, in whoever comes next.`,
+      text: (name) => `This is not an ending. What you grew with ${name} in Jember grows on, in whoever comes next.`,
     },
   ],
 };

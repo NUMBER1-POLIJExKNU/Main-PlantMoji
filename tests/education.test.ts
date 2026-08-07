@@ -87,4 +87,19 @@ describe("FARMER_WISDOM", () => {
       }
     }
   });
+
+  it("ties every entry to a real sensor metric the system measures", () => {
+    // The hardware reports temperature (°C), air humidity (%), calibrated
+    // soil pH, and light (LDR) — nothing else may be cited.
+    for (const entry of FARMER_WISDOM) {
+      expect(entry.sensorLink.metric).toMatch(/temperature|humidity|soil pH|light/);
+    }
+  });
+
+  it("frames the catalog around Jember's seasons (glossed Indonesian terms)", () => {
+    const allText = FARMER_WISDOM.map(
+      (entry) => `${entry.saying} ${entry.translation}`,
+    ).join("\n");
+    expect(allText).toMatch(/musim kemarau \(the dry season\)/);
+  });
 });

@@ -5,39 +5,46 @@
 import type { ChapterDefinition } from "@/types/game";
 
 /** Chapters in unlock order. `chapter` numbers are 1-based and contiguous. */
+// The story is set where the plant physically lives: Jember, East Java —
+// coffee-and-tobacco country between Mount Argopuro and Mount Raung.
+// Descriptions double as unlock-condition text for locked chapters, so each
+// keeps its condition sentence intact after the flavor clause.
 export const CHAPTER_DEFINITIONS: ChapterDefinition[] = [
   {
     chapter: 1,
-    title: "First Meeting",
-    description: "Your plant has arrived — unlocked at registration / first launch.",
+    title: "First Meeting in Jember",
+    description:
+      "Your plant arrives on a windowsill in Jember, in coffee-and-tobacco country — unlocked at registration / first launch.",
   },
   {
     chapter: 2,
-    title: "Learning to Grow",
-    description: "Unlocked when your first quest is completed.",
+    title: "Roots in Volcanic Soil",
+    description:
+      "First lessons in rich volcanic earth. Unlocked when your first quest is completed.",
   },
   {
     chapter: 3,
-    title: "Trust",
-    description: "Unlocked at Bond Level 3 with a 3-day care streak.",
+    title: "Trust, Rain or Shine",
+    description:
+      "Steady care through sun and rain. Unlocked at Bond Level 3 with a 3-day care streak.",
   },
   {
     chapter: 4,
-    title: "Stronger Together",
+    title: "Through Heat and Gray Skies",
     description:
-      "Unlocked at Bond Level 5 with 10 quests completed, including at least one recovery quest.",
+      "Weathering dry-season heat and gloomy days together. Unlocked at Bond Level 5 with 10 quests completed, including at least one recovery quest.",
   },
   {
     chapter: 5,
-    title: "Full Bloom",
+    title: "Full Bloom, Carnival Bright",
     description:
-      "Unlocked at Bond Level 7 with all six moods discovered and 15 quests completed.",
+      "Every mood discovered as carnival month colors Jember. Unlocked at Bond Level 7 with all six moods discovered and 15 quests completed.",
   },
   {
     chapter: 6,
     title: "Harvest of Wisdom",
     description:
-      "Unlocked at Bond Level 10 with 30 quests completed and 5 growth records logged.",
+      "What you learned together becomes wisdom for the next grower. Unlocked at Bond Level 10 with 30 quests completed and 5 growth records logged.",
   },
 ];
 
