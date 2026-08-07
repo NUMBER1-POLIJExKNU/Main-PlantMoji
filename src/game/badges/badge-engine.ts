@@ -4,7 +4,9 @@
 // badges. Replay-safe: `plant_badges` has PK (plant_id, badge_key), so an
 // on-conflict-ignore upsert tells us exactly which rows were inserted by
 // THIS call — those are the newly unlocked badges. BADGE_UNLOCKED events
-// are deduplicated by deterministic event_id (handoff §28).
+// are emitted for every currently-earned badge and deduplicated by
+// deterministic event_id (handoff §28), so a crash between the badge upsert
+// and the emission self-heals on the next call.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BadgeKey, BondEventRow, PlantBadgeRow, QuestKey } from "@/types/game";
@@ -12,7 +14,8 @@ import { BADGE_DEFINITIONS, RECOVERY_QUEST_KEYS } from "./badge-definitions";
 
 /**
  * Evaluates all badge conditions for a plant, persists any earned badges,
- * and emits a BADGE_UNLOCKED bond event per newly unlocked badge.
+ * and emits a BADGE_UNLOCKED bond event per earned badge (deduplicated by
+ * deterministic event_id, so already-emitted events are no-ops).
  *
  * @returns the badge keys newly unlocked by this call (empty on replays).
  */
@@ -68,10 +71,14 @@ export async function evaluateBadges(
   const newlyUnlocked = ((inserted ?? []) as Array<{ badge_key: BadgeKey }>).map(
     (row) => row.badge_key,
   );
-  if (newlyUnlocked.length === 0) return [];
 
+  // Emit for EVERY currently-earned badge, not just newly inserted rows: if a
+  // prior call crashed between the badge upsert and this emission, the badge
+  // row exists but its event was lost — and a newness-gated emit would never
+  // retry it. The deterministic event_id makes repeat emissions no-ops, so
+  // re-emitting here heals that gap on the next evaluateBadges call.
   const occurredAt = new Date().toISOString();
-  const events: Array<Omit<BondEventRow, "created_at">> = newlyUnlocked.map((key) => ({
+  const events: Array<Omit<BondEventRow, "created_at">> = earned.map((key) => ({
     event_id: `badge:${plantId}:${key}`,
     plant_id: plantId,
     type: "BADGE_UNLOCKED",

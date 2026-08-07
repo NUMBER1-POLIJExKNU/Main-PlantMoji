@@ -38,9 +38,10 @@ create table if not exists public.device_events (
 create index if not exists device_events_plant_occurred_idx
   on public.device_events (plant_id, occurred_at desc);
 
--- ── Seed: Jin (handoff §36) ─────────────────────────────────────────────
+-- ── Seed: Jamkachu — PlantMoji's first companion, named after Jember ────
+-- (Team branding decision; the handoff §36 "Jin" was an example.)
 insert into public.plants (id, name, species, personality, growth_stage)
-values ('plant-01', 'Jin', 'Basil', 'funny', 'growing')
+values ('plant-01', 'Jamkachu', 'Basil', 'funny', 'growing')
 on conflict (id) do nothing;
 
 -- ── RLS (handoff §9) ────────────────────────────────────────────────────

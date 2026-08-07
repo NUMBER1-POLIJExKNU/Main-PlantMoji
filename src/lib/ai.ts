@@ -89,7 +89,7 @@ const SYSTEM_PROMPT = [
  *  never bloat or derail the prompt. Returns null when effectively empty. */
 function cleanFragment(value: string | undefined, maxLength = 120): string | null {
   if (typeof value !== "string") return null;
-  // eslint-disable-next-line no-control-regex
+   
   const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   if (!cleaned) return null;
   return cleaned.length > maxLength ? `${cleaned.slice(0, maxLength)}…` : cleaned;

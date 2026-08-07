@@ -1,5 +1,6 @@
 import PlantHome from "@/components/plant-home";
 import { fetchBondState, fetchPlant, fetchTopActiveQuest } from "@/lib/plants";
+import { getHomeMoodMessage } from "@/lib/plant-messages";
 import { runGameTick } from "@/game/events/event-router";
 
 // The plant's live state must always be read fresh from Supabase.
@@ -45,13 +46,27 @@ export default async function Home() {
     );
   }
 
+  if (result.status === "no-schema") {
+    return (
+      <Notice
+        title="Supabase 테이블이 아직 없습니다"
+        lines={[
+          "환경 변수 연결은 정상이지만 스키마가 실행되지 않았습니다.",
+          "Supabase Dashboard → SQL Editor에서 아래 두 파일을 순서대로 실행하세요:",
+          "1) supabase/milestone1.sql   2) supabase/milestone3.sql",
+          "실행 후 이 페이지를 새로고침하면 Jin이 나타납니다.",
+        ]}
+      />
+    );
+  }
+
   if (result.status === "not-found") {
     return (
       <Notice
         title={`${PLANT_ID} 데이터가 없습니다`}
         lines={[
           "Supabase SQL Editor에서 supabase/milestone1.sql을 실행해",
-          "plants 테이블과 Jin(plant-01) 시드 데이터를 만들어 주세요.",
+          "plants 테이블과 Jamkachu(plant-01) 시드 데이터를 만들어 주세요.",
         ]}
       />
     );
@@ -66,10 +81,20 @@ export default async function Home() {
     );
   }
 
-  const [bond, quest] = await Promise.all([
+  const [bond, quest, moodMessage] = await Promise.all([
     fetchBondState(PLANT_ID),
     fetchTopActiveQuest(PLANT_ID),
+    // AI-personalized when ANTHROPIC_API_KEY is set (cached per mood change,
+    // handoff §24); deterministic template otherwise — never blocks on failure.
+    getHomeMoodMessage(result.plant),
   ]);
 
-  return <PlantHome initialPlant={result.plant} initialBond={bond} initialQuest={quest} />;
+  return (
+    <PlantHome
+      initialPlant={result.plant}
+      initialBond={bond}
+      initialQuest={quest}
+      initialMoodMessage={moodMessage}
+    />
+  );
 }

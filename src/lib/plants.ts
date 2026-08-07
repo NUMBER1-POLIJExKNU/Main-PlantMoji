@@ -7,7 +7,14 @@ export type PlantFetchResult =
   | { status: "ok"; plant: Plant }
   | { status: "not-found" }
   | { status: "no-env" }
+  | { status: "no-schema" }
   | { status: "error"; message: string };
+
+/** PostgREST's "table missing from schema cache" — the migrations haven't
+ *  been run in this Supabase project yet. */
+export function isMissingTableError(error: { code?: string; message: string }): boolean {
+  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
+}
 
 export async function fetchPlant(plantId: string): Promise<PlantFetchResult> {
   const supabase = getServerSupabase();
@@ -20,6 +27,7 @@ export async function fetchPlant(plantId: string): Promise<PlantFetchResult> {
     .maybeSingle();
 
   if (error) {
+    if (isMissingTableError(error)) return { status: "no-schema" };
     console.error(`fetchPlant(${plantId}) failed:`, error.message);
     return { status: "error", message: error.message };
   }
@@ -55,6 +63,9 @@ export async function fetchTopActiveQuest(plantId: string): Promise<QuestRow | n
     .select("*")
     .eq("plant_id", plantId)
     .in("status", ["ACTIVE", "VERIFYING"])
+    // "VERIFYING" > "ACTIVE" lexicographically: an in-verification quest
+    // (the demo's countdown beat) always wins the home card.
+    .order("status", { ascending: false })
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();

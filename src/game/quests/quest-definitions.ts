@@ -24,6 +24,13 @@ export interface QuestDefinition {
   triggerMood: PlantMood;
   /** maintain: hold duration. recovery: verification stability window. */
   requiredSeconds: number;
+  /**
+   * recovery only: when an event carries data.temperature above this value,
+   * the underlying problem is NOT fixed even if another mood outranks the
+   * trigger — verification must not start / must relapse (handoff §16:
+   * "temperature <= 30°C and remains stable").
+   */
+  verifyTemperatureMax?: number;
 }
 
 export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
@@ -47,6 +54,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     kind: "recovery",
     triggerMood: "Overheating",
     requiredSeconds: 300,
+    verifyTemperatureMax: 30,
   },
   GIVE_ME_MORE_LIGHT: {
     key: "GIVE_ME_MORE_LIGHT",

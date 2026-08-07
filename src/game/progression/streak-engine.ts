@@ -49,8 +49,22 @@ export async function recordQualifyingCare(
 
   const state = await readBondState(supabase, plantId);
 
-  // Postgres `date` columns arrive as 'YYYY-MM-DD' strings — safe to compare.
-  if (state?.last_qualified_date === today) {
+  // Postgres `date` columns arrive as 'YYYY-MM-DD' strings — safe to compare
+  // lexicographically. `>= today` (not `=== today`) so an out-of-order settle
+  // of an OLDER completion can never move the streak backwards.
+  if (state?.last_qualified_date && state.last_qualified_date >= today) {
+    if (state.last_qualified_date === today) {
+      // Re-emit the (idempotent) day event: heals a crash that landed the
+      // bond_state update but lost the emission.
+      await emitStreakEvent(
+        supabase,
+        plantId,
+        today,
+        occurredAtDate.toISOString(),
+        state.current_streak,
+        state.longest_streak,
+      );
+    }
     return {
       currentStreak: state.current_streak,
       longestStreak: state.longest_streak,
@@ -75,7 +89,9 @@ export async function recordQualifyingCare(
         updated_at: nowIso,
       })
       .eq("plant_id", plantId)
-      .or(`last_qualified_date.is.null,last_qualified_date.neq.${today}`)
+      // Forward-only guard: the date may only advance, so replays and
+      // out-of-order settles can never reset an earned streak.
+      .or(`last_qualified_date.is.null,last_qualified_date.lt.${today}`)
       .select("current_streak, longest_streak");
 
     if (error) {
@@ -110,25 +126,42 @@ export async function recordQualifyingCare(
     }
   }
 
-  // Deterministic per-day event id → replay-safe emission (handoff §27–§28).
-  const { error: eventError } = await supabase.from("bond_events").upsert(
+  await emitStreakEvent(
+    supabase,
+    plantId,
+    today,
+    occurredAtDate.toISOString(),
+    currentStreak,
+    longestStreak,
+  );
+
+  return { currentStreak, longestStreak, qualifiedToday: true };
+}
+
+/** Deterministic per-day event id → replay-safe emission (handoff §27–§28). */
+async function emitStreakEvent(
+  supabase: SupabaseClient,
+  plantId: string,
+  day: string,
+  occurredAtIso: string,
+  currentStreak: number,
+  longestStreak: number,
+): Promise<void> {
+  const { error } = await supabase.from("bond_events").upsert(
     {
-      event_id: `streak:${plantId}:${today}`,
+      event_id: `streak:${plantId}:${day}`,
       plant_id: plantId,
       type: "STREAK_UPDATED",
-      occurred_at: occurredAtDate.toISOString(),
-      data: { currentStreak, longestStreak, date: today },
+      occurred_at: occurredAtIso,
+      data: { currentStreak, longestStreak, date: day },
     },
     { onConflict: "event_id", ignoreDuplicates: true },
   );
-
-  if (eventError) {
+  if (error) {
     throw new Error(
-      `Failed to emit STREAK_UPDATED event for plant "${plantId}": ${eventError.message}`,
+      `Failed to emit STREAK_UPDATED event for plant "${plantId}": ${error.message}`,
     );
   }
-
-  return { currentStreak, longestStreak, qualifiedToday: true };
 }
 
 /** Re-reads state after losing a write race: today was counted by another call. */

@@ -24,10 +24,15 @@ type Connection = "connecting" | "live" | "offline";
 
 const emptySubscribe = () => () => {};
 
-function questCardProps(quest: QuestRow | null, nowMs: number) {
+function questCardProps(quest: QuestRow | null, nowMsOrNull: number | null) {
   if (!quest) return null;
   const def = QUEST_DEFINITIONS[quest.quest_key];
   if (!def) return null;
+
+  // Before hydration nowMs is null — pin "now" to the quest's own timestamp
+  // so server and client render the identical zero-state (no mismatch).
+  const nowMs =
+    nowMsOrNull ?? Date.parse(quest.verifying_since ?? quest.started_at);
 
   let statusLabel = "In progress";
   let progressLabel = def.description;
@@ -52,15 +57,17 @@ export default function PlantHome({
   initialPlant,
   initialBond,
   initialQuest,
+  initialMoodMessage,
 }: {
   initialPlant: Plant;
   initialBond: BondState | null;
   initialQuest: QuestRow | null;
+  initialMoodMessage?: string;
 }) {
   const [plant, setPlant] = useState(initialPlant);
   const [bond, setBond] = useState(initialBond);
   const [quest, setQuest] = useState(initialQuest);
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [nowMs, setNowMs] = useState<number | null>(null);
   const [levelUp, setLevelUp] = useState<{ show: boolean; level: number }>({
     show: false,
     level: 0,
@@ -70,7 +77,12 @@ export default function PlantHome({
   );
   const connectionRef = useRef<Connection>("connecting");
   const moodRef = useRef<PlantMood>(initialPlant.current_state);
-  moodRef.current = plant.current_state;
+
+  // Keep the latest mood readable from realtime callbacks without
+  // resubscribing (refs must not be written during render).
+  useEffect(() => {
+    moodRef.current = plant.current_state;
+  }, [plant.current_state]);
 
   // Hydration-safe "am I on the client" flag — local time can only be
   // formatted after hydration, or server/browser locales may disagree.
@@ -99,13 +111,16 @@ export default function PlantHome({
           .select("*")
           .eq("plant_id", plantId)
           .in("status", ["ACTIVE", "VERIFYING"])
+          .order("status", { ascending: false })
           .order("started_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
       ]);
       if (plantRes.data) setPlant(plantRes.data as Plant);
       if (bondRes.data) applyBond(bondRes.data as BondState);
-      setQuest((questRes.data as QuestRow | null) ?? null);
+      // Only trust an error-free response: a transient query failure must not
+      // blank out the visible quest card.
+      if (!questRes.error) setQuest((questRes.data as QuestRow | null) ?? null);
     };
 
     const applyBond = (next: BondState) => {
@@ -142,10 +157,13 @@ export default function PlantHome({
             .select("*")
             .eq("plant_id", plantId)
             .in("status", ["ACTIVE", "VERIFYING"])
+            .order("status", { ascending: false })
             .order("started_at", { ascending: false })
             .limit(1)
             .maybeSingle()
-            .then(({ data }) => setQuest((data as QuestRow | null) ?? null));
+            .then(({ data, error }) => {
+              if (!error) setQuest((data as QuestRow | null) ?? null);
+            });
         },
       )
       .subscribe((status) => {
@@ -177,12 +195,15 @@ export default function PlantHome({
       }).catch(() => {});
     }, 60_000);
 
-    // Keeps quest progress labels ticking.
+    // Keeps quest progress labels ticking; the rAF seeds live time right
+    // after hydration (setState only inside callbacks — lint-safe).
+    const labelRaf = requestAnimationFrame(() => setNowMs(Date.now()));
     const labelId = setInterval(() => setNowMs(Date.now()), 15_000);
 
     return () => {
       clearInterval(pollId);
       clearInterval(tickId);
+      cancelAnimationFrame(labelRaf);
       clearInterval(labelId);
       supabase.removeChannel(channel);
     };
@@ -191,7 +212,12 @@ export default function PlantHome({
   const mood = MOOD_META[plant.current_state] ?? MOOD_META.Happy;
   const moodLabel = MOOD_LABELS[plant.current_state] ?? plant.current_state;
   const personality = normalizePersonality(plant.personality);
-  const moodMessage = getMoodMessage(personality, plant.current_state);
+  // The server-rendered message (possibly AI-personalized) stays valid until
+  // the mood changes client-side — then fall back to the local template.
+  const moodMessage =
+    plant.current_state === initialPlant.current_state && initialMoodMessage
+      ? initialMoodMessage
+      : getMoodMessage(personality, plant.current_state);
   const changedAt =
     mounted && plant.state_changed_at && Date.parse(plant.state_changed_at) > 0
       ? new Date(plant.state_changed_at).toLocaleTimeString()

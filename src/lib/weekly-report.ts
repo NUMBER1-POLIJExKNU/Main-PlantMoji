@@ -252,7 +252,12 @@ export async function computeWeeklyReport(
     if (row.type === "PLANT_STATE_CHANGED") {
       const mood = normalizeMood(row.data?.currentState);
       // State ENTRY into Overheating — never per-sensor-sample (handoff §45).
-      if (mood === "Overheating") overheatingEvents += 1;
+      // A replayed/repeated row whose previousState was already Overheating
+      // is not an entry (handoff §22); an absent previousState counts as one.
+      const previousState = row.data?.previousState;
+      const wasOverheating =
+        previousState != null && normalizeMood(previousState) === "Overheating";
+      if (mood === "Overheating" && !wasOverheating) overheatingEvents += 1;
       events.push({ atMs, kind: "state", mood });
     } else if (row.type === "SENSOR_OFFLINE") {
       events.push({ atMs, kind: "sensor", online: false });

@@ -22,6 +22,13 @@ export async function POST(request: Request) {
   try {
     await runGameTick(plantId);
   } catch (error) {
+    // Missing tables = migrations not run yet; a setup state, not a fault.
+    if (error instanceof Error && /could not find the table/i.test(error.message)) {
+      return Response.json(
+        { ok: false, error: "schema_missing — run supabase/milestone1.sql and milestone3.sql" },
+        { status: 503 },
+      );
+    }
     console.error("game-tick failed:", error);
     return Response.json({ ok: false }, { status: 500 });
   }

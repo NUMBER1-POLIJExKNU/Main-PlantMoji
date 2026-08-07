@@ -109,7 +109,7 @@ export async function POST(request: Request) {
   // mid-processing, the retry finishes the job — every engine step is
   // idempotent. A failure returns 500 so Node-RED retries.
   try {
-    await processDeviceEvent(event);
+    await processDeviceEvent(event, { stateApplied: applied });
   } catch (error) {
     console.error("device-events: game processing failed:", error);
     return Response.json({ ok: false, error: "game processing error" }, { status: 500 });
