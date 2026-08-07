@@ -136,9 +136,9 @@ export default async function QuestsPage() {
       <Notice
         title="Connecting..."
         lines={[
-          "Supabase 환경 변수가 아직 설정되지 않았습니다.",
-          ".env.local.example을 .env.local로 복사한 뒤 값을 채우고 dev 서버를 재시작하세요.",
-          "자세한 순서: docs/SETUP-milestone1-2.md",
+          "Supabase environment variables are not set yet.",
+          "Copy .env.local.example to .env.local, fill in the values, then restart the dev server.",
+          "Full steps: docs/SETUP-milestone1-2.md",
         ]}
       />
     );
@@ -164,8 +164,8 @@ export default async function QuestsPage() {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
       <Notice
-        title="퀘스트를 불러오지 못했습니다"
-        lines={[message, "supabase/milestone3.sql이 실행되었는지 확인해 주세요."]}
+        title="Couldn't load quests"
+        lines={[message, "Check that supabase/milestone3.sql has been run."]}
       />
     );
   }

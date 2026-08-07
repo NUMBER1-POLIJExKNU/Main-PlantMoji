@@ -41,9 +41,9 @@ export default async function SettingsPage() {
       <Notice
         title="Connecting..."
         lines={[
-          "Supabase 환경 변수가 아직 설정되지 않았습니다.",
-          ".env.local.example을 .env.local로 복사한 뒤 값을 채우고 dev 서버를 재시작하세요.",
-          "자세한 순서: docs/SETUP-milestone1-2.md",
+          "Supabase environment variables are not set yet.",
+          "Copy .env.local.example to .env.local, fill in the values, then restart the dev server.",
+          "Full steps: docs/SETUP-milestone1-2.md",
         ]}
       />
     );
@@ -54,12 +54,12 @@ export default async function SettingsPage() {
   if (result.status === "no-schema") {
     return (
       <Notice
-        title="Supabase 테이블이 아직 없습니다"
+        title="Supabase tables don't exist yet"
         lines={[
-          "환경 변수 연결은 정상이지만 스키마가 실행되지 않았습니다.",
-          "Supabase Dashboard → SQL Editor에서 아래 두 파일을 순서대로 실행하세요:",
+          "Environment variables are connected, but the schema hasn't been run.",
+          "In Supabase Dashboard → SQL Editor, run these two files in order:",
           "1) supabase/milestone1.sql   2) supabase/milestone3.sql",
-          "실행 후 이 페이지를 새로고침해 주세요.",
+          "Then refresh this page.",
         ]}
       />
     );
@@ -68,8 +68,8 @@ export default async function SettingsPage() {
   if (result.status === "error") {
     return (
       <Notice
-        title="Supabase 연결 오류"
-        lines={[result.message, "URL과 키 값을 다시 확인해 주세요."]}
+        title="Supabase connection error"
+        lines={[result.message, "Double-check your URL and key values."]}
       />
     );
   }
@@ -77,10 +77,10 @@ export default async function SettingsPage() {
   if (result.status === "not-found") {
     return (
       <Notice
-        title={`${PLANT_ID} 데이터가 없습니다`}
+        title={`No data for ${PLANT_ID}`}
         lines={[
-          "Supabase SQL Editor에서 supabase/milestone1.sql을 실행해",
-          "plants 테이블과 Jin(plant-01) 시드 데이터를 만들어 주세요.",
+          "Run supabase/milestone1.sql in the Supabase SQL Editor",
+          "to create the plants table and the Jamkachu (plant-01) seed data.",
         ]}
       />
     );
@@ -180,10 +180,10 @@ export default async function SettingsPage() {
 
       <section className="mt-5 flex flex-col gap-5 rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">성장 기록</h2>
+          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Growth Records</h2>
           <p className="text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
-            Growth Stage는 센서가 아니라 이 기록으로만 갱신됩니다. 새 기록을 추가하면 위 Growth
-            stage 값도 함께 바뀝니다.
+            Growth stage is updated only through these records — never by sensors. Adding a new
+            record also updates the Growth stage value above.
           </p>
         </div>
 
@@ -234,7 +234,7 @@ export default async function SettingsPage() {
               type="text"
               name="note"
               maxLength={200}
-              placeholder="새 잎이 나왔어요"
+              placeholder="A new leaf appeared"
               autoComplete="off"
               className={fieldInputClass}
             />
@@ -244,14 +244,14 @@ export default async function SettingsPage() {
             type="submit"
             className="rounded-2xl bg-green-600 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
           >
-            기록 추가
+            Add record
           </button>
         </form>
 
         <div className="flex flex-col gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
           {growthRecords.length === 0 ? (
             <p className="text-xs text-zinc-400 dark:text-zinc-500">
-              아직 기록이 없습니다. 첫 성장 기록을 추가해 보세요.
+              No records yet. Add your first growth record.
             </p>
           ) : (
             growthRecords.map((record) => {
@@ -261,7 +261,7 @@ export default async function SettingsPage() {
                 : growthDateFormat.format(new Date(recordedMs));
               const details = [
                 record.height_cm != null ? `${record.height_cm}cm` : null,
-                record.leaf_count != null ? `잎 ${record.leaf_count}개` : null,
+                record.leaf_count != null ? `${record.leaf_count} leaves` : null,
               ]
                 .filter((part): part is string => part != null)
                 .join(" · ");

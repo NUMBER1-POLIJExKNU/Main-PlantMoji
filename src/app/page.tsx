@@ -38,9 +38,9 @@ export default async function Home() {
       <Notice
         title="Connecting..."
         lines={[
-          "Supabase 환경 변수가 아직 설정되지 않았습니다.",
-          ".env.local.example을 .env.local로 복사한 뒤 값을 채우고 dev 서버를 재시작하세요.",
-          "자세한 순서: docs/SETUP-milestone1-2.md",
+          "Supabase environment variables are not set yet.",
+          "Copy .env.local.example to .env.local, fill in the values, then restart the dev server.",
+          "Full steps: docs/SETUP-milestone1-2.md",
         ]}
       />
     );
@@ -49,12 +49,12 @@ export default async function Home() {
   if (result.status === "no-schema") {
     return (
       <Notice
-        title="Supabase 테이블이 아직 없습니다"
+        title="Supabase tables don't exist yet"
         lines={[
-          "환경 변수 연결은 정상이지만 스키마가 실행되지 않았습니다.",
-          "Supabase Dashboard → SQL Editor에서 아래 두 파일을 순서대로 실행하세요:",
+          "Environment variables are connected, but the schema hasn't been run.",
+          "In Supabase Dashboard → SQL Editor, run these two files in order:",
           "1) supabase/milestone1.sql   2) supabase/milestone3.sql",
-          "실행 후 이 페이지를 새로고침하면 Jin이 나타납니다.",
+          "Then refresh this page and Jamkachu will appear.",
         ]}
       />
     );
@@ -63,10 +63,10 @@ export default async function Home() {
   if (result.status === "not-found") {
     return (
       <Notice
-        title={`${PLANT_ID} 데이터가 없습니다`}
+        title={`No data for ${PLANT_ID}`}
         lines={[
-          "Supabase SQL Editor에서 supabase/milestone1.sql을 실행해",
-          "plants 테이블과 Jamkachu(plant-01) 시드 데이터를 만들어 주세요.",
+          "Run supabase/milestone1.sql in the Supabase SQL Editor",
+          "to create the plants table and the Jamkachu (plant-01) seed data.",
         ]}
       />
     );
@@ -75,8 +75,8 @@ export default async function Home() {
   if (result.status === "error") {
     return (
       <Notice
-        title="Supabase 연결 오류"
-        lines={[result.message, "URL과 키 값을 다시 확인해 주세요."]}
+        title="Supabase connection error"
+        lines={[result.message, "Double-check your URL and key values."]}
       />
     );
   }

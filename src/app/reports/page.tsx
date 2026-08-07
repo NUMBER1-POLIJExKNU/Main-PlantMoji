@@ -69,9 +69,9 @@ export default async function ReportsPage() {
       <Notice
         title="Connecting..."
         lines={[
-          "Supabase 환경 변수가 아직 설정되지 않았습니다.",
-          ".env.local.example을 .env.local로 복사한 뒤 값을 채우고 dev 서버를 재시작하세요.",
-          "자세한 순서: docs/SETUP-milestone1-2.md",
+          "Supabase environment variables are not set yet.",
+          "Copy .env.local.example to .env.local, fill in the values, then restart the dev server.",
+          "Full steps: docs/SETUP-milestone1-2.md",
         ]}
       />
     );
@@ -93,8 +93,8 @@ export default async function ReportsPage() {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
       <Notice
-        title="주간 리포트를 불러오지 못했습니다"
-        lines={[message, "supabase/milestone3.sql이 실행되었는지 확인해 주세요."]}
+        title="Couldn't load the weekly report"
+        lines={[message, "Check that supabase/milestone3.sql has been run."]}
       />
     );
   }
@@ -124,7 +124,7 @@ export default async function ReportsPage() {
       {narration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="mb-6">
           <p className="mb-1.5 text-center text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            {plantResult.plant.name}의 한마디
+            A word from {plantResult.plant.name}
           </p>
           <div className="relative rounded-2xl border border-emerald-200/70 bg-emerald-50/70 px-4 py-3 text-center text-sm leading-6 text-zinc-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-zinc-200">
             <span aria-hidden="true">&ldquo;</span>

@@ -61,21 +61,21 @@ export default function DesignSandboxPage() {
   return (
     <div className="mx-auto flex max-w-md flex-col gap-10 px-6 pt-8 pb-32">
       <div className="rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-900 dark:border-amber-500 dark:bg-amber-950/40 dark:text-amber-200">
-        🎨 이 페이지는 <strong>디자이너 놀이터</strong>입니다. Supabase나 게임 엔진 연결 없이
-        목(mock) props로만 프레젠테이셔널 컴포넌트를 렌더링합니다. 여기서 확인한 스타일을
-        실제 컴포넌트(<code>src/components/</code>)에 반영하면, 실제 페이지에도 그대로
-        적용됩니다.
+        🎨 This page is the <strong>designer playground</strong>. It renders the presentational
+        components with mock props only — no Supabase or game engine connection. Apply the styles
+        you settle on here to the real components (<code>src/components/</code>) and they carry
+        over to the actual pages as-is.
       </div>
 
       <section>
-        <SectionHeading title="BondPanel" hint="bondLevel=3, 40 / 100 XP, 5일 스트릭" />
+        <SectionHeading title="BondPanel" hint="bondLevel=3, 40 / 100 XP, 5-day streak" />
         <BondPanel bondLevel={3} totalXp={240} xpInLevel={40} xpRequired={100} streakDays={5} />
       </section>
 
       <section className="flex flex-col gap-4">
         <SectionHeading
           title="HomeQuestCard"
-          hint="Verifying 상태 예시 (static quest 객체) + 활성 퀘스트 없음(null) 예시"
+          hint="Verifying-state example (static quest object) + no-active-quest (null) example"
         />
         <HomeQuestCard quest={VERIFYING_QUEST} />
         <HomeQuestCard quest={null} />
@@ -84,7 +84,7 @@ export default function DesignSandboxPage() {
       <section className="flex flex-col gap-6">
         <SectionHeading
           title="QuestProgress"
-          hint="maintain(카운트업) / verifying(카운트다운) — client component, 고정 ISO 타임스탬프 사용"
+          hint="maintain (count-up) / verifying (countdown) — client component, uses fixed ISO timestamps"
         />
         <div>
           <p className="mb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
@@ -113,14 +113,14 @@ export default function DesignSandboxPage() {
       <section>
         <SectionHeading
           title="LevelUpOverlay"
-          hint="토글 버튼으로 확인 — 자동으로 2.5초 후 dismiss되거나 탭하면 즉시 닫힘"
+          hint="Toggle with the button — auto-dismisses after 2.5s, or tap to close immediately"
         />
         <button
           type="button"
           onClick={() => setShowLevelUp(true)}
           className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
         >
-          레벨업 오버레이 보기
+          Show level-up overlay
         </button>
         <LevelUpOverlay level={4} show={showLevelUp} onDone={() => setShowLevelUp(false)} />
       </section>
@@ -128,14 +128,14 @@ export default function DesignSandboxPage() {
       <section>
         <SectionHeading
           title="Notice"
-          hint="설정 안내 / 에러 상태에 쓰이는 공용 풀스크린 안내 (src/app/page.tsx 등에서 사용)"
+          hint="Shared full-screen notice for setup guidance / error states (used in src/app/page.tsx and elsewhere)"
         />
         <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <Notice
             title="Connecting..."
             lines={[
-              "Supabase 환경 변수가 아직 설정되지 않았습니다.",
-              ".env.local.example을 .env.local로 복사한 뒤 값을 채우고 dev 서버를 재시작하세요.",
+              "Supabase environment variables are not set yet.",
+              "Copy .env.local.example to .env.local, fill in the values, then restart the dev server.",
             ]}
           />
         </div>
@@ -144,7 +144,7 @@ export default function DesignSandboxPage() {
       <section>
         <SectionHeading
           title="Mood chips"
-          hint="MOOD_LABELS는 @/types/events에서 import, 이모지/색상 메타는 목(mock) 값"
+          hint="MOOD_LABELS imported from @/types/events; emoji/color meta are mock values"
         />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {PLANT_MOODS.map((mood) => {
