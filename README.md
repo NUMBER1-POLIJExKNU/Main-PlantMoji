@@ -99,7 +99,7 @@ Unlike a normal mobile game, quest completion depends on a **real improvement in
 
 > DHT11 humidity is treated as **air humidity**, not soil moisture.
 
-Temporary game emotions such as **Excited**, **Proud**, and **Curious** may be used for events such as Level Up, Quest Complete, and Story Unlock.
+Temporary game emotions — **Excited**, **Proud**, **Curious**, **Recovering** — layer on top for events such as Level Up, Quest Complete, and Story Unlock (implemented in `src/game/emotions/`).
 
 ---
 
@@ -109,9 +109,13 @@ Temporary game emotions such as **Excited**, **Proud**, and **Curious** may be u
 
 | Quest | Trigger / Goal | Reward |
 |---|---|---:|
-| ☀️ **Keep Me Happy** | Stay healthy for 30 minutes | +20 XP |
-| 🔥 **Cool Me Down** | Recover from overheating and remain stable | +30 XP |
-| 💡 **Give Me More Light** | Restore sufficient light and remain stable | +20 XP |
+| 🌱 **Keep Me Happy** | Stay healthy for 30 minutes | +20 XP |
+| 🛋️ **Stay Comfy** | Stay in the comfort zone for 2 hours | +40 XP |
+| ❄️ **Cool Me Down** | Recover from overheating (≤26 °C) and stay stable 5 min | +30 XP |
+| ☀️ **Give Me More Light** | Restore sufficient light and stay stable 5 min | +20 XP |
+| 💦 **Humidify My Air** | Recover air humidity (≥45%) and stay stable 5 min | +20 XP |
+| 🧪 **Balance My Soil** (acidic) | Bring soil pH back into range and stay stable 5 min | +25 XP |
+| 🧪 **Balance My Soil** (alkaline) | Bring soil pH back into range and stay stable 5 min | +25 XP |
 
 Quest completion is **sensor-verified**. A user cannot simply tap “Done” to receive the reward.
 
@@ -126,21 +130,22 @@ Quest completion is **sensor-verified**. A user cannot simply tap “Done” to 
 
 Bond Level represents care and progression. It is intentionally separate from the plant's real biological **Growth Stage**.
 
-### Planned Progression
+### Progression Systems (all implemented)
 
-- 🔥 Care Streak
-- 🏅 Badges
-- 📖 Story Chapters
-- 📚 Collection Book
-- 📊 Weekly Report
-- 🎉 Seasonal Events
-- 🤖 AI-personalized dialogue
+- 🔥 **Care Streak** — consecutive qualifying-care days, counted in WIB (Asia/Jakarta); streak milestones at 3/7/14/30 days award bonus XP
+- 🏅 **Badges** — 12 badges (First Rescue, Light Master, Cool Keeper, pH Guardian, Humidity Hero, Mood Scholar, Care Veteran, Chronicler, streak & level milestones…), each +15 bonus XP
+- 📖 **Story Chapters** — 6 chapters set in Jember with per-personality dialogue, from *First Meeting in Jember* to *Harvest of Wisdom*; each unlock +25 bonus XP
+- 📚 **Collection Book** — Moods (with plant-science "why" cards), Badges, Story, and Farmer Wisdom tabs
+- 📊 **Weekly Report** — healthy time, quests completed, streak, and an AI-narrated (template-fallback) summary
+- 🎉 **Seasonal Events** — date-window XP multipliers: Musim Kemarau Heat Challenge (×1.2), Weekend Growth (×1.1), Musim Hujan Growing Season (×1.15, Nov–Apr); highest multiplier wins, never stacked
+- 🎲 **Daily Events** — one deterministic event per WIB day per plant (hash-picked, replay-safe): Jember-flavored XP boosts (*Golden Hour over the Sawah* ×1.5), care challenges (+10–15 XP, ledger-guarded), and flavor days (*Carnaval Day*, *Market Morning*, *Volcano-Soil Pride Day*…)
+- 🤖 **AI-personalized dialogue** — optional Claude-powered mood messages; always falls back to deterministic personality templates
 
 ---
 
 ## 🧠 Personality System
 
-Planned personalities:
+Implemented personalities (stored per plant, used across dialogue and story):
 
 - 🥰 Cute
 - 😌 Calm
@@ -285,30 +290,32 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 | Game Logic | TypeScript |
 | Database | Supabase PostgreSQL |
 | Realtime | Supabase Realtime |
-| AI | Server-side API *(planned)* |
-| Deployment | Vercel + Supabase Cloud *(planned)* |
+| AI | Claude API, server-side only *(optional — deterministic template fallback)* |
+| Testing / CI | Vitest + GitHub Actions (lint · test · build) |
+| Deployment | Vercel + Supabase Cloud |
 
 ---
 
 ## 🌐 Web App
 
-PlantMoji is being developed as a **mobile-first web app**.
-
-Planned main screens:
+Live screens:
 
 ```text
-Home
-├── Plant Character
-├── Mood
-├── Bond Level
-├── XP
-├── Current Quest
-└── Care Streak
+/            Home — the designer's "Cozy Pixel Farm" page, bound to live data:
+             ├── Jamkachu mascot + AI/template speech bubble (realtime mood)
+             ├── Bond Level · XP · Care Streak
+             ├── Plant Vitals: HP · Temperature · Air Humidity · Soil pH · Light
+             └── Reward FX: +XP toasts, XP count-up, level-up confetti,
+                 quest-complete banners, streak pulses, recovery sparkles
+                 (only for real backend-verified transitions; reduced-motion safe)
 
-Quest
-Collection
-Weekly Report
-Settings
+/monitoring  Sensor dashboard — semicircle gauges (temp / humidity / soil
+             moisture) + light (lux) history chart, 10 s polling
+/quests      Active & past quests + "Today's Event" banner (daily events)
+/collection  Collection Book — Moods · Badges · Story · Wisdom
+/reports     Weekly Report
+/plants      Crop profile view (per-crop preferred ranges)
+/settings    Plant name, personality, growth records, demo tools
 ```
 
 PlantMoji is designed as a **plant companion first** and a sensor dashboard second.
@@ -362,7 +369,20 @@ ANTHROPIC_API_KEY=
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
-### 4. Run
+### 4. Database schema
+
+Run the SQL files in the Supabase SQL Editor, in order (all are re-runnable):
+
+```text
+supabase/milestone1.sql               plants, device_events, RLS, realtime
+supabase/milestone3.sql               bond_state, quests, badges, xp ledger, award_xp RPC
+supabase/milestone4-soil-quests.sql   soil quest keys
+supabase/milestone5-growth-records.sql
+supabase/milestone6-monitoring.sql    soil_moisture / light_lux columns
+supabase/milestone7-more-quests.sql   Humidify My Air + Stay Comfy keys
+```
+
+### 5. Run
 
 ```bash
 npm run dev
@@ -415,28 +435,34 @@ Node-RED → Next.js Game API → Game Engine
 ```text
 plantmoji/
 │
+├── public/farm/          Designer's pixel-farm home page (used verbatim)
+│   └── live.js           Live data binding + reward FX (display only)
+│
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx
-│   │   ├── quests/
-│   │   ├── collection/
-│   │   ├── reports/
-│   │   ├── settings/
+│   │   ├── quests/  collection/  reports/  monitoring/  plants/  settings/
 │   │   └── api/
-│   │       └── device-events/
+│   │       ├── device-events/    Node-RED → game engine (idempotent)
+│   │       ├── sensor-history/   monitoring dashboard feed
+│   │       ├── game-tick/  mood-message/  public-config/  demo-reset/
 │   │
 │   ├── components/
 │   ├── game/
-│   │   ├── events/
-│   │   ├── quests/
-│   │   ├── progression/
-│   │   ├── badges/
-│   │   ├── story/
-│   │   └── seasonal/
+│   │   ├── events/       event router + lazy timestamp sweep
+│   │   ├── quests/       sensor-verified quest engine
+│   │   ├── progression/  XP · streak · bonus XP
+│   │   ├── badges/  story/  seasonal/
+│   │   ├── random/       deterministic daily events (Jember pool)
+│   │   ├── emotions/     event emotions (Proud, Excited…)
+│   │   ├── personality/  deterministic message templates
+│   │   └── education/    why-cards + farmer wisdom
 │   ├── lib/
-│   │   └── supabase/
 │   └── types/
 │
+├── supabase/             SQL migrations (milestone1 … milestone7)
+├── node-red/             bridge flow + trilingual guide
+├── docs/                 setup + integration + gameplay plans (EN/ID/KO)
+├── tests/                Vitest suites (190+ tests)
 └── README.md
 ```
 
@@ -472,11 +498,15 @@ plantmoji/
 
 ### Phase 4 — Experience
 
-- [ ] UI/UX polish
-- [ ] Character animations
+- [x] Designer's pixel-farm home page wired to live data (Plant Vitals: HP / Temperature / Air Humidity / Soil pH / Light)
+- [x] Reward feedback FX (dopamine-friendly, ethically: +XP toasts, level-up confetti, quest banners — real verified transitions only)
+- [x] Sensor monitoring dashboard (/monitoring)
+- [x] Daily events + Jember-localized story, seasons, and wisdom
 - [x] AI-personalized dialogue (optional, template fallback)
 - [x] Seasonal Events
 - [x] Growth Records (manual, settings page — never inferred from sensors)
+- [ ] Character animations per mood
+- [ ] Onboarding & plain-language layer (see docs/PLAN-gameplay-usability.md)
 
 ### Phase 5 — Future Research
 
