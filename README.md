@@ -91,13 +91,15 @@ Unlike a normal mobile game, quest completion depends on a **real improvement in
 | Mood | Meaning |
 |---|---|
 | 😊 **Happy** | Environment is within the preferred range |
-| 🔥 **Overheating** | Temperature is too high |
-| 💨 **Dry Air** | Air humidity is too low |
-| 🌙 **Sleepy** | Light level is insufficient |
-| 🧪 **Soil Acidic** | Soil pH is below the preferred range |
-| 🧪 **Soil Alkaline** | Soil pH is above the preferred range |
+| 🥵 **Overheating** | Temperature is too high |
+| 😵 **Dry Air** | Air humidity is too low |
+| 😴 **Sleepy** | Light level is insufficient |
+| 🤢 **Soil Acidic** | Soil pH is below the preferred range |
+| 😖 **Soil Alkaline** | Soil pH is above the preferred range |
 
 > DHT11 humidity is treated as **air humidity**, not soil moisture.
+
+Jamkachu is **one character with seven faces**: the six mood faces above plus a closed-eyes **night sleep** face. Between **18:00 and 06:00 WIB**, a Happy Jamkachu sleeps — slow breathing, a sleep bubble, and light shown as "Night 🌙" instead of a problem. Problem moods **always override sleep**, so safety stays visible.
 
 Temporary game emotions — **Excited**, **Proud**, **Curious**, **Recovering** — layer on top for events such as Level Up, Quest Complete, and Story Unlock (implemented in `src/game/emotions/`).
 
@@ -119,6 +121,8 @@ Temporary game emotions — **Excited**, **Proud**, **Curious**, **Recovering** 
 
 Quest completion is **sensor-verified**. A user cannot simply tap “Done” to receive the reward.
 
+🍀 **Lucky Sprout ×2** — roughly **1 in 8** quest completions doubles the reward with a bonus XP award. The roll is a **deterministic server-side hash** of the quest id (replay-safe, idempotent, strictly additive — never a loss), and the odds are disclosed honestly inside the app's Collection help.
+
 ### Bond Level
 
 ```text
@@ -135,11 +139,46 @@ Bond Level represents care and progression. It is intentionally separate from th
 - 🔥 **Care Streak** — consecutive qualifying-care days, counted in WIB (Asia/Jakarta); streak milestones at 3/7/14/30 days award bonus XP
 - 🏅 **Badges** — 12 child-friendly badges (First Help, Light Helper, Cool Helper, Happy Soil, Air Helper, Mood Finder, Quest Star, Plant Writer, care & friendship milestones…), each +15 bonus XP
 - 📖 **Story Chapters** — 6 chapters set in Jember with per-personality dialogue, from *First Meeting in Jember* to *Harvest of Wisdom*; each unlock +25 bonus XP
-- 📚 **Collection Book** — Moods (with plant-science "why" cards), Badges, Story, and Farmer Wisdom tabs
-- 📊 **Weekly Report** — healthy time, quests completed, streak, and an AI-narrated (template-fallback) summary
+- 📚 **Collection Book** — Moods (with plant-science "why" cards), Badges, Story, and Farmer Wisdom tabs; locked badges render as **dark silhouettes with honest hints** and flip open live (realtime) when earned
+- 📊 **Weekly Report** — healthy time, quests completed, streak, an AI-narrated (template-fallback) summary, and an animated count-up recap
 - 🎉 **Seasonal Events** — date-window XP multipliers: Musim Kemarau Heat Challenge (×1.2), Weekend Growth (×1.1), Musim Hujan Growing Season (×1.15, Nov–Apr); highest multiplier wins, never stacked
 - 🎲 **Daily Events** — one deterministic event per WIB day per plant (hash-picked, replay-safe): Jember-flavored XP boosts (*Golden Hour over the Sawah* ×1.5), care challenges (+10–15 XP, ledger-guarded), and flavor days (*Carnaval Day*, *Market Morning*, *Volcano-Soil Pride Day*…)
 - 🤖 **AI-personalized dialogue** — optional Claude-powered mood messages; always falls back to deterministic personality templates
+
+### Tamagotchi Continuity
+
+The relationship with Jamkachu continues even after you step away:
+
+- 🐣 **Hatching intro** — one-time first visit (skippable, reduced-motion-safe): the pot trembles, Jamkachu pops out with confetti, and the four sensors are introduced in plain words
+- 🌳 **Contextual care button** — replaces the old WATER / FERTILIZE buttons. There is no soil-moisture or nutrient sensor, so those buttons could teach children the *wrong* action (low **air** humidity must never prompt watering the soil). One mood-driven button shows the single safe action — "Move me to shade 🌳", "Show me some light ☀️", "Check my soil with a teacher 🧑‍🏫" — with a why-card tying it to the sensor that will verify it. Zero XP
+- 😴 **Night sleep mode** — 18:00–06:00 WIB (see Plant Mood System above); no streak loss, no guilt copy at night
+- 🏡 **Level decorations** — Bond levels leave visible traces on the mascot stage: Lv.2 pot sticker, Lv.3 flag, Lv.5 room glow, Lv.7 ribbon, Lv.10 golden pot + best-friend token. Pure presentation, re-derived from the bond level on every render
+- 💭 **Jamkachu remembers** — template sentences built from recent care history ("Yesterday you helped me cool down!") rotate into the idle speech bubble, at most one per hour. No AI call
+- 🥰 **Petting** — tap the mascot for a bounce, heart pixel, and a personality line. In-fiction only: no counters, no achievements, zero XP
+
+### Reward Feedback (the dopamine layer)
+
+Celebrations are real, quick, and honest — every effect fires only on backend-verified transitions:
+
+- 🎚️ **Celebration queue** — stacked FX (quest + lucky + level-up) play as an ordered sequence with per-tier duration caps, so feedback never blocks information
+- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), default ON after the first tap, persistent one-tap mute (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
+- 🌰 **Tap-to-claim reward pod** — a quest completion drops a seed pod by Jamkachu; tap it to pop the celebration (it auto-bursts after ~8 s so nothing ever stalls)
+- ✨ **XP orb cascade** — awards split into orbs that arc into the XP bar (gold when lucky); reduced-motion collapses to a single count-up
+- 🔍 **Verifying shimmer** — quests being sensor-checked render amber with "Sensor is checking…", then a short anticipation hold before the celebration
+- 💬 **Reason chips** — every XP gain is labeled live from realtime events: "+30 XP · Quest complete", "LUCKY! ×2"
+- 🌊 **Causal echo** — when a sensor visibly improves between readings, a chip on the environment strip connects the user's care to the data
+- 🔥 **Streak keeper** — at most once per day, 07:00–20:00 only, with warm copy; a broken streak gets a kind restart message
+- 📖 **Chapter gate** — chapter unlocks are the peak moment: theme jingle, full-screen pixel vignette, tap-through dialogue
+
+### Ethics Guardrails (non-negotiable)
+
+Built for teenagers, so the dopamine layer is honest by design:
+
+1. XP only ever comes from sensor-verified care. Taps, petting, and buttons grant **zero XP** — and no hidden counters
+2. The Lucky bonus is **strictly additive** with disclosed 1-in-8 odds — no near-miss theatrics, no grind loops
+3. No countdown pressure, no guilt copy, no fake scarcity; streak messaging is warm and daytime-only
+4. Celebrations have total-duration caps, honor `prefers-reduced-motion`, and mute is always one tap away
+5. Presenter hotkeys are presentation-only replays (zero data writes) and are disclosed to producers
 
 ---
 
@@ -290,6 +329,8 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 | Game Logic | TypeScript |
 | Database | Supabase PostgreSQL |
 | Realtime | Supabase Realtime |
+| Sound | 8-bit SFX synthesized in WebAudio *(zero audio files)* |
+| UI languages | Bahasa Indonesia (default) · English |
 | AI | Claude API, server-side only *(optional — deterministic template fallback)* |
 | Testing / CI | Vitest + GitHub Actions (lint · test · build) |
 | Deployment | Vercel + Supabase Cloud |
@@ -301,25 +342,47 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 Live screens:
 
 ```text
-/            Home — the designer's "Cozy Pixel Farm" page, bound to live data:
-             ├── Jamkachu mascot + AI/template speech bubble (realtime mood)
-             ├── Bond Level · XP · Care Streak
-             ├── Plant Vitals: HP · Temperature · Air Humidity · Soil pH · Light
-             ├── BMKG Jember outdoor forecast, separated from the indoor
-             │   plant-room temperature/humidity sensor
-             ├── Bahasa Indonesia default UI with an ID / EN switch
-             └── Reward FX: +XP toasts, XP count-up, level-up confetti,
-                 quest-complete banners, streak pulses, recovery sparkles
-                 (only for real backend-verified transitions; reduced-motion safe)
+/            Home — the "Cozy Pixel Farm" page, character-first and bound to
+             live data. Top-to-bottom hierarchy (sensors intentionally LAST):
+             ├── JAMKACHU — one character, 7 faces (6 moods + night sleep),
+             │   idle blink & sway, level decorations Lv.2–10,
+             │   one-time hatching intro, pettable (zero XP)
+             ├── Speech bubble — AI/template mood dialogue + rotated memories
+             ├── Current Quest slot — live progress + amber verifying shimmer
+             ├── Bond Level · XP · HP · Care Streak (tappable streak flame)
+             ├── Contextual care button — the one safe action for the mood
+             └── Environment strip: Temp · Humidity · Light · pH, each value
+                 tappable for Jamkachu's commentary; BMKG Jember outdoor
+                 forecast stays separate from the indoor sensor
+             Reward FX ride the celebration queue: tap-to-claim reward pod,
+             XP orb cascade, reason chips, causal echo, Lucky ×2 stamp,
+             chapter gate — with 8-bit WebAudio SFX (default on, one-tap
+             mute). Real backend-verified transitions only; reduced-motion
+             safe. Append ?demo=1 for presenter hotkeys + a QA self-test
+             overlay (presentation-only replays, zero data writes).
 
-/monitoring  Sensor dashboard — semicircle gauges (temp / humidity / soil
+/quests      Active & past quests, live quest celebrations, verifying
+             shimmer, "Today's Event" banner (daily events)
+/collection  Collection Book — Moods · Badges (silhouettes + realtime badge
+             flips) · Story · Wisdom, incl. the honest Lucky-odds disclosure
+/reports     Weekly Report — animated count-up recap
+/monitoring  "Plant Status" — semicircle gauges (temp / humidity / soil
              moisture) + light (lux) history chart, 10 s polling
-/quests      Active & past quests + "Today's Event" banner (daily events)
-/collection  Collection Book — Moods · Badges · Story · Wisdom
-/reports     Weekly Report
 /plants      Crop profile view (per-crop preferred ranges)
-/settings    Plant name, personality, growth records, Demo Control Center
+/settings    "Growth Diary" — plant name, personality, growth records;
+             the Demo Control Center renders only on /settings?demo=1
 ```
+
+Every React page shares the farm page's pixel design system (`pm-*` utility
+classes) and a matching sidebar — Home · Quests · Growth Diary · Plant
+Status · Collection · Weekly Report · Settings — so the whole app reads as
+one game, not a dashboard with a mascot page attached. Navigation labels are
+de-technicalized (`/monitoring` appears as "Plant Status", the growth-record
+diary as "Growth Diary"); dead links stay hidden until the features exist.
+
+The UI is **bilingual: Bahasa Indonesia by default, English via the ID / EN
+switch** (persisted across pages). The farm page reads a two-locale string
+table (`public/farm/strings.js`); React pages carry inline ID/EN dictionaries.
 
 PlantMoji is designed as a **plant companion first** and a sensor dashboard second.
 
@@ -359,13 +422,15 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 # Server-side only — NEVER expose this in browser code.
 SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
 
-# Optional — shared token for POST /api/device-events. When set, Node-RED
-# must send it as `Authorization: Bearer <value>`; when unset, the endpoint
-# accepts requests without auth (local prototype mode).
+# Optional — shared token for the device endpoints (/api/sensor-readings and
+# /api/device-events). When set, Node-RED must send it as
+# `Authorization: Bearer <value>`; when unset, the endpoints accept requests
+# without auth (local prototype mode).
 DEVICE_API_TOKEN=
 
-# Optional — Settings → Demo Control Center. Use 8+ characters and keep it
-# server-side. The same code can reset the story or unlock the full Lv.10 demo.
+# Optional — the Demo Control Center on /settings?demo=1. Use 8+ characters
+# and keep it server-side. The same code can reset the story or unlock the
+# full Lv.10 demo.
 DEMO_CHEAT_CODE=
 
 # Optional — BMKG village code. Defaults to Tegalgede, Sumbersari, Jember.
@@ -380,11 +445,13 @@ ANTHROPIC_API_KEY=
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
 For a presentation, set `DEMO_CHEAT_CODE` in Vercel, redeploy, then open
-**Settings → Demo Control Center** and enter the code. **Unlock everything**
-creates a replay-safe Lv.10 showcase with every mood, badge, story chapter,
-and quest type. **Reset to start** restores Lv.1 / 0 XP and clears game
-progress for another rehearsal. Neither action changes sensor readings,
-growth records, crop thresholds, or hardware control.
+**`/settings?demo=1`** (the Demo Control Center is hidden from the normal
+student UX) and enter the code. **Unlock everything** creates a replay-safe
+Lv.10 showcase with every mood, badge, story chapter, and quest type.
+**Reset to start** restores Lv.1 / 0 XP and clears game progress for another
+rehearsal. Neither action changes sensor readings, growth records, crop
+thresholds, or hardware control. The full filming/go-live checklist lives in
+`docs/RUNBOOK-filming-and-golive.md` (EN / ID / KO).
 
 The home weather card calls `GET /api/local-context`, which proxies and caches
 the official BMKG forecast for the configured `BMKG_ADM4_CODE`. BMKG is
@@ -403,10 +470,14 @@ supabase/milestone5-growth-records.sql
 supabase/milestone6-crop-profiles.sql  strawberry key on plants
 supabase/milestone6-monitoring.sql    soil_moisture / light_lux columns
 supabase/milestone7-more-quests.sql   Humidify My Air + Stay Comfy keys
-supabase/milestone8-dopamine.sql      story / badge / demo progression additions
-supabase/milestone9-raw-sensor-ingest.sql
+supabase/milestone8-dopamine.sql      bond_events realtime publication (reason chips, Lucky stamp)
+supabase/milestone9-raw-sensor-ingest.sql     sensor_readings table (raw ingest)
 supabase/milestone10-jember-crop-catalog.sql  10 Jember crops + versioned evidence / sources
 ```
+
+There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every
+file is guarded and safe to re-run; when in doubt, run all ten again in
+order (see `docs/RUNBOOK-filming-and-golive.md` §1.2).
 
 Milestone 10 seeds researched Jember profiles as `draft` or
 `reference_only`. Strawberry remains the only profile approved for automatic
@@ -427,9 +498,19 @@ http://localhost:3000
 
 ---
 
-## 📡 Device Event API
+## 📡 Device APIs
 
-Node-RED sends meaningful plant events to the game backend.
+Raw sensor readings can be ingested directly (requires `milestone9-raw-sensor-ingest.sql`):
+
+```http
+POST /api/sensor-readings
+```
+
+Payload shape, the idempotent `readingId`, and Bearer auth are documented in
+`docs/API-raw-sensor-ingest.md`. The legacy `POST /api/device-events` also
+accepts the same flat raw payload.
+
+Node-RED can also send meaningful plant events to the game backend:
 
 ```http
 POST /api/device-events
@@ -449,14 +530,15 @@ POST /api/device-events
 }
 ```
 
-Data paths are intentionally separated:
+Two ingestion paths are supported:
 
 ```text
-Raw sensor telemetry
-Node-RED → Supabase
+Raw sensor readings (new flow)
+Node-RED → /api/sensor-readings → store sample → crop profile +
+hysteresis derive the mood → Game Engine
 
-Meaningful domain event
-Node-RED → Next.js Game API → Game Engine
+Semantic domain event (original flow)
+Node-RED determines plant state → /api/device-events → Game Engine
 ```
 
 ---
@@ -466,35 +548,39 @@ Node-RED → Next.js Game API → Game Engine
 ```text
 plantmoji/
 │
-├── public/farm/          Designer's pixel-farm home page (used verbatim)
-│   └── live.js           Live data binding + reward FX (display only)
+├── public/farm/          Pixel-farm home page (character-first)
+│   ├── live.js           Live data binding + celebration queue + FX
+│   ├── sfx.js            8-bit WebAudio SFX engine (shared with React pages)
+│   ├── strings.js        Two-locale UI string table (ID default / EN)
+│   └── demo.js           Presenter hotkeys + QA self-test overlay (?demo=1)
 │
 ├── src/
 │   ├── app/
 │   │   ├── quests/  collection/  reports/  monitoring/  plants/  settings/
 │   │   └── api/
+│   │       ├── sensor-readings/  raw sensor ingest (idempotent readingId)
 │   │       ├── device-events/    Node-RED → game engine (idempotent)
 │   │       ├── sensor-history/   monitoring dashboard feed
 │   │       ├── game-tick/  mood-message/  public-config/  demo-reset/
 │   │       └── local-context/   cached BMKG outdoor forecast
 │   │
-│   ├── components/
+│   ├── components/       shared pixel-farm shell, collection tabs, demo center…
 │   ├── game/
-│   │   ├── events/       event router + lazy timestamp sweep
+│   │   ├── events/       event router + lazy timestamp sweep + Lucky settle
 │   │   ├── quests/       sensor-verified quest engine
 │   │   ├── progression/  XP · streak · bonus XP
 │   │   ├── badges/  story/  seasonal/
-│   │   ├── random/       deterministic daily events (Jember pool)
+│   │   ├── random/       deterministic daily events (Jember pool) + Lucky hash
 │   │   ├── emotions/     event emotions (Proud, Excited…)
 │   │   ├── personality/  deterministic message templates
 │   │   └── education/    why-cards + farmer wisdom
-│   ├── lib/
+│   ├── lib/              i18n (ID default / EN) + supabase helpers
 │   └── types/
 │
 ├── supabase/             SQL migrations (milestone1 … milestone10)
 ├── node-red/             bridge flow + trilingual guide
-├── docs/                 setup + integration + gameplay plans (EN/ID/KO)
-├── tests/                Vitest suites (200+ tests)
+├── docs/                 setup + integration plans + filming/go-live runbook (EN/ID/KO)
+├── tests/                Vitest suites (240+ tests)
 └── README.md
 ```
 
@@ -530,22 +616,26 @@ plantmoji/
 
 ### Phase 4 — Experience
 
-- [x] Designer's pixel-farm home page wired to live data (Plant Vitals: HP / Temperature / Air Humidity / Soil pH / Light)
-- [x] Reward feedback FX (dopamine-friendly, ethically: +XP toasts, level-up confetti, quest banners — real verified transitions only)
-- [x] Sensor monitoring dashboard (/monitoring)
+- [x] Character-first pixel-farm home wired to live data (JAMKACHU hero → mood → dialogue → quest → bond → environment strip last)
+- [x] Character faces & animations per mood (7 faces incl. night sleep, idle blink + sway)
+- [x] Tamagotchi continuity (contextual care button, night sleep mode, hatching intro, level decorations Lv.2–10, Jamkachu memories)
+- [x] Dopamine reward layer, ethically (celebration queue, 8-bit SFX, reward pod, orb cascade, reason chips, Lucky ×2, chapter gate — real verified transitions only)
+- [x] Bilingual UI — Bahasa Indonesia default + English switch
+- [x] Unified pixel-farm design across every React page (shared sidebar + pm-* utilities)
+- [x] Presenter tooling (?demo=1 hotkeys + QA overlay, /settings?demo=1 Demo Control Center)
+- [x] Sensor monitoring dashboard (/monitoring, "Plant Status")
 - [x] Daily events + Jember-localized story, seasons, and wisdom
 - [x] AI-personalized dialogue (optional, template fallback)
 - [x] Seasonal Events
 - [x] Growth Records (manual, settings page — never inferred from sensors)
-- [ ] Character animations per mood
-- [ ] Onboarding & plain-language layer (see docs/PLAN-gameplay-usability.md)
+- [x] Weather integration — BMKG Jember forecast as learning context
+- [ ] Deeper onboarding & plain-language layer (see docs/PLAN-gameplay-usability.md)
 
 ### Phase 5 — Future Research
 
 - [ ] Camera-based growth tracking
 - [ ] Computer vision
 - [ ] Multi-plant profiles
-- [ ] Weather integration
 - [ ] Multi-device deployment
 
 ---
@@ -557,19 +647,25 @@ plantmoji/
 2. Temperature rises
 3. Node-RED detects Overheating
 4. Servo / RGB / LCD react locally
-5. Web app shows Jamkachu as Overheating
-6. "Cool Me Down" quest appears
+5. Jamkachu's face flips to Overheating 🥵
+6. "Cool Me Down" quest appears; the care button says "Move me to shade 🌳"
 7. User improves the environment
-8. Sensors verify recovery
-9. Quest completes
-10. +30 XP
-11. Bond Level Up
+8. Causal-echo chip on the gauge; quest turns VERIFYING ("Sensor is checking…")
+9. Quest completes — a reward pod drops; tap it
+10. XP orbs cascade into the bar (+30 XP · sometimes LUCKY! ×2)
+11. Bond Level Up → a new level decoration appears on the mascot stage
 12. Hardware + Web celebrate together
 ```
 
 This demonstrates the full loop:
 
 > **real-world sensing → care → verification → game progression**
+
+For filming and go-live, follow `docs/RUNBOOK-filming-and-golive.md`
+(EN / ID / KO): environment variables, migration verification, the
+pre-filming QA checklist, and the three demo beats — including the
+honest-demo rule that `?demo=1` hotkey replays are presentation-only
+and never shown as live sensor events.
 
 ---
 
