@@ -96,6 +96,17 @@ const LOCKED_PANEL: CSSProperties = {
   boxShadow: "none",
 };
 
+// 8-bit pop-in cascade: every card gets the same `pm-card-cascade` class
+// (locked cards included — nothing about the entrance teases what's inside)
+// with a per-index stagger. Capped at the first 8 cards so a long badge or
+// story list never drags out the reveal — cards past the cap share the 8th
+// card's delay instead of accumulating further.
+const CASCADE_STAGGER_MS = 40;
+const CASCADE_CAP = 8;
+function cascadeStyle(index: number): CSSProperties {
+  return { animationDelay: `${Math.min(index, CASCADE_CAP - 1) * CASCADE_STAGGER_MS}ms` };
+}
+
 /** Chunky pixel progress bar (shell .pm-bar contract) replacing the plain
  *  "x / y" text counters (Task 16). */
 function ProgressCounter({ value, total, label }: { value: number; total: number; label: string }) {
@@ -223,10 +234,26 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             0% { transform: perspective(600px) rotateY(0deg); }
             100% { transform: perspective(600px) rotateY(360deg); }
           }
+          /* Pixel cascade pop-in (fill-mode "both" holds the 0% frame during
+             each card's stagger delay, so nothing flashes at full opacity
+             before its turn). Outside this media query the class carries no
+             rules at all, so reduced-motion users just get the cards already
+             in place — an instant swap, not a de-animated version. */
+          .pm-card-cascade {
+            animation: pm-card-cascade 200ms steps(3, jump-end) both;
+          }
+          @keyframes pm-card-cascade {
+            0% { opacity: 0; transform: translateY(6px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           .pm-bar-fill { transition: none; }
         }
+        /* Pressed tab dips 2px, echoing the shared .pm-btn ledge press — a
+           plain :active transform, so it stays on for everyone. */
+        .pm-tab-btn { transition: transform 0.08s ease-out; }
+        .pm-tab-btn:active { transform: translateY(2px); }
       `}</style>
       <div
         role="tablist"
@@ -243,8 +270,11 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               role="tab"
               aria-selected={active}
               aria-controls={`collection-panel-${entry.id}`}
-              onClick={() => setTab(entry.id)}
-              className="pm-heading flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"
+              onClick={() => {
+                setTab(entry.id);
+                window.PMSfx?.play("tick");
+              }}
+              className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"
               style={
                 active
                   ? { background: "var(--color-grass)", color: "#ffffff", boxShadow: "0 3px 0 var(--color-forest)" }
@@ -265,14 +295,14 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ul className="grid grid-cols-3 gap-3">
-            {moods.map((mood) => (
+            {moods.map((mood, index) => (
               <li
                 key={mood.mood}
-                className="pm-panel flex flex-col items-center gap-1.5 text-center"
+                className="pm-panel pm-card-cascade flex flex-col items-center gap-1.5 text-center"
                 style={
                   mood.discovered
-                    ? { padding: "14px 10px", borderColor: "var(--color-grass-light)" }
-                    : { padding: "14px 10px", ...LOCKED_PANEL }
+                    ? { padding: "14px 10px", borderColor: "var(--color-grass-light)", ...cascadeStyle(index) }
+                    : { padding: "14px 10px", ...LOCKED_PANEL, ...cascadeStyle(index) }
                 }
               >
                 <span
@@ -347,13 +377,17 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           <ProgressCounter value={unlockedBadges} total={badges.length} label={copy.unlockedBadges} />
           {unlockedBadges === badges.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ul className="flex flex-col gap-3">
-            {badges.map((badge) => {
+            {badges.map((badge, index) => {
               const unlocked = badge.unlockedLabel !== null || liveUnlocked.has(badge.key);
               return (
                 <li
                   key={badge.key}
-                  className={`pm-panel flex items-start gap-3 ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`}
-                  style={unlocked ? { borderColor: "var(--color-yellow)" } : LOCKED_PANEL}
+                  className={`pm-panel pm-card-cascade flex items-start gap-3 ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`}
+                  style={
+                    unlocked
+                      ? { borderColor: "var(--color-yellow)", ...cascadeStyle(index) }
+                      : { ...LOCKED_PANEL, ...cascadeStyle(index) }
+                  }
                 >
                   <span
                     className={`text-3xl leading-none ${unlocked ? "" : "brightness-0 opacity-30"}`}
@@ -408,8 +442,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           <ProgressCounter value={unlockedChapters} total={chapters.length} label={copy.chapters} />
           {unlockedChapters === chapters.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ol className="flex flex-col gap-3">
-            {chapters.map((chapter) => (
-              <li key={chapter.chapter}>
+            {chapters.map((chapter, index) => (
+              <li key={chapter.chapter} className="pm-card-cascade" style={cascadeStyle(index)}>
                 <StoryChapterCard
                   chapter={{
                     chapter: chapter.chapter,
@@ -431,8 +465,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             {copy.wisdomIntro}
           </p>
           <ul className="flex flex-col gap-3">
-            {wisdom.map((entry) => (
-              <li key={entry.id} className="pm-panel" style={{ borderColor: "#A9D2F2" }}>
+            {wisdom.map((entry, index) => (
+              <li
+                key={entry.id}
+                className="pm-panel pm-card-cascade"
+                style={{ borderColor: "#A9D2F2", ...cascadeStyle(index) }}
+              >
                 <p className="text-sm font-semibold italic leading-5" style={{ color: "var(--color-text)" }}>
                   &ldquo;{entry.saying}&rdquo;
                 </p>
