@@ -32,19 +32,77 @@ export async function evaluateBadges(
   supabase: SupabaseClient,
   plantId: string,
 ): Promise<BadgeKey[]> {
-  // One read covers every quest-based condition (recovery, light, cool,
-  // humidity, and the total-completed count) — fetch quest_key of every
-  // COMPLETED row once and count each condition in TS instead of adding a
-  // query per badge.
-  const { data: questRows, error: questError } = await supabase
-    .from("quests")
-    .select("quest_key")
-    .eq("plant_id", plantId)
-    .eq("status", "COMPLETED");
-  if (questError) {
-    throw new Error(`badge-engine: failed to read quests: ${questError.message}`);
+  // All seven reads below are independent of each other (each depends only on
+  // plantId), so they are issued in ONE parallel batch — a single round-trip
+  // time instead of six sequential ones. Results are validated in the same
+  // order the old sequential code checked them, with identical messages.
+  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const [
+    questsResult,
+    bondResult,
+    recentEventsResult,
+    soilEventsResult,
+    moodEventsResult,
+    moodPlantResult,
+    growthRecordsResult,
+  ] = await Promise.all([
+    // One read covers every quest-based condition (recovery, light, cool,
+    // humidity, and the total-completed count) — fetch quest_key of every
+    // COMPLETED row once and count each condition in TS instead of adding a
+    // query per badge.
+    supabase.from("quests").select("quest_key").eq("plant_id", plantId).eq("status", "COMPLETED"),
+    // bond_level covers LEVEL_5_BOND; longest_streak (not current_streak)
+    // covers STREAK_7 so a later broken streak can never un-earn an
+    // already-earned badge — same reasoning as the story engine's chapter 3
+    // (handoff §19).
+    supabase
+      .from("bond_state")
+      .select("bond_level, longest_streak")
+      .eq("plant_id", plantId)
+      .maybeSingle(),
+    // PH_GUARDIAN inputs: sustained healthy soil, not repeated repair
+    // (handoff §18) — at least one device event in the last 7 days, and none
+    // of them a PLANT_STATE_CHANGED entry into SoilAcidic/SoilAlkaline. Two
+    // cheap head:true counts instead of fetching rows.
+    supabase
+      .from("device_events")
+      .select("event_id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .gte("occurred_at", sevenDaysAgoIso),
+    supabase
+      .from("device_events")
+      .select("event_id", { count: "exact", head: true })
+      .eq("plant_id", plantId)
+      .eq("type", "PLANT_STATE_CHANGED")
+      .in("data->>currentState", ["SoilAcidic", "SoilAlkaline"])
+      .gte("occurred_at", sevenDaysAgoIso),
+    // MOOD_SCHOLAR inputs: every distinct mood ever observed, mirroring
+    // lib/queries.ts's getSeenMoods (duplicated here rather than imported so
+    // this engine stays self-contained — see the isMissingTableError comment
+    // above) — every distinct PLANT_STATE_CHANGED data->>currentState, plus
+    // the live plants.current_state (covers a fresh seed row predating any
+    // event).
+    supabase
+      .from("device_events")
+      .select("currentState:data->>currentState")
+      .eq("plant_id", plantId)
+      .eq("type", "PLANT_STATE_CHANGED")
+      .limit(5000),
+    supabase.from("plants").select("current_state").eq("id", plantId).maybeSingle(),
+    // CHRONICLER input: growth records logged for this plant. head:true
+    // count; a not-yet-migrated schema (growth_records table missing) is
+    // tolerated below by treating it as zero, same as lib/growth.ts's
+    // fetchGrowthRecords.
+    supabase
+      .from("growth_records")
+      .select("id", { count: "exact", head: true })
+      .eq("plant_id", plantId),
+  ]);
+
+  if (questsResult.error) {
+    throw new Error(`badge-engine: failed to read quests: ${questsResult.error.message}`);
   }
-  const completedQuests = (questRows ?? []) as Array<{ quest_key: QuestKey }>;
+  const completedQuests = (questsResult.data ?? []) as Array<{ quest_key: QuestKey }>;
   const totalCompletedCount = completedQuests.length;
   const completedRecovery = completedQuests.filter((row) =>
     (RECOVERY_QUEST_KEYS as readonly QuestKey[]).includes(row.quest_key),
@@ -60,63 +118,26 @@ export async function evaluateBadges(
     (row) => row.quest_key === "HUMIDIFY_MY_AIR",
   ).length;
 
-  // bond_level covers LEVEL_5_BOND; longest_streak (not current_streak) covers
-  // STREAK_7 so a later broken streak can never un-earn an already-earned
-  // badge — same reasoning as the story engine's chapter 3 (handoff §19).
-  const { data: bond, error: bondError } = await supabase
-    .from("bond_state")
-    .select("bond_level, longest_streak")
-    .eq("plant_id", plantId)
-    .maybeSingle();
-  if (bondError) {
-    throw new Error(`badge-engine: failed to read bond_state: ${bondError.message}`);
+  if (bondResult.error) {
+    throw new Error(`badge-engine: failed to read bond_state: ${bondResult.error.message}`);
   }
+  const bond = bondResult.data as { bond_level?: number; longest_streak?: number } | null;
   const bondLevel: number = bond?.bond_level ?? 1;
   const longestStreak: number = bond?.longest_streak ?? 0;
 
-  // PH_GUARDIAN: sustained healthy soil, not repeated repair (handoff §18) —
-  // at least one device event in the last 7 days, and none of them are a
-  // PLANT_STATE_CHANGED entry into SoilAcidic/SoilAlkaline. Two cheap
-  // head:true counts instead of fetching rows.
-  const sevenDaysAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { count: recentEventCount, error: recentEventsError } = await supabase
-    .from("device_events")
-    .select("event_id", { count: "exact", head: true })
-    .eq("plant_id", plantId)
-    .gte("occurred_at", sevenDaysAgoIso);
-  if (recentEventsError) {
+  if (recentEventsResult.error) {
     throw new Error(
-      `badge-engine: failed to count recent device_events: ${recentEventsError.message}`,
+      `badge-engine: failed to count recent device_events: ${recentEventsResult.error.message}`,
     );
   }
-  const { count: soilEventCount, error: soilEventsError } = await supabase
-    .from("device_events")
-    .select("event_id", { count: "exact", head: true })
-    .eq("plant_id", plantId)
-    .eq("type", "PLANT_STATE_CHANGED")
-    .in("data->>currentState", ["SoilAcidic", "SoilAlkaline"])
-    .gte("occurred_at", sevenDaysAgoIso);
-  if (soilEventsError) {
+  if (soilEventsResult.error) {
     throw new Error(
-      `badge-engine: failed to count recent soil device_events: ${soilEventsError.message}`,
+      `badge-engine: failed to count recent soil device_events: ${soilEventsResult.error.message}`,
     );
   }
-  const phGuardian = (recentEventCount ?? 0) >= 1 && (soilEventCount ?? 0) === 0;
+  const phGuardian =
+    (recentEventsResult.count ?? 0) >= 1 && (soilEventsResult.count ?? 0) === 0;
 
-  // MOOD_SCHOLAR: every distinct mood ever observed, mirroring
-  // lib/queries.ts's getSeenMoods (duplicated here rather than imported so
-  // this engine stays self-contained — see the isMissingTableError comment
-  // above) — every distinct PLANT_STATE_CHANGED data->>currentState, plus the
-  // live plants.current_state (covers a fresh seed row predating any event).
-  const [moodEventsResult, moodPlantResult] = await Promise.all([
-    supabase
-      .from("device_events")
-      .select("currentState:data->>currentState")
-      .eq("plant_id", plantId)
-      .eq("type", "PLANT_STATE_CHANGED")
-      .limit(5000),
-    supabase.from("plants").select("current_state").eq("id", plantId).maybeSingle(),
-  ]);
   if (moodEventsResult.error) {
     throw new Error(
       `badge-engine: failed to read device_events for moods: ${moodEventsResult.error.message}`,
@@ -138,19 +159,12 @@ export async function evaluateBadges(
   if (liveMood) seenMoods.add(liveMood);
   const moodScholar = PLANT_MOODS.every((mood) => seenMoods.has(mood));
 
-  // CHRONICLER: growth records logged for this plant. head:true count;
-  // tolerate a not-yet-migrated schema (growth_records table missing) by
-  // treating it as zero, same as lib/growth.ts's fetchGrowthRecords.
-  const { count: growthRecordCount, error: growthRecordsError } = await supabase
-    .from("growth_records")
-    .select("id", { count: "exact", head: true })
-    .eq("plant_id", plantId);
-  if (growthRecordsError && !isMissingTableError(growthRecordsError)) {
+  if (growthRecordsResult.error && !isMissingTableError(growthRecordsResult.error)) {
     throw new Error(
-      `badge-engine: failed to count growth_records: ${growthRecordsError.message}`,
+      `badge-engine: failed to count growth_records: ${growthRecordsResult.error.message}`,
     );
   }
-  const growthRecordsTotal = growthRecordsError ? 0 : (growthRecordCount ?? 0);
+  const growthRecordsTotal = growthRecordsResult.error ? 0 : (growthRecordsResult.count ?? 0);
 
   const earned: BadgeKey[] = [];
   if (recoveryCount >= 1) earned.push("FIRST_RESCUE");

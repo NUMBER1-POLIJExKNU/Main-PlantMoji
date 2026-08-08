@@ -57,11 +57,15 @@ function isMissingTableError(error: { code?: string; message: string }): boolean
  * dailyChallengeRewardKey makes repeat awards no-ops (§28). §23 discipline:
  * every condition below is a verified outcome read from the database — no
  * award is ever based on an assumed or fabricated plant state.
+ *
+ * @returns true when the challenge XP actually landed in THIS call (the RPC
+ * did not report a duplicate) — settleCompletions uses this to decide whether
+ * the second evaluator pass is needed.
  */
-async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): Promise<void> {
+async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): Promise<boolean> {
   const now = new Date();
   const event = getDailyEvent(plantId, now);
-  if (event.kind !== "daily_challenge" || !event.challengeXp) return;
+  if (event.kind !== "daily_challenge" || !event.challengeXp) return false;
 
   // Today's WIB calendar day as a half-open UTC instant range
   // [00:00, next 00:00) — WIB is fixed-offset (no DST), so +24h is exact.
@@ -82,7 +86,7 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
       .gte("recorded_at", dayStartIso)
       .lt("recorded_at", dayEndIso);
     if (error) {
-      if (isMissingTableError(error)) return;
+      if (isMissingTableError(error)) return false;
       throw new Error(`event-router: daily challenge growth_records failed: ${error.message}`);
     }
     satisfied = (count ?? 0) >= 1;
@@ -102,51 +106,56 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
   } else if (event.id === "STEADY_DAY") {
     // Award only after the daytime window (WIB 06:00–18:00) is fully over —
     // never claim "you stayed steady all day" while the day could still sour.
-    if (wibHour(now) < 18) return;
+    if (wibHour(now) < 18) return false;
 
-    // No data, no claim (§23): require at least one device event today so a
-    // dead pipeline can't masquerade as a perfectly steady plant...
-    const { count: anyToday, error: anyError } = await supabase
-      .from("device_events")
-      .select("event_id", { count: "exact", head: true })
-      .eq("plant_id", plantId)
-      .gte("occurred_at", dayStartIso)
-      .lt("occurred_at", dayEndIso);
-    if (anyError) {
-      throw new Error(`event-router: daily challenge device_events failed: ${anyError.message}`);
-    }
-
-    // ...and zero PLANT_STATE_CHANGED entries into a non-Happy mood during
-    // the daytime window. currentState is normalized to canonical casing at
-    // the trust boundary (parseDeviceEvent), so an exact 'Happy' compare is
-    // safe — same convention as badge-engine's soil-event count.
+    // Two independent counts — issued in parallel. First: no data, no claim
+    // (§23) — require at least one device event today so a dead pipeline
+    // can't masquerade as a perfectly steady plant. Second: zero
+    // PLANT_STATE_CHANGED entries into a non-Happy mood during the daytime
+    // window. currentState is normalized to canonical casing at the trust
+    // boundary (parseDeviceEvent), so an exact 'Happy' compare is safe —
+    // same convention as badge-engine's soil-event count.
     const windowStartIso = new Date(Date.parse(`${today}T06:00:00+07:00`)).toISOString();
     const windowEndIso = new Date(Date.parse(`${today}T18:00:00+07:00`)).toISOString();
-    const { count: problemCount, error: problemError } = await supabase
-      .from("device_events")
-      .select("event_id", { count: "exact", head: true })
-      .eq("plant_id", plantId)
-      .eq("type", "PLANT_STATE_CHANGED")
-      .neq("data->>currentState", "Happy")
-      .gte("occurred_at", windowStartIso)
-      .lt("occurred_at", windowEndIso);
-    if (problemError) {
+    const [anyResult, problemResult] = await Promise.all([
+      supabase
+        .from("device_events")
+        .select("event_id", { count: "exact", head: true })
+        .eq("plant_id", plantId)
+        .gte("occurred_at", dayStartIso)
+        .lt("occurred_at", dayEndIso),
+      supabase
+        .from("device_events")
+        .select("event_id", { count: "exact", head: true })
+        .eq("plant_id", plantId)
+        .eq("type", "PLANT_STATE_CHANGED")
+        .neq("data->>currentState", "Happy")
+        .gte("occurred_at", windowStartIso)
+        .lt("occurred_at", windowEndIso),
+    ]);
+    if (anyResult.error) {
       throw new Error(
-        `event-router: daily challenge problem-mood count failed: ${problemError.message}`,
+        `event-router: daily challenge device_events failed: ${anyResult.error.message}`,
       );
     }
-    satisfied = (anyToday ?? 0) >= 1 && (problemCount ?? 0) === 0;
+    if (problemResult.error) {
+      throw new Error(
+        `event-router: daily challenge problem-mood count failed: ${problemResult.error.message}`,
+      );
+    }
+    satisfied = (anyResult.count ?? 0) >= 1 && (problemResult.count ?? 0) === 0;
   }
 
-  if (!satisfied) return;
+  if (!satisfied) return false;
 
-  await awardXp(
+  const result = await awardXp(
     supabase,
     plantId,
     dailyChallengeRewardKey(plantId, today, event.id),
     event.challengeXp,
     `daily:${event.id}`,
   );
+  return !result.duplicate;
 }
 
 /**
@@ -180,6 +189,17 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
   // Oldest first so a batch spanning midnight extends the streak in
   // chronological order.
   const completed = ((data as QuestRow[]) ?? []).reverse();
+
+  // True once ANY award in this settle actually lands (the RPC did not report
+  // a duplicate). Steady-state settles — where every reward key is already in
+  // the ledger — leave this false, which lets the second evaluator pass at
+  // the bottom be skipped entirely.
+  let awardLanded = false;
+  const award = async (rewardKey: string, amount: number, reason: string) => {
+    const result = await awardXp(supabase, plantId, rewardKey, amount, reason);
+    if (!result.duplicate) awardLanded = true;
+    return result;
+  };
 
   if (completed.length > 0) {
     const keys = completed.map(rewardKeyFor);
@@ -224,9 +244,7 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
       // the sweep idempotent AND self-healing: a crash after the streak
       // credit but before an award is repaired by the next settle.
       for (const days of milestonesReached(0, streak.currentStreak)) {
-        await awardXp(
-          supabase,
-          plantId,
+        await award(
           streakMilestoneRewardKey(plantId, days),
           STREAK_MILESTONE_XP,
           `streak-milestone:${days}`,
@@ -261,75 +279,91 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
       // the lucky awardXp no-ops on its own ledger key, and the base award
       // lands. The reverse order would orphan the bonus forever.
       if (isLuckyQuest(quest.id)) {
-        await awardXp(
-          supabase,
-          plantId,
-          luckyRewardKey(quest.id),
-          amount,
-          `lucky-bonus:${quest.quest_key}`,
-        );
+        await award(luckyRewardKey(quest.id), amount, `lucky-bonus:${quest.quest_key}`);
       }
 
       // rewardKey per handoff §28 — a replay can never double-award. LAST
       // write for this quest: the settlement marker (see the docstring).
-      await awardXp(supabase, plantId, rewardKeyFor(quest), amount, quest.quest_key);
+      await award(rewardKeyFor(quest), amount, quest.quest_key);
     }
   }
 
   // Daily challenge sweep — runs on every settle (device events AND page-load
   // ticks) so a challenge earned without any quest activity still pays out.
-  await settleDailyChallenge(supabase, plantId);
+  if (await settleDailyChallenge(supabase, plantId)) awardLanded = true;
 
   // Badges and story react to the new progression state; cheap enough to
   // evaluate on every settle, and both are replay-safe.
   await evaluateBadges(supabase, plantId);
   await evaluateChapters(supabase, plantId);
 
-  // Badge bonus XP — driven by PERSISTED unlocks, not by the evaluators'
-  // "newly unlocked" return values: a crash between the badge insert and a
-  // newness-gated award would orphan that bonus forever. Re-awarding every
-  // unlocked badge each settle (≤12 rows) is a no-op via the reward_key
-  // ledger and heals any such gap.
-  const { data: badgeRows, error: badgeError } = await supabase
-    .from("plant_badges")
-    .select("badge_key")
-    .eq("plant_id", plantId);
-  if (badgeError) {
-    throw new Error(`event-router: fetch plant_badges failed: ${badgeError.message}`);
+  // Badge + chapter bonus XP — driven by PERSISTED unlocks (plant_badges and
+  // the monotonic bond_state.current_chapter), not by the evaluators' "newly
+  // unlocked" return values: a crash between the badge insert and a
+  // newness-gated award would orphan that bonus forever. Sweeping every
+  // unlocked badge/chapter each settle heals any such gap. The two reads are
+  // independent — issued in parallel.
+  const [badgeResult, bondState] = await Promise.all([
+    supabase.from("plant_badges").select("badge_key").eq("plant_id", plantId),
+    getBondState(supabase, plantId),
+  ]);
+  if (badgeResult.error) {
+    throw new Error(`event-router: fetch plant_badges failed: ${badgeResult.error.message}`);
   }
-  for (const row of (badgeRows ?? []) as Array<{ badge_key: BadgeKey }>) {
-    await awardXp(
-      supabase,
-      plantId,
-      badgeRewardKey(plantId, row.badge_key),
-      BADGE_BONUS_XP,
-      `badge:${row.badge_key}`,
-    );
-  }
+  const badgeRows = (badgeResult.data ?? []) as Array<{ badge_key: BadgeKey }>;
 
-  // Chapter bonus XP — same self-healing sweep, driven by the monotonic
-  // bond_state.current_chapter. No bond_state row means no progression has
-  // ever been recorded, so there is nothing to reward yet.
-  const bondState = await getBondState(supabase, plantId);
+  // Ledger pre-filter: ONE xp_rewards read replaces the old "re-award every
+  // unlocked badge/chapter and let the RPC dedupe" loop, which cost a full
+  // round trip per row on EVERY settle. Keys are built with the exact same
+  // badgeRewardKey/chapterRewardKey helpers the awards below use, so a key's
+  // presence in the ledger is precisely "this award already landed". A key
+  // that slips through (racing settle) still hits the RPC's own dedup — the
+  // pre-filter is an optimization, never the idempotency guarantee.
+  const badgeKeys = badgeRows.map((row) => badgeRewardKey(plantId, row.badge_key));
+  const chapterNumbers: number[] = [];
   if (bondState) {
+    // No bond_state row means no progression has ever been recorded, so
+    // there is nothing to reward yet.
     for (let chapter = 1; chapter <= bondState.current_chapter; chapter += 1) {
-      await awardXp(
-        supabase,
-        plantId,
-        chapterRewardKey(plantId, chapter),
-        CHAPTER_BONUS_XP,
-        `chapter:${chapter}`,
-      );
+      chapterNumbers.push(chapter);
     }
   }
+  const chapterKeys = chapterNumbers.map((chapter) => chapterRewardKey(plantId, chapter));
+  const bonusKeys = [...badgeKeys, ...chapterKeys];
+  let settledBonuses = new Set<string>();
+  if (bonusKeys.length > 0) {
+    const { data: bonusRows, error: bonusError } = await supabase
+      .from("xp_rewards")
+      .select("reward_key")
+      .in("reward_key", bonusKeys);
+    if (bonusError) {
+      throw new Error(`event-router: fetch bonus xp_rewards failed: ${bonusError.message}`);
+    }
+    settledBonuses = new Set((bonusRows ?? []).map((row) => row.reward_key as string));
+  }
 
-  // The bonus XP above can raise bond_level, which can itself unlock LEVEL_*
+  for (const row of badgeRows) {
+    const key = badgeRewardKey(plantId, row.badge_key);
+    if (settledBonuses.has(key)) continue;
+    await award(key, BADGE_BONUS_XP, `badge:${row.badge_key}`);
+  }
+  for (const chapter of chapterNumbers) {
+    const key = chapterRewardKey(plantId, chapter);
+    if (settledBonuses.has(key)) continue;
+    await award(key, CHAPTER_BONUS_XP, `chapter:${chapter}`);
+  }
+
+  // The XP landed above can raise bond_level, which can itself unlock LEVEL_*
   // badges and level-gated chapters — but the evaluators ran BEFORE those
-  // awards landed. Re-run both (replay-safe) so level-triggered unlocks land
-  // in this tick instead of the next one; their own bonus XP is picked up by
-  // the next settle's self-healing sweeps, which keeps the cascade bounded.
-  await evaluateBadges(supabase, plantId);
-  await evaluateChapters(supabase, plantId);
+  // awards. Re-run both (replay-safe) so level-triggered unlocks land in this
+  // tick instead of the next one; their own bonus XP is picked up by the next
+  // settle's self-healing sweeps, which keeps the cascade bounded. When NO
+  // award landed in this settle (the steady state on every tab switch),
+  // progression state is exactly what the first pass already saw — skip.
+  if (awardLanded) {
+    await evaluateBadges(supabase, plantId);
+    await evaluateChapters(supabase, plantId);
+  }
 }
 
 export interface ProcessOptions {
