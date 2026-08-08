@@ -126,11 +126,14 @@ Quest completion is **sensor-verified**. A user cannot simply tap “Done” to 
 ### Bond Level
 
 ```text
-0–99 XP    → Bond Lv.1
-100–199 XP → Bond Lv.2
-200–299 XP → Bond Lv.3
+0–29 XP  → Bond Lv.1
+30–59 XP → Bond Lv.2
+60–89 XP → Bond Lv.3
 ...
 ```
+
+Every level uses a flat **30 XP step**. Early levels arrive quickly and later
+levels do not turn into a grind; the XP bar animates the real ledger change.
 
 Bond Level represents care and progression. It is intentionally separate from the plant's real biological **Growth Stage**.
 
@@ -144,6 +147,10 @@ Bond Level represents care and progression. It is intentionally separate from th
 - 🎉 **Seasonal Events** — date-window XP multipliers: Musim Kemarau Heat Challenge (×1.2), Weekend Growth (×1.1), Musim Hujan Growing Season (×1.15, Nov–Apr); highest multiplier wins, never stacked
 - 🎲 **Daily Events** — one deterministic event per WIB day per plant (hash-picked, replay-safe): Jember-flavored XP boosts (*Golden Hour over the Sawah* ×1.5), care challenges (+10–15 XP, ledger-guarded), and flavor days (*Carnaval Day*, *Market Morning*, *Volcano-Soil Pride Day*…)
 - 🤖 **AI-personalized dialogue** — optional Gemini-powered grounded explanations; always falls back to deterministic templates
+- 🐣 **Companion Evolution** — Seed → Sprout → Bud → Bloom → Guardian, calculated only from completed sensor-verified care; care affinity changes the virtual form while the real plant's manually logged Growth Stage remains separate
+- 🧠 **Farm Case Quiz** — endless three-step agriculture cases (*Observe → Understand → Act*) with a 15-second timer, a first-miss hint, answer/explanation after another miss, +1–3 XP for a correct answer, and −1 XP for a miss/timeout
+- 🌾 **1,200+ dialogue variants** — short ID/EN lines grounded in mood, time, companion stage, event, and the selected Jamkachu personality, with repetition control and deterministic fallback
+- 💎 **Playable collection rewards** — discovered Moods perform character reactions, Stories replay as pixel scenes, Badges can preview and change home tap effects, and Wisdom cards open sensor-prediction practice
 
 ### Tamagotchi Continuity
 
@@ -161,7 +168,7 @@ The relationship with Jamkachu continues even after you step away:
 Celebrations are real, quick, and honest — every effect fires only on backend-verified transitions:
 
 - 🎚️ **Celebration queue** — stacked FX (quest + lucky + level-up) play as an ordered sequence with per-tier duration caps, so feedback never blocks information
-- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), default ON after the first tap, persistent one-tap mute (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
+- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), default muted until the user enables it, persistent one-tap preference (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
 - 🌰 **Tap-to-claim reward pod** — a quest completion drops a seed pod by Jamkachu; tap it to pop the celebration (it auto-bursts after ~8 s so nothing ever stalls)
 - ✨ **XP orb cascade** — awards split into orbs that arc into the XP bar (gold when lucky); reduced-motion collapses to a single count-up
 - 🔍 **Verifying shimmer** — quests being sensor-checked render amber with "Sensor is checking…", then a short anticipation hold before the celebration
@@ -174,11 +181,16 @@ Celebrations are real, quick, and honest — every effect fires only on backend-
 
 Built for teenagers, so the dopamine layer is honest by design:
 
-1. XP only ever comes from sensor-verified care. Taps, petting, and buttons grant **zero XP** — and no hidden counters
+1. Physical-care XP comes only from sensor-verified quests. Taps, petting, cosmetic previews, and care buttons grant **zero XP**; the separately labeled agriculture quiz can award +1–3 XP or deduct exactly 1 XP
 2. The Lucky bonus is **strictly additive** with disclosed 1-in-8 odds — no near-miss theatrics, no grind loops
 3. No countdown pressure, no guilt copy, no fake scarcity; streak messaging is warm and daytime-only
 4. Celebrations have total-duration caps, honor `prefers-reduced-motion`, and mute is always one tap away
 5. Presenter hotkeys are presentation-only replays (zero data writes) and are disclosed to producers
+
+Quiz scoring is deliberately small compared with verified care, and every
+question teaches environmental observation or safe agricultural action. Soil
+pH questions never prescribe chemical dosage and direct students to a teacher
+or experienced adult.
 
 ---
 
@@ -258,6 +270,32 @@ flowchart TD
 | **AI Layer** | Optional wording, personality, explanation |
 
 > **AI never controls hardware or determines physical truth.**
+
+### Environment Intelligence
+
+The Jember Crop Explorer reuses one deterministic Environment Analyzer:
+
+```text
+Latest real sensor snapshot + versioned Jember crop profiles
+                         ↓
+            deterministic match / mismatch
+                         ↓
+     Scan This Place · Crop Match · What Should I Change?
+                         ↓
+        optional short Gemini explanation or local fallback
+```
+
+- Compares temperature, **air** humidity, light, and calibrated soil pH.
+- Reports transparent counts such as `3 / 4 measured conditions matched`;
+  missing or malformed values are `not_evaluated`, never mismatches.
+- Ranking is deterministic. Gemini never ranks crops or invents thresholds.
+- Draft and `reference_only` Jember profiles are visibly advisory. Only an
+  approved profile can affect the automatic mood and quest engine.
+- Recommendations are reversible and educational. Soil intervention is
+  referred to a teacher/farmer rather than giving chemical dosage.
+- `GEMINI_API_KEY` and `gemini-3.5-flash-lite` are server-side only. Missing
+  keys, rate limits, malformed output, and timeouts always use deterministic
+  bilingual fallback copy.
 
 ---
 
@@ -356,30 +394,31 @@ Live screens:
                  forecast stays separate from the indoor sensor
              Reward FX ride the celebration queue: tap-to-claim reward pod,
              XP orb cascade, reason chips, causal echo, Lucky ×2 stamp,
-             chapter gate — with 8-bit WebAudio SFX (default on, one-tap
-             mute). Real backend-verified transitions only; reduced-motion
+             chapter gate — with optional 8-bit WebAudio SFX (default muted,
+             one-tap enable). Real backend-verified transitions only; reduced-motion
              safe. Append ?demo=1 for presenter hotkeys + a QA self-test
              overlay (presentation-only replays, zero data writes).
 
 /quests      Active & past quests, live quest celebrations, verifying
              shimmer, "Today's Event" banner (daily events)
-/collection  Collection Book — Moods · Badges (silhouettes + realtime badge
-             flips) · Story · Wisdom, incl. the honest Lucky-odds disclosure
+/collection  Playable Collection — Mood reactions · circular badge/gem path
+             and tap-effect previews · Story pixel replay · Wisdom sensor quiz
 /reports     Weekly Report — animated count-up recap
 /monitoring  "Plant Status" — semicircle gauges (temp / humidity / soil
              moisture) + light (lux) history chart, 10 s polling
-/plants      Crop profile view (per-crop preferred ranges)
-/settings    "Growth Diary" — plant name, personality, growth records;
+/plants      Jember Crop Explorer — real snapshot scan, deterministic crop
+             comparison, condition detail, grounded AI/fallback explanation
+/diary       Care Memories (automatic) + Growth Notes (manual real growth)
+/settings    Plant name, personality and operator/demo tools;
              the Demo Control Center renders only on /settings?demo=1
 ```
 
 Every React page shares the farm page's pixel design system (`pm-*` utility
-classes), framed content stage, and the same seven destinations — Home ·
-Quests · Plants · Dashboard · Collection · Report · Settings — so the whole
-app reads as one game, not a dashboard with a mascot page attached. On phones
-the same destinations stay visible in a compact bottom dock; the brand and
-ID/EN switch remain in the shared top bar. Growth records continue to live in
-Settings without creating a duplicate navigation item.
+classes) and framed content stage. The navigation follows a Tamagotchi game
+loop instead of a dashboard: **My Garden · Care · Explore · Memories ·
+Treasures**. Sensors, Recap, and Settings live in a smaller desktop Tool
+Pocket; phones keep the five core game actions in a compact bottom dock.
+Tab transitions use route-specific, clickable pixel Jamkachu loading toys.
 
 The UI is **bilingual: Bahasa Indonesia by default, English via the ID / EN
 switch** (persisted across pages). The farm page reads a two-locale string
@@ -474,16 +513,25 @@ supabase/milestone7-more-quests.sql   Humidify My Air + Stay Comfy keys
 supabase/milestone8-dopamine.sql      bond_events realtime publication (reason chips, Lucky stamp)
 supabase/milestone9-raw-sensor-ingest.sql     sensor_readings table (raw ingest)
 supabase/milestone10-jember-crop-catalog.sql  10 Jember crops + versioned evidence / sources
+supabase/milestone11-tamagotchi.sql           companion state/evolution + realtime
+supabase/milestone12-selectable-crops.sql     selectable crop catalog/profile contract
+supabase/milestone13-daily-quiz.sql           replay-safe quiz attempts + atomic quiz XP
+supabase/milestone14-fast-levels.sql           flat 30-XP Bond Level progression
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every
-file is guarded and safe to re-run; when in doubt, run all ten again in
+file is guarded and safe to re-run; when in doubt, run all migrations again in
 order (see `docs/RUNBOOK-filming-and-golive.md` §1.2).
 
 Milestone 10 seeds researched Jember profiles as `draft` or
 `reference_only`. Strawberry remains the only profile approved for automatic
 mood and quest decisions. See `docs/CROP-PROFILE-CATALOG-jember.md` before
 activating another crop.
+
+If the Supabase host is unreachable, server-side requests are capped at 2.5
+seconds so route loading can fall back to an honest connection notice instead
+of trapping the user on the pixel loading screen. This does not make offline
+data authoritative; it only keeps navigation responsive.
 
 ### 5. Run
 
@@ -557,12 +605,13 @@ plantmoji/
 │
 ├── src/
 │   ├── app/
-│   │   ├── quests/  collection/  reports/  monitoring/  plants/  settings/
+│   │   ├── quests/ collection/ diary/ reports/ monitoring/ plants/ settings/
 │   │   └── api/
 │   │       ├── sensor-readings/  raw sensor ingest (idempotent readingId)
 │   │       ├── device-events/    Node-RED → game engine (idempotent)
 │   │       ├── sensor-history/   monitoring dashboard feed
-│   │       ├── game-tick/  mood-message/  public-config/  demo-reset/
+│   │       ├── game-tick/ mood-message/ public-config/ demo-reset/ daily-quiz/
+│   │       ├── environment-scan/ environment-explanation/ crop-profile/
 │   │       └── local-context/   cached BMKG outdoor forecast
 │   │
 │   ├── components/       shared pixel-farm shell, collection tabs, demo center…
@@ -570,18 +619,18 @@ plantmoji/
 │   │   ├── events/       event router + lazy timestamp sweep + Lucky settle
 │   │   ├── quests/       sensor-verified quest engine
 │   │   ├── progression/  XP · streak · bonus XP
-│   │   ├── badges/  story/  seasonal/
+│   │   ├── companion/ quiz/ badges/ story/ seasonal/
 │   │   ├── random/       deterministic daily events (Jember pool) + Lucky hash
 │   │   ├── emotions/     event emotions (Proud, Excited…)
 │   │   ├── personality/  deterministic message templates
 │   │   └── education/    why-cards + farmer wisdom
-│   ├── lib/              i18n (ID default / EN) + supabase helpers
+│   ├── lib/              i18n + environment analyzer + AI/Supabase helpers
 │   └── types/
 │
-├── supabase/             SQL migrations (milestone1 … milestone10)
+├── supabase/             additive SQL migrations (milestone1 … milestone14)
 ├── node-red/             bridge flow + trilingual guide
 ├── docs/                 setup + integration plans + filming/go-live runbook (EN/ID/KO)
-├── tests/                Vitest suites (240+ tests)
+├── tests/                315 Vitest tests across 31 suites
 └── README.md
 ```
 
@@ -614,6 +663,8 @@ plantmoji/
 - [x] Collection Book
 - [x] Care Streak
 - [x] Weekly Report
+- [x] Companion Evolution separated from manual real-plant Growth Stage
+- [x] Agriculture-only Farm Case quiz with hints, answer teaching and timer
 
 ### Phase 4 — Experience
 
@@ -626,6 +677,11 @@ plantmoji/
 - [x] Presenter tooling (?demo=1 hotkeys + QA overlay, /settings?demo=1 Demo Control Center)
 - [x] Sensor monitoring dashboard (/monitoring, "Plant Status")
 - [x] Daily events + Jember-localized story, seasons, and wisdom
+- [x] Deterministic Jember Environment Analyzer + Scan This Place + Crop Match
+- [x] Server-only Gemini environment explanations with deterministic fallback
+- [x] Playable Mood, Badge, Story and Wisdom collection rewards
+- [x] Tamagotchi navigation (five game tabs + compact operator Tool Pocket)
+- [x] Route-specific interactive pixel loading toys
 - [x] AI-personalized dialogue (optional, template fallback)
 - [x] Seasonal Events
 - [x] Growth Records (manual, settings page — never inferred from sensors)
@@ -656,6 +712,8 @@ plantmoji/
 10. XP orbs cascade into the bar (+30 XP · sometimes LUCKY! ×2)
 11. Bond Level Up → a new level decoration appears on the mascot stage
 12. Hardware + Web celebrate together
+13. Open Explore, scan the same real snapshot, compare Jember crop references,
+    and ask for a grounded explanation of the largest measured mismatch
 ```
 
 This demonstrates the full loop:
