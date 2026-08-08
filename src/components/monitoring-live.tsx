@@ -117,25 +117,25 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
 
   return (
     <div>
-      <p className="mb-2 text-right text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
+      <p className="mb-2 text-right text-xs tabular-nums text-[#57684F]">
         {updatedAt ? `Last updated ${updatedAt}` : "Connecting to sensors…"}
       </p>
 
       {state === "no-env" && (
-        <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        <p className="mb-3 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] px-3 py-2 text-xs leading-5 text-[#7A5B12]">
           Supabase environment variables are not set — copy .env.local.example to .env.local and
           restart the dev server. Live readings will appear here.
         </p>
       )}
       {state === "error" && (
-        <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        <p className="mb-3 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] px-3 py-2 text-xs leading-5 text-[#7A5B12]">
           Couldn&apos;t reach the sensor API — retrying every 10 seconds.
         </p>
       )}
 
-      {/* Arc colors replicate the Node-RED design (teal/green/orange) with
-          steps validated per mode for surface contrast and pair separation.
-          Hue never carries identity — each gauge is fully text-labeled. */}
+      {/* Arc colors adopt the farm palette — water blue / forest green /
+          soil brown, mirroring what each sensor measures. Hue never carries
+          identity on its own: each gauge stays fully text-labeled. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SensorGauge
           label="Air Temperature"
@@ -143,7 +143,7 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
           min={0}
           max={50}
           unit="°C"
-          colorClass="text-teal-500"
+          colorClass="text-[#4DA1ED]"
         />
         <SensorGauge
           label="Air Humidity"
@@ -151,7 +151,7 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
           min={0}
           max={100}
           unit="%"
-          colorClass="text-green-700 dark:text-green-600"
+          colorClass="text-[#397A2B]"
         />
         <SensorGauge
           label="Soil Moisture"
@@ -159,18 +159,18 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
           min={0}
           max={100}
           unit="%"
-          colorClass="text-orange-600 dark:text-orange-500"
+          colorClass="text-[#AA7E55]"
         />
       </div>
 
-      <section className="mt-4 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 className="mb-2 text-center text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <section className="pm-panel mt-4">
+        <h2 className="pm-heading mb-2 text-center text-xs">
           {mode === "lux" ? "Light Intensity (Lux)" : "Light (on/off)"}
         </h2>
         {points.length > 0 ? (
           <LightChart points={points} mode={mode} />
         ) : (
-          <div className="flex h-[260px] items-center justify-center text-sm text-zinc-400 dark:text-zinc-500">
+          <div className="flex h-[260px] items-center justify-center text-sm text-[#57684F]">
             Waiting for sensors…
           </div>
         )}

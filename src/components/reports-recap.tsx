@@ -78,29 +78,29 @@ export default function ReportsRecap({
         ? `🔥 ${streak} of ${nextMilestone} days — next streak milestone`
         : `🔥 ${streak} days — every milestone reached!`;
 
+  // Farm surface card (.pm-panel) with a harvest-yellow accent; the big
+  // count-up numbers render in Press Start 2P (.pm-heading). Accents stay
+  // inline because the unlayered pm-* contract beats Tailwind utilities.
   return (
     <section
       aria-label="Weekly recap"
-      className="mb-6 rounded-2xl border border-amber-200/70 bg-amber-50/70 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40"
+      className="pm-panel mb-6"
+      style={{ borderColor: "var(--color-yellow)" }}
     >
-      <p className="text-center text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+      <p className="pm-heading text-center text-[9px] uppercase" style={{ color: "#A97B12" }}>
         This week&apos;s recap
       </p>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 text-center">
+      <div className="mt-4 grid grid-cols-2 gap-3 text-center">
         <div>
-          <p className="text-3xl font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-            {shown(xpTotal)}
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+          <p className="pm-heading text-xl tabular-nums">{shown(xpTotal)}</p>
+          <p className="mt-1 text-xs font-semibold" style={{ color: "#5B6B57" }}>
             Total XP
           </p>
         </div>
         <div>
-          <p className="text-3xl font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-            {shown(questsWeek)}
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+          <p className="pm-heading text-xl tabular-nums">{shown(questsWeek)}</p>
+          <p className="mt-1 text-xs font-semibold" style={{ color: "#5B6B57" }}>
             Quests this week
           </p>
         </div>
@@ -113,20 +113,28 @@ export default function ReportsRecap({
           aria-valuemax={arcTarget}
           aria-valuenow={Math.min(streak, arcTarget)}
           aria-label={streakLabel}
-          className="h-2 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-zinc-700/60"
+          className="pm-bar w-full"
         >
+          {/* Width is driven every frame by the count-up rAF, so the
+              contract's 0.8s width transition is disabled inline — it would
+              lag behind the eased curve. Flame gradient stays in the farm
+              palette (yellow → overheat orange). */}
           <div
-            className="h-full rounded-full bg-linear-to-r from-amber-400 to-orange-500"
-            style={{ width: `${arcPercent * progress}%` }}
+            className="pm-bar-fill"
+            style={{
+              width: `${arcPercent * progress}%`,
+              transition: "none",
+              background: "linear-gradient(90deg, var(--color-yellow) 0%, #F08A6B 100%)",
+            }}
           />
         </div>
-        <p className="mt-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+        <p className="mt-1.5 text-xs font-semibold" style={{ color: "#5B6B57" }}>
           {streakLabel}
         </p>
       </div>
 
       {bestDay && (
-        <p className="mt-3 text-center text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+        <p className="mt-3 text-center text-sm font-semibold" style={{ color: "var(--color-text)" }}>
           <span role="img" aria-hidden="true">
             🌟
           </span>{" "}

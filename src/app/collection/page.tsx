@@ -149,16 +149,19 @@ export default async function CollectionPage() {
     };
   });
 
+  // Sizing/backdrop comes from the farm shell contract: .reno-route-content
+  // centers this <main> at 720px directly on the sky, and .pm-panel cards
+  // inside supply the surfaces.
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
-      <header className="mb-6 flex flex-col items-center gap-1 text-center">
-        <span className="text-4xl" role="img" aria-hidden="true">
-          📖
-        </span>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <main className="w-full">
+      <header className="mb-6">
+        <h1 className="pm-heading flex items-center gap-3 text-lg">
+          <span className="text-3xl leading-none" role="img" aria-hidden="true">
+            📖
+          </span>
           {locale === "id" ? "Koleksi" : "Collection"}
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm" style={{ color: "#5B6B57" }}>
           {locale === "id" ? "Semua yang sudah kita temukan bersama." : "Everything we've discovered together."}
         </p>
       </header>

@@ -24,9 +24,9 @@ export interface LightPoint {
  *  log the on/off `light` column. */
 export type LightMode = "lux" | "binary";
 
-// blue-500 — legible on both the white and the zinc-900 card surface, close
-// to the Node-RED original's line color.
-const LINE_BLUE = "#3b82f6";
+// Farm --color-water — the palette's blue, legible on the white .pm-panel
+// surface and close to the Node-RED original's line color.
+const LINE_BLUE = "#4DA1ED";
 
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
@@ -51,15 +51,15 @@ function ChartTooltip({ mode, active, payload }: ChartTooltipProps) {
   const point = active ? payload?.[0]?.payload : undefined;
   if (!point) return null;
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs shadow-md dark:border-zinc-700 dark:bg-zinc-900">
-      <p className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+    <div className="rounded-lg border-2 border-[#BCD3B4] bg-white px-2.5 py-1.5 text-xs shadow-[0_3px_0_rgba(36,52,33,0.15)]">
+      <p className="font-semibold tabular-nums text-[#243421]">
         {mode === "lux"
           ? `${point.value.toLocaleString("en-US")} lx`
           : point.value >= 1
             ? "Light on"
             : "Light off"}
       </p>
-      <p className="tabular-nums text-zinc-500 dark:text-zinc-400">{formatTime(point.t)}</p>
+      <p className="tabular-nums text-[#57684F]">{formatTime(point.t)}</p>
     </div>
   );
 }
@@ -84,7 +84,7 @@ export default function LightChart({
 
   return (
     <div
-      className="h-[260px] w-full text-zinc-500 tabular-nums dark:text-zinc-400"
+      className="h-[260px] w-full text-[#57684F] tabular-nums"
       aria-label={mode === "lux" ? "Light intensity history in lux" : "Light on/off history"}
     >
       <ResponsiveContainer width="100%" height="100%">
@@ -128,7 +128,7 @@ export default function LightChart({
             strokeLinejoin="round"
             strokeLinecap="round"
             dot={false}
-            activeDot={{ r: 4, strokeWidth: 2, className: "stroke-white dark:stroke-zinc-900" }}
+            activeDot={{ r: 4, strokeWidth: 2, className: "stroke-white" }}
             isAnimationActive={false}
           />
         </LineChart>

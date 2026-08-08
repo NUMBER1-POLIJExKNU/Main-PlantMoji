@@ -39,7 +39,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${vt323.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
+      {/* pm-page paints the farm sky on the body itself so overscroll and
+          short routes never flash a plain white background. */}
+      <body className="pm-page min-h-full">
         <RenoAppShell locale={locale}>{children}</RenoAppShell>
         {/* Shared farm globals (dopamine plan Task 5): window.PM_STRINGS +
             window.PMSfx for React pages too. Plain sync tags trip the

@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+/* The whole product commits to the farm's daylight look (public/farm is the
+   design source of truth and has no dark mode). Redefining Tailwind's `dark`
+   variant as class-based — with no `.dark` class ever set — keeps every
+   existing `dark:*` utility compiling while making it inert, so the farm
+   palette wins in both OS themes. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4faf1;
+  --foreground: #243421;
 }
 
 @theme inline {
@@ -14,21 +21,14 @@
   --font-pixel-body: var(--font-vt323), "VT323", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), "Segoe UI", system-ui, Arial, Helvetica, sans-serif;
 }
 
 /* ------------------------------------------------------------------ */
-/* Cozy Pixel Farm — home scene (palette ported from the mockup)      */
+/* Cozy Pixel Farm — design tokens (ported from public/farm/style.css) */
 /* ------------------------------------------------------------------ */
 
 :root {
@@ -44,7 +44,129 @@ body {
   --color-water: #4DA1ED;
   --color-outline: #2B3A27;
   --color-cheek: #FF9E9E;
+
+  /* Contrast tokens (farm spec §2.5) — the surface/typography system every
+     React page shares with the static farm home. */
+  --color-primary: #5FAE45;
+  --color-text: #243421;
+  --color-bg: #F4FAF1;
+  --color-surface: #FFFFFF;
+  --color-border: #BCD3B4;
+
+  /* Chunky pixel chrome shared by panels, sidebar and chips. */
+  --pm-radius: 16px;
+  --pm-shadow: 0 4px 0 rgba(36, 52, 33, 0.15);
+  --pm-font-pixel: var(--font-press-start-2p), "Press Start 2P", monospace;
+  --pm-font-body: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
 }
+
+/* ------------------------------------------------------------------ */
+/* Farm utility classes — the shared contract for every React page.   */
+/* ------------------------------------------------------------------ */
+
+/* .pm-page — the farm sky: radial glow over the sky blue. Applied to <body>
+   (layout.tsx) and reused by any standalone page that needs the backdrop. */
+.pm-page {
+  background: radial-gradient(circle at 50% 30%, var(--color-sky-glow) 0%, var(--color-sky) 100%);
+  color: var(--color-text);
+}
+
+/* .pm-panel — the farm surface card: solid white, 3px sprout-green border,
+   chunky pixel drop shadow, soft radius. Use for every content card. */
+.pm-panel {
+  background: var(--color-surface);
+  border: 3px solid var(--color-border);
+  border-radius: var(--pm-radius);
+  box-shadow: var(--pm-shadow);
+  padding: 16px 20px;
+  color: var(--color-text);
+}
+
+/* .pm-heading — game-style heading: Press Start 2P in the farm ink color.
+   Pixel fonts run large; pair with a Tailwind size (text-sm/text-base). */
+.pm-heading {
+  font-family: var(--pm-font-pixel);
+  color: var(--color-text);
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+}
+
+/* .pm-chip — small pixel badge/pill (XP counts, streaks, statuses). */
+.pm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: var(--pm-font-pixel);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--color-text);
+  box-shadow: 0 2px 0 rgba(36, 52, 33, 0.12);
+}
+
+/* .pm-btn — chunky pixel button (farm .pixel-btn): hard outline, solid
+   shadow ledge, presses down 4px on :active. Add .pm-btn-primary for the
+   grass-green call-to-action variant. */
+.pm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--pm-font-pixel);
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 12px 20px;
+  background: var(--color-surface);
+  color: var(--color-outline);
+  border: 3px solid var(--color-outline);
+  border-radius: 12px;
+  box-shadow: 0 4px 0 var(--color-outline);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.pm-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--color-outline); }
+.pm-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--color-outline); }
+.pm-btn:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
+.pm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 0 var(--color-outline);
+}
+
+.pm-btn-primary {
+  background: var(--color-grass);
+  color: #ffffff;
+  border-color: var(--color-forest);
+  box-shadow: 0 4px 0 var(--color-forest);
+}
+.pm-btn-primary:hover { box-shadow: 0 5px 0 var(--color-forest); filter: brightness(1.06); }
+.pm-btn-primary:active { box-shadow: 0 0 0 var(--color-forest); }
+.pm-btn-primary:disabled { box-shadow: 0 4px 0 var(--color-forest); }
+
+/* .pm-bar / .pm-bar-fill — pixel progress bar: sprout-green track with the
+   primary green fill. Set the fill width inline (style={{ width: "40%" }}). */
+.pm-bar {
+  height: 14px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(36, 52, 33, 0.15);
+}
+.pm-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.8s ease-in-out;
+}
+
+/* ------------------------------------------------------------------ */
+/* Cozy Pixel Farm — home scene (palette ported from the mockup)      */
+/* ------------------------------------------------------------------ */
 
 /* The scene commits to its own game look in both themes; per-mood
    classes only re-tint the sky + grass tokens. */
@@ -242,21 +364,21 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
-/* RENO application shell — shared by every React-backed tab          */
+/* RENO application shell — shared by every React-backed tab.         */
+/* Reskinned to the farm design language: solid surface sidebar with  */
+/* the 3px sprout border + pixel shadow, content floating directly on */
+/* the sky (no glass panel).                                          */
 /* ------------------------------------------------------------------ */
 
 .reno-app-shell {
-  --reno-ui-bg: rgba(255, 255, 255, 0.72);
-  --reno-ui-border: 2px solid rgba(255, 255, 255, 0.9);
   --reno-ui-radius: 20px;
-  --reno-ui-shadow: 0 8px 32px rgba(43, 58, 39, 0.1);
   position: relative;
   min-height: 100vh;
   overflow: hidden;
-  color: var(--color-outline);
+  color: var(--color-text);
   color-scheme: light;
-  background: radial-gradient(circle at 50% 30%, #d4f0ff 0%, var(--color-sky) 100%);
-  font-family: var(--font-vt323), "VT323", monospace;
+  background: radial-gradient(circle at 50% 30%, var(--color-sky-glow) 0%, var(--color-sky) 100%);
+  font-family: var(--pm-font-body);
 }
 
 .reno-env-background {
@@ -284,7 +406,6 @@ body {
   border-radius: 50px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(4px);
 }
 
 .reno-env-cloud-1 { top: 12%; width: 160px; height: 50px; }
@@ -310,19 +431,19 @@ body {
   padding: 24px;
 }
 
+/* Farm sidebar: 240px, solid white surface card (mockup .sidebar). */
 .reno-sidebar {
   z-index: 20;
   display: flex;
-  flex: 0 0 280px;
+  flex: 0 0 240px;
   flex-direction: column;
   gap: 32px;
   height: 100%;
-  padding: 24px;
-  border: var(--reno-ui-border);
+  padding: 20px;
+  border: 3px solid var(--color-border);
   border-radius: var(--reno-ui-radius);
-  background: var(--reno-ui-bg);
-  box-shadow: var(--reno-ui-shadow);
-  backdrop-filter: blur(12px);
+  background: var(--color-surface);
+  box-shadow: var(--pm-shadow);
 }
 
 .reno-brand {
@@ -332,15 +453,15 @@ body {
   padding-bottom: 24px;
   border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
   color: var(--color-forest);
-  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
-  font-size: 16px;
+  font-family: var(--pm-font-pixel);
+  font-size: 14px;
   line-height: 1.5;
   text-decoration: none;
 }
 
 .reno-logo {
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
 }
@@ -359,11 +480,11 @@ body {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px;
+  padding: 13px 12px;
   border-radius: 12px;
-  color: var(--color-outline);
-  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
-  font-size: 11px;
+  color: var(--color-text);
+  font-family: var(--pm-font-pixel);
+  font-size: 10px;
   line-height: 1.4;
   text-decoration: none;
   transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
@@ -375,47 +496,43 @@ body {
   font-style: normal;
 }
 
-.reno-nav-item:hover:not(.reno-nav-disabled) {
+.reno-nav-item:hover {
   transform: translateX(6px);
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--color-bg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .reno-nav-item.active {
-  color: white;
+  color: #ffffff;
   background: var(--color-grass);
   box-shadow: 0 8px 16px rgba(105, 196, 85, 0.4);
 }
 
-.reno-nav-disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
+/* ID/EN switch (mockup .locale-switch): tinted well + token border. */
 .reno-locale-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-top: auto;
   padding: 5px;
-  border: 2px solid rgba(43, 58, 39, 0.18);
+  border: 2px solid var(--color-border);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--color-bg);
 }
 
 .reno-locale-switch button {
   padding: 9px 6px;
   border: 0;
   border-radius: 8px;
-  color: var(--color-outline);
+  color: var(--color-text);
   background: transparent;
-  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  font-family: var(--pm-font-pixel);
   font-size: 9px;
   cursor: pointer;
 }
 
 .reno-locale-switch button.active {
-  color: white;
+  color: #ffffff;
   background: var(--color-forest);
 }
 
@@ -427,86 +544,51 @@ body {
   scrollbar-color: rgba(57, 122, 43, 0.35) transparent;
 }
 
+/* Reading routes sit straight on the sky at a comfortable measure —
+   individual cards inside use .pm-panel for surfaces. */
 .reno-route-content > main:not(.pm-scene) {
   width: 100%;
-  max-width: none;
+  max-width: 720px;
   min-height: 100%;
-  margin: 0;
-  padding: 34px 38px 72px;
-  border: var(--reno-ui-border);
-  border-radius: var(--reno-ui-radius);
-  color: var(--color-outline);
-  background:
-    linear-gradient(180deg, rgba(212, 240, 255, 0.72) 0%, rgba(163, 228, 255, 0.5) 42%, rgba(105, 196, 85, 0.22) 100%);
-  box-shadow: var(--reno-ui-shadow);
-  backdrop-filter: blur(12px);
+  margin: 0 auto;
+  padding: 28px 16px 72px;
+  color: var(--color-text);
 }
 
-/* The dashboard owns its sky/grass scene. The generic route panel must not
-   paint a white sheet or padding over it. */
+/* The dashboard owns its sky/grass scene. It keeps the full column width
+   and gets the same chunky framed-card chrome as the sidebar. */
 .reno-route-content > .pm-scene {
   width: 100%;
   min-height: 100%;
-  border: var(--reno-ui-border);
+  border: 3px solid var(--color-border);
   border-radius: var(--reno-ui-radius);
-  box-shadow: var(--reno-ui-shadow);
+  box-shadow: var(--pm-shadow);
 }
 
-.reno-route-content > main:not(.pm-scene)::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: -1;
-  height: 90px;
-  border-radius: 0 0 var(--reno-ui-radius) var(--reno-ui-radius);
-  background: linear-gradient(180deg, rgba(105, 196, 85, 0.25), rgba(57, 122, 43, 0.34));
-  content: "";
-  pointer-events: none;
-}
-
-.reno-route-content > main:not(.pm-scene) {
-  position: relative;
-  isolation: isolate;
-}
-
+/* Bridge styling for routes not yet rebuilt on the pm-* utilities: farm
+   headings, and existing bordered Tailwind cards read as farm surfaces. */
 .reno-route-content > main:not(.pm-scene) > header {
   align-items: flex-start;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
   border-bottom: 2px dashed rgba(43, 58, 39, 0.18);
   text-align: left;
 }
 
 .reno-route-content > main:not(.pm-scene) h1,
 .reno-route-content > main:not(.pm-scene) h2 {
-  color: var(--color-forest) !important;
-  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  color: var(--color-text) !important;
+  font-family: var(--pm-font-pixel);
   line-height: 1.6;
 }
 
-.reno-route-content > main:not(.pm-scene) h1 { font-size: 20px !important; }
+.reno-route-content > main:not(.pm-scene) h1 { font-size: 18px !important; }
 .reno-route-content > main:not(.pm-scene) h2 { font-size: 12px !important; }
 
-.reno-route-content > main:not(.pm-scene) p,
-.reno-route-content > main:not(.pm-scene) label,
-.reno-route-content > main:not(.pm-scene) input,
-.reno-route-content > main:not(.pm-scene) select {
-  font-family: var(--font-vt323), "VT323", monospace;
-}
-
-.reno-route-content > main:not(.pm-scene) p,
-.reno-route-content > main:not(.pm-scene) label {
-  color: #445340;
-  font-size: 19px;
-  line-height: 1.35;
-}
-
 .reno-route-content > main:not(.pm-scene) [class*="rounded-2xl"][class*="border"] {
-  border: 2px solid rgba(255, 255, 255, 0.92);
-  background-color: rgba(255, 255, 255, 0.68);
-  box-shadow: 0 9px 0 rgba(57, 122, 43, 0.12), 0 14px 28px rgba(43, 58, 39, 0.09);
-  backdrop-filter: blur(8px);
+  border: 3px solid var(--color-border);
+  background-color: var(--color-surface);
+  box-shadow: var(--pm-shadow);
 }
 
 .reno-route-content > main:not(.pm-scene) section,
@@ -522,25 +604,24 @@ body {
 
 .reno-route-content > main:not(.pm-scene) input,
 .reno-route-content > main:not(.pm-scene) select {
-  border: 2px solid rgba(57, 122, 43, 0.2) !important;
+  border: 2px solid var(--color-border) !important;
   border-radius: 10px !important;
-  color: var(--color-outline) !important;
-  background: rgba(255, 255, 255, 0.88) !important;
-  font-size: 20px !important;
+  color: var(--color-text) !important;
+  background: var(--color-surface) !important;
 }
 
 .reno-route-content > main:not(.pm-scene) button[type="submit"] {
   border: 3px solid var(--color-forest);
   border-radius: 10px;
-  color: white;
+  color: #ffffff;
   background: var(--color-grass);
-  box-shadow: 0 6px 0 var(--color-forest);
-  font-family: var(--font-press-start-2p), "Press Start 2P", monospace;
+  box-shadow: 0 4px 0 var(--color-forest);
+  font-family: var(--pm-font-pixel);
   font-size: 10px;
 }
 
 .reno-route-content > main:not(.pm-scene) button[type="submit"]:active {
-  transform: translateY(6px);
+  transform: translateY(4px);
   box-shadow: none;
 }
 
@@ -557,6 +638,8 @@ body {
   to { transform: translate(-60px, -120px); }
 }
 
+/* Small screens keep the shell's existing pattern: the sidebar collapses
+   into a top bar with a horizontally scrolling pixel nav. */
 @media (max-width: 800px) {
   .reno-app-shell { overflow-y: auto; }
 
@@ -579,14 +662,13 @@ body {
 
   .reno-brand {
     padding-bottom: 12px;
+    font-size: 12px;
   }
 
   .reno-logo {
     width: 42px;
     height: 42px;
   }
-
-  .reno-brand { font-size: 12px; }
 
   .reno-nav-links {
     flex-direction: row;
@@ -601,7 +683,7 @@ body {
     font-size: 9px;
   }
 
-  .reno-nav-item:hover:not(.reno-nav-disabled) { transform: translateY(-2px); }
+  .reno-nav-item:hover { transform: translateY(-2px); }
 
   .reno-locale-switch {
     align-self: flex-end;
@@ -613,7 +695,7 @@ body {
 
   .reno-route-content > main:not(.pm-scene) {
     min-height: 0;
-    padding: 24px 18px 40px;
+    padding: 20px 4px 48px;
   }
 
   .reno-route-content > .pm-scene { min-height: 760px; }

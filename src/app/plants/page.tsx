@@ -15,11 +15,13 @@ import { updateCropProfile } from "./actions";
 export const dynamic = "force-dynamic";
 const PLANT_ID = "plant-01";
 
+// Status pills in farm tints: sprout green / harvest amber / warning red /
+// muted bg tint — each pixel-bordered so color never stands alone.
 const STATUS_STYLE: Record<AdvisoryStatus, string> = {
-  Optimal: "bg-green-100 text-green-800",
-  Low: "bg-amber-100 text-amber-800",
-  High: "bg-rose-100 text-rose-800",
-  Waiting: "bg-zinc-100 text-zinc-500",
+  Optimal: "border-[#A5CE97] bg-[#E8F6E0] text-[#397A2B]",
+  Low: "border-[#E8C46B] bg-[#FFF7DF] text-[#7A5B12]",
+  High: "border-[#F3B1B1] bg-[#FFE9E9] text-[#C24141]",
+  Waiting: "border-[#BCD3B4] bg-[#F4FAF1] text-[#6B7A66]",
 };
 
 const STATUS_COPY: Record<AppLocale, Record<AdvisoryStatus, string>> = {
@@ -76,12 +78,12 @@ function Metric({ icon, label, guideLabel, guide, value, status, locale }: {
   icon: string; label: string; guideLabel: string; guide: string; value: string; status: AdvisoryStatus; locale: AppLocale;
 }) {
   return (
-    <article className="rounded-2xl border border-white/90 bg-white/75 p-4 shadow-sm">
+    <article className="pm-panel">
       <div className="flex items-start justify-between gap-3">
-        <div><span className="text-2xl">{icon}</span><h2 className="mt-2">{label}</h2></div>
-        <span className={`rounded-full px-3 py-1 text-sm font-bold ${STATUS_STYLE[status]}`}>{STATUS_COPY[locale][status]}</span>
+        <div><span className="text-2xl">{icon}</span><h2 className="mt-2 pm-heading text-xs">{label}</h2></div>
+        <span className={`shrink-0 rounded-full border-2 px-3 py-1 [font-family:var(--pm-font-pixel)] text-[9px] leading-relaxed ${STATUS_STYLE[status]}`}>{STATUS_COPY[locale][status]}</span>
       </div>
-      <p className="mt-3 text-2xl font-bold">{value}</p>
+      <p className="mt-3 [font-family:var(--pm-font-pixel)] text-base leading-relaxed text-[#243421]">{value}</p>
       <p className="mt-1 text-sm opacity-70">{guideLabel}: {guide}</p>
     </article>
   );
@@ -107,21 +109,21 @@ export default async function PlantsPage() {
   return (
     <main>
       <header className="mb-7">
-        <p className="mb-2 text-sm uppercase tracking-[0.2em] opacity-60">{copy.eyebrow}</p>
-        <h1>{copy.title}</h1>
-        <p className="mt-3">{copy.intro}</p>
+        <p className="mb-2 [font-family:var(--pm-font-pixel)] text-[10px] uppercase tracking-[0.2em] text-[#397A2B]">{copy.eyebrow}</p>
+        <h1 className="pm-heading text-lg">🍓 {copy.title}</h1>
+        <p className="mt-3 text-[#3A4A34]">{copy.intro}</p>
       </header>
 
-      <form action={updateCropProfile} className="mb-6 rounded-2xl border border-white/90 bg-white/75 p-5">
+      <form action={updateCropProfile} className="pm-panel mb-6">
         <input type="hidden" name="plantId" value={result.plant.id} />
         <label className="block font-bold" htmlFor="cropProfileKey">{copy.profile}</label>
         <div className="mt-3 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
           <select id="cropProfileKey" name="cropProfileKey" defaultValue={profile.key} className="w-full p-3">
             {Object.values(CROP_PROFILES).map((item) => <option key={item.key} value={item.key}>{locale === "id" && item.key === "strawberry" ? `Stroberi — ${copy.variety}` : `${item.displayName} — ${item.varietyLabel}`}</option>)}
           </select>
-          <button type="submit" className="px-6 py-3">{copy.save}</button>
+          <button type="submit" className="pm-btn pm-btn-primary">{copy.save}</button>
         </div>
-        <div className="mt-5 rounded-xl bg-green-50/80 p-4">
+        <div className="mt-5 rounded-xl border-2 border-dashed border-[#BCD3B4] bg-[#F4FAF1] p-4">
           <p className="font-bold">🍓 {locale === "id" ? "Stroberi" : profile.displayName} <span className="font-normal">({profile.scientificName})</span></p>
           <p>{locale === "id" ? copy.variety : profile.varietyLabel} · {locale === "id" ? "profil" : "profile"} v{profile.version}</p>
           <p className="mt-2 text-sm opacity-75">{locale === "id" ? copy.note : profile.guidanceNote}</p>

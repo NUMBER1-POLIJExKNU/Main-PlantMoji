@@ -26,10 +26,12 @@ const PERSONALITY_LABELS: Record<PersonalityId, string> = {
   shy: "😳 Shy",
 };
 
-const fieldLabelClass =
-  "text-xs font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500";
+// Farm form chrome (public/farm design language): tiny pixel labels and
+// sprout-green bordered inputs on the solid white surface.
+const fieldLabelClass = "pm-heading text-[10px] uppercase opacity-80";
 const fieldInputClass =
-  "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 outline-none focus:border-green-400 focus:ring-2 focus:ring-green-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-green-600 dark:focus:ring-green-900";
+  "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-sm text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
+const fieldHelpClass = "text-[11px] leading-4 text-[#57684F]";
 
 const growthDateFormat = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -135,36 +137,33 @@ export default async function SettingsPage({
     }
   }
 
+  // Farm column: cards cap at 640px like the farm home stack (.pm-card);
+  // the inline max-width outranks the shell's default 720px reading measure.
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
-      <header className="mb-6 flex flex-col items-center gap-1 text-center">
+    <main className="mx-auto w-full" style={{ maxWidth: 640 }}>
+      <header className="mb-6 flex flex-col gap-1.5">
         <span className="text-4xl" role="img" aria-hidden="true">
           ⚙️
         </span>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Settings
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <h1 className="pm-heading text-lg">Settings</h1>
+        <p className="text-sm text-[#57684F]">
           Who your plant is, and how it talks to you.
         </p>
       </header>
 
-      <section className="mb-5 flex items-center gap-3 rounded-2xl border border-zinc-200/70 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="pm-panel mb-5 flex items-center gap-3">
         <span className="text-3xl leading-none" role="img" aria-hidden="true">
           🪴
         </span>
         <div>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{plant.name}</p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          <p className="text-sm font-bold text-[#243421]">{plant.name}</p>
+          <p className="text-xs text-[#57684F]">
             {plant.species ?? "Unknown species"} · {PLANT_ID}
           </p>
         </div>
       </section>
 
-      <form
-        action={updatePlantSettings}
-        className="flex flex-col gap-5 rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-      >
+      <form action={updatePlantSettings} className="pm-panel flex flex-col gap-5">
         <input type="hidden" name="plantId" value={plant.id} />
 
         <label className="flex flex-col gap-1.5">
@@ -190,7 +189,7 @@ export default async function SettingsPage({
               </option>
             ))}
           </select>
-          <span className="text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
+          <span className={fieldHelpClass}>
             Changes how your plant talks — never the diagnosis itself.
           </span>
         </label>
@@ -204,24 +203,21 @@ export default async function SettingsPage({
               </option>
             ))}
           </select>
-          <span className="text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
+          <span className={fieldHelpClass}>
             Tracked manually in the MVP — sensors can&apos;t measure real growth.
             Separate from Bond Level, which never decreases.
           </span>
         </label>
 
-        <button
-          type="submit"
-          className="mt-1 rounded-2xl bg-green-600 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
-        >
+        <button type="submit" className="pm-btn pm-btn-primary mt-1 w-full">
           Save changes
         </button>
       </form>
 
-      <section className="mt-5 flex flex-col gap-5 rounded-2xl border border-zinc-200/70 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="pm-panel mt-5 flex flex-col gap-5">
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Growth Records</h2>
-          <p className="text-[11px] leading-4 text-zinc-400 dark:text-zinc-500">
+          <h2 className="pm-heading text-xs">Growth Records</h2>
+          <p className={fieldHelpClass}>
             Growth stage is updated only through these records — never by sensors. Adding a new
             record also updates the Growth stage value above.
           </p>
@@ -280,17 +276,14 @@ export default async function SettingsPage({
             />
           </label>
 
-          <button
-            type="submit"
-            className="rounded-2xl bg-green-600 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800 dark:bg-green-500 dark:text-green-950 dark:hover:bg-green-400"
-          >
+          <button type="submit" className="pm-btn pm-btn-primary w-full">
             Add record
           </button>
         </form>
 
-        <div className="flex flex-col gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+        <div className="flex flex-col gap-2 border-t-2 border-dashed border-[#BCD3B4] pt-4">
           {growthRecords.length === 0 ? (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            <p className="text-xs text-[#57684F]">
               No records yet. Add your first growth record.
             </p>
           ) : (
@@ -309,20 +302,14 @@ export default async function SettingsPage({
               return (
                 <div
                   key={record.id}
-                  className="flex flex-col gap-0.5 rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-800/60"
+                  className="flex flex-col gap-0.5 rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2 text-xs"
                 >
-                  <span className="text-zinc-500 dark:text-zinc-400">
+                  <span className="text-[#57684F]">
                     {dateLabel} ·{" "}
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200">
-                      {record.stage}
-                    </span>
+                    <span className="font-semibold text-[#243421]">{record.stage}</span>
                   </span>
-                  {details.length > 0 && (
-                    <span className="text-zinc-400 dark:text-zinc-500">{details}</span>
-                  )}
-                  {record.note && (
-                    <span className="text-zinc-600 dark:text-zinc-300">{record.note}</span>
-                  )}
+                  {details.length > 0 && <span className="text-[#57684F]">{details}</span>}
+                  {record.note && <span className="text-[#3A4A34]">{record.note}</span>}
                 </div>
               );
             })
@@ -330,17 +317,19 @@ export default async function SettingsPage({
         </div>
       </section>
 
+      {/* Presenter tooling keeps its amber tint but wears the same pixel
+          frame as every farm card (3px border + chunky shadow ledge). */}
       {showDemo && (
-      <section className="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 shadow-sm dark:border-amber-900/70 dark:bg-amber-950/30">
+      <section className="mt-5 rounded-[16px] border-[3px] border-[#E8C46B] bg-[#FFF7DF] p-5 shadow-[0_4px_0_rgba(36,52,33,0.15)]">
         <div className="mb-4 flex items-start gap-3">
           <span className="text-3xl leading-none" role="img" aria-hidden="true">
             🎬
           </span>
           <div>
-            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+            <h2 className="pm-heading text-xs">
               {locale === "id" ? "Pusat Kontrol Demo" : "Demo Control Center"}
             </h2>
-            <p className="mt-1 text-[11px] leading-4 text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-[11px] leading-4 text-[#7A5B12]">
               {locale === "id"
                 ? "Untuk presentasi: periksa status, kembali ke awal, atau buka Lv.10 beserta semua koleksi. Data sensor, catatan pertumbuhan, dan aturan keselamatan tidak berubah."
                 : "For presentations: check status, reset to the beginning, or unlock Lv.10 and every collection item. Sensor data, growth records, and safety rules do not change."}

@@ -142,9 +142,20 @@ export default function QuestCelebration({
         }
       `}</style>
       {banners.map((banner) => (
+        // Farm celebration chrome: solid white surface, chunky grass border,
+        // pixel drop shadow — the same panel family as the quest cards, with
+        // the pixel-font title and the yellow XP chip the farm uses for
+        // rewards. Inline styles so the look never fights the pm-* cascade.
         <div
           key={banner.id}
-          className="pm-qc-banner relative flex items-center gap-2 overflow-hidden rounded-2xl border border-green-200/70 bg-white/95 px-4 py-2.5 shadow-md dark:border-green-900/60 dark:bg-zinc-900/95"
+          className="pm-qc-banner relative flex items-center gap-2.5 overflow-hidden"
+          style={{
+            background: "var(--color-surface)",
+            border: "3px solid var(--color-grass)",
+            borderRadius: "var(--pm-radius)",
+            boxShadow: "var(--pm-shadow)",
+            padding: "10px 16px",
+          }}
         >
           {Array.from({ length: CONFETTI_PER_BANNER }, (_, i) => (
             <span
@@ -164,8 +175,13 @@ export default function QuestCelebration({
           <span className="sr-only">
             {locale === "id" ? "Misi selesai:" : "Quest complete:"}
           </span>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{banner.title}</p>
-          <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+          <p className="font-pixel text-[11px] leading-relaxed" style={{ color: "var(--color-text)" }}>
+            {banner.title}
+          </p>
+          <span
+            className="pm-chip shrink-0"
+            style={{ background: "var(--color-yellow)", borderColor: "#E8C46B", color: "#6B4F10" }}
+          >
             +{banner.xp} XP
           </span>
         </div>

@@ -3,17 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { APP_LOCALE_COOKIE, NAV_COPY, type AppLocale } from "@/lib/i18n";
+import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
 
+// Farm-home nav (public/farm/index.html is the source of truth): six items,
+// pixel labels localized with inline id/en ternary copy. Growth Diary and
+// Settings both live on /settings (mirroring the farm page); only the
+// Settings entry claims the active highlight there so a single nav item
+// lights up per route.
 const NAV_ITEMS = [
-  { href: "/", icon: "🏠", copyKey: "dashboard" },
-  { href: "/plants", icon: "🌱", copyKey: "plants" },
-  { href: "/reports", icon: "📈", copyKey: "monitoring" },
-  { href: null, icon: "📷", copyKey: "camera" },
-  { href: "/quests", icon: "📜", copyKey: "quests" },
-  { href: "/collection", icon: "🏆", copyKey: "collection" },
-  { href: null, icon: "🛒", copyKey: "shop" },
-  { href: "/settings", icon: "⚙️", copyKey: "settings" },
+  { key: "home", href: "/", icon: "🏠", id: "Beranda", en: "Home" },
+  { key: "quests", href: "/quests", icon: "📜", id: "Misi", en: "Quests" },
+  { key: "diary", href: "/settings", icon: "🌱", id: "Buku Harian", en: "Growth Diary", skipActive: true },
+  { key: "status", href: "/monitoring", icon: "📈", id: "Status Tanaman", en: "Plant Status" },
+  { key: "collection", href: "/collection", icon: "🏆", id: "Koleksi", en: "Collection" },
+  { key: "reports", href: "/reports", icon: "📊", id: "Laporan Mingguan", en: "Weekly Report" },
+  { key: "settings", href: "/settings", icon: "⚙️", id: "Pengaturan", en: "Settings" },
 ] as const;
 
 function changeAppLocale(nextLocale: AppLocale) {
@@ -24,7 +28,6 @@ function changeAppLocale(nextLocale: AppLocale) {
 
 export default function RenoAppShell({ children, locale }: { children: React.ReactNode; locale: AppLocale }) {
   const pathname = usePathname();
-  const navCopy = NAV_COPY[locale];
 
   return (
     <div className="reno-app-shell">
@@ -38,33 +41,25 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
 
       <div className="reno-app-layout">
         <aside className="reno-sidebar">
-          <Link href="/" className="reno-brand" aria-label="Plant Emoji dashboard">
+          <Link href="/" className="reno-brand" aria-label="PLANT MOJI home">
             <Image
               src="/farm/assets/logo.png"
-              alt="Plant Emoji logo"
-              width={54}
-              height={54}
+              alt="PLANT MOJI logo"
+              width={44}
+              height={44}
               className="reno-logo"
               priority
             />
-            <span>PLANT<br />EMOJI</span>
+            <span>PLANT<br />MOJI</span>
           </Link>
 
           <nav className="reno-nav-links" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => {
-              const label = navCopy[item.copyKey];
-              if (!item.href) {
-                return (
-                  <span key={item.copyKey} className="reno-nav-item reno-nav-disabled" aria-disabled="true">
-                    <i>{item.icon}</i> {label}
-                  </span>
-                );
-              }
-
-              const active = pathname === item.href;
+              const label = locale === "id" ? item.id : item.en;
+              const active = pathname === item.href && !("skipActive" in item && item.skipActive);
               return (
                 <Link
-                  key={item.copyKey}
+                  key={item.key}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={`reno-nav-item${active ? " active" : ""}`}

@@ -12,20 +12,20 @@ export const metadata: Metadata = {
 };
 
 export default function MonitoringPage() {
+  // Farm look: pixel heading on the sky, gauges/chart in .pm-panel cards
+  // (the shell centers <main> at its reading measure).
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-5 pb-24 pt-10">
+    <main className="mx-auto w-full">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400">
-          Plant Monitoring
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        <h1 className="pm-heading text-lg">📈 Plant Monitoring</h1>
+        <p className="mt-1 text-sm text-[#57684F]">
           Live readings from the plant&apos;s sensors, refreshed every 10 seconds.
         </p>
       </header>
 
       <MonitoringLive />
 
-      <p className="mt-6 text-center text-xs leading-5 text-zinc-400 dark:text-zinc-500">
+      <p className="mt-6 text-center text-xs leading-5 text-[#57684F]">
         Soil moisture and lux appear once the hardware team&apos;s new flow starts logging them
         (columns added by supabase/milestone6-monitoring.sql).
       </p>

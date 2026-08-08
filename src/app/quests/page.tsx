@@ -1,7 +1,9 @@
 // Quests screen (handoff §33) — active quest cards with live time progress
 // plus completed/expired history. Mobile-first companion feel, not a
-// dashboard.
+// dashboard. Styled in the farm design language (public/farm) via the shared
+// pm-* shell utilities: white surface panels, pixel headings, yellow XP chips.
 
+import type { CSSProperties } from "react";
 import Notice from "@/components/notice";
 import QuestCelebration from "@/components/quest-celebration";
 import QuestProgress from "@/components/quest-progress";
@@ -31,20 +33,37 @@ function formatWhen(iso: string | null, locale: AppLocale): string | null {
   }).format(new Date(ms));
 }
 
-const FALLBACK_PILL = {
-  label: "Expired",
-  className: "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+// Farm-palette chip tints (inline styles win over the unlayered .pm-chip base
+// in globals.css — Tailwind color utilities would lose that cascade fight).
+
+/** XP pills: --color-yellow with the amber frame the farm uses for rewards. */
+const XP_CHIP_STYLE: CSSProperties = {
+  background: "var(--color-yellow)",
+  borderColor: "#E8C46B",
+  color: "#6B4F10",
 };
 
-const STATUS_PILL: Partial<Record<QuestStatus, { label: string; className: string }>> = {
+/** Dashed tinted well (farm --color-bg) for secondary copy inside cards. */
+const WELL_STYLE: CSSProperties = {
+  background: "var(--color-bg)",
+  border: "2px dashed var(--color-border)",
+  color: "#555555",
+};
+
+const FALLBACK_PILL: { label: string; style: CSSProperties } = {
+  label: "Expired",
+  style: { background: "var(--color-bg)", borderColor: "var(--color-border)", color: "#6B7A66" },
+};
+
+const STATUS_PILL: Partial<Record<QuestStatus, { label: string; style: CSSProperties }>> = {
   COMPLETED: {
     label: "✓ Done",
-    className: "bg-green-100 text-green-800 dark:bg-green-900/60 dark:text-green-300",
+    style: { background: "#E4F4DD", borderColor: "var(--color-grass)", color: "var(--color-forest)" },
   },
   EXPIRED: FALLBACK_PILL,
   FAILED: {
     label: "Failed",
-    className: "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300",
+    style: { background: "#FFE3E3", borderColor: "#E8A0A0", color: "#A03030" },
   },
 };
 
@@ -54,21 +73,21 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
 
   return (
-    <article className="rounded-2xl border border-green-200/70 bg-green-50/80 p-5 shadow-sm dark:border-green-900/60 dark:bg-green-950/40">
+    // Active quests get the grass-green border accent — same white surface
+    // family as every farm panel, but clearly "alive" next to history rows.
+    <article className="pm-panel" style={{ borderColor: "var(--color-grass)" }}>
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" role="img" aria-hidden="true">
           {def.emoji}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {localized.title}
-            </h2>
-            <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+            <h2 className="pm-heading text-xs">{localized.title}</h2>
+            <span className="pm-chip shrink-0" style={XP_CHIP_STYLE}>
               +{quest.xp_reward} XP
             </span>
           </div>
-          <p className="mt-1 text-sm leading-5 text-zinc-600 dark:text-zinc-300">
+          <p className="mt-2 text-sm leading-6" style={{ color: "#555555" }}>
             {localized.description}
           </p>
         </div>
@@ -95,7 +114,7 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
       )}
 
       {quest.status === "ACTIVE" && def.kind === "recovery" && (
-        <p className="mt-3 rounded-xl bg-white/70 px-3 py-2 text-xs font-medium text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">
+        <p className="mt-3 rounded-xl px-3 py-2 text-xs font-medium leading-5" style={WELL_STYLE}>
           {locale === "id"
             ? `Masih ${MOOD_COPY.id[def.triggerMood]} — setelah kondisinya membaik, sensor akan memeriksa kestabilan selama ${Math.round(def.requiredSeconds / 60)} menit.`
             : `Still ${MOOD_LABELS[def.triggerMood]} — once I feel better, a ${Math.round(def.requiredSeconds / 60)}-minute check confirms the rescue.`}
@@ -105,10 +124,13 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
       {/* Educational layer (handoff §2, §51): teach the science behind the
           quest, not just the reward. Collapsible so the card stays compact. */}
       <details className="mt-3">
-        <summary className="cursor-pointer select-none text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300">
+        <summary
+          className="font-pixel cursor-pointer select-none text-[10px] leading-relaxed hover:underline"
+          style={{ color: "var(--color-forest)" }}
+        >
           {locale === "id" ? "Mengapa ini penting" : "Why this matters"}
         </summary>
-        <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs leading-5 text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-300">
+        <div className="mt-2 rounded-xl px-3 py-2 text-xs leading-5" style={WELL_STYLE}>
           <p>{locale === "id" ? QUEST_COPY_ID[quest.quest_key].why : QUEST_WHY[quest.quest_key]}</p>
           {locale === "en" && <p className="mt-1.5">{WHY_CARDS[def.triggerMood].why}</p>}
         </div>
@@ -122,6 +144,9 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
  * component renders the same event on every request today with no hydration
  * concerns. Challenges show their reward; boosts show their multiplier;
  * flavor days are dialogue-only and show no pill.
+ *
+ * Keeps its amber identity (the farm home's "verifying" amber family:
+ * #FFF7DF / #E8C46B / #7A5B12) inside the standard pixel panel frame.
  */
 function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLocale }) {
   const localized = locale === "id" ? DAILY_EVENT_COPY_ID[event.id] : null;
@@ -135,7 +160,8 @@ function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLoc
   return (
     <section
       aria-label="Today's event"
-      className="mb-4 rounded-2xl border border-amber-200/70 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900/60 dark:bg-amber-950/40"
+      className="pm-panel mb-4"
+      style={{ background: "#FFF7DF", borderColor: "#E8C46B" }}
     >
       <div className="flex items-start gap-3">
         <span className="text-3xl leading-none" role="img" aria-hidden="true">
@@ -143,17 +169,19 @@ function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLoc
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            <p className="font-pixel text-[10px] uppercase leading-relaxed" style={{ color: "#A97B12" }}>
               {locale === "id" ? "Acara Hari Ini" : "Today's Event"}
             </p>
             {pill && (
-              <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+              <span className="pm-chip shrink-0" style={XP_CHIP_STYLE}>
                 {pill}
               </span>
             )}
           </div>
-          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{localized?.name ?? event.name}</p>
-          <p className="mt-0.5 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+          <p className="mt-1 text-sm font-semibold" style={{ color: "#7A5B12" }}>
+            {localized?.name ?? event.name}
+          </p>
+          <p className="mt-0.5 text-xs leading-5" style={{ color: "#555555" }}>
             {localized?.description ?? event.description}
           </p>
         </div>
@@ -172,20 +200,20 @@ function HistoryItem({ quest, locale }: { quest: QuestRow; locale: AppLocale }) 
   const when = formatWhen(quest.completed_at ?? quest.expired_at ?? quest.created_at, locale);
 
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-zinc-200/70 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    // History rows share the panel family, compacted — sprout border (not
+    // grass) keeps them visually quieter than active quests.
+    <li className="pm-panel flex items-center gap-3" style={{ padding: "12px 16px" }}>
       <span className="text-2xl leading-none" role="img" aria-hidden="true">
         {def.emoji}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          {localized.title}
-        </p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+        <p className="truncate text-sm font-semibold">{localized.title}</p>
+        <p className="mt-0.5 text-xs" style={{ color: "#777777" }}>
           {when ?? "—"}
           {quest.status === "COMPLETED" && <span> · +{quest.xp_reward} XP</span>}
         </p>
       </div>
-      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${pill.className}`}>
+      <span className="pm-chip shrink-0" style={pill.style}>
         {pill.label}
       </span>
     </li>
@@ -235,8 +263,9 @@ export default async function QuestsPage() {
     );
   }
 
+  // Measure/padding come from the shell contract (.reno-route-content > main).
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
+    <main className="mx-auto w-full flex-1">
       {/* Realtime completion banner (dopamine spec §3) — presentation-only
           island; the server snapshot below primes it so old history never
           celebrates on load. */}
@@ -248,14 +277,12 @@ export default async function QuestsPage() {
           status: quest.status,
         }))}
       />
-      <header className="mb-6 flex flex-col items-center gap-1 text-center">
+      <header className="mb-6 flex flex-col gap-2">
         <span className="text-4xl" role="img" aria-hidden="true">
           🎯
         </span>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {locale === "id" ? "Misi" : "Quests"}
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        <h1 className="pm-heading text-lg">{locale === "id" ? "Misi" : "Quests"}</h1>
+        <p className="text-sm" style={{ color: "var(--color-text)", opacity: 0.75 }}>
           {locale === "id" ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol." : "Real care, verified by sensors — no tap-to-win."}
         </p>
       </header>
@@ -264,14 +291,14 @@ export default async function QuestsPage() {
 
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-200/70 bg-white p-6 text-center dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="pm-panel text-center">
             <span className="text-3xl" role="img" aria-hidden="true">
               🌿
             </span>
-            <p className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="mt-2 text-sm font-medium">
               {locale === "id" ? "Belum ada misi aktif — tanaman sedang nyaman." : "No active quest right now — I'm just vibing."}
             </p>
-            <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+            <p className="mt-1 text-xs" style={{ color: "#777777" }}>
               {locale === "id" ? "Misi baru muncul saat kondisi tanaman berubah." : "A new quest appears when my mood changes."}
             </p>
           </div>
@@ -281,11 +308,11 @@ export default async function QuestsPage() {
       </section>
 
       <section aria-label="Quest history" className="mt-8">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        <h2 className="pm-heading mb-3 text-xs uppercase tracking-wide">
           {locale === "id" ? "Riwayat" : "History"}
         </h2>
         {history.length === 0 ? (
-          <p className="rounded-2xl border border-zinc-200/70 bg-white p-5 text-center text-sm text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500">
+          <p className="pm-panel text-center text-sm" style={{ color: "#777777" }}>
             {locale === "id" ? "Belum ada misi selesai — cerita kita segera dimulai!" : "No completed quests yet — our story starts soon!"}
           </p>
         ) : (

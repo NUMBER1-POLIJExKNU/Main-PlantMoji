@@ -109,6 +109,18 @@ export default function QuestProgress({
           ? `Memeriksa… tersisa ${formatClock(requiredSeconds - elapsedSeconds)}`
           : `Verifying… ${formatClock(requiredSeconds - elapsedSeconds)} left`;
 
+  // Farm-look fills (public/farm/style.css): the grass XP gradient while
+  // maintaining/confirmed, the verifying amber while sensors are checking.
+  // Inline styles because the unlayered .pm-bar-fill base wins over Tailwind
+  // color utilities in the cascade.
+  const fillStyle = {
+    width: `${percent}%`,
+    background:
+      mode === "maintain" || confirmed
+        ? "linear-gradient(90deg, var(--color-grass), var(--color-grass-light))"
+        : "linear-gradient(90deg, #E8C46B, #FFDE6A)",
+  };
+
   return (
     <div className="mt-3">
       <div
@@ -117,23 +129,19 @@ export default function QuestProgress({
         aria-valuemax={requiredSeconds}
         aria-valuenow={elapsedSeconds}
         aria-label={label}
-        className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-zinc-700/60"
+        className="pm-bar w-full"
       >
-        <div
-          className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${
-            mode === "maintain" || confirmed
-              ? "bg-linear-to-r from-green-400 to-emerald-500"
-              : "bg-linear-to-r from-amber-300 to-amber-500"
-          }`}
-          style={{ width: `${percent}%` }}
-        />
+        <div className="pm-bar-fill" style={fillStyle} />
       </div>
       <p
-        className={`mt-1.5 text-xs font-semibold tabular-nums ${
-          confirmed
-            ? "text-emerald-600 dark:text-emerald-400"
-            : "text-zinc-600 dark:text-zinc-300"
-        }`}
+        className="font-pixel mt-2 text-[10px] leading-relaxed tabular-nums"
+        style={{
+          color: confirmed
+            ? "var(--color-forest)"
+            : mode === "verifying"
+              ? "#7A5B12"
+              : "var(--color-text)",
+        }}
       >
         {label}
       </p>
@@ -141,7 +149,7 @@ export default function QuestProgress({
           sensors are watching. motion-safe so reduced-motion users get the
           static line without the pulse. */}
       {mode === "verifying" && !confirmed && (
-        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium" style={{ color: "#A97B12" }}>
           <span className="motion-safe:animate-pulse" role="img" aria-hidden="true">
             🔍
           </span>

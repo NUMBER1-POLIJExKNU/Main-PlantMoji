@@ -36,29 +36,40 @@ function formatWeekRange(report: WeeklyReport): string {
   return `${weekDateFormat.format(new Date(startMs))} – ${weekDateFormat.format(new Date(endMs))}`;
 }
 
+// Muted ink tints derived from the farm text color #243421 (spec §2.5).
+const INK_MUTED = "#5B6B57";
+const INK_FAINT = "#93A08F";
+
+/** Farm surface tile: .pm-panel with a palette accent border and the big
+ *  number in Press Start 2P. Accents are inline because the pm-* contract
+ *  classes are unlayered CSS (Tailwind utilities can't override them). */
 function StatTile({
   emoji,
   label,
   value,
   sub,
-  tint,
+  accent,
 }: {
   emoji: string;
   label: string;
   value: string;
   sub?: string;
-  tint: string;
+  accent: string;
 }) {
   return (
-    <div className={`flex flex-col gap-1 rounded-2xl border p-4 shadow-sm ${tint}`}>
+    <div className="pm-panel flex flex-col gap-1" style={{ borderColor: accent }}>
       <span className="text-2xl leading-none" role="img" aria-hidden="true">
         {emoji}
       </span>
-      <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-        {value}
+      <p className="pm-heading mt-1 text-sm tabular-nums">{value}</p>
+      <p className="text-xs font-semibold" style={{ color: INK_MUTED }}>
+        {label}
       </p>
-      <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">{label}</p>
-      {sub && <p className="text-[11px] text-zinc-400 dark:text-zinc-500">{sub}</p>}
+      {sub && (
+        <p className="text-[11px]" style={{ color: INK_FAINT }}>
+          {sub}
+        </p>
+      )}
     </div>
   );
 }
@@ -111,24 +122,32 @@ export default async function ReportsPage() {
       ? await getWeeklyReportNarration(plantResult.plant, report)
       : null;
 
+  // Sizing/backdrop comes from the farm shell contract: .reno-route-content
+  // centers this <main> at 720px directly on the sky, and .pm-panel tiles
+  // inside supply the surfaces.
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
-      <header className="mb-6 flex flex-col items-center gap-1 text-center">
-        <span className="text-4xl" role="img" aria-hidden="true">
-          📊
-        </span>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <main className="w-full">
+      <header className="mb-6">
+        <h1 className="pm-heading flex items-center gap-3 text-lg">
+          <span className="text-3xl leading-none" role="img" aria-hidden="true">
+            📊
+          </span>
           Weekly Report
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{formatWeekRange(report)}</p>
+        <p className="mt-3">
+          <span className="pm-chip">🗓️ {formatWeekRange(report)}</span>
+        </p>
       </header>
 
       {narration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="mb-6">
-          <p className="mb-1.5 text-center text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+          <p className="pm-heading mb-2 text-center text-[9px] uppercase" style={{ color: INK_MUTED }}>
             A word from {plantResult.plant.name}
           </p>
-          <div className="relative rounded-2xl border border-emerald-200/70 bg-emerald-50/70 px-4 py-3 text-center text-sm leading-6 text-zinc-700 shadow-sm dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-zinc-200">
+          <div
+            className="pm-panel text-center text-sm leading-6"
+            style={{ borderColor: "var(--color-grass-light)" }}
+          >
             <span aria-hidden="true">&ldquo;</span>
             {narration}
             <span aria-hidden="true">&rdquo;</span>
@@ -154,20 +173,20 @@ export default async function ReportsPage() {
           label="Healthy time"
           value={formatDuration(report.healthySeconds)}
           sub="sensor-verified"
-          tint="border-green-200/70 bg-green-50/70 dark:border-green-900/60 dark:bg-green-950/40"
+          accent="var(--color-grass)"
         />
         <StatTile
           emoji="🎯"
           label="Quests completed"
           value={String(report.questsCompleted)}
-          tint="border-emerald-200/70 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/40"
+          accent="var(--color-yellow)"
         />
         <StatTile
           emoji="🔥"
           label="Overheating events"
           value={String(report.overheatingEvents)}
           sub="state entries, not samples"
-          tint="border-red-200/70 bg-red-50/70 dark:border-red-900/60 dark:bg-red-950/40"
+          accent="#F08A6B"
         />
         <StatTile
           emoji="🤝"
@@ -178,19 +197,18 @@ export default async function ReportsPage() {
               ? `🔥 ${report.currentStreak}-day streak`
               : `${report.totalXp} XP total`
           }
-          tint="border-indigo-200/70 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/40"
+          accent="var(--color-water)"
         />
       </section>
 
-      <Link
-        href="/monitoring"
-        className="mt-4 flex items-center justify-between rounded-2xl border border-sky-200/70 bg-sky-50/70 px-4 py-3 text-sm font-semibold text-sky-700 shadow-sm transition-colors hover:bg-sky-100/70 dark:border-sky-900/60 dark:bg-sky-950/40 dark:text-sky-300 dark:hover:bg-sky-900/40"
-      >
+      {/* .pm-btn centers its content; space-between must be inline since the
+          unlayered pm-* contract beats Tailwind utilities. */}
+      <Link href="/monitoring" className="pm-btn mt-4 w-full" style={{ justifyContent: "space-between" }}>
         <span>Live monitoring</span>
         <span aria-hidden="true">→</span>
       </Link>
 
-      <p className="mt-6 text-center text-xs leading-5 text-zinc-400 dark:text-zinc-500">
+      <p className="mt-6 text-center text-xs leading-5" style={{ color: INK_MUTED }}>
         Computed live from this week&apos;s history — healthy time excludes
         sensor-offline periods.
       </p>

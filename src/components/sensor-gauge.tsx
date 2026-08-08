@@ -95,13 +95,12 @@ export default function SensorGauge({
     ? `${label}: ${formatReading(value)} ${unit}`
     : `${label}: no sensor data yet`;
 
+  // Farm skin: .pm-panel surface card, sprout-green track (the .pm-bar
+  // track color), outline-ink needle, and the reading as a Press Start 2P
+  // "game number" (fontSize drops 27 → 20 because the pixel font runs wide).
   return (
-    <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h2
-        className={`text-center text-base font-bold tracking-tight ${
-          hasValue ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-400 dark:text-zinc-500"
-        }`}
-      >
+    <section className="pm-panel">
+      <h2 className={`pm-heading text-center text-xs${hasValue ? "" : " opacity-60"}`}>
         {label}
       </h2>
       <svg
@@ -116,7 +115,7 @@ export default function SensorGauge({
           fill="none"
           stroke="currentColor"
           strokeWidth={26}
-          className="text-zinc-300 dark:text-zinc-700"
+          className="text-[#BCD3B4]"
         />
         {/* Filled fraction — pathLength normalizes the dash to 0–100 */}
         {hasValue && fraction > 0 && (
@@ -135,26 +134,20 @@ export default function SensorGauge({
           points="97.4,64 99.2,10 100.8,10 102.6,64"
           fill="currentColor"
           transform={`rotate(${rotation} 100 100)`}
-          className={hasValue ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-300 dark:text-zinc-600"}
+          className={hasValue ? "text-[#2B3A27]" : "text-[#BCD3B4]"}
         />
         <text
           x={100}
           y={90}
           textAnchor="middle"
-          fontSize={27}
-          className={`font-bold tabular-nums tracking-tight ${
-            hasValue ? "fill-zinc-900 dark:fill-zinc-50" : "fill-zinc-300 dark:fill-zinc-600"
+          fontSize={20}
+          className={`[font-family:var(--pm-font-pixel)] ${
+            hasValue ? "fill-[#243421]" : "fill-[#BCD3B4]"
           }`}
         >
           {hasValue ? formatReading(value) : "—"}
         </text>
-        <text
-          x={100}
-          y={118}
-          textAnchor="middle"
-          fontSize={10}
-          className="fill-zinc-500 dark:fill-zinc-400"
-        >
+        <text x={100} y={118} textAnchor="middle" fontSize={10} className="fill-[#57684F]">
           {unit}
         </text>
         <text
@@ -162,7 +155,7 @@ export default function SensorGauge({
           y={118}
           textAnchor="middle"
           fontSize={10}
-          className="fill-zinc-500 tabular-nums dark:fill-zinc-400"
+          className="fill-[#57684F] tabular-nums"
         >
           {min}
         </text>
@@ -171,13 +164,13 @@ export default function SensorGauge({
           y={118}
           textAnchor="middle"
           fontSize={10}
-          className="fill-zinc-500 tabular-nums dark:fill-zinc-400"
+          className="fill-[#57684F] tabular-nums"
         >
           {max}
         </text>
       </svg>
       {!hasValue && (
-        <p className="mt-1 text-center text-xs text-zinc-400 dark:text-zinc-500">no sensor yet</p>
+        <p className="mt-1 text-center text-xs text-[#57684F]">no sensor yet</p>
       )}
     </section>
   );

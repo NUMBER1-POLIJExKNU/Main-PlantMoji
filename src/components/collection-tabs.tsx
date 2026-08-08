@@ -5,8 +5,14 @@
 // across the RSC boundary (dates preformatted as strings). On top of that,
 // a realtime plant_badges subscription (dopamine plan Task 16) flips badge
 // cards live when the backend unlocks one — presentation only, zero writes.
+//
+// Styled in the farm design language (public/farm/style.css is the source
+// of truth) via the shared shell contract: .pm-panel cards, .pm-bar
+// progress, .pm-chip pills, .pm-heading pixel type. The pm-* classes are
+// unlayered CSS (they beat Tailwind utilities), so per-card accent colors
+// are applied with inline styles on purpose.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import StoryChapterCard from "@/components/story-chapter-card";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { ChapterScene } from "@/game/story/story-dialogue";
@@ -78,11 +84,20 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-// Spec §2.5 palette tokens — progress bars use fill on track.
-const BAR_TRACK = "#BCD3B4";
-const BAR_FILL = "#5FAE45";
+// Muted ink tints derived from the farm text color #243421 (spec §2.5).
+const INK_MUTED = "#5B6B57";
+const INK_FAINT = "#93A08F";
 
-/** Thin progress bar replacing the plain "x / y" text counters (Task 16). */
+// Locked cards read as empty inventory slots: tinted well, dashed border,
+// no pixel shadow. Spread on top of .pm-panel via inline style.
+const LOCKED_PANEL: CSSProperties = {
+  background: "var(--color-bg)",
+  borderStyle: "dashed",
+  boxShadow: "none",
+};
+
+/** Chunky pixel progress bar (shell .pm-bar contract) replacing the plain
+ *  "x / y" text counters (Task 16). */
 function ProgressCounter({ value, total, label }: { value: number; total: number; label: string }) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
@@ -93,15 +108,11 @@ function ProgressCounter({ value, total, label }: { value: number; total: number
         aria-valuemax={total}
         aria-valuenow={value}
         aria-label={`${value} / ${total} ${label}`}
-        className="h-2 flex-1 overflow-hidden rounded-full"
-        style={{ backgroundColor: BAR_TRACK }}
+        className="pm-bar flex-1"
       >
-        <div
-          className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
-          style={{ width: `${pct}%`, backgroundColor: BAR_FILL }}
-        />
+        <div className="pm-bar-fill" style={{ width: `${pct}%` }} />
       </div>
-      <span className="shrink-0 text-[10px] font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">
+      <span className="pm-heading shrink-0 text-[10px] tabular-nums">
         {value}/{total}
       </span>
     </div>
@@ -113,8 +124,12 @@ function OneMorePill({ label }: { label: string }) {
   return (
     <p className="mb-3 text-center">
       <span
-        className="inline-block rounded-full px-3 py-1 text-[11px] font-bold text-white motion-safe:animate-pulse"
-        style={{ backgroundColor: BAR_FILL }}
+        className="pm-chip motion-safe:animate-pulse"
+        style={{
+          background: "var(--color-primary)",
+          borderColor: "var(--color-forest)",
+          color: "#ffffff",
+        }}
       >
         {label}
       </span>
@@ -196,7 +211,9 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
     <div>
       {/* Badge flip celebration (CSS rotateY). Wrapped in a no-preference
           media query so reduced-motion users get an instant, animation-free
-          reveal — the card content still updates, it just never rotates. */}
+          reveal — the card content still updates, it just never rotates.
+          The reduce block also stills the shell's .pm-bar-fill width
+          transition, preserving this component's motion-safe gate. */}
       <style>{`
         @media (prefers-reduced-motion: no-preference) {
           .pm-badge-flip {
@@ -207,11 +224,15 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             100% { transform: perspective(600px) rotateY(360deg); }
           }
         }
+        @media (prefers-reduced-motion: reduce) {
+          .pm-bar-fill { transition: none; }
+        }
       `}</style>
       <div
         role="tablist"
         aria-label="Collection sections"
-        className="flex rounded-full bg-zinc-100 p-1 dark:bg-zinc-900"
+        className="grid grid-cols-4 gap-1.5 rounded-2xl border-2 p-1.5"
+        style={{ background: "var(--color-bg)", borderColor: "var(--color-border)" }}
       >
         {TABS.map((entry) => {
           const active = entry.id === tab;
@@ -223,13 +244,14 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               aria-selected={active}
               aria-controls={`collection-panel-${entry.id}`}
               onClick={() => setTab(entry.id)}
-              className={`flex-1 rounded-full py-1.5 text-sm font-semibold transition-colors ${
+              className="pm-heading flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"
+              style={
                 active
-                  ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
-                  : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-              }`}
+                  ? { background: "var(--color-grass)", color: "#ffffff", boxShadow: "0 3px 0 var(--color-forest)" }
+                  : { color: "var(--color-text)" }
+              }
             >
-              <span className="mr-1" role="img" aria-hidden="true">
+              <span className="text-base leading-none" role="img" aria-hidden="true">
                 {entry.emoji}
               </span>
               {copy[entry.id]}
@@ -246,34 +268,29 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             {moods.map((mood) => (
               <li
                 key={mood.mood}
-                className={`flex flex-col items-center gap-1 rounded-2xl border p-4 text-center ${
+                className="pm-panel flex flex-col items-center gap-1.5 text-center"
+                style={
                   mood.discovered
-                    ? "border-green-200/70 bg-green-50/70 dark:border-green-900/60 dark:bg-green-950/40"
-                    : "border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                }`}
+                    ? { padding: "14px 10px", borderColor: "var(--color-grass-light)" }
+                    : { padding: "14px 10px", ...LOCKED_PANEL }
+                }
               >
                 <span
-                  className={`text-3xl leading-none ${mood.discovered ? "" : "brightness-0 opacity-30 dark:invert"}`}
+                  className={`text-3xl leading-none ${mood.discovered ? "" : "brightness-0 opacity-30"}`}
                   role="img"
                   aria-label={mood.label}
                 >
                   {mood.emoji}
                 </span>
                 <span
-                  className={`text-[11px] font-semibold leading-tight ${
-                    mood.discovered
-                      ? "text-zinc-800 dark:text-zinc-100"
-                      : "text-zinc-400 dark:text-zinc-500"
-                  }`}
+                  className="text-[11px] font-semibold leading-tight"
+                  style={{ color: mood.discovered ? "var(--color-text)" : INK_FAINT }}
                 >
                   {mood.label}
                 </span>
                 <span
-                  className={`text-xs font-bold ${
-                    mood.discovered
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-zinc-300 dark:text-zinc-600"
-                  }`}
+                  className="pm-heading text-[10px]"
+                  style={{ color: mood.discovered ? "var(--color-forest)" : "#B7C2B3" }}
                   aria-label={mood.discovered ? copy.unlocked : copy.locked}
                 >
                   {mood.discovered ? "✓" : "?"}
@@ -287,7 +304,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               hidden until the sensors have actually seen them. */}
           {moods.some((mood) => mood.discovered && mood.whyCard) && (
             <>
-              <p className="mb-3 mt-6 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
+              <p className="pm-heading mb-3 mt-6 text-center text-[10px]" style={{ color: INK_MUTED }}>
                 {copy.learned}
               </p>
               <ul className="flex flex-col gap-3">
@@ -296,24 +313,25 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   .map((mood) => (
                     <li
                       key={mood.mood}
-                      className="rounded-2xl border border-green-200/70 bg-green-50/70 p-4 dark:border-green-900/60 dark:bg-green-950/40"
+                      className="pm-panel"
+                      style={{ borderColor: "var(--color-grass-light)" }}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xl leading-none" role="img" aria-hidden="true">
                           {mood.emoji}
                         </span>
-                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-50">
+                        <p className="text-sm font-bold" style={{ color: "var(--color-text)" }}>
                           {mood.label}
-                          <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                          <span className="font-medium" style={{ color: INK_MUTED }}>
                             {" "}
                             · {mood.whyCard?.title}
                           </span>
                         </p>
                       </div>
-                      <p className="mt-1.5 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+                      <p className="mt-1.5 text-xs leading-5" style={{ color: INK_MUTED }}>
                         {mood.whyCard?.why}
                       </p>
-                      <p className="mt-1.5 text-xs font-medium leading-5 text-green-700 dark:text-green-400">
+                      <p className="mt-1.5 text-xs font-semibold leading-5" style={{ color: "var(--color-forest)" }}>
                         {mood.whyCard?.action}
                       </p>
                     </li>
@@ -334,14 +352,11 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               return (
                 <li
                   key={badge.key}
-                  className={`flex items-start gap-3 rounded-2xl border p-4 ${
-                    unlocked
-                      ? "border-amber-200/70 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30"
-                      : "border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                  } ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`}
+                  className={`pm-panel flex items-start gap-3 ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`}
+                  style={unlocked ? { borderColor: "var(--color-yellow)" } : LOCKED_PANEL}
                 >
                   <span
-                    className={`text-3xl leading-none ${unlocked ? "" : "brightness-0 opacity-30 dark:invert"}`}
+                    className={`text-3xl leading-none ${unlocked ? "" : "brightness-0 opacity-30"}`}
                     role="img"
                     aria-hidden="true"
                   >
@@ -350,29 +365,27 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p
-                        className={`text-sm font-bold ${
-                          unlocked
-                            ? "text-zinc-900 dark:text-zinc-50"
-                            : "text-zinc-500 dark:text-zinc-400"
-                        }`}
+                        className="text-sm font-bold"
+                        style={{ color: unlocked ? "var(--color-text)" : INK_FAINT }}
                       >
                         {badge.name}
                       </p>
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        className="pm-heading shrink-0 rounded-full border-2 px-2 py-1 text-[8px] uppercase"
+                        style={
                           unlocked
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300"
-                            : "bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
-                        }`}
+                            ? { background: "var(--color-yellow)", borderColor: "#E8C46B", color: "#7A5B12" }
+                            : { background: "var(--color-bg)", borderColor: "var(--color-border)", color: INK_FAINT }
+                        }
                       >
                         {unlocked ? copy.unlocked : copy.locked}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-0.5 text-xs leading-5" style={{ color: INK_MUTED }}>
                       {badge.description}
                     </p>
                     {badge.unlockedLabel && (
-                      <p className="mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                      <p className="mt-1 text-[11px] font-semibold" style={{ color: "#A97B12" }}>
                         {copy.unlockedOn} {badge.unlockedLabel}
                       </p>
                     )}
@@ -384,7 +397,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           {/* Honest lucky-odds disclosure (spec D2 / §4.2). English copy is
               the same text as PM_STRINGS.luckyOdds in public/farm/strings.js —
               duplicated knowingly, React can't read that file at build time. */}
-          <p className="mt-4 text-center text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+          <p className="mt-4 text-center text-[11px] font-medium" style={{ color: INK_MUTED }}>
             🍀 {copy.luckyOdds}
           </p>
         </section>
@@ -414,30 +427,30 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "wisdom" && (
         <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
-          <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
+          <p className="mb-3 text-center text-xs font-medium" style={{ color: INK_MUTED }}>
             {copy.wisdomIntro}
           </p>
           <ul className="flex flex-col gap-3">
             {wisdom.map((entry) => (
-              <li
-                key={entry.id}
-                className="rounded-2xl border border-teal-200/70 bg-teal-50/60 p-4 dark:border-teal-900/60 dark:bg-teal-950/30"
-              >
-                <p className="text-sm font-semibold italic leading-5 text-zinc-900 dark:text-zinc-50">
+              <li key={entry.id} className="pm-panel" style={{ borderColor: "#A9D2F2" }}>
+                <p className="text-sm font-semibold italic leading-5" style={{ color: "var(--color-text)" }}>
                   &ldquo;{entry.saying}&rdquo;
                 </p>
-                <p className="mt-2 text-xs leading-5 text-zinc-600 dark:text-zinc-300">
+                <p className="mt-2 text-xs leading-5" style={{ color: INK_MUTED }}>
                   {entry.translation}
                 </p>
-                <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 dark:bg-zinc-900/50">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-teal-700 dark:text-teal-400">
+                <div
+                  className="mt-2 rounded-xl border-2 px-3 py-2"
+                  style={{ background: "var(--color-bg)", borderColor: "var(--color-border)" }}
+                >
+                  <p className="pm-heading text-[8px] uppercase tracking-wide" style={{ color: "#2F6FAE" }}>
                     {entry.metric}
                   </p>
-                  <p className="mt-0.5 text-[11px] leading-4 text-zinc-600 dark:text-zinc-300">
+                  <p className="mt-1 text-[11px] leading-4" style={{ color: INK_MUTED }}>
                     {entry.example}
                   </p>
                 </div>
-                <p className="mt-2 text-[10px] font-medium leading-4 text-zinc-400 dark:text-zinc-500">
+                <p className="mt-2 text-[10px] font-medium leading-4" style={{ color: INK_FAINT }}>
                   {entry.source}
                 </p>
               </li>
