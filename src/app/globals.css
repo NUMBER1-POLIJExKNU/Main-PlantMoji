@@ -664,6 +664,12 @@ body {
 }
 
 .reno-nav-links::-webkit-scrollbar { display: none; }
+.reno-nav-section-title { padding: 2px 12px 1px; color: #7B8876; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .12em; }
+.reno-nav-tool-pocket { margin-top: 10px; border-top: 2px dashed rgba(43,58,39,.16); padding-top: 10px; }
+.reno-nav-tool-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin-top: 6px; }
+.reno-nav-item.reno-nav-tool { min-width: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 3px; font-size: 6px; text-align: center; }
+.reno-nav-item.reno-nav-tool i { font-size: 16px; }
+.reno-nav-item.reno-nav-tool:hover { transform: translateY(-2px); }
 
 .reno-nav-item {
   display: flex;
@@ -896,10 +902,9 @@ body {
   to { transform: translate(-60px, -120px); }
 }
 
-/* On phones the oversized horizontal sidebar used to consume a quarter of
-   the viewport and force the whole app wider than the screen. Brand/language
-   now form a compact sticky top bar; all seven destinations stay visible in
-   a fixed Tamagotchi-style bottom dock. */
+/* On phones brand/language form a compact sticky top bar. The five core game
+   destinations stay visible in a fixed Tamagotchi-style bottom dock; the
+   desktop-only operator tool pocket does not compete with care actions. */
 @media (max-width: 800px) {
   .reno-app-shell {
     min-width: 0;
@@ -952,7 +957,7 @@ body {
     left: 8px;
     z-index: 80;
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
     width: auto;
     padding: 6px;
@@ -986,6 +991,8 @@ body {
 
   .reno-nav-item:hover { transform: translateY(-2px); }
   .reno-nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, 0.35); }
+  .reno-nav-section-title,
+  .reno-nav-tool-pocket { display: none; }
 
   .reno-locale-switch {
     width: 94px;

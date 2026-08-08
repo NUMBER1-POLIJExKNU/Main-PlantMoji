@@ -13,6 +13,7 @@ const TAB_HREFS = [
   "/",
   "/quests",
   "/plants",
+  "/diary",
   "/monitoring",
   "/collection",
   "/reports",
@@ -20,7 +21,7 @@ const TAB_HREFS = [
 ] as const;
 
 describe("shared PlantMoji application shell", () => {
-  it("exposes the seven product destinations from the React shell", () => {
+  it("exposes the five game destinations and three utility destinations", () => {
     for (const href of TAB_HREFS) {
       expect(reactShell).toContain(`href: "${href}"`);
     }
@@ -28,16 +29,18 @@ describe("shared PlantMoji application shell", () => {
     expect(reactShell.match(/href: "\/settings"/g)).toHaveLength(1);
   });
 
-  it("keeps Plants visible instead of aliasing the growth diary to Settings", () => {
+  it("keeps crop exploration and care memories as distinct game destinations", () => {
     expect(reactShell).toContain('key: "plants", href: "/plants"');
-    expect(reactShell).not.toContain('key: "diary"');
+    expect(reactShell).toContain('key: "diary", href: "/diary"');
+    expect(reactShell).toContain("const TOOL_ITEMS");
   });
 
-  it("uses a seven-column mobile dock without widening the viewport", () => {
-    expect(reactCss).toContain("grid-template-columns: repeat(7, minmax(0, 1fr))");
+  it("uses a five-action mobile game dock without widening the viewport", () => {
+    expect(reactCss).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
     expect(reactCss).toMatch(/\.reno-nav-links\s*\{[\s\S]*?position:\s*fixed/);
     expect(reactCss).toContain("env(safe-area-inset-bottom)");
     expect(reactCss).toContain("overflow-x: hidden");
+    expect(reactCss).toMatch(/\.reno-nav-tool-pocket\s*\{\s*display:\s*none/);
   });
 
   it("frames React feature routes and uses a shared page header", () => {

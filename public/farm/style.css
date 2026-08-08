@@ -153,6 +153,12 @@ body {
     overflow-y: auto;
 }
 .nav-links::-webkit-scrollbar { display: none; }
+.nav-section-title { padding: 2px 12px 1px; color: #7B8876; font: 7px/1.4 var(--font-heading); letter-spacing: .12em; }
+.nav-tool-pocket { margin-top: 10px; border-top: 2px dashed rgba(43,58,39,.16); padding-top: 10px; }
+.nav-tool-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin-top: 6px; }
+.nav-item.nav-tool { min-width: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 3px; font-size: 6px; text-align: center; }
+.nav-item.nav-tool .icon { font-size: 16px; }
+.nav-item.nav-tool:hover { transform: translateY(-2px); }
 
 /* ID/EN language switch (restored from the pre-reframe page, restyled for
    the solid-surface sidebar: tinted well + token border instead of glass). */
@@ -1365,7 +1371,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         left: 8px;
         z-index: 100;
         display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 2px;
         width: auto;
         padding: 6px;
@@ -1395,6 +1401,8 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .nav-item:hover { transform: translateY(-2px); }
     .nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, .35); }
+    .nav-section-title,
+    .nav-tool-pocket { display: none; }
     .locale-switch { width: 94px; margin: 0; padding: 3px; }
     .locale-switch button { min-height: 36px; padding: 6px 4px; font-size: 8px; }
     .game-world {

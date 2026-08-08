@@ -5,17 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
 
-// The static farm home and every React route use this same seven-destination
-// information architecture. Keep public/farm/index.html in sync until the
-// static home has been fully retired.
+// The static farm home and every React route share five game destinations,
+// with operational views tucked into a small tool pocket. Keep
+// public/farm/index.html in sync until the static home has been retired.
 const NAV_ITEMS = [
-  { key: "home", href: "/", icon: "🏠", id: "Beranda", en: "Home" },
-  { key: "quests", href: "/quests", icon: "📜", id: "Misi", en: "Quests" },
-  { key: "plants", href: "/plants", icon: "🌾", id: "Tanaman", en: "Plants" },
-  { key: "status", href: "/monitoring", icon: "📈", id: "Dashboard", en: "Dashboard" },
-  { key: "collection", href: "/collection", icon: "🏆", id: "Koleksi", en: "Collection" },
-  { key: "reports", href: "/reports", icon: "📊", id: "Laporan", en: "Report" },
-  { key: "settings", href: "/settings", icon: "⚙️", id: "Pengaturan", en: "Settings" },
+  { key: "home", href: "/", icon: "🌱", id: "Kebunku", en: "My Garden" },
+  { key: "quests", href: "/quests", icon: "💚", id: "Rawat", en: "Care" },
+  { key: "plants", href: "/plants", icon: "🗺️", id: "Jelajah", en: "Explore" },
+  { key: "diary", href: "/diary", icon: "📖", id: "Kenangan", en: "Memories" },
+  { key: "collection", href: "/collection", icon: "💎", id: "Harta", en: "Treasures" },
+] as const;
+const TOOL_ITEMS = [
+  { key: "status", href: "/monitoring", icon: "📡", id: "Sensor", en: "Sensors" },
+  { key: "reports", href: "/reports", icon: "📜", id: "Rekap", en: "Recap" },
+  { key: "settings", href: "/settings", icon: "🧰", id: "Alat", en: "Tools" },
 ] as const;
 
 function changeAppLocale(nextLocale: AppLocale) {
@@ -53,6 +56,7 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
           </Link>
 
           <nav className="reno-nav-links" aria-label="Main navigation">
+            <span className="reno-nav-section-title">{locale === "id" ? "DUNIAKU" : "MY WORLD"}</span>
             {NAV_ITEMS.map((item) => {
               const label = locale === "id" ? item.id : item.en;
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -69,6 +73,15 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
                 </Link>
               );
             })}
+            <div className="reno-nav-tool-pocket">
+              <span className="reno-nav-section-title">{locale === "id" ? "ALAT" : "TOOLS"}</span>
+              <div className="reno-nav-tool-grid">
+                {TOOL_ITEMS.map((item) => {
+                  const active = pathname.startsWith(item.href);
+                  return <Link key={item.key} href={item.href} title={locale === "id" ? item.id : item.en} aria-current={active ? "page" : undefined} className={`reno-nav-item reno-nav-tool${active ? " active" : ""}`} onClick={() => window.PMSfx?.play("tick")}><i>{item.icon}</i><span>{locale === "id" ? item.id : item.en}</span></Link>;
+                })}
+              </div>
+            </div>
           </nav>
 
           <div className="reno-locale-switch" role="group" aria-label="Language / Bahasa">

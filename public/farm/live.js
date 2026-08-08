@@ -47,13 +47,7 @@ function spawnBadgeTapEffect(rect) {
 // "JAMKACHU" and "PLANT MOJI" are proper nouns and are never translated.
 const COPY = {
   id: {
-    "nav.home": "Beranda",
-    "nav.quests": "Misi",
-    "nav.plants": "Tanaman",
-    "nav.status": "Dashboard",
-    "nav.collection": "Koleksi",
-    "nav.reports": "Laporan",
-    "nav.settings": "Pengaturan",
+    "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebunku", "nav.quests": "Rawat", "nav.plants": "Jelajah", "nav.memories": "Kenangan", "nav.status": "Sensor", "nav.collection": "Harta", "nav.reports": "Rekap", "nav.settings": "Alat",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
     "weather.loading": "Memuat prakiraan...",
@@ -78,13 +72,7 @@ const COPY = {
     questComplete: "Misi selesai!",
   },
   en: {
-    "nav.home": "Home",
-    "nav.quests": "Quests",
-    "nav.plants": "Plants",
-    "nav.status": "Dashboard",
-    "nav.collection": "Collection",
-    "nav.reports": "Report",
-    "nav.settings": "Settings",
+    "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Care", "nav.plants": "Explore", "nav.memories": "Memories", "nav.status": "Sensors", "nav.collection": "Treasures", "nav.reports": "Recap", "nav.settings": "Tools",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
     "weather.loading": "Loading forecast...",
