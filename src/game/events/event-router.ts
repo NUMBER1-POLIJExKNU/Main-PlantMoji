@@ -156,11 +156,14 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
  * COMPLETED transition but before the XP award therefore heals on the next
  * event or tick instead of losing the reward forever.
  *
- * Write order per quest — the xp_rewards insert (inside award_xp) is the
- * LAST step and acts as the settlement marker:
+ * Write order per quest — the BASE award's xp_rewards insert (inside
+ * award_xp) is the LAST step and acts as the settlement marker, so every
+ * earlier write (including the lucky bonus) has already landed by the time
+ * the marker exists:
  *   1. heal the QUEST_COMPLETED bond event (idempotent upsert)
  *   2. streak credit (idempotent per calendar day)
- *   3. awardXp (idempotent by rewardKey; marks the quest settled)
+ *   3. lucky ×2 bonus, when rolled (idempotent by its own rewardKey)
+ *   4. base awardXp (idempotent by rewardKey; marks the quest settled)
  */
 async function settleCompletions(supabase: SupabaseClient, plantId: string): Promise<void> {
   const { data, error } = await supabase
@@ -242,8 +245,6 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
         quest.xp_reward * dailyBoostMultiplier(getDailyEvent(plantId, completedAt)),
       );
       const amount = Math.max(seasonalAmount, boostedAmount);
-      // rewardKey per handoff §28 — a replay can never double-award.
-      await awardXp(supabase, plantId, rewardKeyFor(quest), amount, quest.quest_key);
 
       // Lucky Sprout ×2 (spec D2): a deterministic ~1/8 roll on the quest's
       // primary key grants a second award of the SAME final composed amount
@@ -252,6 +253,13 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
       // identical amount). Strictly additive, odds disclosed in Collection
       // help, and idempotent via its own reward_key, so a replayed settle of
       // an unsettled quest can never double-grant the bonus.
+      //
+      // Awarded BEFORE the base award on purpose: the base rewardKey is this
+      // quest's settlement marker, so its presence must imply the lucky roll
+      // already settled. A crash after the lucky award but before the base
+      // award self-heals — the next sweep still sees the quest as unsettled,
+      // the lucky awardXp no-ops on its own ledger key, and the base award
+      // lands. The reverse order would orphan the bonus forever.
       if (isLuckyQuest(quest.id)) {
         await awardXp(
           supabase,
@@ -261,6 +269,10 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
           `lucky-bonus:${quest.quest_key}`,
         );
       }
+
+      // rewardKey per handoff §28 — a replay can never double-award. LAST
+      // write for this quest: the settlement marker (see the docstring).
+      await awardXp(supabase, plantId, rewardKeyFor(quest), amount, quest.quest_key);
     }
   }
 

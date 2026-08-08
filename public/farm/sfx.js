@@ -22,8 +22,12 @@
 // ("off" = muted, anything else = on) and syncs across tabs/pages via
 // storage events. The AudioContext is created + resumed on the FIRST
 // pointerdown (capture phase, once); if the browser keeps it suspended
-// after a few real gestures, the speaker toggle renders crossed-out and
-// the engine stays silent.
+// across several real gestures WITHOUT ever having run, the speaker toggle
+// renders crossed-out and the engine stays silent. A context that DID run
+// and was later suspended (tab backgrounded, iOS audio interruption) is a
+// transient state, never a permanent block: play() fires a resume() and
+// re-arms the gesture unlock, and a visibilitychange listener resumes on
+// return to the tab.
 //
 // Guardrails (spec §4): mute short-circuits BEFORE any audio node is
 // created; every cue is rate-limited to once per 1.5s; this engine is pure
@@ -60,8 +64,10 @@
   // ── Lazy AudioContext + gesture unlock ─────────────────────────────────
 
   let ctx = null;
-  let blocked = false; // context stayed suspended after real unlock attempts
+  let blocked = false; // autoplay policy refused every real gesture, pre-first-run
   let unlockAttempts = 0;
+  let unlockArmed = false; // a {once:true} pointerdown unlock listener is pending
+  let everUnlocked = false; // the context reached "running" at least once
 
   function ensureContext() {
     if (ctx || blocked) return ctx;
@@ -80,28 +86,62 @@
     return ctx;
   }
 
+  /** The context is (or just became) running — clear every failure latch so
+   *  a later transient suspension can never permanently silence the engine. */
+  function markRunning() {
+    everUnlocked = true;
+    unlockAttempts = 0;
+    blocked = false;
+    updateButton();
+  }
+
+  /** Fire-and-forget resume(); on success clear the failure latches.
+   *  Rejections are swallowed — the re-armed gesture unlock, the next
+   *  play(), or the visibilitychange listener simply tries again. */
+  function tryResume(c) {
+    try {
+      c.resume().then(() => {
+        if (c.state === "running") markRunning();
+      }, () => {});
+    } catch {
+      /* resume unavailable — a later attempt retries */
+    }
+  }
+
   function attemptUnlock() {
+    unlockArmed = false; // the {once:true} listener just consumed itself
     const c = ensureContext();
     if (!c) return;
     unlockAttempts += 1;
     const settle = () => {
       if (c.state === "running") {
-        blocked = false;
-        updateButton();
-      } else if (unlockAttempts >= MAX_UNLOCK_ATTEMPTS) {
-        // The autoplay policy refused even inside real user gestures →
-        // cross out the speaker and stay silent (Task 5).
+        markRunning();
+      } else if (!everUnlocked && unlockAttempts >= MAX_UNLOCK_ATTEMPTS) {
+        // The autoplay policy refused even inside real user gestures AND no
+        // unlock has EVER succeeded → cross out the speaker and stay silent
+        // (Task 5). Once any unlock has succeeded this branch is
+        // unreachable: a post-unlock suspension re-arms below instead, so a
+        // transient interruption never shows the crossed-out speaker.
         blocked = true;
         updateButton();
       } else {
         listenForUnlock(); // try again on the next gesture
       }
     };
-    if (c.state === "suspended") c.resume().then(settle, settle);
-    else settle();
+    if (c.state === "running") {
+      settle();
+    } else {
+      try {
+        c.resume().then(settle, settle);
+      } catch {
+        settle();
+      }
+    }
   }
 
   function listenForUnlock() {
+    if (unlockArmed) return; // one pending unlock listener is enough
+    unlockArmed = true;
     document.addEventListener("pointerdown", attemptUnlock, {
       capture: true,
       once: true,
@@ -109,6 +149,14 @@
     });
   }
   listenForUnlock();
+
+  // Post-unlock resilience: coming back to the tab re-resumes a context the
+  // browser suspended in the background (tab switch, iOS interruption), so
+  // celebration audio survives the presenter checking notes mid-demo.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (ctx && ctx.state !== "running" && !blocked) tryResume(ctx);
+  });
 
   // ── Synthesis helpers ──────────────────────────────────────────────────
   // Every cue is a handful of short square/triangle notes (or filtered
@@ -239,7 +287,16 @@
     const recipe = CUES[cue];
     if (!recipe) return; // unknown cue → silent no-op, never a throw
     const c = ctx;
-    if (!c || c.state !== "running") return; // not unlocked yet
+    if (!c) return; // no context yet — the gesture unlock is still pending
+    if (c.state !== "running") {
+      // Transient suspension (tab backgrounded, iOS interruption after a
+      // successful unlock). Kick off a resume for the NEXT cue, re-arm the
+      // gesture unlock as a fallback, and drop THIS cue — resume() is
+      // async, so synthesizing now would only play stale audio later.
+      tryResume(c);
+      listenForUnlock();
+      return;
+    }
     const now = Date.now();
     if (now - (lastPlayedAt[cue] || 0) < RATE_LIMIT_MS) return; // 1.5s/cue
     lastPlayedAt[cue] = now;
