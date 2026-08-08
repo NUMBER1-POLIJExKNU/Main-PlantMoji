@@ -110,11 +110,14 @@ export default async function CollectionPage() {
 
   const wisdom: WisdomCollectionItem[] = FARMER_WISDOM.map((entry) => ({
     id: entry.id,
-    saying: entry.saying,
+    saying: locale === "id" ? entry.sayingId ?? entry.saying : entry.saying,
     source: entry.source,
-    translation: entry.translation,
+    translation: locale === "id" ? entry.translationId ?? entry.translation : entry.translation,
     metric: entry.sensorLink.metric,
-    example: entry.sensorLink.example,
+    example:
+      locale === "id"
+        ? entry.sensorLink.exampleId ?? entry.sensorLink.example
+        : entry.sensorLink.example,
   }));
 
   const badges: BadgeCollectionItem[] = Object.values(BADGE_DEFINITIONS).map((definition) => {
@@ -136,14 +139,22 @@ export default async function CollectionPage() {
 
   const chapters: StoryCollectionItem[] = CHAPTER_DEFINITIONS.map((definition) => {
     const unlocked = definition.chapter <= currentChapter;
+    // Locked chapters never compute their scene — keeps future story
+    // spoiler-free on the wire.
+    const scene = unlocked ? getChapterScene(definition.chapter, personality, plantName) : null;
     return {
       chapter: definition.chapter,
-      title: definition.title,
-      description: definition.description,
+      title: locale === "id" ? definition.titleId ?? definition.title : definition.title,
+      description:
+        locale === "id" ? definition.descriptionId ?? definition.description : definition.description,
       unlocked,
-      // Locked chapters never compute their scene — keeps future story
-      // spoiler-free on the wire.
-      scene: unlocked ? getChapterScene(definition.chapter, personality, plantName) : null,
+      // Localized here (page level) so StoryChapterCard stays dumb and keeps
+      // reading `line.text` unchanged — .textId is folded into .text before
+      // the scene ever reaches the component tree.
+      scene:
+        scene && locale === "id"
+          ? { ...scene, lines: scene.lines.map((line) => ({ ...line, text: line.textId ?? line.text })) }
+          : scene,
     };
   });
 
