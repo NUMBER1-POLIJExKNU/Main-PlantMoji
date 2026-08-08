@@ -127,8 +127,8 @@
       // Threshold-true vital comments (Task 19). Boundaries mirror the mood
       // engine so a comment can never contradict the current mood:
       //   temp: > 32 hot · 18–28 good
-      //   humidity: < 40 dry · >= 40 good
-      //   light: 0 dark · 1 good (bright)
+      //   humidity: < 40 dry · >= 45 good (the hysteresis band stays silent)
+      //   light: 0 dark · 1 good (bright) · 0 at night = gentle night line
       //   soil pH: 6.0–7.0 good · outside that band = off
       vitals: {
         tempHot: "Phew, vent please!",
@@ -137,6 +137,7 @@
         humGood: "The air feels lovely!",
         lightDark: "Pretty dark here",
         lightGood: "Sunbathing time!",
+        lightNight: "Night 🌙 — it's supposed to be dark now. Sweet dreams!",
         phGood: "Soil feels great",
         phOff: "My soil tastes funny — mind checking the pH?",
       },
@@ -152,6 +153,63 @@
       // Verifying-shimmer quest slot label (Task 12).
       verifying: {
         checking: "Sensor is checking…",
+      },
+
+      // Hatching intro (spec §6.3): one-time first-visit sequence, pure
+      // presentation — no XP, no writes; the seen-flag lives in localStorage.
+      hatch: {
+        skip: "Skip",
+        rumble: "Rumble rumble… something is stirring in the pot!",
+        hello: "Nice to meet you!",
+        personality: "I'm a sunshine-loving little plant — cozy air, bright days, and lots of hanging out with you!",
+        rename: "You can change my name in Settings ⚙️",
+        sensors: {
+          temp: { title: "Temperature 🌡️", line: "This little helper feels whether my room is comfy or too hot." },
+          hum: { title: "Air Humidity 💧", line: "This one checks if the air is moist enough for me to breathe easy." },
+          light: { title: "Light ☀️", line: "This one watches whether I'm getting my sunshine." },
+          ph: { title: "Soil pH ⚗️", line: "This one tastes my soil to make sure it feels just right." },
+        },
+        finale: "This button always shows what I need!",
+      },
+
+      // Level decorations (spec §6.4): names for the pure-presentation
+      // keepsakes each bond level leaves behind, plus the T3 reveal chip.
+      decor: {
+        reveal: (name) => `New decoration: ${name}!`,
+        sticker: "Pot heart sticker",
+        flag: "Pot flag",
+        room: "Warmer room glow",
+        ribbon: "Head ribbon",
+        goldpot: "Golden pot",
+        bffToken: "Best Friend 💛",
+      },
+
+      // Jamkachu memories (spec §6.5): template sentences built from recent
+      // bond_events, rotated into the idle speech bubble. No AI calls.
+      memories: {
+        day: { today: "Today", yesterday: "Yesterday", earlier: "A few days ago" },
+        quest: (day) => `${day} you helped me feel better!`,
+        badge: (name) => `We earned the ${name} badge together!`,
+        chapter: (n) => `Our story reached chapter ${n}!`,
+        streak: (n) => `${n} days of care — I remember every one!`,
+      },
+
+      // Chapter Gate (plan T17, T5 peak): kicker label + one dialogue line.
+      chapterGate: {
+        label: (n) => `Chapter ${n}`,
+        dialogue: "Our story grows, leaf by leaf. Thanks for growing with me!",
+      },
+
+      // Six Jember chapter titles — copied EXACTLY from
+      // src/game/story/story-definitions.ts (the contract test pins them;
+      // never edit one side alone).
+      chapterTitles: {
+        1: "First Meeting in Jember",
+        2: "Roots in Volcanic Soil",
+        3: "Trust, Rain or Shine",
+        4: "Through Heat and Gray Skies",
+        5: "Full Bloom, Carnival Bright",
+        6: "Harvest of Wisdom",
       },
 
       // Existing live.js FX copy, centralized here per Task 4 ("move them in").
@@ -270,6 +328,7 @@
         humGood: "Udaranya enak banget!",
         lightDark: "Gelap banget di sini",
         lightGood: "Waktunya berjemur!",
+        lightNight: "Malam 🌙 — memang waktunya gelap kok. Selamat tidur ya!",
         phGood: "Tanahnya terasa nyaman",
         phOff: "Rasa tanahku aneh — bisa cek pH-nya?",
       },
@@ -283,6 +342,58 @@
 
       verifying: {
         checking: "Sensor sedang memeriksa…",
+      },
+
+      // Intro penetasan (spec §6.3) — bahasa santai khas remaja, tetap sopan.
+      hatch: {
+        skip: "Lewati",
+        rumble: "Gruduk gruduk… ada yang bergerak di dalam pot!",
+        hello: "Salam kenal ya!",
+        personality: "Aku tanaman kecil penyuka matahari — udara nyaman, hari cerah, dan main bareng kamu!",
+        rename: "Kamu bisa ganti namaku di Pengaturan ⚙️",
+        sensors: {
+          temp: { title: "Suhu 🌡️", line: "Penolong kecil ini merasakan kamarku lagi nyaman atau kepanasan." },
+          hum: { title: "Kelembapan Udara 💧", line: "Yang ini mengecek udaranya cukup lembap nggak, biar napasku lega." },
+          light: { title: "Cahaya ☀️", line: "Yang ini memperhatikan aku sudah kebagian sinar matahari atau belum." },
+          ph: { title: "pH Tanah ⚗️", line: "Yang ini mencicipi tanahku biar rasanya selalu pas." },
+        },
+        finale: "Tombol ini selalu menunjukkan apa yang aku butuhkan!",
+      },
+
+      // Dekorasi level (spec §6.4).
+      decor: {
+        reveal: (name) => `Dekorasi baru: ${name}!`,
+        sticker: "Stiker hati di pot",
+        flag: "Bendera kecil di pot",
+        room: "Cahaya kamar lebih hangat",
+        ribbon: "Pita di kepala",
+        goldpot: "Pot emas",
+        bffToken: "Sahabat 💛",
+      },
+
+      // Kenangan Jamkachu (spec §6.5).
+      memories: {
+        day: { today: "Hari ini", yesterday: "Kemarin", earlier: "Beberapa hari lalu" },
+        quest: (day) => `${day} kamu bikin aku merasa lebih baik!`,
+        badge: (name) => `Kita dapat lencana ${name} bareng-bareng!`,
+        chapter: (n) => `Cerita kita sudah sampai bab ${n}!`,
+        streak: (n) => `${n} hari merawatku — aku ingat semuanya!`,
+      },
+
+      // Gerbang Bab (plan T17).
+      chapterGate: {
+        label: (n) => `Bab ${n}`,
+        dialogue: "Cerita kita tumbuh selembar demi selembar daun. Makasih sudah tumbuh bareng aku!",
+      },
+
+      // Terjemahan setia dari judul bab en (story-definitions.ts).
+      chapterTitles: {
+        1: "Pertemuan Pertama di Jember",
+        2: "Berakar di Tanah Vulkanik",
+        3: "Saling Percaya, Hujan maupun Cerah",
+        4: "Melewati Panas dan Langit Kelabu",
+        5: "Mekar Penuh Semeriah Karnaval",
+        6: "Panen Kebijaksanaan",
       },
 
       fx: {

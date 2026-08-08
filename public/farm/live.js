@@ -232,6 +232,7 @@ let prevXp = null;
 let prevLevel = null;
 let prevStreak = null;
 let prevMoodFx = null;
+let prevChapter = null; // bond_state.current_chapter — read for PMFx.chapter() only
 const questStatuses = new Map(); // quest id → last seen status
 let questsPrimed = false; // first quest snapshot recorded without celebrating
 
@@ -258,9 +259,11 @@ const FX_CSS = `
 .fx-levelup-card { font-family: var(--font-heading, monospace); background: var(--color-white, #fff); border: 4px solid var(--color-outline, #2B3A27); border-radius: 18px; box-shadow: 0 8px 0 var(--color-outline, #2B3A27); padding: 32px 48px; text-align: center; will-change: transform, opacity; }
 .fx-levelup-title { font-size: 26px; color: var(--color-forest, #397A2B); text-shadow: 3px 3px 0 var(--color-yellow, #FFDE6A); }
 .fx-levelup-sub { font-size: 12px; margin-top: 14px; color: var(--color-outline, #2B3A27); }
-.fx-chapter-card { font-family: var(--font-heading, monospace); background: #1C2618; border: 4px solid var(--color-yellow, #FFDE6A); border-radius: 18px; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35); padding: 36px 52px; text-align: center; will-change: transform, opacity; }
-.fx-chapter-title { font-size: 22px; color: var(--color-yellow, #FFDE6A); text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4); }
-.fx-chapter-sub { font-size: 11px; margin-top: 12px; color: #E9F2E4; }
+.fx-chapter-veil { position: fixed; inset: 0; z-index: 1006; background: radial-gradient(circle at 50% 40%, rgba(28, 38, 24, 0.85) 0%, rgba(12, 17, 10, 0.97) 100%); display: flex; align-items: center; justify-content: center; pointer-events: auto; cursor: pointer; }
+.fx-chapter-gate { max-width: 560px; padding: 24px; text-align: center; font-family: var(--font-heading, monospace); will-change: transform, opacity; }
+.fx-chapter-kicker { font-size: 13px; color: var(--color-yellow, #FFDE6A); letter-spacing: 2px; margin-bottom: 18px; }
+.fx-chapter-gate-title { font-size: 22px; line-height: 1.7; color: #FFF7DF; text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5); }
+.fx-chapter-line { font-family: var(--font-body, sans-serif); font-size: 16px; line-height: 1.8; color: #E9F2E4; }
 `;
 
 function prefersReducedMotion() {
@@ -1068,6 +1071,13 @@ function onBondEventInsert(row) {
   const amount = Number(data.amount) || 0;
   const reason = String(data.reason ?? "");
   noteReason(amount, reason);
+  if (reason.startsWith("chapter:")) {
+    // Chapter Gate (plan T17): the story engine's award reason is
+    // `chapter:<n>` — unlock the T5 peak. Unparsable numbers still gate
+    // (dialogue-only) rather than showing a wrong chapter.
+    const digits = reason.replace(/\D+/g, "");
+    fxChapterGate(digits ? Number.parseInt(digits, 10) : null);
+  }
   if (reason.startsWith("lucky-bonus:")) {
     // The bonus gets its own gold presentation → note it so renderBond's
     // diff never chips the same XP again (Task 13 ledger).
@@ -1391,6 +1401,25 @@ let petSatiatedUntil = 0;
 let petTapTimes = [];
 let petLineIndex = 0;
 
+/** Temporarily replace the speech bubble with `line`, restoring the saved
+ *  mood bubble after `ms` — the petting mechanism, shared by the pressable
+ *  vitals (T19) and the memory rotation (spec §6.5) so every transient line
+ *  rides the SAME guards: cancelPetBubble() on mood/sleep transitions wipes
+ *  a stale restore, and petSavedBubble keeps the original content safe. */
+function showTransientBubble(line, ms) {
+  const bubble = $(".speech-bubble");
+  if (!bubble) return;
+  if (petSavedBubble === null) petSavedBubble = bubble.innerHTML;
+  bubble.textContent = `"${line}"`;
+  if (petRestoreTimer !== null) clearTimeout(petRestoreTimer);
+  petRestoreTimer = setTimeout(() => {
+    petRestoreTimer = null;
+    const el = $(".speech-bubble");
+    if (el && petSavedBubble !== null) el.innerHTML = petSavedBubble;
+    petSavedBubble = null;
+  }, ms);
+}
+
 function petMascot() {
   const now = Date.now();
   if (now < petCooldownUntil || now < petSatiatedUntil) return;
@@ -1424,18 +1453,83 @@ function petMascot() {
     petLineIndex++;
   }
 
-  const bubble = $(".speech-bubble");
-  if (bubble) {
-    if (petSavedBubble === null) petSavedBubble = bubble.innerHTML;
-    bubble.textContent = `"${line}"`;
-    if (petRestoreTimer !== null) clearTimeout(petRestoreTimer);
-    petRestoreTimer = setTimeout(() => {
-      petRestoreTimer = null;
-      const el = $(".speech-bubble");
-      if (el && petSavedBubble !== null) el.innerHTML = petSavedBubble;
-      petSavedBubble = null;
-    }, PET_BUBBLE_RESTORE_MS);
+  showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+// ── Pressable vital rows (plan T19) ─────────────────────────────────────
+// Tapping an env-strip value makes Jamkachu comment in the speech bubble
+// using the SAME thresholds as the mood engine (threshold-true lines from
+// PM().vitals), so a comment can never contradict the current mood. The
+// hysteresis bands (temp 28–32, humidity 40–45) stay silent on purpose.
+// At night a light tap gets the gentle night line, never a "dark" warning.
+// Zero XP, zero writes; 2s shared cooldown; bubble restores like petting.
+
+const VITAL_TAP_COOLDOWN_MS = 2000;
+const VITAL_TEMP_HOT = 32; // > 32 → hot (Overheating threshold)
+const VITAL_HUM_DRY = 40; // < 40 → dry (DryAir threshold)
+const VITAL_HUM_GOOD = 45; // >= 45 → good (recovery threshold)
+const VITAL_PH_MIN = 6.0;
+const VITAL_PH_MAX = 7.0;
+const VITALS_FALLBACK = {
+  tempHot: "Phew, vent please!",
+  tempGood: "Perfect temperature!",
+  humDry: "Air feels dry",
+  humGood: "The air feels lovely!",
+  lightDark: "Pretty dark here",
+  lightGood: "Sunbathing time!",
+  lightNight: "Night 🌙 — it's supposed to be dark now. Sweet dreams!",
+  phGood: "Soil feels great",
+  phOff: "My soil tastes funny — mind checking the pH?",
+};
+let vitalTapCooldownUntil = 0;
+// Latest rendered reading (null until real data) — renderSensors updates it.
+const lastVitals = { temperature: null, humidity: null, light: null, soilPh: null };
+
+function vitalString(key) {
+  return PM().vitals?.[key] ?? VITALS_FALLBACK[key];
+}
+
+/** Threshold-true comment for one vital, or null when no threshold holds
+ *  (unknown reading, or a hysteresis band where any claim could contradict
+ *  the mood engine's current state). */
+function vitalComment(kind) {
+  if (kind === "temp") {
+    const v = lastVitals.temperature;
+    if (v == null) return null;
+    if (v > VITAL_TEMP_HOT) return vitalString("tempHot");
+    if (v >= ECHO_TEMP_MIN && v <= ECHO_TEMP_MAX) return vitalString("tempGood");
+    return null;
   }
+  if (kind === "hum") {
+    const v = lastVitals.humidity;
+    if (v == null) return null;
+    if (v < VITAL_HUM_DRY) return vitalString("humDry");
+    if (v >= VITAL_HUM_GOOD) return vitalString("humGood");
+    return null;
+  }
+  if (kind === "light") {
+    const v = lastVitals.light;
+    if (v !== 0 && v !== 1) return null;
+    if (v === 1) return vitalString("lightGood");
+    // Night (spec §6.2): dark is normal — gentle night line, no warning.
+    return isNightWIB() ? vitalString("lightNight") : vitalString("lightDark");
+  }
+  if (kind === "ph") {
+    const v = lastVitals.soilPh;
+    if (v == null) return null;
+    return v >= VITAL_PH_MIN && v <= VITAL_PH_MAX ? vitalString("phGood") : vitalString("phOff");
+  }
+  return null;
+}
+
+function onVitalTap(kind) {
+  const now = Date.now();
+  if (now < vitalTapCooldownUntil) return;
+  const line = vitalComment(kind);
+  if (!line) return; // nothing true to say — never invent a comment
+  vitalTapCooldownUntil = now + VITAL_TAP_COOLDOWN_MS;
+  window.PMSfx?.play("blip");
+  showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
 }
 
 /** One-time listener wiring; safe on the static demo (no data needed). */
@@ -1459,6 +1553,20 @@ function setupCareInteractions() {
 
   $("#care-action")?.addEventListener("pointerdown", onCareAction);
   $(".mascot-wrapper")?.addEventListener("pointerdown", petMascot);
+
+  // Pressable vitals (plan T19): pointer + keyboard (role=button spans).
+  const vitalSpans = { "#env-temp": "temp", "#env-hum": "hum", "#env-light": "light", "#env-ph": "ph" };
+  for (const [selector, kind] of Object.entries(vitalSpans)) {
+    const el = $(selector);
+    if (!el) continue;
+    el.addEventListener("pointerdown", () => onVitalTap(kind));
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onVitalTap(kind);
+      }
+    });
+  }
 
   // Streak flame press (Task 15): tap → "N days in a row! Care today makes
   // N+1." + blip + a little flame pulse. Celebrates only what is already
@@ -1494,51 +1602,116 @@ setInterval(updateCareUi, 60_000); // sleep window flips without a reload (spec 
 // celebration queue paces stacked calls.
 
 const PMFX_DEMO_XP = 20; // fake pod reward; lucky presents the same amount (net ×2 story)
-const CHAPTER_CARD_MS = 3200;
 
-/** T5 chapter-gate placeholder: dark pixel card + chapter jingle. Demo-only
- *  English for now — the richer localized story gate comes later. */
-function fxChapterCardNow(done) {
+// ── Chapter Gate (plan T17 — the T5 peak) ───────────────────────────────
+// Full-screen dark pixel vignette: chapter number + title (client-side
+// CHAPTER_TITLES map in strings.js — copied from story-definitions.ts),
+// then one dialogue line, tap-through with 4s auto-advance, gold confetti
+// finale + "chapter" cue. ≤8s total (the T5 tier cap); reduced motion gets
+// the same static cards. Triggered by the bond_events reason prefix
+// `chapter:` and by PMFx.chapter().
+
+const CHAPTER_GATE_MS = 8000;
+const CHAPTER_STEP_MS = 4000; // per-step auto-advance
+const CHAPTER_TITLES_FALLBACK = {
+  1: "First Meeting in Jember",
+  2: "Roots in Volcanic Soil",
+  3: "Trust, Rain or Shine",
+  4: "Through Heat and Gray Skies",
+  5: "Full Bloom, Carnival Bright",
+  6: "Harvest of Wisdom",
+};
+const CHAPTER_GATE_FALLBACK = {
+  label: (n) => `Chapter ${n}`,
+  dialogue: "Our story grows, leaf by leaf. Thanks for growing with me!",
+};
+
+/** T5 chapter gate. `chapter` may be null (unparsable reason) — the gate
+ *  then plays the dialogue beat only, never a wrong number. */
+function fxChapterGateNow(chapter, done) {
   const layer = ensureFxLayer();
   if (!layer) {
     done();
     return;
   }
+  const n = Number(chapter) > 0 ? Number(chapter) : null;
   window.PMSfx?.play("chapter");
   window.PMSfx?.buzz(30);
-  const overlay = document.createElement("div");
-  overlay.className = "fx-overlay";
-  overlay.setAttribute("role", "status");
-  overlay.setAttribute("aria-live", "polite");
-  const card = document.createElement("div");
-  card.className = "fx-chapter-card";
-  card.innerHTML =
-    '<div class="fx-chapter-title">📖 Chapter unlocked!</div>' +
-    '<div class="fx-chapter-sub">A new page of the story begins</div>';
-  overlay.appendChild(card);
-  layer.appendChild(overlay);
+  const veil = document.createElement("div");
+  veil.className = "fx-chapter-veil";
+  veil.setAttribute("role", "status");
+  veil.setAttribute("aria-live", "polite");
+  const gate = document.createElement("div");
+  gate.className = "fx-chapter-gate";
+  veil.appendChild(gate);
+  layer.appendChild(veil);
   const reduce = prefersReducedMotion();
-  animateSafe(
-    card,
-    reduce
-      ? [
-          { opacity: 0 },
-          { opacity: 1, offset: 0.12 },
-          { opacity: 1, offset: 0.85 },
-          { opacity: 0 },
-        ]
-      : [
-          { transform: "scale(0.5)", opacity: 0 },
-          { transform: "scale(1.06)", opacity: 1, offset: 0.15 },
-          { transform: "scale(1)", opacity: 1, offset: 0.25 },
-          { transform: "scale(1)", opacity: 1, offset: 0.85 },
-          { transform: "scale(0.92)", opacity: 0 },
+
+  const label = n ? (PM().chapterGate?.label?.(n) ?? CHAPTER_GATE_FALLBACK.label(n)) : null;
+  const title = n ? (PM().chapterTitles?.[n] ?? CHAPTER_TITLES_FALLBACK[n] ?? label) : null;
+  const dialogue = PM().chapterGate?.dialogue ?? CHAPTER_GATE_FALLBACK.dialogue;
+  const steps = [];
+  if (n) steps.push({ kicker: `📖 ${label}`, title });
+  steps.push({ line: dialogue });
+
+  let index = -1;
+  let stepTimer = null;
+  let finished = false;
+  const showStep = () => {
+    index++;
+    if (index >= steps.length) {
+      finish();
+      return;
+    }
+    const step = steps[index];
+    gate.innerHTML = "";
+    if (step.title != null) {
+      const kicker = document.createElement("div");
+      kicker.className = "fx-chapter-kicker";
+      kicker.textContent = step.kicker;
+      const titleEl = document.createElement("div");
+      titleEl.className = "fx-chapter-gate-title";
+      titleEl.textContent = step.title;
+      gate.appendChild(kicker);
+      gate.appendChild(titleEl);
+    } else {
+      const lineEl = document.createElement("div");
+      lineEl.className = "fx-chapter-line";
+      lineEl.textContent = step.line;
+      gate.appendChild(lineEl);
+    }
+    if (!reduce) {
+      animateSafe(
+        gate,
+        [
+          { transform: "scale(0.85)", opacity: 0 },
+          { transform: "scale(1)", opacity: 1 },
         ],
-    { duration: CHAPTER_CARD_MS, easing: reduce ? "linear" : "steps(24, end)", fill: "forwards" },
-  );
-  removeLater(overlay, CHAPTER_CARD_MS + 100);
-  spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 30, GOLD_CONFETTI);
-  setTimeout(done, CHAPTER_CARD_MS);
+        { duration: 300, easing: "steps(5, end)", fill: "both" },
+      );
+    }
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    stepTimer = setTimeout(showStep, CHAPTER_STEP_MS);
+  };
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    veil.remove();
+    // Gold confetti finale (skips itself under reduced motion).
+    spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.4, 36, GOLD_CONFETTI);
+    done();
+  };
+  veil.addEventListener("pointerdown", showStep); // tap-through
+  showStep();
+  // Self-cleanup safety: the veil must never outlive the queue's T5 cap
+  // (the queue force-advance alone would leave the veil on screen).
+  setTimeout(finish, CHAPTER_GATE_MS - 200);
+}
+
+/** Enqueue the T5 chapter gate for chapter `n` (null ⇒ dialogue-only). */
+function fxChapterGate(chapter) {
+  fxEnqueue(5, (done) => fxChapterGateNow(chapter, done), CHAPTER_GATE_MS);
 }
 
 window.PMFx = {
@@ -1548,13 +1721,22 @@ window.PMFx = {
     fxEnqueue(3, (done) => fxLuckyStampNow(done), LUCKY_STAMP_MS + 100);
     fxEnqueue(2, () => orbCascade(PMFX_DEMO_XP, { gold: true }), ORB_CASCADE_TOTAL_MS + 200);
   },
-  /** T4 level-up overlay for the next level (display only). */
+  /** T4 level-up overlay for the next level, extended with the decoration
+   *  reveal for the next unlockable decoration (demo beat 3: level-up →
+   *  new decoration). Presentation only — the previewed decoration classes
+   *  are re-asserted from real bond_level on the next data render. */
   levelUp() {
-    fxLevelUp((prevLevel ?? 1) + 1);
+    const next = (prevLevel ?? 1) + 1;
+    fxLevelUp(next);
+    const decorLevel = DECOR_LEVELS.find((lvl) => lvl >= next);
+    if (decorLevel) {
+      applyDecorations(decorLevel);
+      fxDecorReveal(decorLevel);
+    }
   },
-  /** T5 chapter-gate placeholder card. */
+  /** T5 chapter gate for the next chapter (display only). */
   chapter() {
-    fxEnqueue(5, (done) => fxChapterCardNow(done), CHAPTER_CARD_MS + 100);
+    fxChapterGate(Math.min((prevChapter ?? 1) + 1, 6));
   },
   /** Reward-pod drop with a fake quest — bypasses celebrateQuest's
    *  presented-XP ledger on purpose (nothing real is being presented). */
@@ -1564,6 +1746,78 @@ window.PMFx = {
 };
 
 // ── End care button + sleep + petting + micro-juice + PMFx ──────────────
+
+// ── Level decorations (spec §6.4) ───────────────────────────────────────
+// Levels leave visible traces: Lv.2 pot heart sticker, Lv.3 flag beside the
+// pot, Lv.5 warmer room glow, Lv.7 head ribbon, Lv.10 golden pot + best-
+// friend token. PURE presentation derived from bond_level: renderBond
+// applies them idempotently on EVERY render (first included — decorations
+// are state, not celebration). Only the LEVEL-UP diff adds a short T3
+// reveal after the level-up overlay.
+
+const DECOR_LEVELS = [2, 3, 5, 7, 10];
+const DECOR_KEY_BY_LEVEL = { 2: "sticker", 3: "flag", 5: "room", 7: "ribbon", 10: "goldpot" };
+const DECOR_ANCHOR = {
+  sticker: ".decor-sticker",
+  flag: ".decor-flag",
+  ribbon: ".decor-ribbon",
+  goldpot: ".decor-goldpot",
+  // "room" has no single element — sparkles fall back to the mascot stage.
+};
+const DECOR_FALLBACK = {
+  reveal: (name) => `New decoration: ${name}!`,
+  sticker: "Pot heart sticker",
+  flag: "Pot flag",
+  room: "Warmer room glow",
+  ribbon: "Head ribbon",
+  goldpot: "Golden pot",
+  bffToken: "Best Friend 💛",
+};
+const DECOR_REVEAL_MS = 1600;
+
+/** Apply every decoration the given bond level has earned (and remove any
+ *  it has not — idempotent, so demo previews self-correct on the next real
+ *  render). */
+function applyDecorations(level) {
+  const lv = Number(level) || 1;
+  const svg = $(".mascot-svg");
+  if (svg) {
+    svg.classList.toggle("decor-lv2", lv >= 2);
+    svg.classList.toggle("decor-lv3", lv >= 3);
+    svg.classList.toggle("decor-lv7", lv >= 7);
+    svg.classList.toggle("decor-lv10", lv >= 10);
+  }
+  document.body?.classList.toggle("room-warm", lv >= 5);
+  const token = $("#bff-token");
+  if (token) {
+    token.hidden = lv < 10;
+    if (lv >= 10) token.textContent = PM().decor?.bffToken ?? DECOR_FALLBACK.bffToken;
+  }
+}
+
+/** Immediate decoration reveal (queue item body): chip naming the new
+ *  decoration + sparkles at the decoration itself + "coin" cue. */
+function fxDecorRevealNow(level) {
+  const key = DECOR_KEY_BY_LEVEL[level];
+  if (!key) return;
+  window.PMSfx?.play("coin");
+  const name = PM().decor?.[key] ?? DECOR_FALLBACK[key];
+  const text = PM().decor?.reveal?.(name) ?? DECOR_FALLBACK.reveal(name);
+  const anchor = DECOR_ANCHOR[key] ? $(DECOR_ANCHOR[key]) : null;
+  const anchorRect = anchor?.getBoundingClientRect?.();
+  const rect = anchorRect && anchorRect.width > 0 ? anchorRect : mascotRect();
+  spawnSparkles(rect, 8);
+  floatChip(text, rect);
+}
+
+/** T3 follow-up reveal — enqueued AFTER fxLevelUp (T4), so the queue plays
+ *  overlay first, then this short chip+sparkle beat. */
+function fxDecorReveal(level) {
+  fxEnqueue(3, (done) => {
+    fxDecorRevealNow(level);
+    setTimeout(done, DECOR_REVEAL_MS);
+  }, DECOR_REVEAL_MS);
+}
 
 /** HP is character state (mood-derived, HP_BY_MOOD) — rendered inline next
  *  to the XP bar (#hp-inline), not in the environment strip (spec §2.1). */
@@ -1712,13 +1966,26 @@ function renderBond(bond, plantName) {
       if (remainder > 0) fxXpGain(remainder);
     }, XP_CHIP_GRACE_MS);
   }
-  if (leveledUp) fxLevelUp(level);
+  if (leveledUp) {
+    fxLevelUp(level);
+    // Level decorations (spec §6.4): when the new level unlocks one, extend
+    // the level-up celebration with a short T3 reveal (highest new unlock
+    // on a multi-level jump — the decorations themselves are all applied).
+    const newDecorLevel = DECOR_LEVELS.filter((lvl) => lvl > prevLevel && lvl <= level).pop();
+    if (newDecorLevel) fxDecorReveal(newDecorLevel);
+  }
   if (streakDelta > 0) fxStreakUp(streakDelta);
   // Streak keeper (Task 15): kind restart line on a real reset diff, and
   // the once-per-WIB-day daytime nudge (self-gated by its localStorage
   // day-flag, so poll repeats can never re-fire it).
   if (!firstRender && prevStreak > 1 && streakDays <= 1) fxStreakBroken();
   maybeStreakNudge(bond, streakDays);
+
+  // Decorations are STATE, not celebration: re-derive them from the current
+  // level on every render, first render included (idempotent toggles).
+  applyDecorations(level);
+  const chapterNow = Number(bond.current_chapter);
+  if (Number.isFinite(chapterNow) && chapterNow > 0) prevChapter = chapterNow;
 
   prevXp = totalXp;
   prevLevel = level;
@@ -1811,6 +2078,116 @@ function flameFor(days) {
   return days >= 30 ? "💛🔥" : days >= 14 ? "🔥🔥🔥" : days >= 7 ? "🔥🔥" : "🔥";
 }
 
+// ── Jamkachu memories (spec §6.5) ───────────────────────────────────────
+// No AI: template sentences built from the last few bond_events rows
+// (queried in refresh(); table/query failure is silently tolerated), rotated
+// into the idle speech bubble at most ONCE per hour (localStorage
+// pm_memory_at) — and only when the mood is Happy, Jamkachu is not
+// sleeping, and no pet/care line is pending. The bubble rides the shared
+// showTransientBubble machinery, so mood/sleep transitions cancel a stale
+// restore exactly like they do for petting.
+
+const MEMORY_AT_KEY = "pm_memory_at";
+const MEMORY_INTERVAL_MS = 3600_000; // one memory line per visit-hour
+const MEMORY_BUBBLE_MS = 6000;
+const MEMORIES_FALLBACK = {
+  day: { today: "Today", yesterday: "Yesterday", earlier: "A few days ago" },
+  quest: (day) => `${day} you helped me feel better!`,
+  badge: (name) => `We earned the ${name} badge together!`,
+  chapter: (n) => `Our story reached chapter ${n}!`,
+  streak: (n) => `${n} days of care — I remember every one!`,
+};
+let memoryLines = []; // template lines built from the latest bond_events
+
+/** WIB calendar date ("YYYY-MM-DD") of an ISO timestamp, or null. */
+function wibDateString(iso) {
+  try {
+    const at = new Date(iso);
+    if (Number.isNaN(at.getTime())) return null;
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(at);
+    const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
+    const date = `${get("year")}-${get("month")}-${get("day")}`;
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
+  } catch {
+    return null;
+  }
+}
+
+/** "Today" / "Yesterday" / "A few days ago" (locale copy) for an event
+ *  timestamp, counted in WIB calendar days like the server's streak. */
+function relativeDayWIB(iso) {
+  const now = wibNow();
+  const eventDate = wibDateString(iso);
+  if (!now || !eventDate) return null;
+  const diffDays = Math.round((Date.parse(now.date) - Date.parse(eventDate)) / 86_400_000);
+  const day = PM().memories?.day ?? MEMORIES_FALLBACK.day;
+  if (diffDays <= 0) return day.today ?? MEMORIES_FALLBACK.day.today;
+  if (diffDays === 1) return day.yesterday ?? MEMORIES_FALLBACK.day.yesterday;
+  return day.earlier ?? MEMORIES_FALLBACK.day.earlier;
+}
+
+/** Template line for one bond_events row, or null when no template fits
+ *  (LEVEL_UP rows and unparsable reasons are simply skipped). */
+function memoryLineFor(row) {
+  if (!row || row.type !== "XP_AWARDED") return null;
+  const data = row.data && typeof row.data === "object" ? row.data : {};
+  const reason = String(data.reason ?? "");
+  const M = PM().memories ?? {};
+  if (reason.startsWith("badge:")) {
+    const name = prettifyKey(reason.slice("badge:".length));
+    return (M.badge ?? MEMORIES_FALLBACK.badge)(name);
+  }
+  if (reason.startsWith("chapter:")) {
+    const digits = reason.replace(/\D+/g, "");
+    if (!digits) return null;
+    return (M.chapter ?? MEMORIES_FALLBACK.chapter)(Number.parseInt(digits, 10));
+  }
+  if (reason.startsWith("streak-milestone:")) {
+    const digits = reason.replace(/\D+/g, "");
+    if (!digits) return null;
+    return (M.streak ?? MEMORIES_FALLBACK.streak)(Number.parseInt(digits, 10));
+  }
+  // Everything else (bare quest keys, lucky bonuses, daily/mood/growth
+  // awards) reads as shared care — the relative-day helper line.
+  const day = relativeDayWIB(row.occurred_at);
+  if (!day) return null;
+  return (M.quest ?? MEMORIES_FALLBACK.quest)(day);
+}
+
+function noteMemoryRows(rows) {
+  memoryLines = (Array.isArray(rows) ? rows : []).map(memoryLineFor).filter(Boolean);
+}
+
+/** At most one memory per hour, into an IDLE bubble only. Storage failure ⇒
+ *  stay silent (once-per-hour cannot be guaranteed without it). */
+function maybeShowMemory() {
+  if (memoryLines.length === 0) return;
+  if (careMood !== "Happy" || sleepShown) return; // Happy + awake only
+  if (petRestoreTimer !== null || petSavedBubble !== null) return; // bubble busy
+  if (hatchPendingOrActive()) return; // never talk over the hatching intro
+  let last = null;
+  try {
+    last = window.localStorage.getItem(MEMORY_AT_KEY);
+  } catch {
+    return;
+  }
+  const now = Date.now();
+  const lastAt = Number(last);
+  if (Number.isFinite(lastAt) && lastAt > 0 && now - lastAt < MEMORY_INTERVAL_MS) return;
+  try {
+    window.localStorage.setItem(MEMORY_AT_KEY, String(now));
+  } catch {
+    return;
+  }
+  const line = memoryLines[Math.floor(Math.random() * memoryLines.length)];
+  showTransientBubble(line, MEMORY_BUBBLE_MS);
+}
+
 // ── Causal Echo (Task 11) ───────────────────────────────────────────────
 // Real sensor diffs → a chip anchored to the environment strip, binding the
 // student's physical care to on-screen feedback. Diff-driven like every
@@ -1890,20 +2267,24 @@ function renderSensors(reading) {
   const temperature = Number(reading?.temperature);
   if (reading?.temperature != null && Number.isFinite(temperature)) {
     setText("#env-temp", `${temperature.toFixed(1)}°C`);
+    lastVitals.temperature = temperature; // pressable vitals (T19)
   }
 
   const humidity = Number(reading?.humidity);
   if (reading?.humidity != null && Number.isFinite(humidity)) {
     setText("#env-hum", `${Math.round(humidity)}%`);
+    lastVitals.humidity = humidity;
   }
 
   const soilPh = Number(reading?.soil_ph);
   if (reading?.soil_ph != null && Number.isFinite(soilPh)) {
     setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
+    lastVitals.soilPh = soilPh;
   }
 
   const light = Number(reading?.light);
   if (reading?.light != null && (light === 0 || light === 1)) {
+    lastVitals.light = light;
     // Night (spec §6.2): light=0 inside the 18:00–06:00 WIB window is
     // normal, not a problem — present it as "Night 🌙", never as "Dark".
     setText(
@@ -1976,6 +2357,206 @@ async function refreshWeather() {
   }
 }
 
+// ── Hatching intro (spec §6.3, one-time) ────────────────────────────────
+// First visit only (localStorage pm_hatched): pot trembles → Jamkachu pops
+// out (confetti + fanfare + name card) → personality/rename card → the four
+// sensors in plain words → finale highlighting the contextual care button
+// and the current quest slot. ENTIRELY presentation: no writes, no XP.
+// Every step is tap-to-advance with a 5s auto-advance; Skip stays visible.
+// Reduced motion: the same cards, no shake/pop/confetti. Runs after the
+// first render settles — with Supabase unconfigured too (default happy
+// character); the flag is set either way.
+
+const HATCH_KEY = "pm_hatched";
+const HATCH_STEP_MS = 5000;
+const HATCH_SETTLE_MS = 800;
+const HATCH_FALLBACK = {
+  skip: "Skip",
+  rumble: "Rumble rumble… something is stirring in the pot!",
+  hello: "Nice to meet you!",
+  personality: "I'm a sunshine-loving little plant — cozy air, bright days, and lots of hanging out with you!",
+  rename: "You can change my name in Settings ⚙️",
+  sensors: {
+    temp: { title: "Temperature 🌡️", line: "This little helper feels whether my room is comfy or too hot." },
+    hum: { title: "Air Humidity 💧", line: "This one checks if the air is moist enough for me to breathe easy." },
+    light: { title: "Light ☀️", line: "This one watches whether I'm getting my sunshine." },
+    ph: { title: "Soil pH ⚗️", line: "This one tastes my soil to make sure it feels just right." },
+  },
+  finale: "This button always shows what I need!",
+};
+let hatchActive = false;
+
+/** True while the intro is running OR still owed to this browser — used by
+ *  the memory rotation so a bubble never talks over the hatching. */
+function hatchPendingOrActive() {
+  if (hatchActive) return true;
+  try {
+    return !window.localStorage.getItem(HATCH_KEY);
+  } catch {
+    return true;
+  }
+}
+
+/** Schedule the one-time intro after the first render settles. Unreadable
+ *  storage ⇒ skip: without the flag we could not keep it one-time. */
+function scheduleHatch(plantName) {
+  let seen = null;
+  try {
+    seen = window.localStorage.getItem(HATCH_KEY);
+  } catch {
+    return;
+  }
+  if (seen || hatchActive) return;
+  setTimeout(() => runHatchIntro(plantName), HATCH_SETTLE_MS);
+}
+
+function runHatchIntro(plantName) {
+  if (hatchActive || !document.body) return;
+  hatchActive = true;
+  // One-time either way (spec §6.3) — flag first, so a mid-sequence reload
+  // can never replay the intro.
+  try {
+    window.localStorage.setItem(HATCH_KEY, "1");
+  } catch {}
+  const H = PM().hatch ?? {};
+  const F = HATCH_FALLBACK;
+  const name = typeof plantName === "string" && plantName.trim() ? plantName.trim() : "Jamkachu";
+  const reduce = prefersReducedMotion();
+
+  const layer = document.createElement("div");
+  layer.id = "hatch-layer";
+  const card = document.createElement("div");
+  card.className = "hatch-card";
+  const skip = document.createElement("button");
+  skip.type = "button";
+  skip.className = "pixel-btn hatch-skip";
+  skip.textContent = H.skip ?? F.skip;
+  layer.appendChild(card);
+  layer.appendChild(skip);
+  document.body.appendChild(layer);
+
+  const wrapper = $(".mascot-wrapper");
+  const svg = $(".mascot-svg");
+  const container = $(".mascot-container");
+
+  /** Card body: optional pixel title + any number of body lines. */
+  const setCard = (title, lines) => {
+    card.innerHTML = "";
+    if (title) {
+      const titleEl = document.createElement("div");
+      titleEl.className = "hatch-card-title";
+      titleEl.textContent = title;
+      card.appendChild(titleEl);
+    }
+    for (const line of lines ?? []) {
+      const lineEl = document.createElement("div");
+      lineEl.className = "hatch-card-line";
+      lineEl.textContent = line;
+      card.appendChild(lineEl);
+    }
+  };
+  const sensorStep = (key) => () => {
+    const sensor = H.sensors?.[key] ?? {};
+    setCard(sensor.title ?? F.sensors[key].title, [sensor.line ?? F.sensors[key].line]);
+  };
+
+  const steps = [
+    () => {
+      // (1) Pot trembles, plant hidden — rumble + "whoosh" cue.
+      svg?.classList.add("hatch-pre");
+      container?.classList.add("hatch-hidden");
+      if (!reduce) wrapper?.classList.add("hatch-shake");
+      window.PMSfx?.play("whoosh");
+      setCard(null, [H.rumble ?? F.rumble]);
+    },
+    () => {
+      // (2) Jamkachu pops up: scale-in + confetti + fanfare + name card.
+      svg?.classList.remove("hatch-pre");
+      container?.classList.remove("hatch-hidden");
+      wrapper?.classList.remove("hatch-shake");
+      window.PMSfx?.play("fanfare");
+      window.PMSfx?.buzz(20);
+      const rect = mascotRect();
+      spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, 26);
+      if (wrapper && !reduce) {
+        wrapper.style.transformOrigin = "50% 90%";
+        animateSafe(
+          wrapper,
+          [
+            { transform: "scale(0.2)", opacity: 0 },
+            { transform: "scale(1.12)", opacity: 1, offset: 0.7 },
+            { transform: "scale(1)", opacity: 1 },
+          ],
+          { duration: 600, easing: "steps(6, end)" },
+        );
+      }
+      card.innerHTML = "";
+      const big = document.createElement("div");
+      big.className = "hatch-card-title hatch-name";
+      big.textContent = `${name.toUpperCase()}!`;
+      const sub = document.createElement("div");
+      sub.className = "hatch-card-line";
+      sub.textContent = H.hello ?? F.hello;
+      card.appendChild(big);
+      card.appendChild(sub);
+    },
+    // (3) Personality + "rename me in Settings" card.
+    () => setCard(null, [H.personality ?? F.personality, H.rename ?? F.rename]),
+    // (4) The four sensors in plain words.
+    sensorStep("temp"),
+    sensorStep("hum"),
+    sensorStep("light"),
+    sensorStep("ph"),
+    () => {
+      // (5) Finale: highlight the care button + pulse the quest slot.
+      layer.classList.add("hatch-final");
+      $("#care-action")?.classList.add("hatch-highlight");
+      $("#current-quest")?.classList.add("hatch-highlight");
+      window.PMSfx?.play("blip");
+      setCard(null, [H.finale ?? F.finale]);
+    },
+  ];
+
+  let index = -1;
+  let stepTimer = null;
+  let ended = false;
+  const finish = () => {
+    if (ended) return;
+    ended = true;
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    hatchActive = false;
+    layer.remove();
+    // Undo every stage class the sequence may have left behind.
+    svg?.classList.remove("hatch-pre");
+    container?.classList.remove("hatch-hidden");
+    wrapper?.classList.remove("hatch-shake");
+    $("#care-action")?.classList.remove("hatch-highlight");
+    $("#current-quest")?.classList.remove("hatch-highlight");
+  };
+  const advance = () => {
+    if (ended) return;
+    index++;
+    if (index >= steps.length) {
+      finish();
+      return;
+    }
+    try {
+      steps[index]();
+    } catch {}
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    stepTimer = setTimeout(advance, HATCH_STEP_MS);
+  };
+  layer.addEventListener("pointerdown", (event) => {
+    if (event.target === skip || skip.contains(event.target)) {
+      finish();
+      return;
+    }
+    window.PMSfx?.play("blip");
+    advance();
+  });
+  advance();
+}
+
 async function main() {
   refreshWeather();
   setInterval(refreshWeather, 30 * 60_000);
@@ -1984,11 +2565,13 @@ async function main() {
     config = await (await fetch("/api/public-config")).json();
   } catch {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+    scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
   if (!config?.url || !config?.key) {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
     setText(".indoor-reading", t("sensor.unavailable"));
+    scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
   window.__pmSupabaseConfigured = true;
@@ -1999,7 +2582,7 @@ async function main() {
   let plantName = null;
 
   const refresh = async () => {
-    const [plantRes, bondRes, sensorRes, questRes] = await Promise.all([
+    const [plantRes, bondRes, sensorRes, questRes, eventsRes] = await Promise.all([
       supabase.from("plants").select("*").eq("id", PLANT_ID).maybeSingle(),
       supabase.from("bond_state").select("*").eq("plant_id", PLANT_ID).maybeSingle(),
       supabase
@@ -2018,6 +2601,18 @@ async function main() {
         .in("status", ["ACTIVE", "VERIFYING", "COMPLETED"])
         .order("created_at", { ascending: false })
         .limit(12),
+      // Jamkachu memories (spec §6.5): recent reward history for the idle
+      // bubble templates. Failure (missing table, RLS, network) is silently
+      // tolerated — the extra catch keeps Promise.all alive.
+      supabase
+        .from("bond_events")
+        .select("type, data, occurred_at")
+        .eq("plant_id", PLANT_ID)
+        .in("type", ["XP_AWARDED", "LEVEL_UP"])
+        .order("occurred_at", { ascending: false })
+        .limit(6)
+        .then((res) => res)
+        .catch(() => ({ data: null })),
     ]);
     if (bondRes.data) renderBond(bondRes.data, plantName ?? plantRes.data?.name);
     if (plantRes.data) {
@@ -2026,9 +2621,13 @@ async function main() {
     }
     if (sensorRes.data) renderSensors(sensorRes.data);
     if (questRes.data) trackQuests(questRes.data);
+    if (Array.isArray(eventsRes?.data)) noteMemoryRows(eventsRes.data);
+    maybeShowMemory(); // hour-gated; only into an idle Happy bubble
   };
 
   await refresh();
+  // Hatching intro (spec §6.3): once, after the first real render settles.
+  scheduleHatch(plantName);
 
   supabase
     .channel(`farm-${PLANT_ID}`)

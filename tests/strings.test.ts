@@ -31,6 +31,25 @@ type StringTable = {
   vitals: Record<string, unknown>;
   echo: Record<string, unknown>;
   verifying: Record<string, unknown>;
+  hatch: {
+    skip?: unknown;
+    rumble?: unknown;
+    hello?: unknown;
+    personality?: unknown;
+    rename?: unknown;
+    sensors?: Record<string, { title?: unknown; line?: unknown }>;
+    finale?: unknown;
+  };
+  decor: Record<string, unknown>;
+  memories: {
+    day?: Record<string, unknown>;
+    quest?: unknown;
+    badge?: unknown;
+    chapter?: unknown;
+    streak?: unknown;
+  };
+  chapterGate: { label?: unknown; dialogue?: unknown };
+  chapterTitles: Record<string | number, unknown>;
   fx: Record<string, unknown>;
   demoTag: unknown;
 };
@@ -90,9 +109,26 @@ const VITAL_KEYS = [
   "humGood",
   "lightDark",
   "lightGood",
+  "lightNight",
   "phGood",
   "phOff",
 ];
+const HATCH_TEXT_KEYS = ["skip", "rumble", "hello", "personality", "rename", "finale"] as const;
+const HATCH_SENSOR_KEYS = ["temp", "hum", "light", "ph"];
+const DECOR_NAME_KEYS = ["sticker", "flag", "room", "ribbon", "goldpot", "bffToken"];
+const MEMORY_DAY_KEYS = ["today", "yesterday", "earlier"];
+
+// Import-free literal check (plan T17): the six en chapter titles must match
+// src/game/story/story-definitions.ts CHAPTER_DEFINITIONS EXACTLY — copied
+// here by hand on purpose so the browser bundle stays TypeScript-free.
+const STORY_TITLES: Record<number, string> = {
+  1: "First Meeting in Jember",
+  2: "Roots in Volcanic Soil",
+  3: "Trust, Rain or Shine",
+  4: "Through Heat and Gray Skies",
+  5: "Full Bloom, Carnival Bright",
+  6: "Harvest of Wisdom",
+};
 
 // The honesty sentence must end both ritual lines, with its exact meaning
 // preserved per locale (spec §4: taps never grant XP; real care does).
@@ -221,6 +257,57 @@ for (const [locale, S] of [
       expectLatinCopy(S.verifying.checking, "verifying.checking");
     });
 
+    it("tells the full hatching intro (spec §6.3)", () => {
+      for (const key of HATCH_TEXT_KEYS) expectLatinCopy(S.hatch[key], `hatch.${key}`);
+      // The rename card must point at Settings by its gear icon.
+      expect(S.hatch.rename as string).toContain("⚙️");
+      expect(Object.keys(S.hatch.sensors ?? {}).sort()).toEqual([...HATCH_SENSOR_KEYS].sort());
+      for (const key of HATCH_SENSOR_KEYS) {
+        const sensor = S.hatch.sensors?.[key];
+        expect(Object.keys(sensor ?? {}).sort(), `hatch.sensors.${key} shape`).toEqual(["line", "title"]);
+        expectLatinCopy(sensor?.title, `hatch.sensors.${key}.title`);
+        expectLatinCopy(sensor?.line, `hatch.sensors.${key}.line`);
+      }
+    });
+
+    it("names every level decoration and its reveal chip (spec §6.4)", () => {
+      for (const key of DECOR_NAME_KEYS) expectLatinCopy(S.decor[key], `decor.${key}`);
+      const reveal = S.decor.reveal;
+      expect(typeof reveal, "decor.reveal should be a template function").toBe("function");
+      const line = (reveal as (name: string) => string)("Pot flag");
+      expectLatinCopy(line, "decor.reveal(...)");
+      expect(line).toContain("Pot flag");
+    });
+
+    it("provides memory templates with their placeholders filled (spec §6.5)", () => {
+      const M = S.memories;
+      for (const key of MEMORY_DAY_KEYS) expectLatinCopy(M.day?.[key], `memories.day.${key}`);
+      const today = M.day?.today as string;
+      const quest = (M.quest as (day: string) => string)(today);
+      expectLatinCopy(quest, "memories.quest(day)");
+      expect(quest).toContain(today);
+      const badge = (M.badge as (name: string) => string)("First Quest");
+      expectLatinCopy(badge, "memories.badge(name)");
+      expect(badge).toContain("First Quest");
+      const chapter = (M.chapter as (n: number) => string)(3);
+      expectLatinCopy(chapter, "memories.chapter(n)");
+      expect(chapter).toContain("3");
+      const streak = (M.streak as (n: number) => string)(7);
+      expectLatinCopy(streak, "memories.streak(n)");
+      expect(streak).toContain("7");
+    });
+
+    it("provides the chapter gate label, dialogue and all six titles (plan T17)", () => {
+      const label = (S.chapterGate.label as (n: number) => string)(2);
+      expectLatinCopy(label, "chapterGate.label(2)");
+      expect(label).toContain("2");
+      expectLatinCopy(S.chapterGate.dialogue, "chapterGate.dialogue");
+      expect(Object.keys(S.chapterTitles).sort()).toEqual(["1", "2", "3", "4", "5", "6"]);
+      for (const n of [1, 2, 3, 4, 5, 6]) {
+        expectLatinCopy(S.chapterTitles[n], `chapterTitles.${n}`);
+      }
+    });
+
     it("provides every celebration string live.js consumes", () => {
       expectLatinCopy(S.fx.levelUpTitle, "fx.levelUpTitle");
       expectLatinCopy(S.fx.questComplete, "fx.questComplete");
@@ -246,6 +333,12 @@ describe("English tree exact copy", () => {
 
   it("fx.luckyStamp matches the live.js English fallback", () => {
     expect(EN.fx.luckyStamp).toBe("LUCKY! ×2");
+  });
+
+  it("chapterTitles match story-definitions.ts EXACTLY (all six)", () => {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      expect(EN.chapterTitles[n], `chapterTitles.${n}`).toBe(STORY_TITLES[n]);
+    }
   });
 });
 
@@ -293,5 +386,32 @@ describe("Bahasa Indonesia tree is a real translation", () => {
 
   it("id fx.luckyStamp is the approved Bahasa stamp", () => {
     expect(ID.fx.luckyStamp).toBe("BERUNTUNG! ×2");
+  });
+
+  it("hatch copy is a real translation (structure identical, key lines differ)", () => {
+    expect(Object.keys(ID.hatch)).toEqual(Object.keys(EN.hatch));
+    expect(Object.keys(ID.hatch.sensors ?? {})).toEqual(Object.keys(EN.hatch.sensors ?? {}));
+    expect(ID.hatch.rumble).not.toBe(EN.hatch.rumble);
+    expect(ID.hatch.personality).not.toBe(EN.hatch.personality);
+    expect(ID.hatch.finale).not.toBe(EN.hatch.finale);
+  });
+
+  it("decoration names are translated", () => {
+    const translated = DECOR_NAME_KEYS.filter((key) => ID.decor[key] !== EN.decor[key]);
+    expect(translated.length, "translated decor names").toBeGreaterThanOrEqual(4);
+  });
+
+  it("memory templates are translated", () => {
+    const idLine = (ID.memories.quest as (day: string) => string)(ID.memories.day?.yesterday as string);
+    const enLine = (EN.memories.quest as (day: string) => string)(EN.memories.day?.yesterday as string);
+    expect(idLine).not.toBe(enLine);
+    expect(ID.memories.day?.yesterday).not.toBe(EN.memories.day?.yesterday);
+  });
+
+  it("id chapter titles are faithful translations (≥4 differ from en)", () => {
+    const differing = [1, 2, 3, 4, 5, 6].filter(
+      (n) => ID.chapterTitles[n] !== EN.chapterTitles[n],
+    );
+    expect(differing.length, "translated chapter titles").toBeGreaterThanOrEqual(4);
   });
 });

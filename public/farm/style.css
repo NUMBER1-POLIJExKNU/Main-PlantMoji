@@ -377,6 +377,21 @@ body {
     color: var(--color-text);
 }
 
+/* Pressable vital values (plan T19): each reading is a ≥40px-tall tap
+   target (padding-grown, margin-compensated) that makes Jamkachu comment. */
+#env-strip span[role="button"] {
+    display: inline-block;
+    cursor: pointer;
+    padding: 10px 6px;
+    margin: -10px -2px;
+    border-radius: 8px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+#env-strip span[role="button"]:hover,
+#env-strip span[role="button"]:focus-visible { background: var(--color-bg); }
+#env-strip span[role="button"]:active { transform: translateY(1px); }
+
 /* Actions */
 .actions-panel {
     display: flex;
@@ -539,6 +554,35 @@ body {
 .mascot-svg.face-asleep [data-face="asleep"] { display: block; }
 .mascot-svg.face-asleep .face-default { display: none; }
 
+/* Level decorations (spec §6.4): pure presentation from bond_level.
+   live.js applies .decor-lv* idempotently on every renderBond — the
+   decorations are STATE (visible from the first render), not celebration. */
+.mascot-svg .decor { display: none; }
+.mascot-svg.decor-lv2 .decor-sticker { display: block; }
+.mascot-svg.decor-lv3 .decor-flag { display: block; }
+.mascot-svg.decor-lv7 .decor-ribbon { display: block; }
+.mascot-svg.decor-lv10 .decor-goldpot { display: block; }
+
+/* Lv.5 room upgrade: subtly warmer sky gradient (live.js toggles on body). */
+body.room-warm {
+    background: radial-gradient(circle at 50% 30%, #FFF0D6 0%, #ACE0F8 100%);
+}
+
+/* Lv.10 best-friend token next to the character name (spec §6.4). */
+.bff-token {
+    display: inline-block;
+    margin-top: 8px;
+    font-family: var(--font-heading);
+    font-size: 9px;
+    color: #7A5B12;
+    background: linear-gradient(180deg, #FFE98A, #FFC93C);
+    border: 2px solid #A97B12;
+    border-radius: 10px;
+    padding: 4px 10px;
+    box-shadow: 0 2px 0 #A97B12;
+}
+.bff-token[hidden] { display: none; }
+
 /* Idle life: gentle breath sway + eye blink — both gated so reduced-motion
    users get a calm, static character. */
 @media (prefers-reduced-motion: no-preference) {
@@ -630,6 +674,83 @@ body {
     0%, 100% { transform: rotate(0deg); }
     25% { transform: rotate(-7deg); }
     60% { transform: rotate(7deg); }
+}
+
+/* ── Hatching intro (spec §6.3, one-time) ──────────────────────────────
+   Full-screen tap-to-advance layer above every FX element; the mascot
+   stage stays visible through the light dim. Skip is always reachable. */
+#hatch-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1010;
+    background: rgba(36, 52, 33, 0.22);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 24px;
+    cursor: pointer;
+}
+/* Finale: drop the dim so the highlighted care button + quest slot pop. */
+#hatch-layer.hatch-final { background: transparent; }
+.hatch-card {
+    pointer-events: none; /* taps fall through to the layer (advance) */
+    background: var(--color-surface);
+    border: 3px solid var(--color-outline);
+    border-radius: 16px;
+    box-shadow: 0 5px 0 var(--color-outline);
+    padding: 18px 26px;
+    max-width: 440px;
+    margin-bottom: 9vh;
+    text-align: center;
+}
+.hatch-card-title {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-forest);
+    margin-bottom: 10px;
+}
+.hatch-card-title:last-child { margin-bottom: 0; }
+.hatch-name {
+    font-size: 22px;
+    text-shadow: 2px 2px 0 var(--color-yellow);
+}
+.hatch-card-line {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text);
+}
+.hatch-card-line + .hatch-card-line { margin-top: 8px; }
+.hatch-skip {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 10px;
+    padding: 10px 16px;
+}
+
+/* Step 1: only the pot on stage (plant + name + bubble hidden). */
+.mascot-svg.hatch-pre .mascot-stem,
+.mascot-svg.hatch-pre .animated-leaves { display: none; }
+.mascot-container.hatch-hidden .speech-bubble,
+.mascot-container.hatch-hidden .char-id { visibility: hidden; }
+
+/* Pot tremble + finale highlight pulse — motion only when allowed;
+   reduced-motion users get the static card sequence (spec §6.3). */
+.hatch-highlight { outline: 4px solid var(--color-yellow); outline-offset: 4px; }
+@media (prefers-reduced-motion: no-preference) {
+    .mascot-wrapper.hatch-shake { animation: pm-hatch-shake 0.5s steps(4, end) infinite; }
+    .hatch-highlight { animation: pm-hatch-pulse 1s steps(6, end) infinite; }
+}
+@keyframes pm-hatch-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px) rotate(-1deg); }
+    75% { transform: translateX(6px) rotate(1deg); }
+}
+@keyframes pm-hatch-pulse {
+    0%, 100% { outline-color: var(--color-yellow); }
+    50% { outline-color: transparent; }
 }
 
 /* Responsive adjustments */
