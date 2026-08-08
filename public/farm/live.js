@@ -9,15 +9,18 @@
 const PLANT_ID = "plant-01";
 const LOCALE_KEY = "plantmoji_locale";
 
+// STATIC farm-page strings, Bahasa Indonesia default with an EN toggle
+// (restored dac0528 mechanism). DYNAMIC celebration copy lives in the
+// central table `public/farm/strings.js` (window.PM_STRINGS, English this
+// pass — Day-3 translation handles it), read defensively via PM() below.
+// "JAMKACHU" and "PLANT MOJI" are proper nouns and are never translated.
 const COPY = {
   id: {
-    "nav.dashboard": "Beranda",
-    "nav.plants": "Tanaman",
-    "nav.monitoring": "Pemantauan",
-    "nav.camera": "Kamera AI",
+    "nav.home": "Beranda",
     "nav.quests": "Misi",
+    "nav.diary": "Buku Harian",
+    "nav.status": "Status Tanaman",
     "nav.collection": "Koleksi",
-    "nav.shop": "Toko",
     "nav.settings": "Pengaturan",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
@@ -28,12 +31,14 @@ const COPY = {
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
     "action.water": "SIRAM",
     "action.fertilize": "PUPUK",
-    "vitals.title": "Kondisi Tanaman",
-    "vitals.health": "Kesehatan",
-    "vitals.temperature": "Suhu",
-    "vitals.humidity": "Kelembapan Udara",
-    "vitals.soilPh": "pH Tanah",
-    "vitals.light": "Cahaya",
+    "quest.none": "Belum ada misi aktif",
+    "quest.verifying": "memverifikasi…",
+    "mood.Happy": "Senang",
+    "mood.Overheating": "Kepanasan",
+    "mood.DryAir": "Udara Kering",
+    "mood.Sleepy": "Mengantuk",
+    "mood.SoilAcidic": "Tanah Asam",
+    "mood.SoilAlkaline": "Tanah Basa",
     bright: "Terang",
     dark: "Gelap",
     days: "Hari",
@@ -43,13 +48,11 @@ const COPY = {
     questComplete: "Misi selesai!",
   },
   en: {
-    "nav.dashboard": "Dashboard",
-    "nav.plants": "Plants",
-    "nav.monitoring": "Monitoring",
-    "nav.camera": "Camera AI",
+    "nav.home": "Home",
     "nav.quests": "Quests",
+    "nav.diary": "Growth Diary",
+    "nav.status": "Plant Status",
     "nav.collection": "Collection",
-    "nav.shop": "Shop",
     "nav.settings": "Settings",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
@@ -60,12 +63,14 @@ const COPY = {
     "sensor.unavailable": "Indoor sensor not connected",
     "action.water": "WATER",
     "action.fertilize": "FERTILIZE",
-    "vitals.title": "Plant Vitals",
-    "vitals.health": "Health",
-    "vitals.temperature": "Temperature",
-    "vitals.humidity": "Air Humidity",
-    "vitals.soilPh": "Soil pH",
-    "vitals.light": "Light",
+    "quest.none": "No active quest",
+    "quest.verifying": "verifying…",
+    "mood.Happy": "Happy",
+    "mood.Overheating": "Overheating",
+    "mood.DryAir": "Dry Air",
+    "mood.Sleepy": "Sleepy",
+    "mood.SoilAcidic": "Acidic",
+    "mood.SoilAlkaline": "Alkaline",
     bright: "Bright",
     dark: "Dark",
     days: "Days",
@@ -85,15 +90,20 @@ function initialLocale() {
 }
 
 let appLocale = initialLocale();
-const t = (key) => COPY[appLocale][key] ?? key;
+// Missing keys fall back to English, then to the raw key.
+const t = (key) => COPY[appLocale][key] ?? COPY.en[key] ?? key;
+
+/** Central string table (Task 4, authored in strings.js) — always guarded so
+ *  a missing/failed script tag can never break the page. */
+const PM = () => window.PM_STRINGS || {};
 
 const MOODS = {
-  Happy: { icon: "☀️", label: { id: "Sehat", en: "Happy" }, bubble: { id: "\"Aku merasa sehat!<br>Terima kasih sudah merawatku.\"", en: "\"I'm feeling so healthy!<br>Thanks for the care.\"" } },
-  Overheating: { icon: "🔥", label: { id: "Terlalu Panas", en: "Too Hot!" }, bubble: { id: "\"Terlalu panas...<br>tolong sejukkan aku!\"", en: "\"It's too hot...<br>please cool me down!\"" } },
-  DryAir: { icon: "💨", label: { id: "Udara Kering", en: "Dry Air" }, bubble: { id: "\"Udaranya kering...<br>tolong lembapkan udara di sekitarku.\"", en: "\"The air feels so dry...<br>a little humidity please?\"" } },
-  Sleepy: { icon: "🌙", label: { id: "Kurang Cahaya", en: "Too Dark" }, bubble: { id: "\"Gelap sekali...<br>tolong beri aku cahaya!\"", en: "\"So dark... I'm getting sleepy.<br>More light please!\"" } },
-  SoilAcidic: { icon: "🧪", label: { id: "Tanah Terlalu Asam", en: "Soil Too Acidic" }, bubble: { id: "\"Tanahku terlalu asam...<br>tolong periksa pH-nya.\"", en: "\"My soil feels sour...<br>can you check the pH?\"" } },
-  SoilAlkaline: { icon: "🧪", label: { id: "Tanah Terlalu Basa", en: "Soil Too Alkaline" }, bubble: { id: "\"Tanahku terlalu basa...<br>tolong periksa pH-nya.\"", en: "\"My soil feels off...<br>can you check the pH?\"" } },
+  Happy: { bubble: "\"I'm feeling so healthy!<br>Thanks for the care.\"" },
+  Overheating: { bubble: "\"It's too hot...<br>please cool me down!\"" },
+  DryAir: { bubble: "\"The air feels so dry...<br>a little humidity please?\"" },
+  Sleepy: { bubble: "\"So dark... I'm getting sleepy.<br>More light please!\"" },
+  SoilAcidic: { bubble: "\"My soil feels sour...<br>can you check the pH?\"" },
+  SoilAlkaline: { bubble: "\"My soil feels off...<br>can you check the pH?\"" },
 };
 
 // HP is a friendly summary of the plant's CURRENT mood — the only honest
@@ -109,15 +119,57 @@ const HP_BY_MOOD = {
 };
 
 // Display metadata for quest keys (mirrors src/game/quests/quest-definitions.ts).
+// targetMin only on 'maintain' quests — drives the "23/30 min" progress in the
+// home quest slot (renderQuestSlot); recovery quests show a verifying state.
 const QUEST_META = {
-  KEEP_ME_HAPPY: { title: { id: "Jaga Aku Tetap Sehat", en: "Keep Me Happy" }, emoji: "🌱" },
-  STAY_COMFY: { title: { id: "Tetap Nyaman", en: "Stay Comfy" }, emoji: "🛋️" },
-  COOL_ME_DOWN: { title: { id: "Sejukkan Aku", en: "Cool Me Down" }, emoji: "❄️" },
-  GIVE_ME_MORE_LIGHT: { title: { id: "Beri Aku Cahaya", en: "Give Me More Light" }, emoji: "☀️" },
-  HUMIDIFY_MY_AIR: { title: { id: "Lembapkan Udaraku", en: "Humidify My Air" }, emoji: "💦" },
-  BALANCE_SOIL_ACIDIC: { title: { id: "Seimbangkan Tanahku", en: "Balance My Soil" }, emoji: "🧪" },
-  BALANCE_SOIL_ALKALINE: { title: { id: "Seimbangkan Tanahku", en: "Balance My Soil" }, emoji: "🧪" },
+  KEEP_ME_HAPPY: { title: "Keep Me Happy", emoji: "🌱", targetMin: 30 },
+  STAY_COMFY: { title: "Stay Comfy", emoji: "🛋️", targetMin: 120 },
+  COOL_ME_DOWN: { title: "Cool Me Down", emoji: "❄️" },
+  GIVE_ME_MORE_LIGHT: { title: "Give Me More Light", emoji: "☀️" },
+  HUMIDIFY_MY_AIR: { title: "Humidify My Air", emoji: "💦" },
+  BALANCE_SOIL_ACIDIC: { title: "Balance My Soil", emoji: "🧪" },
+  BALANCE_SOIL_ALKALINE: { title: "Balance My Soil", emoji: "🧪" },
 };
+
+// Mood word + emoji shown under the character name (#char-mood). Words come
+// from PM_STRINGS.moods when available; these are the verbatim fallbacks.
+const MOOD_WORDS = { Happy: "Happy", Overheating: "Overheating", DryAir: "Dry Air", Sleepy: "Sleepy", SoilAcidic: "Acidic", SoilAlkaline: "Alkaline" };
+const MOOD_EMOJI = { Happy: "😊", Overheating: "🥵", DryAir: "😵", Sleepy: "😴", SoilAcidic: "🤢", SoilAlkaline: "😖" };
+// Mood state → face-swap class on .mascot-svg ("face-happy" has no CSS rule
+// on purpose: with no variant class matched, the default happy group shows).
+const MOOD_FACE = { Happy: "face-happy", Overheating: "face-hot", DryAir: "face-dry", Sleepy: "face-sleepy", SoilAcidic: "face-acidic", SoilAlkaline: "face-alkaline" };
+
+/** Swap Jamkachu's face group + identity line (#char-mood) to the given mood.
+ *  Same body, same pot — only the expression changes (spec §2.2). */
+function setMascotMood(state) {
+  const svg = $(".mascot-svg");
+  if (svg) {
+    for (const cls of Object.values(MOOD_FACE)) svg.classList.remove(cls);
+    svg.classList.add(MOOD_FACE[state] ?? "face-happy");
+  }
+  const moodEl = $("#char-mood");
+  if (moodEl) {
+    // Mood word goes through the active locale dictionary first; unknown
+    // states fall back to the English word (PM_STRINGS, then local table).
+    const word = COPY[appLocale][`mood.${state}`] ?? PM().moods?.[state] ?? MOOD_WORDS[state] ?? String(state ?? "");
+    const emoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
+    moodEl.textContent = `${word} ${emoji}`;
+  }
+}
+// DevTools/demo handle (display-only; grants nothing).
+window.setMascotMood = setMascotMood;
+
+/** Petting cleanup hook (defined ahead of the petting task so mood renders
+ *  can always call it): cancels a pending speech-bubble restore. */
+let petRestoreTimer = null;
+let petSavedBubble = null;
+function cancelPetBubble() {
+  if (petRestoreTimer !== null) {
+    clearTimeout(petRestoreTimer);
+    petRestoreTimer = null;
+  }
+  petSavedBubble = null;
+}
 
 // Cross-render state for speech-bubble request de-duplication.
 let lastMoodFetched = null; // mood already sent to /api/mood-message
@@ -129,6 +181,9 @@ function setText(selector, text) {
   if (el && text != null) el.textContent = text;
 }
 
+/** Repaint every static [data-i18n] string + the switch's pressed state
+ *  (restored dac0528 mechanism — runs on load; switching reloads the page
+ *  so server pages pick the cookie up too). */
 function applyLocale() {
   document.documentElement.lang = appLocale;
   document.querySelectorAll("[data-i18n]").forEach((element) => {
@@ -156,9 +211,13 @@ applyLocale();
 // SQL — handoff §17). Nothing here invents rewards or urgency, and the
 // first paint after page load NEVER celebrates (prev* state starts null),
 // so students get feedback for care — not for merely opening the page.
-// No sound (autoplay policies + classroom use). When Supabase is not
-// configured, main() returns before any data render, so all of this stays
-// dormant: no DOM or <style> is injected on the static-demo path.
+// Sound: optional 8-bit cues via window.PMSfx (sfx.js — unlocks on first
+// gesture, mute persisted in localStorage) — always called with ?. so a
+// missing engine is a silent no-op. When Supabase is not configured, main()
+// returns before any data render, so every DATA-driven effect stays dormant;
+// the user-initiated care interactions (water/fertilize rituals, petting,
+// button micro-juice) still respond because they are pure presentation:
+// zero writes, zero XP, no hidden counters (spec §4).
 //
 // Performance: particles are capped (MAX_PARTICLES), always removed from
 // the DOM on a timer, and animate transform/opacity only (fixed-position
@@ -180,7 +239,10 @@ let liveParticles = 0;
 
 const FX_CSS = `
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
-.fx-confetti, .fx-sparkle { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
+.fx-confetti, .fx-sparkle, .fx-droplet, .fx-heart { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
+.fx-droplet { background: var(--color-water, #4DA1ED); }
+.fx-heart { background: var(--color-cheek, #FF9E9E); clip-path: polygon(50% 100%, 0 40%, 0 15%, 25% 0, 50% 20%, 75% 0, 100% 15%, 100% 40%); }
+.fx-why-card { position: fixed; max-width: 320px; font-family: var(--font-body, sans-serif); font-size: 13px; line-height: 1.5; color: var(--color-text, #243421); background: var(--color-surface, #fff); border: 3px solid var(--color-border, #BCD3B4); border-radius: 12px; box-shadow: 0 4px 0 rgba(36,52,33,.15); padding: 10px 14px; text-align: center; will-change: transform, opacity; }
 .fx-chip { position: fixed; font-family: var(--font-heading, monospace); font-size: 12px; color: #fff; background: var(--color-grass, #69C455); border: 2px solid var(--color-outline, #2B3A27); box-shadow: 0 3px 0 var(--color-outline, #2B3A27); border-radius: 10px; padding: 5px 10px; white-space: nowrap; will-change: transform, opacity; }
 .fx-chip-streak { background: #FF9C4B; }
 .fx-banner-stack { position: fixed; top: 96px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; z-index: 1000; }
@@ -201,6 +263,64 @@ function prefersReducedMotion() {
     return false;
   }
 }
+
+// ── Celebration queue (Task 6) ──────────────────────────────────────────
+// Serializes stacked celebrations (quest + lucky + level-up) so FX never
+// overlap or block information. Items play strictly in enqueue order, except
+// that a higher tier arriving while items are still WAITING jumps ahead of
+// lower-tier items that have not started. Per-item duration is capped per
+// tier; when the pending backlog would exceed 6s, T1/T2 XP chips collapse
+// into one merged chip (amounts added — nothing is ever lost, only merged).
+
+const FX_TIER_CAP = { 1: 300, 2: 1200, 3: 2600, 4: 3500, 5: 8000 };
+const FX_BACKLOG_CAP_MS = 6000;
+const fxQueue = [];
+let fxPlaying = false;
+
+function fxEnqueue(tier, runFn, durationMs, meta) {
+  const cap = FX_TIER_CAP[tier] ?? 2600;
+  // Explicit durations above the tier cap are only honored for interactive
+  // items that resolve early via done() (e.g. the reward pod's 8s window).
+  const duration = Number.isFinite(durationMs) ? durationMs : cap;
+  const item = { tier, runFn, duration, meta: meta ?? null };
+  const backlogMs = fxQueue.reduce((sum, queued) => sum + queued.duration, 0);
+  if (backlogMs + duration > FX_BACKLOG_CAP_MS && tier <= 2 && item.meta?.kind === "xp") {
+    const mergeable = fxQueue.find((queued) => queued.meta?.kind === "xp");
+    if (mergeable) {
+      mergeable.meta.amount += item.meta.amount;
+      return;
+    }
+  }
+  let index = fxQueue.length;
+  while (index > 0 && fxQueue[index - 1].tier < tier) index--;
+  fxQueue.splice(index, 0, item);
+  fxPump();
+}
+
+function fxPump() {
+  if (fxPlaying) return;
+  const item = fxQueue.shift();
+  if (!item) return;
+  fxPlaying = true;
+  let advanced = false;
+  const done = () => {
+    if (advanced) return;
+    advanced = true;
+    clearTimeout(capTimer);
+    fxPlaying = false;
+    fxPump();
+  };
+  // Force-advance at the duration cap so a stuck/ignored item never blocks
+  // the queue; runFn may call done() earlier (e.g. pod claimed by tap).
+  const capTimer = setTimeout(done, item.duration);
+  try {
+    item.runFn(done, item.meta);
+  } catch {
+    done();
+  }
+}
+
+// ── End celebration queue ───────────────────────────────────────────────
 
 let fxLayer = null;
 let fxBannerStack = null;
@@ -378,17 +498,123 @@ function floatChip(text, rect, variant) {
   removeLater(chip, 1300);
 }
 
-function fxXpGain(delta) {
-  const wrap = $(".xp-bar-wrap");
-  if (!wrap) return;
-  floatChip(`+${delta} XP`, wrap.getBoundingClientRect());
+/** Blue pixel droplets raining over a rect (water ritual; reused by causal
+ *  echo). Same budget + reduced-motion rules as every other particle. */
+function spawnDroplets(rect, count) {
+  if (prefersReducedMotion()) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const n = Math.max(0, Math.min(count, MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement("div");
+    d.className = "fx-droplet";
+    d.setAttribute("aria-hidden", "true");
+    const size = 5 + Math.floor(Math.random() * 4);
+    d.style.width = `${size}px`;
+    d.style.height = `${size + 2}px`;
+    d.style.left = `${rect.left + Math.random() * rect.width}px`;
+    d.style.top = `${rect.top - 10 - Math.random() * 30}px`;
+    layer.appendChild(d);
+    liveParticles++;
+    const fall = rect.height * (0.5 + Math.random() * 0.5) + 30;
+    const duration = 500 + Math.random() * 300;
+    const delay = Math.random() * 200;
+    animateSafe(
+      d,
+      [
+        { transform: "translateY(0)", opacity: 1 },
+        { transform: `translateY(${fall * 0.8}px)`, opacity: 1, offset: 0.8 },
+        { transform: `translateY(${fall}px)`, opacity: 0 },
+      ],
+      { duration, delay, easing: "steps(6, end)", fill: "both" },
+    );
+    removeLater(d, duration + delay + 100, true);
+  }
 }
 
-function fxStreakUp(days) {
+/** Single pixel heart rising from the mascot (petting). */
+function spawnHeart(rect) {
+  if (prefersReducedMotion() || !rect) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  if (liveParticles >= MAX_PARTICLES) return;
+  const heart = document.createElement("div");
+  heart.className = "fx-heart";
+  heart.setAttribute("aria-hidden", "true");
+  const size = 12 + Math.floor(Math.random() * 6);
+  heart.style.width = `${size}px`;
+  heart.style.height = `${size}px`;
+  heart.style.left = `${rect.left + rect.width * (0.3 + Math.random() * 0.4)}px`;
+  heart.style.top = `${rect.top + rect.height * 0.25}px`;
+  layer.appendChild(heart);
+  liveParticles++;
+  animateSafe(
+    heart,
+    [
+      { transform: "translateY(0) scale(0.6)", opacity: 0 },
+      { transform: "translateY(-14px) scale(1)", opacity: 1, offset: 0.3 },
+      { transform: "translateY(-44px) scale(1)", opacity: 0 },
+    ],
+    { duration: 700, easing: "steps(7, end)", fill: "forwards" },
+  );
+  removeLater(heart, 800, true);
+}
+
+/** Floating "why" card — a readable sentence (ritual honesty copy), longer
+ *  lived than a chip. Reduced motion: fade only. */
+function floatWhyCard(text, rect) {
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const card = document.createElement("div");
+  card.className = "fx-why-card";
+  card.setAttribute("role", "status");
+  card.textContent = text;
+  card.style.left = `${rect.left + rect.width / 2}px`;
+  card.style.top = `${Math.max(70, rect.top - 10)}px`;
+  card.style.transform = "translate(-50%, -100%)";
+  layer.appendChild(card);
+  const reduce = prefersReducedMotion();
+  animateSafe(
+    card,
+    reduce
+      ? [
+          { opacity: 0 },
+          { opacity: 1, offset: 0.1 },
+          { opacity: 1, offset: 0.85 },
+          { opacity: 0 },
+        ]
+      : [
+          { transform: "translate(-50%, -100%) translateY(8px)", opacity: 0 },
+          { transform: "translate(-50%, -100%) translateY(-4px)", opacity: 1, offset: 0.12 },
+          { transform: "translate(-50%, -100%) translateY(-4px)", opacity: 1, offset: 0.85 },
+          { transform: "translate(-50%, -100%) translateY(-18px)", opacity: 0 },
+        ],
+    { duration: 3400, easing: reduce ? "linear" : "steps(16, end)", fill: "forwards" },
+  );
+  removeLater(card, 3500);
+}
+
+/** Immediate XP chip presentation (queue item body). */
+function fxXpChipNow(amount) {
+  const wrap = $(".xp-bar-wrap");
+  if (!wrap) return;
+  window.PMSfx?.play("coin");
+  const text = PM().fx?.xpGain?.(amount) ?? `+${amount} XP`;
+  floatChip(text, wrap.getBoundingClientRect());
+}
+
+/** T2: XP gain chip — routed through the celebration queue; carries its
+ *  amount as meta so backlogged chips can merge into one. */
+function fxXpGain(delta) {
+  fxEnqueue(2, (done, meta) => fxXpChipNow(meta.amount), 1200, { kind: "xp", amount: delta });
+}
+
+function fxStreakUpNow(days) {
   const streakEl = $(".badge.streak");
   if (!streakEl) return;
-  const suffix = appLocale === "id" ? "hari" : days === 1 ? "day" : "days";
-  floatChip(`+${days} ${suffix}`, streakEl.getBoundingClientRect(), "fx-chip-streak");
+  window.PMSfx?.play("blip");
+  const text = PM().fx?.streakUp?.(days) ?? `+${days} ${days === 1 ? "day" : "days"}`;
+  floatChip(text, streakEl.getBoundingClientRect(), "fx-chip-streak");
   if (!prefersReducedMotion()) {
     animateSafe(
       streakEl,
@@ -398,11 +624,18 @@ function fxStreakUp(days) {
   }
 }
 
+/** T2: streak-up chip via the celebration queue. */
+function fxStreakUp(days) {
+  fxEnqueue(2, () => fxStreakUpNow(days), 1200);
+}
+
 /** Level-up celebration: pixel card overlay + confetti burst. Non-blocking
  *  (pointer-events: none) and self-removing. */
-function fxLevelUp(level) {
+function fxLevelUpNow(level) {
   const layer = ensureFxLayer();
   if (!layer) return;
+  window.PMSfx?.play("fanfare");
+  window.PMSfx?.buzz(30);
   const overlay = document.createElement("div");
   overlay.className = "fx-overlay";
   overlay.setAttribute("role", "status");
@@ -410,8 +643,8 @@ function fxLevelUp(level) {
   const card = document.createElement("div");
   card.className = "fx-levelup-card";
   card.innerHTML =
-    `<div class="fx-levelup-title">${t("levelUp")}</div>` +
-    `<div class="fx-levelup-sub">${t("bond")} Lv.${Number(level) || 0} — ${t("carePays")}</div>`;
+    `<div class="fx-levelup-title">${PM().fx?.levelUpTitle ?? t("levelUp")}</div>` +
+    `<div class="fx-levelup-sub">${PM().fx?.levelUpSub?.(Number(level) || 0) ?? `${t("bond")} Lv.${Number(level) || 0} — ${t("carePays")}`}</div>`;
   overlay.appendChild(card);
   layer.appendChild(overlay);
   const reduce = prefersReducedMotion();
@@ -437,6 +670,11 @@ function fxLevelUp(level) {
   spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.4, 44);
 }
 
+/** T4: level-up overlay via the celebration queue. */
+function fxLevelUp(level) {
+  fxEnqueue(4, () => fxLevelUpNow(level), 2500);
+}
+
 function prettifyKey(key) {
   const words = String(key ?? "")
     .toLowerCase()
@@ -446,16 +684,16 @@ function prettifyKey(key) {
 }
 
 /** Quest-complete banner (top-center, non-blocking) + small confetti pop. */
-function celebrateQuest(quest) {
+function showQuestBannerNow(quest) {
   const layer = ensureFxLayer();
   if (!layer || !fxBannerStack) return;
-  const meta = QUEST_META[quest.quest_key] ?? { title: { id: prettifyKey(quest.quest_key), en: prettifyKey(quest.quest_key) }, emoji: "🌟" };
+  const meta = QUEST_META[quest.quest_key] ?? { title: prettifyKey(quest.quest_key), emoji: "🌟" };
   const xp = Number(quest.xp_reward) || 0;
   const banner = document.createElement("div");
   banner.className = "fx-banner";
   banner.innerHTML =
-    `<div class="fx-banner-title">🏆 ${t("questComplete")}</div>` +
-    `<div class="fx-banner-detail">${meta.emoji} ${meta.title[appLocale]} · <span class="fx-xp">+${xp} XP</span></div>`;
+    `<div class="fx-banner-title">${PM().fx?.questComplete ?? `🏆 ${t("questComplete")}`}</div>` +
+    `<div class="fx-banner-detail">${meta.emoji} ${meta.title} · <span class="fx-xp">+${xp} XP</span></div>`;
   while (fxBannerStack.children.length >= 3) fxBannerStack.firstChild.remove();
   fxBannerStack.appendChild(banner);
   const reduce = prefersReducedMotion();
@@ -481,6 +719,79 @@ function celebrateQuest(quest) {
   spawnConfetti(rect.left + rect.width / 2, rect.bottom, 18);
 }
 
+// ── Tap-to-Claim Reward Pod (Task 9) ────────────────────────────────────
+// Quest completes → a pixel seed pod drops beside Jamkachu and wiggles;
+// tapping it pops the celebration. Presentation-only: the XP is already in
+// the ledger before the pod ever appears. The pod is the ONLY element in
+// the FX layer with pointer-events enabled. Auto-bursts after 8s and on
+// page-hide so nothing ever stalls; the celebration queue guarantees one
+// pod at a time (extra completions wait as queued T3 items).
+
+const POD_AUTO_BURST_MS = 8000;
+
+function podDrop(quest, done) {
+  const layer = ensureFxLayer();
+  if (!layer) {
+    showQuestBannerNow(quest);
+    done();
+    return;
+  }
+  window.PMSfx?.play("whoosh");
+  const reduce = prefersReducedMotion();
+  const rect = mascotRect();
+  const pod = document.createElement("button");
+  pod.type = "button";
+  pod.className = "fx-pod";
+  pod.setAttribute("aria-label", "Claim quest reward");
+  pod.style.left = `${Math.min(rect.right - 12, window.innerWidth - 72)}px`;
+  pod.style.top = `${Math.min(rect.bottom - 90, window.innerHeight - 90)}px`;
+  layer.appendChild(pod);
+  if (!reduce) {
+    // steps(6) fall from above, then the CSS wiggle loop takes over.
+    animateSafe(
+      pod,
+      [
+        { transform: "translateY(-340px)", opacity: 0 },
+        { transform: "translateY(-300px)", opacity: 1, offset: 0.1 },
+        { transform: "translateY(0)", opacity: 1 },
+      ],
+      { duration: 600, easing: "steps(6, end)", fill: "backwards" },
+    );
+  }
+
+  let burst = false;
+  let autoTimer = null;
+  const onHide = () => {
+    if (document.visibilityState === "hidden") pop();
+  };
+  const pop = () => {
+    if (burst) return;
+    burst = true;
+    if (autoTimer !== null) clearTimeout(autoTimer);
+    document.removeEventListener("visibilitychange", onHide);
+    const podRect = pod.getBoundingClientRect();
+    pod.remove();
+    window.PMSfx?.play("pod");
+    window.PMSfx?.buzz(15);
+    spawnConfetti(podRect.left + podRect.width / 2, podRect.top + podRect.height / 2, 20);
+    showQuestBannerNow(quest);
+    // XP presentation: orb cascade when present (later task), else XP chip.
+    const xp = Number(quest.xp_reward) || 0;
+    if (xp > 0) fxXpGain(xp);
+    done();
+  };
+  pod.addEventListener("pointerdown", pop);
+  autoTimer = setTimeout(pop, POD_AUTO_BURST_MS);
+  document.addEventListener("visibilitychange", onHide);
+}
+
+/** T3: quest celebration — drops a claimable reward pod via the queue. The
+ *  explicit duration covers the full 8s claim window; tapping resolves the
+ *  queue item early through done(). */
+function celebrateQuest(quest) {
+  fxEnqueue(3, (done) => podDrop(quest, done), POD_AUTO_BURST_MS + 700);
+}
+
 /** Record a quest row's status; celebrate only a real transition INTO
  *  COMPLETED. The first snapshot after load primes silently. A row first
  *  seen already COMPLETED only celebrates if it finished in the last five
@@ -502,12 +813,15 @@ function trackQuests(rows) {
   const primed = questsPrimed;
   for (const row of rows) trackQuest(row, primed);
   questsPrimed = true;
+  lastQuestRows = rows.slice();
+  renderQuestSlot(lastQuestRows);
 }
 
 /** Mood recovered to Happy: sparkles around the mascot, a bubble bounce
  *  (the bubble text itself is refreshed by renderPlant's mood-change path),
  *  and a pulse on the HP bar that just climbed back to 100%. */
 function fxMoodRecovered() {
+  window.PMSfx?.play("pet");
   const wrapper = $(".mascot-wrapper");
   if (wrapper) spawnSparkles(wrapper.getBoundingClientRect(), 10);
   if (prefersReducedMotion()) return;
@@ -524,11 +838,11 @@ function fxMoodRecovered() {
       { duration: 500, easing: "steps(6, end)" },
     );
   }
-  const hpBar = document.querySelector('[data-vital="hp"] .v-bar');
-  if (hpBar) {
+  const hpEl = $("#hp-inline");
+  if (hpEl) {
     animateSafe(
-      hpBar,
-      [{ transform: "scale(1)" }, { transform: "scale(1.06)" }, { transform: "scale(1)" }],
+      hpEl,
+      [{ transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }],
       { duration: 450, easing: "steps(5, end)" },
     );
   }
@@ -605,25 +919,198 @@ function setXpBar(percent, wrapped) {
 
 // ── End reward-feedback FX helpers ──────────────────────────────────────
 
-/** DEV ADDITION (HP vital): bind the designer's HP row to the current mood.
- *  Only called with real plant data — the static placeholder stays
- *  otherwise. Width transition comes from the teammate's .fill CSS. */
-function renderHp(moodState) {
-  const row = document.querySelector('[data-vital="hp"]');
-  if (!row) return;
-  const pct = HP_BY_MOOD[moodState] ?? 100;
-  const fill = row.querySelector(".fill");
-  if (fill) {
-    fill.style.width = `${pct}%`;
-    fill.style.background =
-      pct >= 80
-        ? "var(--color-grass-light, #89D974)"
-        : pct >= 60
-          ? "var(--color-yellow, #FFDE6A)"
-          : "var(--color-cheek, #FF9E9E)";
+// ── Care rituals + petting + button micro-juice (Task 8) ────────────────
+// Pure presentation, in-fiction only: ZERO Supabase writes, ZERO XP, no
+// persisted counters of any kind (spec §4.1). The why-cards honestly point
+// students at real, sensor-verified care.
+
+const WHY_CARD_COOLDOWN_MS = 30_000; // shared across both ritual buttons
+let lastWhyCardAt = 0;
+
+const RITUAL_FALLBACK = {
+  water: "That splash is just for fun — go water the real plant! Real care = real XP. The sensors will notice.",
+  fertilize: "Sparkles are free — real nutrients feed the real soil! Real care = real XP. The sensors will notice.",
+};
+
+function mascotRect() {
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper) return wrapper.getBoundingClientRect();
+  return { left: window.innerWidth / 2 - 100, top: window.innerHeight / 2 - 100, width: 200, height: 200, right: window.innerWidth / 2 + 100, bottom: window.innerHeight / 2 + 100 };
+}
+
+function mascotBounce() {
+  if (prefersReducedMotion()) return;
+  const wrapper = $(".mascot-wrapper");
+  if (!wrapper) return;
+  animateSafe(
+    wrapper,
+    [
+      { transform: "translateY(0)" },
+      { transform: "translateY(-10px)" },
+      { transform: "translateY(0)" },
+    ],
+    { duration: 300, easing: "steps(4, end)" },
+  );
+}
+
+function runRitual(kind) {
+  const rect = mascotRect();
+  if (kind === "water") {
+    window.PMSfx?.play("splash");
+    spawnDroplets(rect, 14);
+  } else {
+    window.PMSfx?.play("tick");
+    spawnSparkles(rect, 12); // green/gold sparkles from the shared palette
   }
-  const display = row.querySelector(".v-perc");
-  if (display) display.textContent = `${pct}%`;
+  mascotBounce();
+  const now = Date.now();
+  if (now - lastWhyCardAt >= WHY_CARD_COOLDOWN_MS) {
+    lastWhyCardAt = now;
+    const text = PM().ritual?.[kind] ?? RITUAL_FALLBACK[kind];
+    floatWhyCard(text, rect);
+  }
+}
+
+// Petting — in-memory fiction only. Every 5th pet inside a rolling 30s
+// window triggers a satiation yawn + 10s rest (never persisted anywhere).
+const PET_FALLBACK_LINES = [
+  "Hehe, that tickles!",
+  "Jamkachu likes hanging out with you!",
+  "Your hands are so warm!",
+  "More pets, please!",
+  "Growing up strong, thanks to you!",
+];
+const PET_COOLDOWN_MS = 600;
+const PET_WINDOW_MS = 30_000;
+const PET_SATIATION_MS = 10_000;
+const PET_BUBBLE_RESTORE_MS = 4000;
+let petCooldownUntil = 0;
+let petSatiatedUntil = 0;
+let petTapTimes = [];
+let petLineIndex = 0;
+
+function petMascot() {
+  const now = Date.now();
+  if (now < petCooldownUntil || now < petSatiatedUntil) return;
+  petCooldownUntil = now + PET_COOLDOWN_MS;
+  petTapTimes = petTapTimes.filter((time) => now - time < PET_WINDOW_MS);
+  petTapTimes.push(now);
+
+  window.PMSfx?.play("pet");
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper && !prefersReducedMotion()) {
+    animateSafe(
+      wrapper,
+      [
+        { transform: "scale(1, 1)" },
+        { transform: "scale(1.06, 0.94)" },
+        { transform: "scale(1, 1)" },
+      ],
+      { duration: 150, easing: "steps(3, end)" },
+    );
+  }
+  spawnHeart(wrapper ? wrapper.getBoundingClientRect() : null);
+
+  let line;
+  if (petTapTimes.length >= 5) {
+    line = PM().pettingYawn ?? "So cozy… Jamkachu needs a tiny nap now. Zzz…";
+    petSatiatedUntil = now + PET_SATIATION_MS;
+    petTapTimes = [];
+  } else {
+    const lines = Array.isArray(PM().petting) && PM().petting.length > 0 ? PM().petting : PET_FALLBACK_LINES;
+    line = lines[petLineIndex % lines.length];
+    petLineIndex++;
+  }
+
+  const bubble = $(".speech-bubble");
+  if (bubble) {
+    if (petSavedBubble === null) petSavedBubble = bubble.innerHTML;
+    bubble.textContent = `"${line}"`;
+    if (petRestoreTimer !== null) clearTimeout(petRestoreTimer);
+    petRestoreTimer = setTimeout(() => {
+      petRestoreTimer = null;
+      const el = $(".speech-bubble");
+      if (el && petSavedBubble !== null) el.innerHTML = petSavedBubble;
+      petSavedBubble = null;
+    }, PET_BUBBLE_RESTORE_MS);
+  }
+}
+
+/** One-time listener wiring; safe on the static demo (no data needed). */
+function setupCareInteractions() {
+  // Universal button micro-juice: sub-100ms press feedback + blip on every
+  // pixel button and nav link (one delegated capture listener, no awaits).
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const target = event.target instanceof Element ? event.target.closest(".pixel-btn, .nav-item") : null;
+      if (!target) return;
+      target.classList.add("pressed");
+      setTimeout(() => target.classList.remove("pressed"), 160);
+      // Ritual buttons play their own richer cue instead of the blip.
+      if (!target.classList.contains("water-btn") && !target.classList.contains("feed-btn")) {
+        window.PMSfx?.play("blip");
+      }
+    },
+    { passive: true },
+  );
+
+  $(".water-btn")?.addEventListener("pointerdown", () => runRitual("water"));
+  $(".feed-btn")?.addEventListener("pointerdown", () => runRitual("fertilize"));
+  $(".mascot-wrapper")?.addEventListener("pointerdown", petMascot);
+}
+
+setupCareInteractions();
+
+// ── End care rituals + petting + micro-juice ────────────────────────────
+
+/** HP is character state (mood-derived, HP_BY_MOOD) — rendered inline next
+ *  to the XP bar (#hp-inline), not in the environment strip (spec §2.1). */
+function renderHp(moodState) {
+  const el = $("#hp-inline");
+  if (!el) return;
+  const pct = HP_BY_MOOD[moodState] ?? 100;
+  el.textContent = `HP ${pct}%`;
+  el.classList.remove("hp-good", "hp-warn", "hp-low");
+  el.classList.add(pct >= 80 ? "hp-good" : pct >= 60 ? "hp-warn" : "hp-low");
+}
+
+/** Home quest slot (#current-quest): first ACTIVE quest, else first
+ *  VERIFYING. Maintain quests show live elapsed/target minutes; recovery
+ *  quests in VERIFYING show a "verifying…" hint. Display-only. */
+function renderQuestSlot(rows) {
+  const nameEl = $("#cq-name");
+  const progressEl = $("#cq-progress");
+  if (!nameEl || !progressEl) return;
+  const list = Array.isArray(rows) ? rows : [];
+  const quest = list.find((row) => row?.status === "ACTIVE") ?? list.find((row) => row?.status === "VERIFYING");
+  if (!quest) {
+    nameEl.textContent = t("quest.none");
+    progressEl.textContent = "";
+    return;
+  }
+  const meta = QUEST_META[quest.quest_key];
+  nameEl.textContent = meta ? `${meta.emoji} ${meta.title}` : prettifyKey(quest.quest_key);
+  if (quest.status === "VERIFYING") {
+    progressEl.textContent = t("quest.verifying");
+  } else if (meta?.targetMin && quest.started_at) {
+    const elapsedMin = Math.max(0, Math.floor((Date.now() - Date.parse(quest.started_at)) / 60_000));
+    progressEl.textContent = `${Math.min(elapsedMin, meta.targetMin)}/${meta.targetMin} min`;
+  } else {
+    progressEl.textContent = "";
+  }
+}
+
+// Latest quest snapshot so realtime single-row updates can re-render the
+// quest slot without waiting for the next 15s poll.
+let lastQuestRows = [];
+
+function upsertQuestRow(row) {
+  if (!row || !row.id) return;
+  const index = lastQuestRows.findIndex((existing) => existing.id === row.id);
+  if (index >= 0) lastQuestRows[index] = { ...lastQuestRows[index], ...row };
+  else lastQuestRows.unshift(row);
+  renderQuestSlot(lastQuestRows);
 }
 
 function renderPlant(plant) {
@@ -637,21 +1124,19 @@ function renderPlant(plant) {
   if (plant.current_state !== lastMoodFetched) {
     const state = plant.current_state;
     lastMoodFetched = state;
+    setMascotMood(state);
     const bubble = $(".speech-bubble");
-    if (bubble) bubble.innerHTML = mood.bubble[appLocale];
-    // The current AI prompt is English-only. Keep the verified Indonesian
-    // fallback on the default locale instead of replacing it with English.
-    if (appLocale === "en") {
-      fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!data || typeof data.message !== "string") return;
-          if (lastMoodFetched !== state) return; // mood moved on mid-flight
-          const el = $(".speech-bubble");
-          if (el) el.textContent = `"${data.message}"`;
-        })
-        .catch(() => {});
-    }
+    if (bubble) bubble.innerHTML = mood.bubble;
+    cancelPetBubble(); // a real mood message must never be stomped by a stale pet-line restore
+    fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data || typeof data.message !== "string") return;
+        if (lastMoodFetched !== state) return; // mood moved on mid-flight
+        const el = $(".speech-bubble");
+        if (el) el.textContent = `"${data.message}"`;
+      })
+      .catch(() => {});
   }
   // DEV ADDITION (reward FX): sparkle + bubble bounce + HP pulse when the
   // plant RECOVERS to Happy (real sensor-verified transition; the first
@@ -714,35 +1199,27 @@ function renderBond(bond, plantName) {
   prevStreak = streakDays;
 }
 
+/** Environment strip (#env-strip): compact one-line reading — the old 5-row
+ *  vitals panel is gone; detail lives in Plant Status (/monitoring). */
 function renderSensors(reading) {
-  const updateVital = (name, width, value) => {
-    const row = document.querySelector(`[data-vital="${name}"]`);
-    if (!row) return;
-    const fill = row.querySelector(".fill");
-    if (fill) fill.style.width = `${Math.max(0, Math.min(100, width))}%`;
-    const display = row.querySelector(".v-perc");
-    if (display) display.textContent = value;
-  };
-
   const temperature = Number(reading?.temperature);
   if (reading?.temperature != null && Number.isFinite(temperature)) {
-    const label = `${temperature.toFixed(1)}°C`;
-    updateVital("temperature", (temperature / 40) * 100, label);
+    setText("#env-temp", `${temperature.toFixed(1)}°C`);
   }
 
   const humidity = Number(reading?.humidity);
   if (reading?.humidity != null && Number.isFinite(humidity)) {
-    updateVital("humidity", humidity, `${Math.round(humidity)}%`);
+    setText("#env-hum", `${Math.round(humidity)}%`);
   }
 
   const soilPh = Number(reading?.soil_ph);
   if (reading?.soil_ph != null && Number.isFinite(soilPh)) {
-    updateVital("soil-ph", (soilPh / 14) * 100, soilPh.toFixed(1));
+    setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
   }
 
   const light = Number(reading?.light);
   if (reading?.light != null && (light === 0 || light === 1)) {
-    updateVital("light", light * 100, light === 1 ? t("bright") : t("dark"));
+    setText("#env-light", light === 1 ? t("bright") : t("dark"));
   }
 
   const indoorParts = [];
@@ -769,7 +1246,9 @@ function renderWeather(context) {
     widget?.classList.add("weather-stale");
     return;
   }
-  const description = appLocale === "id" ? context.forecast.descriptionId : context.forecast.descriptionEn;
+  const description = appLocale === "id"
+    ? (context.forecast.descriptionId ?? context.forecast.descriptionEn)
+    : (context.forecast.descriptionEn ?? context.forecast.descriptionId);
   setText(".weather-text .temp", `${Math.round(Number(context.forecast.temperatureC))}°C`);
   const outdoorHumidity = Number(context.forecast.humidityPct);
   setText(
@@ -834,7 +1313,7 @@ async function main() {
       // completed-quest celebration (polling fallback alongside realtime).
       supabase
         .from("quests")
-        .select("id, quest_key, status, xp_reward, completed_at")
+        .select("id, quest_key, status, xp_reward, started_at, completed_at")
         .eq("plant_id", PLANT_ID)
         .in("status", ["ACTIVE", "VERIFYING", "COMPLETED"])
         .order("created_at", { ascending: false })
@@ -869,7 +1348,10 @@ async function main() {
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "quests", filter: `plant_id=eq.${PLANT_ID}` },
-      (payload) => trackQuest(payload.new),
+      (payload) => {
+        trackQuest(payload.new);
+        upsertQuestRow(payload.new);
+      },
     )
     .subscribe();
 

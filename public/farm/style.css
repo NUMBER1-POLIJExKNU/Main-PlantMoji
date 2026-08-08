@@ -12,10 +12,20 @@
     --color-white: #FFFFFF;
     --color-outline: #2B3A27; /* Dark forest green/brown instead of harsh black */
     --color-cheek: #FF9E9E;
-    
-    --font-heading: 'Press Start 2P', cursive;
-    --font-body: 'VT323', monospace;
-    
+
+    /* Contrast tokens (dopamine-UX spec §2.5) — consumed by every later task */
+    --color-primary: #5FAE45;
+    --color-text: #243421;
+    --color-bg: #F4FAF1;
+    --color-surface: #FFFFFF;
+    --color-border: #BCD3B4;
+
+    /* Two-tier typography (spec §2.4): pixel display for game elements only,
+       readable system sans for body copy. VT323 retires from body. */
+    --font-display: 'Press Start 2P', monospace;
+    --font-heading: var(--font-display);
+    --font-body: "Segoe UI", system-ui, sans-serif;
+
     /* Modern Glass UI mixed with Game aesthetics */
     --ui-bg: rgba(255, 255, 255, 0.7);
     --ui-border: 2px solid rgba(255, 255, 255, 0.9);
@@ -31,9 +41,9 @@
 
 body {
     font-family: var(--font-body);
-    font-size: 24px;
+    font-size: 16px;
     background-color: var(--color-sky);
-    color: var(--color-outline);
+    color: var(--color-text);
     overflow: hidden;
     height: 100vh;
     position: relative;
@@ -100,16 +110,14 @@ body {
     height: 100vh;
 }
 
-/* Sidebar */
+/* Sidebar (slimmed 280px → 240px, solid surface for contrast) */
 .sidebar {
-    width: 280px;
-    background: var(--ui-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: var(--ui-border);
+    width: 240px;
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
     border-radius: var(--ui-radius);
-    box-shadow: var(--ui-shadow);
-    padding: 24px;
+    box-shadow: 0 4px 0 rgba(36, 52, 33, .15);
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 32px;
@@ -126,14 +134,14 @@ body {
 }
 
 .logo-img {
-    width: 54px; height: 54px;
+    width: 44px; height: 44px;
     image-rendering: pixelated;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
 .brand h1 {
     font-family: var(--font-heading);
-    font-size: 16px;
+    font-size: 14px;
     line-height: 1.5;
     color: var(--color-forest);
 }
@@ -146,21 +154,23 @@ body {
 }
 .nav-links::-webkit-scrollbar { display: none; }
 
+/* ID/EN language switch (restored from the pre-reframe page, restyled for
+   the solid-surface sidebar: tinted well + token border instead of glass). */
 .locale-switch {
     margin-top: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
     padding: 5px;
-    border: 2px solid rgba(43, 58, 39, 0.18);
+    border: 2px solid var(--color-border);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-bg);
 }
 .locale-switch button {
     border: 0;
     border-radius: 8px;
     padding: 9px 6px;
-    color: var(--color-outline);
+    color: var(--color-text);
     background: transparent;
     font-family: var(--font-heading);
     font-size: 9px;
@@ -170,10 +180,10 @@ body {
 
 .nav-item {
     text-decoration: none;
-    color: var(--color-outline);
+    color: var(--color-text);
     font-family: var(--font-heading);
-    font-size: 11px;
-    padding: 16px;
+    font-size: 10px;
+    padding: 13px 12px;
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -196,34 +206,40 @@ body {
 }
 .nav-item .icon { font-size: 18px; font-style: normal; }
 
-/* Main Game World */
+/* Main Game World — character-first vertical flow (spec §2.1) */
 .game-world {
     flex: 1;
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 8px 48px;
 }
+.game-world::-webkit-scrollbar { display: none; }
 
-/* Glass Panels (HUD) */
+/* Cards (HUD): solid white surface + visible border + pixel shadow —
+   replaces the old translucent light-on-light glass (spec §2.5). */
 .panel-glass {
-    background: var(--ui-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: var(--ui-border);
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
     border-radius: var(--ui-radius);
-    box-shadow: var(--ui-shadow);
+    box-shadow: 0 4px 0 rgba(36, 52, 33, .15);
     padding: 16px 24px;
     transition: transform 0.3s ease;
 }
+
+/* Card width utility (React settings mirrors this as max-w-2xl). */
+.pm-card { max-width: 640px; }
 .panel-glass:hover {
     transform: translateY(-4px);
 }
 
-/* HUD Top */
+/* HUD Top (weather only — the bond block moved into the home stack) */
 .hud-top {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: flex-start;
     z-index: 10;
 }
@@ -232,6 +248,7 @@ body {
     display: flex;
     align-items: center;
     gap: 20px;
+    width: 100%;
 }
 
 .avatar-img {
@@ -247,8 +264,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    flex: 1;
 }
 .username { font-family: var(--font-heading); font-size: 12px; }
+.xp-row { display: flex; align-items: center; gap: 10px; }
+#hp-inline { font-family: var(--font-heading); font-size: 10px; white-space: nowrap; }
+#hp-inline.hp-good { color: var(--color-forest); }
+#hp-inline.hp-warn { color: #A97B12; }
+#hp-inline.hp-low { color: #C24141; }
 .xp-bar-wrap {
     width: 160px; height: 14px;
     background: rgba(255, 255, 255, 0.5);
@@ -292,17 +315,46 @@ body {
 .weather-text .indoor-reading { margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(43, 58, 39, 0.25); font-size: 13px; color: #555; }
 .weather-widget.weather-stale .forecast-time { color: #9a6515; }
 
-/* HUD Bottom */
-.hud-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+/* Home info stack: quest → bond → divider → env strip → actions */
+.home-stack {
+    position: relative;
     z-index: 10;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+}
+
+#current-quest {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    line-height: 1.8;
+    text-align: center;
+    padding: 14px 20px;
+}
+#cq-progress { color: var(--color-primary); }
+
+.home-divider {
+    border: 0;
+    border-top: 2px dashed var(--color-border);
+    margin: 2px 0;
+}
+
+#env-strip {
+    font-family: var(--font-body);
+    font-size: 15px;
+    text-align: center;
+    padding: 12px 20px;
+    color: var(--color-text);
 }
 
 /* Actions */
 .actions-panel {
     display: flex;
+    justify-content: center;
     gap: 16px;
 }
 .pixel-btn {
@@ -326,63 +378,34 @@ body {
 .feed-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-soil-dark); filter: brightness(1.1); }
 .feed-btn:active { transform: translateY(6px); box-shadow: 0 0 0 var(--color-soil-dark); }
 
-/* Mini Sensors */
-.mini-sensors {
-    width: 360px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-.mini-sensors h3 {
-    font-family: var(--font-heading);
-    font-size: 12px;
-    border-bottom: 2px solid rgba(43, 58, 39, 0.1);
-    padding-bottom: 12px;
-    margin-bottom: 8px;
-    display: flex; align-items: center; gap: 10px;
-}
-.vital-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-family: var(--font-heading);
-    font-size: 10px;
-}
-.v-label { width: 105px; color: #444; }
-.v-bar {
-    flex: 1; height: 12px;
-    background: rgba(255,255,255,0.5);
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-}
-.v-bar .fill { height: 100%; border-radius: 6px; transition: width 1s ease-in-out; }
-.v-perc { width: 58px; text-align: right; font-weight: bold; }
+/* Touch press feedback (micro-juice): .pressed mirrors :active for
+   pointerdown-driven presses, chunky 3px push (spec Task 8). */
+.pixel-btn.pressed { transform: translateY(3px); filter: brightness(0.96); }
+.water-btn.pressed { box-shadow: 0 3px 0 #1E3A8A; }
+.feed-btn.pressed { box-shadow: 0 3px 0 var(--color-soil-dark); }
+.nav-item.pressed { transform: translateX(2px) scale(0.98); }
 
-/* Mascot Stage (Center Environment) */
+/* Mascot Stage (Center Stage — top of the hierarchy, now in document flow) */
 .mascot-stage {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
     z-index: 5;
     pointer-events: none;
 }
 
-/* Grass Floor */
+/* Grass Floor (fixed scene decoration at the viewport bottom) */
 .grass-floor {
-    position: absolute;
-    bottom: -24px;
-    left: -24px;
-    width: calc(100% + 48px);
-    height: 180px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 140px;
     background: linear-gradient(180deg, var(--color-grass) 0%, var(--color-forest) 100%);
     border-top: 8px solid var(--color-grass-light);
     border-radius: 30px 30px 0 0;
-    z-index: 1;
+    z-index: 0;
     box-shadow: inset 0 10px 20px rgba(255,255,255,0.2);
 }
 
@@ -391,15 +414,34 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-bottom: 50px;
     z-index: 2;
     pointer-events: auto;
 }
 
+/* Character identity: big name + mood word under the mascot (spec §2.2) */
+.char-id {
+    text-align: center;
+    margin-top: 4px;
+}
+.char-id h2 {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    color: var(--color-forest);
+    text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
+    letter-spacing: 2px;
+}
+#char-mood {
+    font-family: var(--font-heading);
+    font-size: 12px;
+    margin-top: 8px;
+    color: var(--color-text);
+}
+
 .speech-bubble {
-    background: var(--color-white);
-    padding: 16px 24px;
-    font-size: 22px;
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
+    padding: 14px 22px;
+    font-size: 15px;
     max-width: 400px;
     text-align: center;
     position: relative;
@@ -423,23 +465,114 @@ body {
 }
 
 .mascot-wrapper {
-    width: 420px;
+    width: 300px;
     filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
 }
 .mascot-svg { width: 100%; height: auto; }
-.animated-breath .animated-leaves {
-    transform-origin: center bottom;
-    animation: smoothBreath 3s ease-in-out infinite alternate;
+
+/* Jamkachu mood faces (spec §2.2): one body, six swappable face groups.
+   Variants are hidden until the matching face-* class lands on .mascot-svg;
+   the default happy group shows whenever no variant class is set. */
+.mascot-face[data-face] { display: none; }
+.mascot-svg.face-hot [data-face="hot"] { display: block; }
+.mascot-svg.face-dry [data-face="dry"] { display: block; }
+.mascot-svg.face-sleepy [data-face="sleepy"] { display: block; }
+.mascot-svg.face-acidic [data-face="acidic"] { display: block; }
+.mascot-svg.face-alkaline [data-face="alkaline"] { display: block; }
+.mascot-svg.face-hot .face-default,
+.mascot-svg.face-dry .face-default,
+.mascot-svg.face-sleepy .face-default,
+.mascot-svg.face-acidic .face-default,
+.mascot-svg.face-alkaline .face-default { display: none; }
+
+/* Idle life: gentle breath sway + eye blink — both gated so reduced-motion
+   users get a calm, static character. */
+@media (prefers-reduced-motion: no-preference) {
+    .animated-breath .animated-leaves {
+        transform-origin: center bottom;
+        animation: smoothBreath 3s ease-in-out infinite alternate;
+    }
+    .mascot-svg .eyes {
+        transform-box: fill-box;
+        transform-origin: center;
+        animation: pm-blink 5s linear infinite;
+    }
 }
 @keyframes smoothBreath {
     from { transform: scaleY(1) scaleX(1); }
     to { transform: scaleY(1.04) scaleX(1.02); }
 }
+@keyframes pm-blink {
+    0%, 96%, 100% { transform: scaleY(1); }
+    98% { transform: scaleY(0.1); }
+}
+
+/* Tap-to-Claim Reward Pod (pixel seed pod, CSS art via layered box-shadows).
+   Lives in the FX layer (pointer-events: none) — the pod itself is the only
+   interactive element there. */
+.fx-pod {
+    position: fixed;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 1002;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
+}
+.fx-pod::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    background: transparent;
+    box-shadow:
+        /* sprout */
+        24px 0 0 var(--color-forest),
+        18px 6px 0 var(--color-grass),
+        24px 6px 0 var(--color-forest),
+        30px 6px 0 var(--color-grass),
+        /* pod shell */
+        18px 12px 0 var(--color-soil-light),
+        24px 12px 0 var(--color-soil-light),
+        30px 12px 0 var(--color-soil-light),
+        12px 18px 0 var(--color-soil-light),
+        18px 18px 0 var(--color-yellow),
+        24px 18px 0 var(--color-soil-light),
+        30px 18px 0 var(--color-yellow),
+        36px 18px 0 var(--color-soil-light),
+        12px 24px 0 var(--color-soil),
+        18px 24px 0 var(--color-soil-light),
+        24px 24px 0 var(--color-yellow),
+        30px 24px 0 var(--color-soil-light),
+        36px 24px 0 var(--color-soil),
+        12px 30px 0 var(--color-soil),
+        18px 30px 0 var(--color-soil),
+        24px 30px 0 var(--color-soil),
+        30px 30px 0 var(--color-soil),
+        36px 30px 0 var(--color-soil),
+        18px 36px 0 var(--color-soil-dark),
+        24px 36px 0 var(--color-soil-dark),
+        30px 36px 0 var(--color-soil-dark);
+}
+@media (prefers-reduced-motion: no-preference) {
+    /* Wiggle starts after the WAAPI fall (0.7s delay) and loops every 1.2s. */
+    .fx-pod { animation: pm-pod-wiggle 1.2s steps(4, end) 0.7s infinite; transform-origin: 50% 90%; }
+}
+@keyframes pm-pod-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-7deg); }
+    60% { transform: rotate(7deg); }
+}
 
 /* Responsive adjustments */
 @media (max-width: 1100px) {
-    .hud-top { flex-direction: column; gap: 16px; align-items: flex-end; }
-    .mascot-wrapper { width: 320px; }
+    .mascot-wrapper { width: 260px; }
 }
 @media (max-width: 800px) {
     .app-layout { flex-direction: column; overflow-y: auto; height: auto; }
@@ -447,7 +580,6 @@ body {
     .sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; position: static; }
     .nav-links { flex-direction: row; overflow-x: auto; flex-wrap: nowrap; width: 100%; }
     .locale-switch { width: 116px; margin-top: 0; margin-left: auto; }
-    .game-world { min-height: 800px; }
-    .hud-bottom { flex-direction: column; align-items: center; gap: 24px; }
-    .hud-top { align-items: center; }
+    .game-world { overflow-y: visible; }
+    .hud-top { justify-content: center; }
 }

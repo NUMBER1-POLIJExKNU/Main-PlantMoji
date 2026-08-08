@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Plant - Cozy Pixel Farm</title>
-    <!-- Pixel Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <title>PlantMoji - Cozy Pixel Farm</title>
+    <!-- Pixel Font (display tier only — body copy uses the system sans stack) -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/farm/style.css">
 </head>
 <body>
@@ -23,20 +23,18 @@
 
     <!-- Main App Layout -->
     <div class="app-layout">
-        <!-- Sidebar Navigation -->
+        <!-- Sidebar Navigation (de-technicalized labels, spec §2.3) -->
         <aside class="sidebar">
             <div class="brand">
                 <img src="/farm/assets/logo.png" alt="Logo" class="logo-img">
-                <h1>PLANT<br>EMOJI</h1>
+                <h1>PLANT<br>MOJI</h1>
             </div>
             <nav class="nav-links">
-                <a href="/" class="nav-item active"><i class="icon">🏠</i> <span data-i18n="nav.dashboard">Beranda</span></a>
-                <a href="/plants" class="nav-item"><i class="icon">🌱</i> <span data-i18n="nav.plants">Tanaman</span></a>
-                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> <span data-i18n="nav.monitoring">Pemantauan</span></a>
-                <span class="nav-item nav-disabled" aria-disabled="true"><i class="icon">📷</i> <span data-i18n="nav.camera">Kamera AI</span></span>
+                <a href="/" class="nav-item active"><i class="icon">🏠</i> <span data-i18n="nav.home">Beranda</span></a>
                 <a href="/quests" class="nav-item"><i class="icon">📜</i> <span data-i18n="nav.quests">Misi</span></a>
+                <a href="/settings" class="nav-item"><i class="icon">🌱</i> <span data-i18n="nav.diary">Buku Harian</span></a>
+                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> <span data-i18n="nav.status">Status Tanaman</span></a>
                 <a href="/collection" class="nav-item"><i class="icon">🏆</i> <span data-i18n="nav.collection">Koleksi</span></a>
-                <span class="nav-item nav-disabled" aria-disabled="true"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></span>
                 <a href="/settings" class="nav-item"><i class="icon">⚙️</i> <span data-i18n="nav.settings">Pengaturan</span></a>
             </nav>
             <div class="locale-switch" role="group" aria-label="Language / Bahasa">
@@ -45,11 +43,164 @@
             </div>
         </aside>
 
-        <!-- Main Content Area: The Game World -->
+        <!-- Main Content Area: The Game World.
+             Character-first hierarchy (spec §2.1): Jamkachu → mood → dialogue →
+             current quest → bond/XP (+HP) → streak → divider → env strip. -->
         <main class="game-world">
-            
-            <!-- HUD Top: Profile & Weather -->
+
+            <!-- Weather stays as ambient chrome, top-right -->
             <div class="hud-top">
+                <div class="weather-widget panel-glass">
+                    <div class="weather-icon">🌤️</div>
+                    <div class="weather-text">
+                        <span class="weather-source"><span data-i18n="weather.outdoor">Luar ruang Jember</span> · <a href="https://data.bmkg.go.id/prakiraan-cuaca/" target="_blank" rel="noreferrer">BMKG</a></span>
+                        <span class="temp">--°C</span>
+                        <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>
+                        <span class="forecast-time"></span>
+                        <span class="indoor-reading"><span data-i18n="weather.indoor">Ruang tanaman</span>: --°C · --% RH</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1) Center Stage: Jamkachu -->
+            <div class="mascot-stage">
+                <!-- Grass Floor (fixed decoration at the bottom of the scene) -->
+                <div class="grass-floor"></div>
+
+                <!-- Mascot -->
+                <div class="mascot-container">
+                    <div class="speech-bubble animated-bounce">
+                        "I'm feeling so healthy!<br>Thanks for the care."
+                    </div>
+                    <div class="mascot-wrapper animated-breath">
+                        <svg viewBox="0 0 300 350" class="mascot-svg">
+                            <!-- Pot (Clay) -->
+                            <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke="var(--color-outline)" stroke-width="8"/>
+                            <rect x="60" y="190" width="180" height="30" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="8"/>
+                            <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
+
+                            <!-- Stem -->
+                            <rect x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="8"/>
+
+                            <g class="animated-leaves">
+                                <!-- Leaf Left -->
+                                <rect x="70" y="140" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
+                                <!-- Leaf Right -->
+                                <rect x="160" y="120" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
+
+                                <!-- Head/Flower Base -->
+                                <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke="var(--color-outline)" stroke-width="8"/>
+
+                                <!-- Face (Happy — default, shows when no face-* class is set) -->
+                                <g class="mascot-face face-default">
+                                    <!-- Eyes -->
+                                    <g class="eyes">
+                                        <rect x="110" y="45" width="15" height="15" fill="var(--color-outline)"/>
+                                        <rect x="112" y="47" width="5" height="5" fill="#FFF"/>
+
+                                        <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/>
+                                        <rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                    </g>
+
+                                    <!-- Cheeks -->
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+
+                                    <!-- Smile -->
+                                    <rect x="125" y="70" width="30" height="8" fill="var(--color-outline)"/>
+                                    <rect x="120" y="62" width="8" height="8" fill="var(--color-outline)"/>
+                                    <rect x="152" y="62" width="8" height="8" fill="var(--color-outline)"/>
+                                </g>
+
+                                <!-- Face (Overheating): slanted brows + sweat drop + deep cheeks -->
+                                <g class="mascot-face" data-face="hot">
+                                    <rect x="106" y="36" width="18" height="6" fill="var(--color-outline)" transform="rotate(14 115 39)"/>
+                                    <rect x="156" y="36" width="18" height="6" fill="var(--color-outline)" transform="rotate(-14 165 39)"/>
+                                    <g class="eyes">
+                                        <rect x="110" y="47" width="15" height="12" fill="var(--color-outline)"/>
+                                        <rect x="155" y="47" width="15" height="12" fill="var(--color-outline)"/>
+                                    </g>
+                                    <rect x="196" y="28" width="10" height="12" fill="var(--color-water)"/>
+                                    <rect x="199" y="22" width="4" height="6" fill="var(--color-water)"/>
+                                    <rect x="92" y="63" width="18" height="12" fill="#FF7A7A"/>
+                                    <rect x="170" y="63" width="18" height="12" fill="#FF7A7A"/>
+                                    <rect x="128" y="74" width="24" height="12" fill="var(--color-outline)"/>
+                                </g>
+
+                                <!-- Face (Dry Air): X eyes + flat mouth -->
+                                <g class="mascot-face" data-face="dry">
+                                    <g class="eyes">
+                                        <rect x="108" y="47" width="19" height="5" fill="var(--color-outline)" transform="rotate(45 117 49)"/>
+                                        <rect x="108" y="47" width="19" height="5" fill="var(--color-outline)" transform="rotate(-45 117 49)"/>
+                                        <rect x="153" y="47" width="19" height="5" fill="var(--color-outline)" transform="rotate(45 162 49)"/>
+                                        <rect x="153" y="47" width="19" height="5" fill="var(--color-outline)" transform="rotate(-45 162 49)"/>
+                                    </g>
+                                    <rect x="124" y="74" width="32" height="7" fill="var(--color-outline)"/>
+                                </g>
+
+                                <!-- Face (Sleepy): closed-line eyes + zzz -->
+                                <g class="mascot-face" data-face="sleepy">
+                                    <g class="eyes">
+                                        <rect x="108" y="52" width="18" height="5" fill="var(--color-outline)"/>
+                                        <rect x="154" y="52" width="18" height="5" fill="var(--color-outline)"/>
+                                    </g>
+                                    <rect x="190" y="26" width="16" height="4" fill="var(--color-outline)"/>
+                                    <rect x="192" y="30" width="12" height="4" fill="var(--color-outline)" transform="rotate(-35 198 32)"/>
+                                    <rect x="190" y="36" width="16" height="4" fill="var(--color-outline)"/>
+                                    <rect x="210" y="14" width="10" height="3" fill="var(--color-outline)"/>
+                                    <rect x="211" y="17" width="8" height="3" fill="var(--color-outline)" transform="rotate(-35 215 18)"/>
+                                    <rect x="210" y="21" width="10" height="3" fill="var(--color-outline)"/>
+                                    <rect x="132" y="74" width="16" height="8" fill="var(--color-outline)"/>
+                                </g>
+
+                                <!-- Face (Soil Acidic): wavy mouth + green cheek tint -->
+                                <g class="mascot-face" data-face="acidic">
+                                    <g class="eyes">
+                                        <rect x="110" y="46" width="14" height="12" fill="var(--color-outline)"/>
+                                        <rect x="156" y="46" width="14" height="12" fill="var(--color-outline)"/>
+                                    </g>
+                                    <rect x="94" y="64" width="17" height="11" fill="#A9D77A"/>
+                                    <rect x="169" y="64" width="17" height="11" fill="#A9D77A"/>
+                                    <rect x="118" y="72" width="9" height="6" fill="var(--color-outline)"/>
+                                    <rect x="127" y="76" width="9" height="6" fill="var(--color-outline)"/>
+                                    <rect x="136" y="72" width="9" height="6" fill="var(--color-outline)"/>
+                                    <rect x="145" y="76" width="9" height="6" fill="var(--color-outline)"/>
+                                    <rect x="154" y="72" width="9" height="6" fill="var(--color-outline)"/>
+                                </g>
+
+                                <!-- Face (Soil Alkaline): pinched eyes + zigzag mouth -->
+                                <g class="mascot-face" data-face="alkaline">
+                                    <g class="eyes">
+                                        <rect x="107" y="48" width="16" height="5" fill="var(--color-outline)" transform="rotate(20 115 50)"/>
+                                        <rect x="107" y="54" width="16" height="5" fill="var(--color-outline)" transform="rotate(-20 115 56)"/>
+                                        <rect x="157" y="48" width="16" height="5" fill="var(--color-outline)" transform="rotate(-20 165 50)"/>
+                                        <rect x="157" y="54" width="16" height="5" fill="var(--color-outline)" transform="rotate(20 165 56)"/>
+                                    </g>
+                                    <rect x="118" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(25 123 76)"/>
+                                    <rect x="127" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(-25 132 76)"/>
+                                    <rect x="136" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(25 141 76)"/>
+                                    <rect x="145" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(-25 150 76)"/>
+                                    <rect x="154" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(25 159 76)"/>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- 2) Character identity: big name + mood word -->
+                    <div class="char-id">
+                        <h2 id="char-name">JAMKACHU</h2>
+                        <div id="char-mood">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3+) Info stack below the character -->
+            <div class="home-stack">
+
+                <!-- Current Quest (fed by the existing quests query) -->
+                <div id="current-quest" class="panel-glass">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></div>
+
+                <!-- Bond / XP / HP / Streak (character state, moved down from hud-top) -->
                 <div class="user-gamification panel-glass">
                     <div class="avatar">
                         <svg viewBox="0 0 64 64" class="avatar-img" role="img" aria-label="Pixel cat avatar" shape-rendering="crispEdges">
@@ -85,83 +236,24 @@
                         </svg>
                     </div>
                     <div class="user-details">
-                        <span class="username">Lvl 15 Farmer</span>
-                        <div class="xp-bar-wrap"><div class="xp-bar" style="width: 80%;"></div></div>
+                        <span class="username">Jamkachu</span>
+                        <div class="xp-row">
+                            <div class="xp-bar-wrap"><div class="xp-bar" style="width: 0%;"></div></div>
+                            <span id="hp-inline">HP --</span>
+                        </div>
                     </div>
                     <div class="badges">
-                        <div class="badge coin"><i class="icon">🪙</i> 2,450</div>
-                        <div class="badge streak"><i class="icon">🔥</i> 12 Days</div>
+                        <div class="badge coin"><i class="icon">⭐</i> -- XP</div>
+                        <div class="badge streak"><i class="icon">🔥</i> -- Days</div>
                     </div>
                 </div>
 
-                <div class="weather-widget panel-glass">
-                    <div class="weather-icon">🌤️</div>
-                    <div class="weather-text">
-                        <span class="weather-source"><span data-i18n="weather.outdoor">Luar ruang Jember</span> · <a href="https://data.bmkg.go.id/prakiraan-cuaca/" target="_blank" rel="noreferrer">BMKG</a></span>
-                        <span class="temp">--°C</span>
-                        <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>
-                        <span class="forecast-time"></span>
-                        <span class="indoor-reading"><span data-i18n="weather.indoor">Ruang tanaman</span>: --°C · --% RH</span>
-                    </div>
-                </div>
-            </div>
+                <hr class="home-divider">
 
-            <!-- Center Stage: Plant & Grass -->
-            <div class="mascot-stage">
-                <!-- Grass Floor -->
-                <div class="grass-floor"></div>
-                
-                <!-- Mascot -->
-                <div class="mascot-container">
-                    <div class="speech-bubble animated-bounce">
-                        "Aku merasa sehat!<br>Terima kasih sudah merawatku."
-                    </div>
-                    <div class="mascot-wrapper animated-breath">
-                        <svg viewBox="0 0 300 350" class="mascot-svg">
-                            <!-- Pot (Clay) -->
-                            <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke="var(--color-outline)" stroke-width="8"/>
-                            <rect x="60" y="190" width="180" height="30" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="8"/>
-                            <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
-                            
-                            <!-- Stem -->
-                            <rect x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="8"/>
-                            
-                            <g class="animated-leaves">
-                                <!-- Leaf Left -->
-                                <rect x="70" y="140" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
-                                <!-- Leaf Right -->
-                                <rect x="160" y="120" width="70" height="25" fill="var(--color-grass)" stroke="var(--color-outline)" stroke-width="8"/>
-                                
-                                <!-- Head/Flower Base -->
-                                <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke="var(--color-outline)" stroke-width="8"/>
-                                
-                                <!-- Face (Happy) -->
-                                <g class="mascot-face">
-                                    <!-- Eyes -->
-                                    <rect x="110" y="45" width="15" height="15" fill="var(--color-outline)"/>
-                                    <rect x="112" y="47" width="5" height="5" fill="#FFF"/>
-                                    
-                                    <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/>
-                                    <rect x="157" y="47" width="5" height="5" fill="#FFF"/>
-                                    
-                                    <!-- Cheeks -->
-                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/>
-                                    <rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
-                                    
-                                    <!-- Smile -->
-                                    <rect x="125" y="70" width="30" height="8" fill="var(--color-outline)"/>
-                                    <rect x="120" y="62" width="8" height="8" fill="var(--color-outline)"/>
-                                    <rect x="152" y="62" width="8" height="8" fill="var(--color-outline)"/>
-                                </g>
-                            </g>
-                        </svg>
-                    </div>
-                </div>
-            </div>
+                <!-- 7) Environment: compact one-line strip (detail lives in Plant Status) -->
+                <div id="env-strip" class="panel-glass">🌡 <span id="env-temp">--°C</span> · 💧 <span id="env-hum">--%</span> · ☀️ <span id="env-light">--</span> · ⚗️ <span id="env-ph">pH --</span></div>
 
-            <!-- HUD Bottom: Vitals & Actions -->
-            <div class="hud-bottom">
-                
+                <!-- Care rituals (presentational — real XP only ever comes from sensors) -->
                 <div class="actions-panel">
                     <button class="pixel-btn water-btn">
                         <i class="icon">💧</i> <span data-i18n="action.water">SIRAM</span>
@@ -171,39 +263,12 @@
                     </button>
                 </div>
 
-                <div class="mini-sensors panel-glass">
-                    <h3><i class="icon">📊</i> <span data-i18n="vitals.title">Kondisi Tanaman</span></h3>
-                    <div class="vital-item" data-vital="hp">
-                        <span class="v-label" data-i18n="vitals.health">Kesehatan</span>
-                        <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-grass-light);"></div></div>
-                        <span class="v-perc">--</span>
-                    </div>
-                    <div class="vital-item" data-vital="temperature">
-                        <span class="v-label" data-i18n="vitals.temperature">Suhu</span>
-                        <div class="v-bar"><div class="fill" style="width: 0%; background: #FF9C4B;"></div></div>
-                        <span class="v-perc">--°C</span>
-                    </div>
-                    <div class="vital-item" data-vital="humidity">
-                        <span class="v-label" data-i18n="vitals.humidity">Kelembapan Udara</span>
-                        <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-water);"></div></div>
-                        <span class="v-perc">--%</span>
-                    </div>
-                    <div class="vital-item" data-vital="soil-ph">
-                        <span class="v-label" data-i18n="vitals.soilPh">pH Tanah</span>
-                        <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-soil-light);"></div></div>
-                        <span class="v-perc">--</span>
-                    </div>
-                    <div class="vital-item" data-vital="light">
-                        <span class="v-label" data-i18n="vitals.light">Cahaya</span>
-                        <div class="v-bar"><div class="fill" style="width: 0%; background: var(--color-yellow);"></div></div>
-                        <span class="v-perc">--</span>
-                    </div>
-                </div>
-
             </div>
 
         </main>
     </div>
+    <script src="/farm/strings.js"></script>
+    <script src="/farm/sfx.js"></script>
     <script type="module" src="/farm/live.js"></script>
 </body>
 </html>

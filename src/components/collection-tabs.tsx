@@ -1,13 +1,28 @@
 "use client";
 
 // Collection book tabs (handoff §20, §33 — Mood / Badges / Story / Wisdom).
-// Purely presentational: the server page queries everything and passes plain
-// serializable props across the RSC boundary (dates preformatted as strings).
+// The server page queries everything and passes plain serializable props
+// across the RSC boundary (dates preformatted as strings). On top of that,
+// a realtime plant_badges subscription (dopamine plan Task 16) flips badge
+// cards live when the backend unlocks one — presentation only, zero writes.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StoryChapterCard from "@/components/story-chapter-card";
+import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { ChapterScene } from "@/game/story/story-dialogue";
 import type { AppLocale } from "@/lib/i18n";
+
+declare global {
+  interface Window {
+    /** 8-bit SFX engine from public/farm/sfx.js (loaded via the root layout). */
+    PMSfx?: {
+      play: (cue: string) => void;
+      muted: () => boolean;
+      toggle: () => boolean;
+      buzz: (ms: number) => void;
+    };
+  }
+}
 
 export interface MoodCollectionItem {
   mood: string;
@@ -63,18 +78,136 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+// Spec §2.5 palette tokens — progress bars use fill on track.
+const BAR_TRACK = "#BCD3B4";
+const BAR_FILL = "#5FAE45";
+
+/** Thin progress bar replacing the plain "x / y" text counters (Task 16). */
+function ProgressCounter({ value, total, label }: { value: number; total: number; label: string }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div className="mb-3 flex items-center gap-2 px-1">
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={value}
+        aria-label={`${value} / ${total} ${label}`}
+        className="h-2 flex-1 overflow-hidden rounded-full"
+        style={{ backgroundColor: BAR_TRACK }}
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+          style={{ width: `${pct}%`, backgroundColor: BAR_FILL }}
+        />
+      </div>
+      <span className="shrink-0 text-[10px] font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">
+        {value}/{total}
+      </span>
+    </div>
+  );
+}
+
+/** Pulsing "1 more to go!" pill shown when a tab is one item from complete. */
+function OneMorePill({ label }: { label: string }) {
+  return (
+    <p className="mb-3 text-center">
+      <span
+        className="inline-block rounded-full px-3 py-1 text-[11px] font-bold text-white motion-safe:animate-pulse"
+        style={{ backgroundColor: BAR_FILL }}
+      >
+        {label}
+      </span>
+    </p>
+  );
+}
+
 export default function CollectionTabs({ locale, moods, badges, chapters, wisdom }: CollectionTabsProps) {
   const [tab, setTab] = useState<TabId>("moods");
+  // Badges unlocked by a live plant_badges INSERT after the server render,
+  // and the subset currently playing their flip celebration.
+  const [liveUnlocked, setLiveUnlocked] = useState<ReadonlySet<string>>(() => new Set());
+  const [flipping, setFlipping] = useState<ReadonlySet<string>>(() => new Set());
+  const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    // Degrades gracefully: without Supabase env the collection stays static.
+    const supabase = getBrowserSupabase();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel("collection-badges")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "plant_badges" },
+        (payload) => {
+          const key = (payload.new as { badge_key?: string } | null)?.badge_key;
+          if (!key) return;
+          setLiveUnlocked((prev) => {
+            if (prev.has(key)) return prev;
+            const next = new Set(prev);
+            next.add(key);
+            return next;
+          });
+          setFlipping((prev) => {
+            const next = new Set(prev);
+            next.add(key);
+            return next;
+          });
+          // Presentation only — sound is muted/rate-limited inside the engine.
+          window.PMSfx?.play("coin");
+          // Whole celebration stays inside the 4s budget (flip itself is 0.9s).
+          flipTimers.current.push(
+            setTimeout(() => {
+              setFlipping((prev) => {
+                if (!prev.has(key)) return prev;
+                const next = new Set(prev);
+                next.delete(key);
+                return next;
+              });
+            }, 4000),
+          );
+        },
+      )
+      .subscribe();
+
+    const timers = flipTimers.current;
+    return () => {
+      supabase.removeChannel(channel);
+      timers.forEach(clearTimeout);
+      timers.length = 0;
+    };
+  }, []);
+
+  // Copy lives inline per locale (same mechanism as the rest of this file).
+  // luckyOdds duplicates public/farm/strings.js → PM_STRINGS.luckyOdds
+  // knowingly: React can't read the farm string table at build time.
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Terbuka", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran" }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Unlocked", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements" };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Terbuka", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!" }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Unlocked", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!" };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
-  const unlockedBadges = badges.filter((badge) => badge.unlockedLabel !== null).length;
+  const unlockedBadges = badges.filter(
+    (badge) => badge.unlockedLabel !== null || liveUnlocked.has(badge.key),
+  ).length;
   const unlockedChapters = chapters.filter((chapter) => chapter.unlocked).length;
 
   return (
     <div>
+      {/* Badge flip celebration (CSS rotateY). Wrapped in a no-preference
+          media query so reduced-motion users get an instant, animation-free
+          reveal — the card content still updates, it just never rotates. */}
+      <style>{`
+        @media (prefers-reduced-motion: no-preference) {
+          .pm-badge-flip {
+            animation: pm-badge-flip 0.9s ease-in-out both;
+          }
+          @keyframes pm-badge-flip {
+            0% { transform: perspective(600px) rotateY(0deg); }
+            100% { transform: perspective(600px) rotateY(360deg); }
+          }
+        }
+      `}</style>
       <div
         role="tablist"
         aria-label="Collection sections"
@@ -107,9 +240,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
-          <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {discoveredMoods} / {moods.length} {copy.discovered}
-          </p>
+          <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
+          {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ul className="grid grid-cols-3 gap-3">
             {moods.map((mood) => (
               <li
@@ -121,7 +253,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 }`}
               >
                 <span
-                  className={`text-3xl leading-none ${mood.discovered ? "" : "opacity-40 grayscale"}`}
+                  className={`text-3xl leading-none ${mood.discovered ? "" : "brightness-0 opacity-30 dark:invert"}`}
                   role="img"
                   aria-label={mood.label}
                 >
@@ -194,12 +326,11 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "badges" && (
         <section id="collection-panel-badges" role="tabpanel" className="mt-5">
-          <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {unlockedBadges} / {badges.length} {copy.unlockedBadges}
-          </p>
+          <ProgressCounter value={unlockedBadges} total={badges.length} label={copy.unlockedBadges} />
+          {unlockedBadges === badges.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ul className="flex flex-col gap-3">
             {badges.map((badge) => {
-              const unlocked = badge.unlockedLabel !== null;
+              const unlocked = badge.unlockedLabel !== null || liveUnlocked.has(badge.key);
               return (
                 <li
                   key={badge.key}
@@ -207,10 +338,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                     unlocked
                       ? "border-amber-200/70 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30"
                       : "border-zinc-200/70 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                  }`}
+                  } ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`}
                 >
                   <span
-                    className={`text-3xl leading-none ${unlocked ? "" : "opacity-40 grayscale"}`}
+                    className={`text-3xl leading-none ${unlocked ? "" : "brightness-0 opacity-30 dark:invert"}`}
                     role="img"
                     aria-hidden="true"
                   >
@@ -250,14 +381,19 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               );
             })}
           </ul>
+          {/* Honest lucky-odds disclosure (spec D2 / §4.2). English copy is
+              the same text as PM_STRINGS.luckyOdds in public/farm/strings.js —
+              duplicated knowingly, React can't read that file at build time. */}
+          <p className="mt-4 text-center text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+            🍀 {copy.luckyOdds}
+          </p>
         </section>
       )}
 
       {tab === "story" && (
         <section id="collection-panel-story" role="tabpanel" className="mt-5">
-          <p className="mb-3 text-center text-xs font-medium text-zinc-400 dark:text-zinc-500">
-            {unlockedChapters} / {chapters.length} {copy.chapters}
-          </p>
+          <ProgressCounter value={unlockedChapters} total={chapters.length} label={copy.chapters} />
+          {unlockedChapters === chapters.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ol className="flex flex-col gap-3">
             {chapters.map((chapter) => (
               <li key={chapter.chapter}>

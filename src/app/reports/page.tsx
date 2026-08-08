@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import Notice from "@/components/notice";
+import ReportsRecap from "@/components/reports-recap";
 import { runGameTick } from "@/game/events/event-router";
 import { fetchPlant } from "@/lib/plants";
 import { getWeeklyReportNarration } from "@/lib/plant-messages";
@@ -134,6 +135,18 @@ export default async function ReportsPage() {
           </div>
         </section>
       )}
+
+      {/* Dopamine plan Task 18: animated recap of numbers this page already
+          computed — no extra queries. There is no per-week XP figure or
+          per-day care breakdown in WeeklyReport, so the recap gets lifetime
+          XP as the closest equivalent and no bestDay (its 🌟 line stays
+          hidden until a future report field provides one). */}
+      <ReportsRecap
+        xpTotal={report.totalXp}
+        questsWeek={report.questsCompleted}
+        streak={report.currentStreak}
+        bestDay={null}
+      />
 
       <section aria-label="Weekly stats" className="grid grid-cols-2 gap-3">
         <StatTile

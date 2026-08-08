@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
+import Script from "next/script";
 import RenoAppShell from "@/components/reno-app-shell";
 import { getRequestLocale } from "@/lib/i18n-server";
 import "./globals.css";
@@ -40,6 +41,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full">
         <RenoAppShell locale={locale}>{children}</RenoAppShell>
+        {/* Shared farm globals (dopamine plan Task 5): window.PM_STRINGS +
+            window.PMSfx for React pages too. Plain sync tags trip the
+            no-sync-scripts lint rule, so next/script with beforeInteractive
+            keeps the same load-before-hydration semantics. */}
+        <Script src="/farm/strings.js" strategy="beforeInteractive" />
+        <Script src="/farm/sfx.js" strategy="beforeInteractive" />
       </body>
     </html>
   );
