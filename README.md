@@ -400,9 +400,18 @@ supabase/milestone1.sql               plants, device_events, RLS, realtime
 supabase/milestone3.sql               bond_state, quests, badges, xp ledger, award_xp RPC
 supabase/milestone4-soil-quests.sql   soil quest keys
 supabase/milestone5-growth-records.sql
+supabase/milestone6-crop-profiles.sql  strawberry key on plants
 supabase/milestone6-monitoring.sql    soil_moisture / light_lux columns
 supabase/milestone7-more-quests.sql   Humidify My Air + Stay Comfy keys
+supabase/milestone8-dopamine.sql      story / badge / demo progression additions
+supabase/milestone9-raw-sensor-ingest.sql
+supabase/milestone10-jember-crop-catalog.sql  10 Jember crops + versioned evidence / sources
 ```
+
+Milestone 10 seeds researched Jember profiles as `draft` or
+`reference_only`. Strawberry remains the only profile approved for automatic
+mood and quest decisions. See `docs/CROP-PROFILE-CATALOG-jember.md` before
+activating another crop.
 
 ### 5. Run
 
@@ -482,7 +491,7 @@ plantmoji/
 │   ├── lib/
 │   └── types/
 │
-├── supabase/             SQL migrations (milestone1 … milestone7)
+├── supabase/             SQL migrations (milestone1 … milestone10)
 ├── node-red/             bridge flow + trilingual guide
 ├── docs/                 setup + integration + gameplay plans (EN/ID/KO)
 ├── tests/                Vitest suites (200+ tests)
