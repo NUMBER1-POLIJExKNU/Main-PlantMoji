@@ -396,19 +396,41 @@ body {
     color: var(--color-outline);
 }
 .pixel-btn .icon { font-style: normal; font-size: 18px; }
-.water-btn { background: var(--color-water); color: white; border-color: #1E3A8A; box-shadow: 0 6px 0 #1E3A8A; }
-.water-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #1E3A8A; filter: brightness(1.1); }
-.water-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #1E3A8A; }
 
-.feed-btn { background: var(--color-soil-light); color: white; border-color: var(--color-soil-dark); box-shadow: 0 6px 0 var(--color-soil-dark); }
-.feed-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-soil-dark); filter: brightness(1.1); }
-.feed-btn:active { transform: translateY(6px); box-shadow: 0 0 0 var(--color-soil-dark); }
+/* Contextual care button (spec §6.1): ONE large mood-driven safe action —
+   live.js owns the label; ≥64px touch target, centered in the panel. */
+#care-action {
+    width: 100%;
+    max-width: 440px;
+    min-height: 64px;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.7;
+    background: var(--color-grass);
+    color: var(--color-white);
+    border-color: var(--color-forest);
+    box-shadow: 0 6px 0 var(--color-forest);
+}
+#care-action:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-forest); filter: brightness(1.06); }
+#care-action:active { transform: translateY(6px); box-shadow: 0 0 0 var(--color-forest); }
+
+/* Night state (spec §6.2): quiet "Good night 🌙" disabled-style look —
+   still pressable (soft shh why-card), but calm colors and no eager
+   hover lift while Jamkachu sleeps. */
+#care-action.care-night {
+    background: #39456B;
+    border-color: #232B45;
+    box-shadow: 0 6px 0 #232B45;
+    color: #D9DFF2;
+}
+#care-action.care-night:hover { transform: none; box-shadow: 0 6px 0 #232B45; filter: none; }
+#care-action.care-night:active { transform: translateY(3px); box-shadow: 0 3px 0 #232B45; }
 
 /* Touch press feedback (micro-juice): .pressed mirrors :active for
    pointerdown-driven presses, chunky 3px push (spec Task 8). */
 .pixel-btn.pressed { transform: translateY(3px); filter: brightness(0.96); }
-.water-btn.pressed { box-shadow: 0 3px 0 #1E3A8A; }
-.feed-btn.pressed { box-shadow: 0 3px 0 var(--color-soil-dark); }
+#care-action.pressed { box-shadow: 0 3px 0 var(--color-forest); }
+#care-action.care-night.pressed { box-shadow: 0 3px 0 #232B45; filter: none; }
 .nav-item.pressed { transform: translateX(2px) scale(0.98); }
 
 /* Mascot Stage (Center Stage — top of the hierarchy, now in document flow) */
@@ -511,6 +533,12 @@ body {
 .mascot-svg.face-acidic .face-default,
 .mascot-svg.face-alkaline .face-default { display: none; }
 
+/* Night sleep face (spec §6.2): live.js toggles .face-asleep only while the
+   sleep presentation is active (18:00–06:00 WIB AND mood Happy) — problem
+   moods keep their own face, so this never coexists with a variant class. */
+.mascot-svg.face-asleep [data-face="asleep"] { display: block; }
+.mascot-svg.face-asleep .face-default { display: none; }
+
 /* Idle life: gentle breath sway + eye blink — both gated so reduced-motion
    users get a calm, static character. */
 @media (prefers-reduced-motion: no-preference) {
@@ -523,6 +551,10 @@ body {
         transform-origin: center;
         animation: pm-blink 5s linear infinite;
     }
+    /* Night sleep (spec §6.2): slower, deeper breath while asleep, and the
+       tiny zZ gently pulses. Reduced motion keeps both static. */
+    .animated-breath.breath-slow .animated-leaves { animation-duration: 7s; }
+    .mascot-svg .asleep-zz { animation: pm-zz-drift 3s steps(3, end) infinite; }
 }
 @keyframes smoothBreath {
     from { transform: scaleY(1) scaleX(1); }
@@ -531,6 +563,10 @@ body {
 @keyframes pm-blink {
     0%, 96%, 100% { transform: scaleY(1); }
     98% { transform: scaleY(0.1); }
+}
+@keyframes pm-zz-drift {
+    0%, 100% { opacity: 0.55; }
+    50% { opacity: 1; }
 }
 
 /* Tap-to-Claim Reward Pod (pixel seed pod, CSS art via layered box-shadows).

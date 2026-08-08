@@ -182,6 +182,31 @@
                                     <rect x="145" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(-25 150 76)"/>
                                     <rect x="154" y="74" width="10" height="5" fill="var(--color-outline)" transform="rotate(25 159 76)"/>
                                 </g>
+
+                                <!-- Face (Asleep, spec §6.2): closed CURVED eyes + tiny zZ.
+                                     Night presentation only (18:00–06:00 WIB while Happy;
+                                     live.js toggles .face-asleep) — distinct from the
+                                     light-hungry daytime "sleepy" face. No .eyes class on
+                                     purpose: closed lids must not run the blink loop. -->
+                                <g class="mascot-face" data-face="asleep">
+                                    <rect x="106" y="48" width="5" height="4" fill="var(--color-outline)"/>
+                                    <rect x="110" y="51" width="12" height="4" fill="var(--color-outline)"/>
+                                    <rect x="121" y="48" width="5" height="4" fill="var(--color-outline)"/>
+                                    <rect x="154" y="48" width="5" height="4" fill="var(--color-outline)"/>
+                                    <rect x="158" y="51" width="12" height="4" fill="var(--color-outline)"/>
+                                    <rect x="169" y="48" width="5" height="4" fill="var(--color-outline)"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="133" y="75" width="14" height="6" fill="var(--color-outline)"/>
+                                    <g class="asleep-zz">
+                                        <rect x="192" y="32" width="10" height="3" fill="var(--color-outline)"/>
+                                        <rect x="193" y="35" width="8" height="3" fill="var(--color-outline)" transform="rotate(-35 197 36)"/>
+                                        <rect x="192" y="39" width="10" height="3" fill="var(--color-outline)"/>
+                                        <rect x="206" y="14" width="13" height="4" fill="var(--color-outline)"/>
+                                        <rect x="208" y="19" width="10" height="4" fill="var(--color-outline)" transform="rotate(-35 213 21)"/>
+                                        <rect x="206" y="25" width="13" height="4" fill="var(--color-outline)"/>
+                                    </g>
+                                </g>
                             </g>
                         </svg>
                     </div>
@@ -253,13 +278,14 @@
                 <!-- 7) Environment: compact one-line strip (detail lives in Plant Status) -->
                 <div id="env-strip" class="panel-glass">🌡 <span id="env-temp">--°C</span> · 💧 <span id="env-hum">--%</span> · ☀️ <span id="env-light">--</span> · ⚗️ <span id="env-ph">pH --</span></div>
 
-                <!-- Care rituals (presentational — real XP only ever comes from sensors) -->
+                <!-- Contextual care action (spec §6.1): ONE mood-driven safe
+                     action — guidance only, zero XP, zero writes. live.js
+                     derives the label from the current mood (and the night
+                     sleep state, §6.2); this static default matches the
+                     default happy character. -->
                 <div class="actions-panel">
-                    <button class="pixel-btn water-btn">
-                        <i class="icon">💧</i> <span data-i18n="action.water">SIRAM</span>
-                    </button>
-                    <button class="pixel-btn feed-btn">
-                        <i class="icon">🧪</i> <span data-i18n="action.fertilize">PUPUK</span>
+                    <button id="care-action" class="pixel-btn" type="button">
+                        <span class="care-action-label">Elus aku — atau tulis buku harianku 📖</span>
                     </button>
                 </div>
 
@@ -269,6 +295,7 @@
     </div>
     <script src="/farm/strings.js"></script>
     <script src="/farm/sfx.js"></script>
+    <script src="/farm/demo.js"></script>
     <script type="module" src="/farm/live.js"></script>
 </body>
 </html>

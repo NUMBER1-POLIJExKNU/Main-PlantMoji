@@ -29,8 +29,6 @@ const COPY = {
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
-    "action.water": "SIRAM",
-    "action.fertilize": "PUPUK",
     "quest.none": "Belum ada misi aktif",
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
@@ -61,8 +59,6 @@ const COPY = {
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
     "sensor.unavailable": "Indoor sensor not connected",
-    "action.water": "WATER",
-    "action.fertilize": "FERTILIZE",
     "quest.none": "No active quest",
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
@@ -155,6 +151,11 @@ function setMascotMood(state) {
     const emoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
     moodEl.textContent = `${word} ${emoji}`;
   }
+  // Contextual care button + night sleep (spec §6.1/§6.2): every mood
+  // render re-derives the one safe action and the sleep presentation —
+  // the label is state, not a celebration, so it must always be correct.
+  careMood = state ?? "Happy";
+  updateCareUi();
 }
 // DevTools/demo handle (display-only; grants nothing).
 window.setMascotMood = setMascotMood;
@@ -215,7 +216,7 @@ applyLocale();
 // gesture, mute persisted in localStorage) — always called with ?. so a
 // missing engine is a silent no-op. When Supabase is not configured, main()
 // returns before any data render, so every DATA-driven effect stays dormant;
-// the user-initiated care interactions (water/fertilize rituals, petting,
+// the user-initiated care interactions (contextual care button, petting,
 // button micro-juice) still respond because they are pure presentation:
 // zero writes, zero XP, no hidden counters (spec §4).
 //
@@ -239,8 +240,7 @@ let liveParticles = 0;
 
 const FX_CSS = `
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
-.fx-confetti, .fx-sparkle, .fx-droplet, .fx-heart { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
-.fx-droplet { background: var(--color-water, #4DA1ED); }
+.fx-confetti, .fx-sparkle, .fx-heart { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
 .fx-heart { background: var(--color-cheek, #FF9E9E); clip-path: polygon(50% 100%, 0 40%, 0 15%, 25% 0, 50% 20%, 75% 0, 100% 15%, 100% 40%); }
 .fx-why-card { position: fixed; max-width: 320px; font-family: var(--font-body, sans-serif); font-size: 13px; line-height: 1.5; color: var(--color-text, #243421); background: var(--color-surface, #fff); border: 3px solid var(--color-border, #BCD3B4); border-radius: 12px; box-shadow: 0 4px 0 rgba(36,52,33,.15); padding: 10px 14px; text-align: center; will-change: transform, opacity; }
 .fx-chip { position: fixed; font-family: var(--font-heading, monospace); font-size: 12px; color: #fff; background: var(--color-grass, #69C455); border: 2px solid var(--color-outline, #2B3A27); box-shadow: 0 3px 0 var(--color-outline, #2B3A27); border-radius: 10px; padding: 5px 10px; white-space: nowrap; will-change: transform, opacity; }
@@ -258,6 +258,9 @@ const FX_CSS = `
 .fx-levelup-card { font-family: var(--font-heading, monospace); background: var(--color-white, #fff); border: 4px solid var(--color-outline, #2B3A27); border-radius: 18px; box-shadow: 0 8px 0 var(--color-outline, #2B3A27); padding: 32px 48px; text-align: center; will-change: transform, opacity; }
 .fx-levelup-title { font-size: 26px; color: var(--color-forest, #397A2B); text-shadow: 3px 3px 0 var(--color-yellow, #FFDE6A); }
 .fx-levelup-sub { font-size: 12px; margin-top: 14px; color: var(--color-outline, #2B3A27); }
+.fx-chapter-card { font-family: var(--font-heading, monospace); background: #1C2618; border: 4px solid var(--color-yellow, #FFDE6A); border-radius: 18px; box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35); padding: 36px 52px; text-align: center; will-change: transform, opacity; }
+.fx-chapter-title { font-size: 22px; color: var(--color-yellow, #FFDE6A); text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4); }
+.fx-chapter-sub { font-size: 11px; margin-top: 12px; color: #E9F2E4; }
 `;
 
 function prefersReducedMotion() {
@@ -503,40 +506,6 @@ function floatChip(text, rect, variant) {
   removeLater(chip, 1300);
 }
 
-/** Blue pixel droplets raining over a rect (water ritual; reused by causal
- *  echo). Same budget + reduced-motion rules as every other particle. */
-function spawnDroplets(rect, count) {
-  if (prefersReducedMotion()) return;
-  const layer = ensureFxLayer();
-  if (!layer) return;
-  const n = Math.max(0, Math.min(count, MAX_PARTICLES - liveParticles));
-  for (let i = 0; i < n; i++) {
-    const d = document.createElement("div");
-    d.className = "fx-droplet";
-    d.setAttribute("aria-hidden", "true");
-    const size = 5 + Math.floor(Math.random() * 4);
-    d.style.width = `${size}px`;
-    d.style.height = `${size + 2}px`;
-    d.style.left = `${rect.left + Math.random() * rect.width}px`;
-    d.style.top = `${rect.top - 10 - Math.random() * 30}px`;
-    layer.appendChild(d);
-    liveParticles++;
-    const fall = rect.height * (0.5 + Math.random() * 0.5) + 30;
-    const duration = 500 + Math.random() * 300;
-    const delay = Math.random() * 200;
-    animateSafe(
-      d,
-      [
-        { transform: "translateY(0)", opacity: 1 },
-        { transform: `translateY(${fall * 0.8}px)`, opacity: 1, offset: 0.8 },
-        { transform: `translateY(${fall}px)`, opacity: 0 },
-      ],
-      { duration, delay, easing: "steps(6, end)", fill: "both" },
-    );
-    removeLater(d, duration + delay + 100, true);
-  }
-}
-
 /** Single pixel heart rising from the mascot (petting). */
 function spawnHeart(rect) {
   if (prefersReducedMotion() || !rect) return;
@@ -565,7 +534,7 @@ function spawnHeart(rect) {
   removeLater(heart, 800, true);
 }
 
-/** Floating "why" card — a readable sentence (ritual honesty copy), longer
+/** Floating "why" card — a readable sentence (care honesty copy), longer
  *  lived than a chip. Reduced motion: fade only. */
 function floatWhyCard(text, rect) {
   const layer = ensureFxLayer();
@@ -1247,18 +1216,141 @@ function setXpBar(percent, wrapped) {
 
 // ── End reward-feedback FX helpers ──────────────────────────────────────
 
-// ── Care rituals + petting + button micro-juice (Task 8) ────────────────
-// Pure presentation, in-fiction only: ZERO Supabase writes, ZERO XP, no
-// persisted counters of any kind (spec §4.1). The why-cards honestly point
-// students at real, sensor-verified care.
+// ── Contextual care button + night sleep + petting + micro-juice ────────
+// (spec §6.1 / §6.2, reusing the Task 8 ritual juice.) The old WATER /
+// FERTILIZE buttons are gone: there is no soil-moisture or nutrient sensor,
+// so watering imagery could teach children the wrong action. ONE large
+// mood-driven button (#care-action) always shows the single safe action for
+// the CURRENT state. Pure presentation, in-fiction only: ZERO Supabase
+// writes, ZERO XP, no persisted counters of any kind (spec §4.1). The
+// why-cards honestly name the sensor that will verify the real care.
 
-const WHY_CARD_COOLDOWN_MS = 30_000; // shared across both ritual buttons
+const WHY_CARD_COOLDOWN_MS = 30_000; // shared across all care-button taps
 let lastWhyCardAt = 0;
 
-const RITUAL_FALLBACK = {
-  water: "That splash is just for fun — go water the real plant! Real care = real XP. The sensors will notice.",
-  fertilize: "Sparkles are free — real nutrients feed the real soil! Real care = real XP. The sensors will notice.",
+// Mood state → care copy key (both soil moods share one adults-only action).
+const CARE_KEY_BY_MOOD = {
+  Happy: "Happy",
+  Overheating: "Overheating",
+  DryAir: "DryAir",
+  Sleepy: "Sleepy",
+  SoilAcidic: "Soil",
+  SoilAlkaline: "Soil",
 };
+
+// English fallbacks — PM_STRINGS.care carries the localized copy.
+const CARE_FALLBACK = {
+  Overheating: { label: "Move me to shade 🌳", why: "Find a cooler, shadier spot. The temperature sensor will feel the difference." },
+  DryAir: { label: "Move me away from drafts 🌬️", why: "Fans and AC dry my air. The humidity sensor will notice when it's cozier." },
+  Sleepy: { label: "Show me some light ☀️", why: "Open the curtains or move me near a window. The light sensor will see it." },
+  Soil: { label: "Check my soil with a teacher 🧑‍🏫", why: "Soil pH needs an adult's help. Never add anything to the pot by yourself." },
+  Happy: { label: "Pet me — or write my diary 📖", why: "I'm feeling great! Want to remember today? Write a line in my Growth Diary." },
+};
+const SLEEP_FALLBACK = {
+  bubble: "I'm sleeping. See you tomorrow! 💤",
+  why: "Shh… Jamkachu is resting. Plants sleep too — see you tomorrow!",
+  nightLabel: "Night 🌙",
+  button: "Good night 🌙",
+};
+
+// ── Night sleep mode (spec §6.2) ────────────────────────────────────────
+// 18:00–06:00 WIB while the mood is Happy: closed-eyes face, slow breath,
+// sleep bubble, quiet "Good night" button. Problem moods ALWAYS override
+// sleep (safety visibility wins). Evaluated on every mood render plus a
+// 60s clock so 18:00/06:00 flip without a reload.
+
+const SLEEP_START_HOUR = 18; // 18:00 WIB inclusive
+const SLEEP_END_HOUR = 6; // 06:00 WIB exclusive
+
+/** True inside the 18:00–06:00 WIB night window (Intl failure ⇒ never night). */
+function isNightWIB() {
+  const now = wibNow();
+  if (!now) return false;
+  return now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR;
+}
+
+// Current mood driving the care button (the static page defaults to the
+// happy character) and the sleep presentation currently shown (null =
+// not evaluated yet — the first evaluation applies silently, no cue).
+let careMood = "Happy";
+let sleepShown = null;
+
+/** Sleep presentation is Happy-only: a problem mood at night keeps its own
+ *  face and care button. */
+function sleepEligible() {
+  return careMood === "Happy" && isNightWIB();
+}
+
+/** Paint the care button's label + night styling from current mood/sleep. */
+function applyCareButton() {
+  const btn = $("#care-action");
+  if (!btn) return;
+  const labelEl = btn.querySelector(".care-action-label") ?? btn;
+  if (sleepShown) {
+    btn.classList.add("care-night");
+    labelEl.textContent = PM().sleep?.button ?? SLEEP_FALLBACK.button;
+  } else {
+    btn.classList.remove("care-night");
+    const key = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
+    labelEl.textContent = PM().care?.[key]?.label ?? CARE_FALLBACK[key].label;
+  }
+}
+
+/** Re-evaluate the sleep presentation + care button. Idempotent per state;
+ *  bubble/cue changes are diff-gated so the 60s clock never stomps a pet
+ *  line mid-display. Entering sleep plays one soft "pet" settle cue (no
+ *  celebration); the very first evaluation is always silent. */
+function updateCareUi() {
+  const sleepNow = sleepEligible();
+  const changed = sleepNow !== sleepShown;
+  const firstEval = sleepShown === null;
+  sleepShown = sleepNow;
+  applyCareButton();
+  $(".mascot-svg")?.classList.toggle("face-asleep", sleepNow);
+  $(".mascot-wrapper")?.classList.toggle("breath-slow", sleepNow);
+  if (!changed) return;
+  const bubble = $(".speech-bubble");
+  if (sleepNow) {
+    cancelPetBubble(); // a stale pet-line restore must never stomp the sleep bubble
+    if (bubble) bubble.textContent = `"${PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble}"`;
+    if (!firstEval) window.PMSfx?.play("pet");
+  } else if (!firstEval && bubble) {
+    // Waking (06:00 flip, or a problem mood overriding sleep): restore the
+    // mood's own template line; renderPlant repaints on the next mood diff.
+    cancelPetBubble();
+    bubble.innerHTML = (MOODS[careMood] ?? MOODS.Happy).bubble;
+  }
+}
+
+/** Shared 30s why-card gate (the "occasional" in occasional guidance). */
+function maybeWhyCard(text, rect) {
+  const now = Date.now();
+  if (now - lastWhyCardAt < WHY_CARD_COOLDOWN_MS) return;
+  lastWhyCardAt = now;
+  floatWhyCard(text, rect);
+}
+
+/** Care-button tap (spec §6.1): guidance juice only — mascot reaction,
+ *  leaf/sparkle particles (never water droplets), the mood's why-card on
+ *  the 30s cooldown, a mood-appropriate cue. Zero XP, zero writes. */
+function onCareAction() {
+  const rect = mascotRect();
+  if (sleepShown) {
+    // Quiet good-night press: soft "shh" card only — no bounce, no confetti.
+    window.PMSfx?.play("tick");
+    maybeWhyCard(PM().sleep?.why ?? SLEEP_FALLBACK.why, rect);
+    return;
+  }
+  const key = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
+  if (key === "Happy") {
+    petMascot(); // existing petting reaction — satiation + "pet" cue included
+  } else {
+    window.PMSfx?.play("blip");
+    mascotBounce(); // relief reaction
+    spawnSparkles(rect, 10); // green/gold leaf-sparkle palette
+  }
+  maybeWhyCard(PM().care?.[key]?.why ?? CARE_FALLBACK[key].why, rect);
+}
 
 function mascotRect() {
   const wrapper = $(".mascot-wrapper");
@@ -1279,24 +1371,6 @@ function mascotBounce() {
     ],
     { duration: 300, easing: "steps(4, end)" },
   );
-}
-
-function runRitual(kind) {
-  const rect = mascotRect();
-  if (kind === "water") {
-    window.PMSfx?.play("splash");
-    spawnDroplets(rect, 14);
-  } else {
-    window.PMSfx?.play("tick");
-    spawnSparkles(rect, 12); // green/gold sparkles from the shared palette
-  }
-  mascotBounce();
-  const now = Date.now();
-  if (now - lastWhyCardAt >= WHY_CARD_COOLDOWN_MS) {
-    lastWhyCardAt = now;
-    const text = PM().ritual?.[kind] ?? RITUAL_FALLBACK[kind];
-    floatWhyCard(text, rect);
-  }
 }
 
 // Petting — in-memory fiction only. Every 5th pet inside a rolling 30s
@@ -1375,16 +1449,15 @@ function setupCareInteractions() {
       if (!target) return;
       target.classList.add("pressed");
       setTimeout(() => target.classList.remove("pressed"), 160);
-      // Ritual buttons play their own richer cue instead of the blip.
-      if (!target.classList.contains("water-btn") && !target.classList.contains("feed-btn")) {
+      // The care button plays its own mood-appropriate cue instead.
+      if (target.id !== "care-action") {
         window.PMSfx?.play("blip");
       }
     },
     { passive: true },
   );
 
-  $(".water-btn")?.addEventListener("pointerdown", () => runRitual("water"));
-  $(".feed-btn")?.addEventListener("pointerdown", () => runRitual("fertilize"));
+  $("#care-action")?.addEventListener("pointerdown", onCareAction);
   $(".mascot-wrapper")?.addEventListener("pointerdown", petMascot);
 
   // Streak flame press (Task 15): tap → "N days in a row! Care today makes
@@ -1411,8 +1484,86 @@ function setupCareInteractions() {
 }
 
 setupCareInteractions();
+updateCareUi(); // initial paint — the care label must be correct before any data
+setInterval(updateCareUi, 60_000); // sleep window flips without a reload (spec §6.2)
 
-// ── End care rituals + petting + micro-juice ────────────────────────────
+// ── PMFx presentation hooks (demo script, Task 21 / spec §3) ────────────
+// window.PMFx replays existing celebrations for the presenter hotkeys in
+// demo.js. PRESENTATION ONLY: nothing here touches the notePresented /
+// reason ledgers, Supabase, or XP — safe to call repeatedly because the
+// celebration queue paces stacked calls.
+
+const PMFX_DEMO_XP = 20; // fake pod reward; lucky presents the same amount (net ×2 story)
+const CHAPTER_CARD_MS = 3200;
+
+/** T5 chapter-gate placeholder: dark pixel card + chapter jingle. Demo-only
+ *  English for now — the richer localized story gate comes later. */
+function fxChapterCardNow(done) {
+  const layer = ensureFxLayer();
+  if (!layer) {
+    done();
+    return;
+  }
+  window.PMSfx?.play("chapter");
+  window.PMSfx?.buzz(30);
+  const overlay = document.createElement("div");
+  overlay.className = "fx-overlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  const card = document.createElement("div");
+  card.className = "fx-chapter-card";
+  card.innerHTML =
+    '<div class="fx-chapter-title">📖 Chapter unlocked!</div>' +
+    '<div class="fx-chapter-sub">A new page of the story begins</div>';
+  overlay.appendChild(card);
+  layer.appendChild(overlay);
+  const reduce = prefersReducedMotion();
+  animateSafe(
+    card,
+    reduce
+      ? [
+          { opacity: 0 },
+          { opacity: 1, offset: 0.12 },
+          { opacity: 1, offset: 0.85 },
+          { opacity: 0 },
+        ]
+      : [
+          { transform: "scale(0.5)", opacity: 0 },
+          { transform: "scale(1.06)", opacity: 1, offset: 0.15 },
+          { transform: "scale(1)", opacity: 1, offset: 0.25 },
+          { transform: "scale(1)", opacity: 1, offset: 0.85 },
+          { transform: "scale(0.92)", opacity: 0 },
+        ],
+    { duration: CHAPTER_CARD_MS, easing: reduce ? "linear" : "steps(24, end)", fill: "forwards" },
+  );
+  removeLater(overlay, CHAPTER_CARD_MS + 100);
+  spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 30, GOLD_CONFETTI);
+  setTimeout(done, CHAPTER_CARD_MS);
+}
+
+window.PMFx = {
+  /** Gold "LUCKY! ×2" stamp + gold orb burst — mirrors the server-lucky
+   *  reveal WITHOUT noteReason/notePresented (pure display). */
+  lucky() {
+    fxEnqueue(3, (done) => fxLuckyStampNow(done), LUCKY_STAMP_MS + 100);
+    fxEnqueue(2, () => orbCascade(PMFX_DEMO_XP, { gold: true }), ORB_CASCADE_TOTAL_MS + 200);
+  },
+  /** T4 level-up overlay for the next level (display only). */
+  levelUp() {
+    fxLevelUp((prevLevel ?? 1) + 1);
+  },
+  /** T5 chapter-gate placeholder card. */
+  chapter() {
+    fxEnqueue(5, (done) => fxChapterCardNow(done), CHAPTER_CARD_MS + 100);
+  },
+  /** Reward-pod drop with a fake quest — bypasses celebrateQuest's
+   *  presented-XP ledger on purpose (nothing real is being presented). */
+  pod() {
+    fxEnqueue(3, (done) => podDrop({ quest_key: "KEEP_ME_HAPPY", xp_reward: PMFX_DEMO_XP }, done), POD_AUTO_BURST_MS + 700);
+  },
+};
+
+// ── End care button + sleep + petting + micro-juice + PMFx ──────────────
 
 /** HP is character state (mood-derived, HP_BY_MOOD) — rendered inline next
  *  to the XP bar (#hp-inline), not in the environment strip (spec §2.1). */
@@ -1481,15 +1632,18 @@ function renderPlant(plant) {
   if (plant.current_state !== lastMoodFetched) {
     const state = plant.current_state;
     lastMoodFetched = state;
-    setMascotMood(state);
+    setMascotMood(state); // also re-derives the care button + sleep (spec §6)
     const bubble = $(".speech-bubble");
-    if (bubble) bubble.innerHTML = mood.bubble;
+    // While the sleep presentation is active the sleep line owns the bubble
+    // (setMascotMood → updateCareUi just painted it) — never stomp it.
+    if (bubble && !sleepShown) bubble.innerHTML = mood.bubble;
     cancelPetBubble(); // a real mood message must never be stomped by a stale pet-line restore
     fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data || typeof data.message !== "string") return;
         if (lastMoodFetched !== state) return; // mood moved on mid-flight
+        if (sleepShown) return; // Jamkachu is asleep — keep the sleep bubble
         const el = $(".speech-bubble");
         if (el) el.textContent = `"${data.message}"`;
       })
@@ -1622,6 +1776,9 @@ function streakAnchorRect() {
  *  signal. Storage failure ⇒ stay silent (better than risking a nag). */
 function maybeStreakNudge(bond, streakDays) {
   if (!(streakDays > 0)) return;
+  // Never say "visit today" over a sleeping character (spec §6.2) — the
+  // 20:00 cutoff below already covers most of the night window.
+  if (sleepShown) return;
   const now = wibNow();
   if (!now) return;
   if (now.hour < STREAK_NUDGE_HOUR_START || now.hour >= STREAK_NUDGE_HOUR_END) return;
@@ -1717,7 +1874,9 @@ function causalEcho(next) {
   ) {
     echoChip("temp", "#env-temp", PM().echo?.tempComfy ?? ECHO_FALLBACK.tempComfy);
   }
-  if (next.light === 1 && prevSensors.light === 0) {
+  // Night guard (spec §6.2): inside the sleep window light diffs are normal
+  // day/night physics — never celebrate light (nor treat 0 as a problem).
+  if (next.light === 1 && prevSensors.light === 0 && !isNightWIB()) {
     echoChip("light", "#env-light", PM().echo?.lightOn ?? ECHO_FALLBACK.lightOn);
   }
   if (next.temperature != null) prevSensors.temperature = next.temperature;
@@ -1745,7 +1904,12 @@ function renderSensors(reading) {
 
   const light = Number(reading?.light);
   if (reading?.light != null && (light === 0 || light === 1)) {
-    setText("#env-light", light === 1 ? t("bright") : t("dark"));
+    // Night (spec §6.2): light=0 inside the 18:00–06:00 WIB window is
+    // normal, not a problem — present it as "Night 🌙", never as "Dark".
+    setText(
+      "#env-light",
+      light === 1 ? t("bright") : isNightWIB() ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : t("dark"),
+    );
   }
 
   const indoorParts = [];
@@ -1819,12 +1983,15 @@ async function main() {
   try {
     config = await (await fetch("/api/public-config")).json();
   } catch {
+    window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
     return;
   }
   if (!config?.url || !config?.key) {
+    window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
     setText(".indoor-reading", t("sensor.unavailable"));
     return;
   }
+  window.__pmSupabaseConfigured = true;
 
   const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
   const supabase = createClient(config.url, config.key);

@@ -62,6 +62,44 @@
         fertilize: "Sparkles are free — real nutrients feed the real soil! Real care = real XP. The sensors will notice.",
       },
 
+      // Contextual care button (spec §6.1): ONE mood-driven safe action.
+      // Both soil moods share the "Soil" entry (adults-only pH help). Every
+      // why-card names the sensor that will verify the care — guidance is
+      // honest, physical, and never watering imagery (no soil-moisture
+      // sensor exists). Zero XP, like every tap.
+      care: {
+        Overheating: {
+          label: "Move me to shade 🌳",
+          why: "Find a cooler, shadier spot. The temperature sensor will feel the difference.",
+        },
+        DryAir: {
+          label: "Move me away from drafts 🌬️",
+          why: "Fans and AC dry my air. The humidity sensor will notice when it's cozier.",
+        },
+        Sleepy: {
+          label: "Show me some light ☀️",
+          why: "Open the curtains or move me near a window. The light sensor will see it.",
+        },
+        Soil: {
+          label: "Check my soil with a teacher 🧑‍🏫",
+          why: "Soil pH needs an adult's help. Never add anything to the pot by yourself.",
+        },
+        Happy: {
+          label: "Pet me — or write my diary 📖",
+          why: "I'm feeling great! Want to remember today? Write a line in my Growth Diary.",
+        },
+      },
+
+      // Night sleep mode (spec §6.2): 18:00–06:00 WIB while the mood is
+      // Happy. Problem moods always override sleep; light=0 at night is
+      // presented as a normal "Night 🌙", never as a problem.
+      sleep: {
+        bubble: "I'm sleeping. See you tomorrow! 💤",
+        why: "Shh… Jamkachu is resting. Plants sleep too — see you tomorrow!",
+        nightLabel: "Night 🌙",
+        button: "Good night 🌙",
+      },
+
       // Streak keeper copy (Task 15). Warm, daytime-only, never guilt or
       // countdowns (spec §4.3).
       streakKeeper: {
@@ -124,6 +162,7 @@
         questComplete: "🏆 Quest complete!",
         xpGain: (delta) => `+${delta} XP`,
         streakUp: (days) => (days === 1 ? "+1 day" : `+${days} days`),
+        luckyStamp: "LUCKY! ×2",
       },
 
       // Banner tag shown while presenter/demo mode is active (Task 21) and on
@@ -173,6 +212,38 @@
         fertilize: "Kilaunya memang gratis — tapi nutrisi asli yang menyuburkan tanah sungguhan! Perawatan nyata = XP nyata. Sensor akan tahu.",
       },
 
+      // Tombol perawatan kontekstual (spec §6.1) — the sensor-honesty framing
+      // is load-bearing: every why-card names the sensor that will verify it.
+      care: {
+        Overheating: {
+          label: "Pindahkan aku ke tempat teduh 🌳",
+          why: "Cari tempat yang lebih sejuk dan teduh ya. Sensor suhu pasti merasakan bedanya.",
+        },
+        DryAir: {
+          label: "Jauhkan aku dari angin 🌬️",
+          why: "Kipas dan AC bikin udaraku kering. Sensor kelembapan akan tahu kalau udaranya sudah lebih nyaman.",
+        },
+        Sleepy: {
+          label: "Tunjukkan aku cahaya ☀️",
+          why: "Buka tirainya atau pindahkan aku ke dekat jendela. Sensor cahaya akan melihatnya.",
+        },
+        Soil: {
+          label: "Periksa tanahku bersama guru 🧑‍🏫",
+          why: "Urusan pH tanah butuh bantuan orang dewasa. Jangan pernah menambahkan apa pun ke pot sendirian ya.",
+        },
+        Happy: {
+          label: "Elus aku — atau tulis buku harianku 📖",
+          why: "Aku lagi senang banget! Mau menyimpan cerita hari ini? Tulis sebaris di Buku Harianku.",
+        },
+      },
+
+      sleep: {
+        bubble: "Aku sedang tidur. Sampai besok! 💤",
+        why: "Ssst… Jamkachu sedang istirahat. Tanaman juga tidur — sampai besok ya!",
+        nightLabel: "Malam 🌙",
+        button: "Selamat malam 🌙",
+      },
+
       streakKeeper: {
         active: (d) => `🔥 ${d} hari beruntun — Jamkachu pasti senang kalau kamu mampir hari ini.`,
         broken: "Semua kebiasaan baik dimulai dari hari pertama. Selamat datang lagi!",
@@ -220,6 +291,7 @@
         questComplete: "🏆 Misi selesai!",
         xpGain: (delta) => `+${delta} XP`,
         streakUp: (days) => (days === 1 ? "+1 hari" : `+${days} hari`),
+        luckyStamp: "BERUNTUNG! ×2",
       },
 
       // Presenter/demo tag is a product mark, not copy — stays "DEMO".

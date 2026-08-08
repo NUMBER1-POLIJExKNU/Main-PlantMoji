@@ -22,6 +22,8 @@ type StringTable = {
   moodEmoji: Record<string, unknown>;
   reasons: Record<string, unknown>;
   ritual: { water?: unknown; fertilize?: unknown };
+  care: Record<string, { label?: unknown; why?: unknown }>;
+  sleep: { bubble?: unknown; why?: unknown; nightLabel?: unknown; button?: unknown };
   streakKeeper: { active?: unknown; broken?: unknown; flame?: unknown };
   luckyOdds: unknown;
   petting: unknown;
@@ -78,6 +80,9 @@ function expectLatinCopy(value: unknown, label: string) {
 
 const MOOD_KEYS = ["Happy", "Overheating", "DryAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
 const REASON_KEYS = ["quest", "lucky", "badge", "chapter", "streak", "mood", "daily", "growth"];
+// Contextual care button (spec §6.1): both soil moods share the "Soil" entry.
+const CARE_KEYS = ["Overheating", "DryAir", "Sleepy", "Soil", "Happy"];
+const SLEEP_KEYS = ["bubble", "why", "nightLabel", "button"] as const;
 const VITAL_KEYS = [
   "tempHot",
   "tempGood",
@@ -149,6 +154,25 @@ for (const [locale, S] of [
       }
     });
 
+    it("provides a label + why-card for every contextual care state", () => {
+      // Structure must be identical across locales: exactly the five care
+      // states, each with exactly {label, why}.
+      expect(Object.keys(S.care).sort()).toEqual([...CARE_KEYS].sort());
+      for (const key of CARE_KEYS) {
+        const entry = S.care[key];
+        expect(Object.keys(entry ?? {}).sort(), `care.${key} shape`).toEqual(["label", "why"]);
+        expectLatinCopy(entry?.label, `care.${key}.label`);
+        expectLatinCopy(entry?.why, `care.${key}.why`);
+      }
+    });
+
+    it("provides the night sleep bubble, shh card, night label and button", () => {
+      expect(Object.keys(S.sleep).sort()).toEqual([...SLEEP_KEYS].sort());
+      for (const key of SLEEP_KEYS) expectLatinCopy(S.sleep[key], `sleep.${key}`);
+      // The env-strip night value keeps the moon in both locales.
+      expect(S.sleep.nightLabel as string).toContain("🌙");
+    });
+
     it("has at least five rotating petting lines plus a yawn", () => {
       expect(Array.isArray(S.petting), "petting should be an array").toBe(true);
       const lines = S.petting as unknown[];
@@ -200,6 +224,7 @@ for (const [locale, S] of [
     it("provides every celebration string live.js consumes", () => {
       expectLatinCopy(S.fx.levelUpTitle, "fx.levelUpTitle");
       expectLatinCopy(S.fx.questComplete, "fx.questComplete");
+      expectLatinCopy(S.fx.luckyStamp, "fx.luckyStamp");
       for (const key of ["levelUpSub", "xpGain", "streakUp"]) {
         const raw = S.fx[key];
         const value = typeof raw === "function" ? raw(3) : raw;
@@ -217,6 +242,10 @@ for (const [locale, S] of [
 describe("English tree exact copy", () => {
   it("discloses the exact lucky odds line", () => {
     expect(EN.luckyOdds).toBe("1 in 8 quests sprouts a lucky bonus!");
+  });
+
+  it("fx.luckyStamp matches the live.js English fallback", () => {
+    expect(EN.fx.luckyStamp).toBe("LUCKY! ×2");
   });
 });
 
@@ -240,5 +269,29 @@ describe("Bahasa Indonesia tree is a real translation", () => {
 
   it("id luckyOdds matches the /collection disclosure wording", () => {
     expect(ID.luckyOdds).toBe("1 dari 8 misi menumbuhkan bonus keberuntungan!");
+  });
+
+  it("care structure is identical across locales and at least three labels are translated", () => {
+    expect(Object.keys(ID.care)).toEqual(Object.keys(EN.care));
+    for (const key of Object.keys(EN.care)) {
+      expect(Object.keys(ID.care[key] ?? {}), `care.${key} shape`).toEqual(
+        Object.keys(EN.care[key] ?? {}),
+      );
+    }
+    const translated = Object.keys(EN.care).filter(
+      (key) => ID.care[key]?.label !== EN.care[key]?.label,
+    );
+    expect(translated.length, "translated care labels").toBeGreaterThanOrEqual(3);
+  });
+
+  it("sleep copy is a real translation (structure identical, values differ)", () => {
+    expect(Object.keys(ID.sleep)).toEqual(Object.keys(EN.sleep));
+    expect(ID.sleep.bubble).not.toBe(EN.sleep.bubble);
+    expect(ID.sleep.why).not.toBe(EN.sleep.why);
+    expect(ID.sleep.nightLabel).not.toBe(EN.sleep.nightLabel);
+  });
+
+  it("id fx.luckyStamp is the approved Bahasa stamp", () => {
+    expect(ID.fx.luckyStamp).toBe("BERUNTUNG! ×2");
   });
 });
