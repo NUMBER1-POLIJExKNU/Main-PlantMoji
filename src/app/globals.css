@@ -129,7 +129,14 @@ body {
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 .pm-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--color-outline); }
-.pm-btn:active { transform: translateY(4px); box-shadow: 0 0 0 var(--color-outline); }
+/* Plain :active transform — kept unconditional (not motion-gated) so the
+   press itself still registers for reduced-motion users; only the timed
+   rebound below is gated. */
+.pm-btn:active {
+  transform: translateY(4px) scale(1.05, 0.92);
+  transform-origin: bottom center;
+  box-shadow: 0 0 0 var(--color-outline);
+}
 .pm-btn:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
 .pm-btn:disabled {
   opacity: 0.55;
@@ -147,6 +154,24 @@ body {
 .pm-btn-primary:hover { box-shadow: 0 5px 0 var(--color-forest); filter: brightness(1.06); }
 .pm-btn-primary:active { box-shadow: 0 0 0 var(--color-forest); }
 .pm-btn-primary:disabled { box-shadow: 0 4px 0 var(--color-forest); }
+
+/* Pixel squash-and-stretch: the squash itself lives in the plain :active
+   rule above. Only the RELEASE — a ~180ms, 3-frame pixel snap back to rest
+   — is a timed animation, so only it sits behind the motion gate. Setting
+   `transition` (not `animation`) on the resting rule means the stepped
+   rebound is whatever the button transitions TO once :active is released;
+   it can never self-trigger on mount the way a keyframe `animation` bound
+   to `:not(:active)` would. */
+@media (prefers-reduced-motion: no-preference) {
+  .pm-btn,
+  .pm-btn-primary {
+    transition: transform 0.18s steps(3, jump-end), box-shadow 0.15s ease, filter 0.15s ease;
+  }
+  .pm-btn:active,
+  .pm-btn-primary:active {
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
+  }
+}
 
 /* .pm-bar / .pm-bar-fill — pixel progress bar: sprout-green track with the
    primary green fill. Set the fill width inline (style={{ width: "40%" }}). */
@@ -562,6 +587,33 @@ body {
   color: #ffffff;
   background: var(--color-grass);
   box-shadow: 0 8px 16px rgba(105, 196, 85, 0.4);
+}
+
+/* Nav sprout hop: a one-shot 2-frame pixel hop on hover/focus, and a slow
+   2-frame idle bob on the active route's icon. Both rules share the same
+   (0,2,1) specificity, so the hop is declared AFTER the bob to win the tie
+   while hovering/focusing the active item; the bob resumes on its own once
+   the hover/focus state ends, since it's a plain cascade swap back to the
+   `.active i` rule, not something that needs to be re-triggered. */
+@media (prefers-reduced-motion: no-preference) {
+  .reno-nav-item.active i {
+    animation: pm-nav-bob 1.4s steps(2, jump-end) infinite alternate;
+  }
+
+  .reno-nav-item:hover i,
+  .reno-nav-item:focus-visible i {
+    animation: pm-nav-hop 250ms steps(2, jump-end);
+  }
+}
+
+@keyframes pm-nav-hop {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
+}
+
+@keyframes pm-nav-bob {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px); }
 }
 
 /* ID/EN switch (mockup .locale-switch): tinted well + token border. */

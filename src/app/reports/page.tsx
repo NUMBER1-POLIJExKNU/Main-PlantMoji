@@ -3,14 +3,15 @@
 
 import Link from "next/link";
 import Notice from "@/components/notice";
+import PageHeader from "@/components/page-header";
 import ReportsRecap from "@/components/reports-recap";
-import { runGameTick } from "@/game/events/event-router";
-import { fetchPlant } from "@/lib/plants";
+import { fetchPlant, type PlantFetchResult } from "@/lib/plants";
 import { getWeeklyReportNarration } from "@/lib/plant-messages";
 import { computeWeeklyReport } from "@/lib/weekly-report";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { AppLocale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
+import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { STREAK_TIMEZONE, type WeeklyReport } from "@/types/game";
 
 // The report window is capped at "now" — always render fresh.
@@ -97,18 +98,22 @@ export default async function ReportsPage() {
     );
   }
 
-  // Lazy timestamp sweep FIRST (handoff Correction 4): pending time-based
-  // quest completions land before the report is computed, so "quests
-  // completed" is up to date. A sweep failure never breaks the page.
-  try {
-    await runGameTick(PLANT_ID);
-  } catch {
-    // Ignored — the report still renders from existing history.
-  }
+  // Lazy timestamp sweep (handoff Correction 4), deferred: awaiting it here
+  // blocked every render on the engine's Supabase sweep. It now runs after
+  // the response (lib/tick-gate.ts); a completion it lands shows up on the
+  // next open — the report is a summary, not a live feed.
+  maybeScheduleGameTick(PLANT_ID);
 
   let report: WeeklyReport;
+  let plantResult: PlantFetchResult;
   try {
-    report = await computeWeeklyReport(supabase, PLANT_ID);
+    // fetchPlant never rejects (it returns status objects), so this
+    // Promise.all can only fail via computeWeeklyReport — the Notice below
+    // keeps its exact meaning.
+    [report, plantResult] = await Promise.all([
+      computeWeeklyReport(supabase, PLANT_ID),
+      fetchPlant(PLANT_ID),
+    ]);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
@@ -123,7 +128,6 @@ export default async function ReportsPage() {
   // handoff §24); deterministic template otherwise — never blocks on
   // failure. No plant row (e.g. schema not seeded yet) simply skips the
   // narration — the stat tiles below still render from `report`.
-  const plantResult = await fetchPlant(PLANT_ID);
   const narration =
     plantResult.status === "ok"
       ? await getWeeklyReportNarration(plantResult.plant, report)
@@ -134,17 +138,15 @@ export default async function ReportsPage() {
   // inside supply the surfaces.
   return (
     <main className="w-full">
-      <header className="mb-6">
-        <h1 className="pm-heading flex items-center gap-3 text-lg">
-          <span className="text-3xl leading-none" role="img" aria-hidden="true">
-            📊
-          </span>
-          {locale === "id" ? "Laporan Mingguan" : "Weekly Report"}
-        </h1>
-        <p className="mt-3">
-          <span className="pm-chip">🗓️ {formatWeekRange(report, locale)}</span>
-        </p>
-      </header>
+      <PageHeader
+        icon="📊"
+        eyebrow={locale === "id" ? "Ringkasan perawatan" : "Care recap"}
+        title={locale === "id" ? "Laporan Mingguan" : "Weekly Report"}
+        description={locale === "id"
+          ? "Lihat pola perawatan dan perkembangan ikatan minggu ini."
+          : "See this week's care pattern and bond progress."}
+        meta={<span className="pm-chip">🗓️ {formatWeekRange(report, locale)}</span>}
+      />
 
       {narration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="mb-6">

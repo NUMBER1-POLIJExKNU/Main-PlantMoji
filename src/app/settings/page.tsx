@@ -2,6 +2,7 @@
 // and manual growth stage (§14: sensors cannot infer real growth in MVP).
 
 import Notice from "@/components/notice";
+import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
 import { BADGE_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
@@ -76,6 +77,12 @@ export default async function SettingsPage({
     );
   }
 
+  // Started alongside getPlant — the growth log is keyed by PLANT_ID (the
+  // same id getPlant resolves) and fetchGrowthRecords never rejects (it
+  // returns [] on any failure), so kicking it off before the status checks
+  // can't change which Notice renders below; it's only awaited once the
+  // plant row is confirmed.
+  const growthRecordsPromise = fetchGrowthRecords(PLANT_ID);
   const result = await getPlant(supabase, PLANT_ID);
 
   if (result.status === "no-schema") {
@@ -120,7 +127,7 @@ export default async function SettingsPage({
 
   // Manual growth log (handoff §14, §35). Empty when milestone5 hasn't been
   // run yet — fetchGrowthRecords tolerates the missing table on its own.
-  const growthRecords = await fetchGrowthRecords(plant.id);
+  const growthRecords = await growthRecordsPromise;
   let demoProgress = {
     level: 1,
     totalXp: 0,
@@ -152,18 +159,17 @@ export default async function SettingsPage({
   // Farm column: cards cap at 640px like the farm home stack (.pm-card);
   // the inline max-width outranks the shell's default 720px reading measure.
   return (
-    <main className="mx-auto w-full" style={{ maxWidth: 640 }}>
-      <header className="mb-6 flex flex-col gap-1.5">
-        <span className="text-4xl" role="img" aria-hidden="true">
-          ⚙️
-        </span>
-        <h1 className="pm-heading text-lg">{locale === "id" ? "Pengaturan" : "Settings"}</h1>
-        <p className="text-sm text-[#57684F]">
-          {locale === "id"
-            ? "Siapa tanamanmu, dan bagaimana ia bicara denganmu."
-            : "Who your plant is, and how it talks to you."}
-        </p>
-      </header>
+    <main className="mx-auto w-full">
+      <PageHeader
+        icon="⚙️"
+        eyebrow={locale === "id" ? "Profil teman tanaman" : "Plant companion profile"}
+        title={locale === "id" ? "Pengaturan" : "Settings"}
+        description={locale === "id"
+          ? "Atur siapa tanamanmu, cara ia berbicara, dan catatan pertumbuhannya."
+          : "Manage who your plant is, how it talks, and its growth diary."}
+      />
+
+      <div className="mx-auto w-full max-w-[680px]">
 
       <section className="pm-panel mb-5 flex items-center gap-3">
         <span className="text-3xl leading-none" role="img" aria-hidden="true">
@@ -363,6 +369,7 @@ export default async function SettingsPage({
         <DemoControlCenter locale={locale} progress={demoProgress} />
       </section>
       )}
+      </div>
     </main>
   );
 }
