@@ -20,10 +20,20 @@ export interface WisdomEntry {
   id: string;
   /** The traditional heuristic, phrased as a field saying. */
   saying: string;
+  /**
+   * Indonesian variant of `saying` (last i18n gap — narrative content is
+   * additive-only here; `saying` stays English and unchanged for existing
+   * consumers, e.g. this feeds a farmer-grandpa NPC's voice). Wiring this
+   * into the UI is a later pass — see src/app/collection/page.tsx:111-118
+   * (WisdomCollectionItem only carries the English fields today).
+   */
+  sayingId: string;
   /** Attribution. Must keep the replacement marker until §43 interviews exist. */
   source: string;
   /** What the saying means in measurable plant-science terms. */
   translation: string;
+  /** Indonesian variant of `translation` — same additive-only note as `sayingId`. */
+  translationId: string;
   /** The sensor-side expression of the same observation. */
   sensorLink: {
     /** The mood this observation usually maps to, when there is one. */
@@ -32,6 +42,8 @@ export interface WisdomEntry {
     metric: string;
     /** A concrete "saying ↔ reading" pairing. */
     example: string;
+    /** Indonesian variant of `example` — same additive-only note as `sayingId`. */
+    exampleId: string;
   };
 }
 
@@ -43,81 +55,114 @@ export const FARMER_WISDOM: WisdomEntry[] = [
     id: "heavy-air-at-midday",
     saying:
       "When the midday air sits heavy on the valley, plants suffer even if the soil is wet.",
+    sayingId:
+      "Saat udara siang terasa berat menggantung di lembah, tanaman menderita meski tanahnya basah.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "Tropical lowland air turns hot and humid by midday. Once a closed room passes 32°C, still humid air stops leaves from cooling themselves: transpiration slows and heat stress builds even though water is available at the roots — until the room is vented.",
+    translationId:
+      "Udara dataran rendah tropis jadi panas dan lembap menjelang siang. Begitu ruangan tertutup melewati 32°C, udara lembap yang diam membuat daun tak bisa mendinginkan diri: transpirasi melambat dan tekanan panas menumpuk meski air tersedia di akar — sampai ruangan diberi sirkulasi udara.",
     sensorLink: {
       mood: "Overheating",
       metric: "air temperature (°C) + air humidity (%)",
       example:
         "“heavy midday air” ↔ temperature 34.2°C + humidity 85% — past the 32°C venting threshold",
+      exampleId:
+        "“udara siang yang berat” ↔ suhu 34,2°C + kelembapan 85% — melewati ambang 32°C untuk perlu sirkulasi udara",
     },
   },
   {
     id: "dry-lips-dry-leaves",
     saying:
       "If your own lips feel dry in the dry season, the leaves are feeling it too.",
+    sayingId:
+      "Kalau bibirmu sendiri terasa kering di musim kemarau, daun-daun pun merasakannya juga.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "In musim kemarau (the dry season), dry air and indoor fans pull moisture out of leaves faster than the roots can supply it — a high vapor pressure deficit. It is the air around the plant, not the soil, that causes this stress; it eases only once the air is humid again.",
+    translationId:
+      "Di musim kemarau, udara kering dan kipas angin dalam ruangan menarik kelembapan keluar dari daun lebih cepat daripada akar bisa memasoknya — defisit tekanan uap yang tinggi. Udara di sekitar tanamanlah, bukan tanah, yang menyebabkan tekanan ini; ia mereda hanya setelah udara kembali lembap.",
     sensorLink: {
       mood: "DryAir",
       metric: "air humidity (%)",
       example:
         "“dry-season lips” ↔ air humidity 36%, below the 40% dry-air threshold (recovered at 45%)",
+      exampleId:
+        "“bibir kering musim kemarau” ↔ kelembapan udara 36%, di bawah ambang udara kering 40% (pulih di 45%)",
     },
   },
   {
     id: "coffee-shade-lesson",
     saying:
       "Shade trees over the coffee rows are planted with care — enough to soften the sun, never enough to starve the leaves.",
+    sayingId:
+      "Pohon peneduh di atas barisan kopi ditanam dengan penuh perhitungan — cukup untuk melunakkan matahari, tak pernah sampai membuat daun kelaparan cahaya.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "On the coffee slopes around Jember, shade is managed, not accidental: with too little light a plant cannot photosynthesize enough, so it spends its reserves stretching long, pale stems toward the nearest brightness. A windowsill herb needs its bright hours just as deliberately.",
+    translationId:
+      "Di lereng-lereng kopi sekitar Jember, naungan itu diatur, bukan kebetulan: dengan cahaya yang terlalu sedikit, tanaman tak bisa berfotosintesis cukup, jadi ia menghabiskan cadangan energinya untuk meregangkan batang panjang dan pucat mencari cahaya terdekat. Tanaman di ambang jendela pun perlu jam terangnya sendiri, sama sengajanya.",
     sensorLink: {
       mood: "Sleepy",
       metric: "light level (LDR bright/dark)",
       example:
         "“too much shade over the rows” ↔ light sensor reading dark for most of the afternoon",
+      exampleId:
+        "“naungan terlalu tebal di atas barisan tanaman” ↔ sensor cahaya membaca gelap sepanjang sebagian besar sore",
     },
   },
   {
     id: "sour-soil-after-rains",
     saying: "Soil that smells sour after the rains has turned sour itself.",
+    sayingId: "Tanah yang berbau asam setelah hujan memang sudah berubah jadi asam.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "Volcanic soil is fertile, but heavy rainy-season leaching and poor drainage can push it acidic. A sharp, sour smell often goes with that shift — and below pH 6.0, acidity locks nutrients away from the roots no matter how rich the ground is.",
+    translationId:
+      "Tanah vulkanik memang subur, tapi pencucian hara yang deras di musim hujan dan drainase yang buruk bisa mendorongnya jadi asam. Bau asam yang tajam sering menyertai perubahan ini — dan di bawah pH 6,0, keasaman mengunci unsur hara dari akar, sesubur apa pun tanahnya.",
     sensorLink: {
       mood: "SoilAcidic",
       metric: "calibrated soil pH",
       example: "“smells sour after the rains” ↔ soil pH 5.2, below the 6.0–7.0 healthy range",
+      exampleId: "“berbau asam setelah hujan” ↔ pH tanah 5,2, di bawah rentang sehat 6,0–7,0",
     },
   },
   {
     id: "pale-leaves-green-veins",
     saying:
       "Pale young leaves with green veins mean the food is in the soil but the plant cannot take it.",
+    sayingId:
+      "Daun muda yang pucat dengan urat hijau berarti makanannya ada di tanah, tapi tanaman tak bisa mengambilnya.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "Yellowing between green veins (chlorosis) on new leaves is a classic sign of iron lock-out in alkaline soil — common where hard tap water or over-liming pushes pH above 7.0. The nutrient is present but chemically unavailable to the roots.",
+    translationId:
+      "Menguningnya daun di antara urat hijau (klorosis) pada daun baru adalah tanda klasik zat besi yang terkunci di tanah basa — sering terjadi saat air keran yang keras atau kapur berlebih mendorong pH di atas 7,0. Unsur haranya ada, tapi secara kimia tak bisa diserap akar.",
     sensorLink: {
       mood: "SoilAlkaline",
       metric: "calibrated soil pH",
       example:
         "“pale leaves, green veins” ↔ soil pH 7.8, above the 6.0–7.0 healthy range",
+      exampleId: "“daun pucat, urat hijau” ↔ pH tanah 7,8, di atas rentang sehat 6,0–7,0",
     },
   },
   {
     id: "water-before-the-heat",
     saying:
       "In the dry season, water in the cool of morning, before the sun takes its share.",
+    sayingId:
+      "Di musim kemarau, siramlah di kesejukan pagi, sebelum matahari mengambil bagiannya.",
     source: PLACEHOLDER_SOURCE,
     translation:
       "During musim kemarau (the dry season), morning watering lets roots drink before midday heat drives evaporation and leaf stress. And when an afternoon reading passes 32°C, water alone is not enough — the room also needs venting so the leaves can cool.",
+    translationId:
+      "Selama musim kemarau, menyiram di pagi hari membiarkan akar minum sebelum panas siang mendorong penguapan dan tekanan pada daun. Dan saat pembacaan sore melewati 32°C, air saja tidak cukup — ruangan juga perlu sirkulasi udara agar daun bisa mendingin.",
     sensorLink: {
       metric: "air temperature (°C)",
       example:
         "“before the sun takes its share” ↔ watering done before readings climb past the 32°C venting threshold",
+      exampleId:
+        "“sebelum matahari mengambil bagiannya” ↔ penyiraman dilakukan sebelum pembacaan melewati ambang 32°C untuk sirkulasi udara",
     },
   },
 ];
