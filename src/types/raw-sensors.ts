@@ -1,0 +1,165 @@
+import type { CropProfile } from "@/lib/crop-profiles";
+import { normalizeMood, type PlantMood } from "@/types/events";
+
+export interface RawSensorReading {
+  plantId: string;
+  temperature: number;
+  humidity: number;
+  soilPH: number;
+  light: 0 | 1;
+  recordedAt: string;
+  readingId: string;
+}
+
+export type ParsedRawSensorReading =
+  | { ok: true; reading: RawSensorReading }
+  | { ok: false; error: string };
+
+function finiteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function parseRecordedAt(value: unknown, now: Date): Date | null {
+  if (value === undefined || value === null) return now;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  if (typeof value !== "string") return null;
+  const ISO_WITH_OFFSET =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
+  if (!ISO_WITH_OFFSET.test(value)) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function looksLikeRawSensorPayload(input: unknown): boolean {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) return false;
+  const body = input as Record<string, unknown>;
+  const hasSensorField = ["temperature", "humidity", "soilPH", "soilPh", "light"].some(
+    (key) => Object.hasOwn(body, key),
+  );
+  return (
+    hasSensorField ||
+    (Object.hasOwn(body, "plantId") && !Object.hasOwn(body, "eventId") && !Object.hasOwn(body, "type"))
+  );
+}
+
+/** Validates the flat payload produced by the new Node-RED flow. */
+export function parseRawSensorReading(
+  input: unknown,
+  now: Date = new Date(),
+): ParsedRawSensorReading {
+  if (Number.isNaN(now.getTime())) return { ok: false, error: "invalid server time" };
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return { ok: false, error: "body must be a JSON object" };
+  }
+  const body = input as Record<string, unknown>;
+  const plantId = typeof body.plantId === "string" ? body.plantId.trim() : "";
+  if (!plantId || plantId.length > 64) {
+    return { ok: false, error: "plantId must be a non-empty string (max 64 chars)" };
+  }
+
+  const temperature = finiteNumber(body.temperature);
+  const humidity = finiteNumber(body.humidity);
+  const soilPH = finiteNumber(body.soilPH ?? body.soilPh);
+  const light = finiteNumber(body.light);
+  if (temperature === null || humidity === null || soilPH === null || light === null) {
+    return {
+      ok: false,
+      error: "temperature, humidity, soilPH, and light must all be finite numbers",
+    };
+  }
+  if (temperature < -40 || temperature > 100) {
+    return { ok: false, error: "temperature must be between -40 and 100°C" };
+  }
+  if (humidity < 0 || humidity > 100) {
+    return { ok: false, error: "humidity must be between 0 and 100%" };
+  }
+  if (soilPH < 0 || soilPH > 14) {
+    return { ok: false, error: "soilPH must be between 0 and 14" };
+  }
+  if (light !== 0 && light !== 1) {
+    return { ok: false, error: "light must be 0 (dark) or 1 (bright)" };
+  }
+
+  const recordedAt = parseRecordedAt(body.recordedAt ?? body.timestamp, now);
+  if (!recordedAt) {
+    return {
+      ok: false,
+      error: "timestamp must be epoch milliseconds or ISO 8601 with a timezone offset",
+    };
+  }
+  if (recordedAt.getTime() > now.getTime() + 10 * 60_000) {
+    return { ok: false, error: "timestamp is more than 10 minutes in the future" };
+  }
+
+  const rawReadingId = body.readingId;
+  if (
+    rawReadingId !== undefined &&
+    (typeof rawReadingId !== "string" || !rawReadingId.trim() || rawReadingId.trim().length > 96)
+  ) {
+    return { ok: false, error: "readingId must be a non-empty string (max 96 chars) when provided" };
+  }
+  const recordedAtIso = recordedAt.toISOString();
+  const readingId =
+    typeof rawReadingId === "string"
+      ? rawReadingId.trim()
+      : `raw:${plantId}:${recordedAtIso}`;
+
+  return {
+    ok: true,
+    reading: {
+      plantId,
+      temperature,
+      humidity,
+      soilPH,
+      light: light as 0 | 1,
+      recordedAt: recordedAtIso,
+      readingId,
+    },
+  };
+}
+
+export function isCropLightingHours(date: Date, profile: CropProfile): boolean {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      hour12: false,
+      hourCycle: "h23",
+      timeZone: profile.timezone,
+    }).format(date),
+  );
+  const { start, end } = profile.light.lightingHours;
+  return start < end ? hour >= start && hour < end : hour >= start || hour < end;
+}
+
+/**
+ * Server-side equivalent of Node-RED's former Combine Plant State function.
+ * Priority is heat → dry air → daytime darkness → soil pH → healthy.
+ */
+export function determinePlantMood(
+  reading: Pick<RawSensorReading, "temperature" | "humidity" | "soilPH" | "light">,
+  currentValue: unknown,
+  profile: CropProfile,
+  duringLightingHours: boolean,
+): PlantMood {
+  const currentMood = normalizeMood(currentValue) ?? "Happy";
+  const overheating =
+    currentMood === "Overheating"
+      ? reading.temperature > profile.temperature.overheating.recoverAtOrBelow
+      : reading.temperature >= profile.temperature.overheating.enterAtOrAbove;
+  if (overheating) return "Overheating";
+
+  const dryAir =
+    currentMood === "DryAir"
+      ? reading.humidity < profile.airHumidity.dryAir.recoverAtOrAbove
+      : reading.humidity < profile.airHumidity.dryAir.enterBelow;
+  if (dryAir) return "DryAir";
+  if (duringLightingHours && reading.light !== profile.light.requiredDuringLightingHours) {
+    return "Sleepy";
+  }
+  if (reading.soilPH < profile.soilPh.recommended.min) return "SoilAcidic";
+  if (reading.soilPH > profile.soilPh.recommended.max) return "SoilAlkaline";
+  return "Happy";
+}
