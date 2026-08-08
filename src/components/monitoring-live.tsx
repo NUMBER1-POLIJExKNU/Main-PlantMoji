@@ -7,10 +7,40 @@
 // callbacks), and "last updated" is client-only state so hydration matches.
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import SensorGauge from "@/components/sensor-gauge";
-import LightChart, { formatTime, type LightMode, type LightPoint } from "@/components/light-chart";
+import type { LightMode, LightPoint } from "@/components/light-chart";
 
 const REFRESH_MS = 10_000;
+
+// recharts is the heaviest dependency in the app; light-chart.tsx pulls it
+// in, so it's loaded on demand (client-only, no SSR) instead of shipping in
+// the initial /monitoring bundle. Only type-only imports of light-chart.tsx
+// remain above — those are erased at compile time and carry no runtime cost,
+// so this file has no static value import of the recharts-bearing module.
+const LightChart = dynamic(() => import("@/components/light-chart"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[260px] w-full animate-pulse items-center justify-center text-sm text-[#57684F]">
+      …
+    </div>
+  ),
+});
+
+// Local copy of light-chart's formatTime: keeping this here (instead of a
+// static import from light-chart.tsx) means "Last updated" formatting never
+// pulls the recharts-bearing module into this file's static import graph.
+const timeFormat = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+/** 1717082973000 → "20:14:33" (viewer's local time). Mirrors light-chart.tsx's formatTime. */
+function formatTime(ms: number): string {
+  return timeFormat.format(new Date(ms));
+}
 
 interface LatestReading {
   recorded_at?: string | null;
