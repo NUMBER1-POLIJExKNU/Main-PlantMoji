@@ -38,7 +38,14 @@ const growthDateFormat = new Intl.DateTimeFormat("en-US", {
   timeZone: STREAK_TIMEZONE,
 });
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // Presentation tooling stays out of the normal student UX (spec §2.3):
+  // the Demo Control Center only renders on /settings?demo=1.
+  const showDemo = (await searchParams).demo === "1";
   const locale = await getRequestLocale();
   const supabase = getServerSupabase();
 
@@ -109,21 +116,23 @@ export default async function SettingsPage() {
     chapter: 1,
     totalChapters: CHAPTER_DEFINITIONS.length,
   };
-  try {
-    const [bond, badges] = await Promise.all([
-      getBondState(supabase, plant.id),
-      getUnlockedBadges(supabase, plant.id),
-    ]);
-    demoProgress = {
-      ...demoProgress,
-      level: bond?.bond_level ?? 1,
-      totalXp: bond?.total_xp ?? 0,
-      streak: bond?.current_streak ?? 0,
-      chapter: bond?.current_chapter ?? 1,
-      badges: badges.length,
-    };
-  } catch (cause) {
-    console.error("SettingsPage demo progress failed:", cause);
+  if (showDemo) {
+    try {
+      const [bond, badges] = await Promise.all([
+        getBondState(supabase, plant.id),
+        getUnlockedBadges(supabase, plant.id),
+      ]);
+      demoProgress = {
+        ...demoProgress,
+        level: bond?.bond_level ?? 1,
+        totalXp: bond?.total_xp ?? 0,
+        streak: bond?.current_streak ?? 0,
+        chapter: bond?.current_chapter ?? 1,
+        badges: badges.length,
+      };
+    } catch (cause) {
+      console.error("SettingsPage demo progress failed:", cause);
+    }
   }
 
   return (
@@ -321,6 +330,7 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      {showDemo && (
       <section className="mt-5 rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 shadow-sm dark:border-amber-900/70 dark:bg-amber-950/30">
         <div className="mb-4 flex items-start gap-3">
           <span className="text-3xl leading-none" role="img" aria-hidden="true">
@@ -339,6 +349,7 @@ export default async function SettingsPage() {
         </div>
         <DemoControlCenter locale={locale} progress={demoProgress} />
       </section>
+      )}
     </main>
   );
 }
