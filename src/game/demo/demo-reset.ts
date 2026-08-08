@@ -8,6 +8,8 @@ export const DEMO_RESET_TABLES = [
   "plant_badges",
   "quests",
   "device_events",
+  "companion_evolutions",
+  "daily_quiz_attempts",
 ] as const;
 
 export class DemoResetError extends Error {
@@ -75,5 +77,15 @@ export async function resetDemoProgress(supabase: SupabaseClient, plantId: strin
     throw new DemoResetError(`failed to reset plants: ${plantResetError.message}`, "database");
   }
 
-  return { plantId, cleared };
+  const { error: companionError } = await supabase.from("companion_state").upsert({
+    plant_id: plantId,
+    cycle: 1,
+    stage: "Seed",
+    form_key: "balanced",
+    last_evolved_at: null,
+    updated_at: nowIso,
+  }, { onConflict: "plant_id" });
+  if (companionError) throw new DemoResetError(`failed to reset companion_state: ${companionError.message}`, "database");
+
+  return { plantId, cleared, companionStage: "Seed", companionForm: "balanced" };
 }

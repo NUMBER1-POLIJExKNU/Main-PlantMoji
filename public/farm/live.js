@@ -8,6 +8,36 @@
 
 const PLANT_ID = "plant-01";
 const LOCALE_KEY = "plantmoji_locale";
+const BADGE_EFFECT_STORAGE_KEY = "plantmoji_badge_effect_v1";
+const BADGE_TAP_EFFECTS = {
+  FIRST_RESCUE:["💚","✨","💚"], LIGHT_MASTER:["☀️","✨","🌟"], LEVEL_5_BOND:["💚","💛","💚"],
+  COOL_KEEPER:["❄️","🧊","❄️"], PH_GUARDIAN:["🌱","✨","🌿"], STREAK_7:["🔥","7️⃣","🔥"],
+  HUMIDITY_HERO:["💧","☁️","💦"], MOOD_SCHOLAR:["😊","😮","🤓"], CARE_VETERAN:["⭐","🌟","⭐"],
+  CHRONICLER:["✏️","📓","✨"], STREAK_30:["🏆","✨","🌟"], LEVEL_10_BOND:["💛","👑","💛","✨"],
+};
+
+function activeBadgeEffect() {
+  try { return localStorage.getItem(BADGE_EFFECT_STORAGE_KEY); } catch { return null; }
+}
+
+function spawnBadgeTapEffect(rect) {
+  const key = activeBadgeEffect();
+  const particles = BADGE_TAP_EFFECTS[key];
+  if (!particles) return false;
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * .42;
+  particles.forEach((glyph, index) => {
+    const el = document.createElement("span");
+    el.className = "badge-tap-particle";
+    el.textContent = glyph;
+    el.style.left = `${cx + (index - (particles.length - 1) / 2) * 34}px`;
+    el.style.top = `${cy + Math.abs(index - 1) * 8}px`;
+    el.style.setProperty("--tap-x", `${(index - (particles.length - 1) / 2) * 26}px`);
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  });
+  return key === "LEVEL_10_BOND";
+}
 
 // STATIC farm-page strings, Bahasa Indonesia default with an EN toggle
 // (restored dac0528 mechanism). DYNAMIC celebration copy lives in the
@@ -18,10 +48,10 @@ const COPY = {
   id: {
     "nav.home": "Beranda",
     "nav.quests": "Misi",
-    "nav.diary": "Buku Harian",
-    "nav.status": "Status Tanaman",
+    "nav.plants": "Tanaman",
+    "nav.status": "Dashboard",
     "nav.collection": "Koleksi",
-    "nav.reports": "Laporan Mingguan",
+    "nav.reports": "Laporan",
     "nav.settings": "Pengaturan",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
@@ -49,10 +79,10 @@ const COPY = {
   en: {
     "nav.home": "Home",
     "nav.quests": "Quests",
-    "nav.diary": "Growth Diary",
-    "nav.status": "Plant Status",
+    "nav.plants": "Plants",
+    "nav.status": "Dashboard",
     "nav.collection": "Collection",
-    "nav.reports": "Weekly Report",
+    "nav.reports": "Report",
     "nav.settings": "Settings",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
@@ -184,6 +214,40 @@ function cancelPetBubble() {
 
 // Cross-render state for speech-bubble request de-duplication.
 let lastMoodFetched = null; // mood already sent to /api/mood-message
+let currentCompanionStage = "Seed";
+const DIALOGUE_RECENT_KEY = "pm_dialogue_recent_v1";
+const DIALOGUE_RECENT_LIMIT = 20;
+
+function chooseFreshDialogue(candidates) {
+  const lines = [...new Set((Array.isArray(candidates) ? candidates : []).filter((line) => typeof line === "string" && line.trim()))];
+  if (!lines.length) return null;
+  let recent = [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DIALOGUE_RECENT_KEY) || "[]");
+    if (Array.isArray(parsed)) recent = parsed.filter((line) => typeof line === "string").slice(-DIALOGUE_RECENT_LIMIT);
+  } catch {}
+  const available = lines.filter((line) => !recent.includes(line));
+  const line = (available.length ? available : lines)[Math.floor(Math.random() * (available.length || lines.length))];
+  try {
+    localStorage.setItem(DIALOGUE_RECENT_KEY, JSON.stringify([...recent.filter((item) => item !== line), line].slice(-DIALOGUE_RECENT_LIMIT)));
+  } catch {}
+  return line;
+}
+
+function renderCompanion(state) {
+  if (!state) return; // migration absent: preserve the original mascot
+  const stage = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"].includes(state.stage) ? state.stage : "Seed";
+  currentCompanionStage = stage;
+  const form = state.form_key || "balanced";
+  const label = $("#companion-stage");
+  if (label) label.textContent = `COMPANION · ${stage.toUpperCase()} · ${String(form).toUpperCase()}`;
+  const svg = $(".mascot-svg");
+  if (svg) {
+    for (const value of ["Seed", "Sprout", "Bud", "Bloom", "Guardian"]) svg.classList.remove(`companion-${value}`);
+    svg.classList.add(`companion-${stage}`);
+    svg.dataset.companionForm = form;
+  }
+}
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -258,6 +322,7 @@ const FX_CSS = `
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
 .fx-confetti, .fx-sparkle, .fx-heart { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
 .fx-heart { background: var(--color-cheek, #FF9E9E); clip-path: polygon(50% 100%, 0 40%, 0 15%, 25% 0, 50% 20%, 75% 0, 100% 15%, 100% 40%); }
+.fx-note { position: fixed; font-family: var(--font-heading, monospace); font-size: 15px; color: #39456B; text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.55); will-change: transform, opacity; }
 .fx-why-card { position: fixed; max-width: 320px; font-family: var(--font-body, sans-serif); font-size: 13px; line-height: 1.5; color: var(--color-text, #243421); background: var(--color-surface, #fff); border: 3px solid var(--color-border, #BCD3B4); border-radius: 12px; box-shadow: 0 4px 0 rgba(36,52,33,.15); padding: 10px 14px; text-align: center; will-change: transform, opacity; }
 .fx-chip { position: fixed; font-family: var(--font-heading, monospace); font-size: 12px; color: #fff; background: var(--color-grass, #69C455); border: 2px solid var(--color-outline, #2B3A27); box-shadow: 0 3px 0 var(--color-outline, #2B3A27); border-radius: 10px; padding: 5px 10px; white-space: nowrap; will-change: transform, opacity; }
 .fx-chip-streak { background: #FF9C4B; }
@@ -530,14 +595,17 @@ function floatChip(text, rect, variant) {
 
 /** Single pixel heart rising from the mascot (petting). */
 function spawnHeart(rect) {
-  if (prefersReducedMotion() || !rect) return;
+  if (!rect) return;
+  const reduce = prefersReducedMotion();
   const layer = ensureFxLayer();
   if (!layer) return;
   if (liveParticles >= MAX_PARTICLES) return;
   const heart = document.createElement("div");
   heart.className = "fx-heart";
   heart.setAttribute("aria-hidden", "true");
-  const size = 12 + Math.floor(Math.random() * 6);
+  // Large enough to read as an intentional pet reaction on the full-size
+  // desktop stage, while still remaining a single lightweight particle.
+  const size = 22 + Math.floor(Math.random() * 8);
   heart.style.width = `${size}px`;
   heart.style.height = `${size}px`;
   heart.style.left = `${rect.left + rect.width * (0.3 + Math.random() * 0.4)}px`;
@@ -546,14 +614,16 @@ function spawnHeart(rect) {
   liveParticles++;
   animateSafe(
     heart,
-    [
-      { transform: "translateY(0) scale(0.6)", opacity: 0 },
-      { transform: "translateY(-14px) scale(1)", opacity: 1, offset: 0.3 },
-      { transform: "translateY(-44px) scale(1)", opacity: 0 },
-    ],
-    { duration: 700, easing: "steps(7, end)", fill: "forwards" },
+    reduce
+      ? [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }]
+      : [
+          { transform: "translateY(0) scale(0.55)", opacity: 0 },
+          { transform: "translateY(-20px) scale(1.15)", opacity: 1, offset: 0.28 },
+          { transform: "translateY(-72px) scale(1)", opacity: 0 },
+        ],
+    { duration: 900, easing: reduce ? "linear" : "steps(9, end)", fill: "forwards" },
   );
-  removeLater(heart, 800, true);
+  removeLater(heart, 1000, true);
 }
 
 /** Floating "why" card — a readable sentence (care honesty copy), longer
@@ -1305,7 +1375,7 @@ const CARE_KEY_BY_MOOD = {
 // English fallbacks — PM_STRINGS.care carries the localized copy.
 const CARE_FALLBACK = {
   Overheating: { label: "Move me to shade 🌳", why: "Find a cooler, shadier spot. The temperature sensor will feel the difference." },
-  DryAir: { label: "Move me away from drafts 🌬️", why: "Fans and AC dry my air. The humidity sensor will notice when it's cozier." },
+  DryAir: { label: "Move me away from fans & AC 🌬️", why: "Fans and AC can dry the air around my leaves. This is about air humidity, not watering my soil; the humidity sensor will check the change." },
   Sleepy: { label: "Show me some light ☀️", why: "Open the curtains or move me near a window. The light sensor will see it." },
   Soil: { label: "Check my soil with a teacher 🧑‍🏫", why: "Soil pH needs an adult's help. Never add anything to the pot by yourself." },
   Happy: { label: "Pet me — or write my diary 📖", why: "I'm feeling great! Want to remember today? Write a line in my Growth Diary." },
@@ -1370,12 +1440,17 @@ function updateCareUi() {
   const firstEval = sleepShown === null;
   sleepShown = sleepNow;
   applyCareButton();
+  // Dusk sky + fireflies + grandpa (living world): WIB-clock STATE that is
+  // deliberately INDEPENDENT of sleepShown — a problem mood keeps Jamkachu
+  // awake, but the sky must stay honest about the real time of day.
+  applyNightUi();
   $(".mascot-svg")?.classList.toggle("face-asleep", sleepNow);
   $(".mascot-wrapper")?.classList.toggle("breath-slow", sleepNow);
   if (!changed) return;
   const bubble = $(".speech-bubble");
   if (sleepNow) {
     cancelPetBubble(); // a stale pet-line restore must never stomp the sleep bubble
+    gazeReset(); // curious gaze: pupils ease home before the lids close
     if (bubble) bubble.textContent = `"${PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble}"`;
     if (!firstEval) window.PMSfx?.play("pet");
   } else if (!firstEval && bubble) {
@@ -1455,6 +1530,68 @@ let petSatiatedUntil = 0;
 let petTapTimes = [];
 let petLineIndex = 0;
 
+// ── Tactile interactions (curious gaze / double-tap hop / body-part pokes /
+// mood-aware petting / long-press lean-in / night lullaby stroke) ─────────
+// All pure presentation: ZERO XP, zero writes, no hidden counters — the
+// existing pet cooldown/satiation state above is the ONLY pacing mechanism;
+// everything else here is gesture-detection timestamps and rotation indexes.
+const DOUBLE_TAP_MS = 300;
+const LEAN_HOLD_MS = 600;
+const LEAN_CANCEL_DIST = 14; // px of drift that turns a hold into a drag
+const LULLABY_MAX_SPEED = 0.15; // px/ms — average speed of a gentle stroke
+const LULLABY_MIN_MS = 500;
+const LULLABY_MIN_DIST = 24; // the stroke must actually travel across
+const LULLABY_CARD_COOLDOWN_MS = 60_000; // why-card at most once per minute
+const LULLABY_BREATH_MS = 5000;
+const PET_SURPRISE_FALLBACK = "Whee!";
+const LEAN_IN_FALLBACK = "Mmm… staying close to you is my favorite.";
+const LULLABY_FALLBACK = {
+  why: "Your slow, gentle stroke felt like a lullaby 🎵 Jamkachu is sleeping even more soundly.",
+};
+const POKE_FALLBACK = {
+  pot: "Boom! Tiny pot drum! 🥁",
+  potSticker: "Hey! That's my favorite sticker. 💚",
+  stem: "Hihi, that's my tummy — it tickles!",
+};
+// English fallbacks for the mood-aware comfort petting lines (item 4);
+// PM_STRINGS.petComfort carries the localized sets. Each line is gratitude
+// plus the real sensor-backed fix — mirrors the care-button honesty rules
+// (never watering/fertilizing: those sensors do not exist).
+const PET_COMFORT_FALLBACK = {
+  Overheating: [
+    "Thanks… a cooler, shadier spot would feel even better.",
+    "Your hands help… but this room is really warm right now.",
+    "Phew… some shade would be lovely.",
+    "That's nice… the temperature sensor still says it's hot, though.",
+    "A little cooler and I'll be all smiles again.",
+  ],
+  DryAir: [
+    "That feels nice… the air is still pretty dry, though.",
+    "Thanks… away from fans and drafts, my air gets cozier.",
+    "Sweet of you… moister air would be even sweeter.",
+    "The humidity sensor still says the air is very dry.",
+    "A calmer, less breezy spot would feel wonderful.",
+  ],
+  Sleepy: [
+    "Thanks… some light would wake me right up.",
+    "So cozy… but it's pretty dark in here right now.",
+    "Your hands are warm… a bright window would be dreamy.",
+    "The light sensor says it's dark right now.",
+    "A little daylight and I'll perk right up.",
+  ],
+  Soil: [
+    "Thanks… my soil still feels a bit funny, though.",
+    "That helps… could a teacher check my soil pH with you?",
+    "The pH sensor says my soil isn't quite right yet.",
+    "Soil fixes need a grown-up — never add anything to my pot alone, okay?",
+    "Your pets are sweet… my soil could use an adult's check.",
+  ],
+};
+let lastPetTapAt = 0; // double-tap detector (surprise hop)
+let petComfortIndex = 0; // comfort-line rotation (mood-aware petting)
+let lullabyCardAt = 0; // 60s why-card gate (spec'd rate limit, not a counter)
+let lullabyBreathTimer = null;
+
 /** Temporarily replace the speech bubble with `line`, restoring the saved
  *  mood bubble after `ms` — the petting mechanism, shared by the pressable
  *  vitals (T19) and the memory rotation (spec §6.5) so every transient line
@@ -1474,7 +1611,21 @@ function showTransientBubble(line, ms) {
   }, ms);
 }
 
-function petMascot() {
+/** Shared satiation accounting (in-fiction only, never persisted): the 5th
+ *  interaction inside the rolling window engages the existing 10s rest.
+ *  Callers show the yawn line when this returns true. */
+function petSatiationHit(now) {
+  if (petTapTimes.length < 5) return false;
+  petSatiatedUntil = now + PET_SATIATION_MS;
+  petTapTimes = [];
+  return true;
+}
+
+function petYawnLine() {
+  return PM().pettingYawn ?? "So cozy… Jamkachu needs a tiny nap now. Zzz…";
+}
+
+function petMascot(part = "head") {
   // Night sleep (spec §6.2): a sleeping Jamkachu is never squash-animated,
   // hearted, or chatted awake — mirror the care button's quiet good-night
   // path (soft tick + the shh card on its shared 30s cooldown) and leave
@@ -1485,31 +1636,70 @@ function petMascot() {
     return;
   }
   const now = Date.now();
-  if (now < petCooldownUntil || now < petSatiatedUntil) return;
+  // Double-tap surprise hop: a second tap inside 300ms used to die silently
+  // in the pet cooldown — now it becomes one big hop. The pair still counts
+  // as the ONE pet the first tap already recorded, so interaction volume
+  // never rises (no extra satiation entry, cooldown re-armed like a pet).
+  const sinceLastTap = now - lastPetTapAt;
+  lastPetTapAt = now;
+  if (now < petSatiatedUntil) return;
+  if (sinceLastTap <= DOUBLE_TAP_MS && now < petCooldownUntil) {
+    lastPetTapAt = 0; // a third tap never chains a second hop
+    surpriseHop(now);
+    return;
+  }
+  if (now < petCooldownUntil) return;
   petCooldownUntil = now + PET_COOLDOWN_MS;
   petTapTimes = petTapTimes.filter((time) => now - time < PET_WINDOW_MS);
   petTapTimes.push(now);
 
+  // Body-part router (stateless, pure geometry): pot knocks and stem boops
+  // share the cooldown + satiation accounting above; the head continues
+  // into the shipped petting below, exactly as before.
+  if (part === "pot") {
+    potKnock(now);
+    return;
+  }
+  if (part === "stem") {
+    stemBoop(now);
+    return;
+  }
+
   window.PMSfx?.play("pet");
   const wrapper = $(".mascot-wrapper");
   if (wrapper && !prefersReducedMotion()) {
+    // Mood-aware petting: a not-Happy Jamkachu gets a softer squash.
+    const mid = careMood === "Happy" ? "scale(1.1, 0.9)" : "scale(1.06, 0.94)";
     animateSafe(
       wrapper,
       [
         { transform: "scale(1, 1)" },
-        { transform: "scale(1.06, 0.94)" },
+        { transform: mid },
         { transform: "scale(1, 1)" },
       ],
-      { duration: 150, easing: "steps(3, end)" },
+      { duration: 210, easing: "steps(4, end)" },
     );
   }
   spawnHeart(wrapper ? wrapper.getBoundingClientRect() : null);
+  const bestFriendHug = spawnBadgeTapEffect(wrapper ? wrapper.getBoundingClientRect() : mascotRect());
+  if (bestFriendHug) {
+    setTimeout(() => spawnHeart(mascotRect()), 90);
+    setTimeout(() => spawnHeart(mascotRect()), 180);
+  }
 
   let line;
-  if (petTapTimes.length >= 5) {
-    line = PM().pettingYawn ?? "So cozy… Jamkachu needs a tiny nap now. Zzz…";
-    petSatiatedUntil = now + PET_SATIATION_MS;
-    petTapTimes = [];
+  if (petSatiationHit(now)) {
+    line = petYawnLine();
+  } else if (bestFriendHug) {
+    line = appLocale === "id" ? "Pelukan sahabat! Sebentar lagi ya. 💛" : "Best-friend hug! Stay a little longer. 💛";
+  } else if (careMood !== "Happy" && CARE_KEY_BY_MOOD[careMood]) {
+    // Comfort lines (item 4): gratitude + the real sensor-backed fix the
+    // mood engine already knows about. Both soil moods share one family.
+    const family = CARE_KEY_BY_MOOD[careMood];
+    const table = PM().petComfort?.[family];
+    const set = Array.isArray(table) && table.length > 0 ? table : PET_COMFORT_FALLBACK[family];
+    line = set[petComfortIndex % set.length];
+    petComfortIndex++;
   } else {
     const lines = Array.isArray(PM().petting) && PM().petting.length > 0 ? PM().petting : PET_FALLBACK_LINES;
     line = lines[petLineIndex % lines.length];
@@ -1517,6 +1707,355 @@ function petMascot() {
   }
 
   showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Double-tap surprise hop (item 2): one big steps(4) hop + wide-eye pupils
+ *  + an excited line. Reduced motion keeps the eye swap and the line. */
+function surpriseHop(now) {
+  petCooldownUntil = now + PET_COOLDOWN_MS; // hops pace exactly like pets
+  window.PMSfx?.play("boing");
+  $(".mascot-svg")?.classList.add("eyes-wide");
+  setTimeout(() => $(".mascot-svg")?.classList.remove("eyes-wide"), 700);
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper && !prefersReducedMotion()) {
+    animateSafe(
+      wrapper,
+      [
+        { transform: "translateY(0)" },
+        { transform: "translateY(-18px)", offset: 0.4 },
+        { transform: "translateY(0)" },
+      ],
+      { duration: 420, easing: "steps(4, end)" },
+    );
+  }
+  showTransientBubble(PM().petSurprise ?? PET_SURPRISE_FALLBACK, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Pot knock (item 3): shakes ONLY the pot group; the line swaps when the
+ *  Lv.2 heart-sticker decoration is visible on the pot. */
+function potKnock(now) {
+  window.PMSfx?.play("knock");
+  const pot = $(".mascot-pot");
+  if (pot && !prefersReducedMotion()) {
+    animateSafe(
+      pot,
+      [
+        { transform: "translateX(0)" },
+        { transform: "translateX(-3px)" },
+        { transform: "translateX(3px)" },
+        { transform: "translateX(-2px)" },
+        { transform: "translateX(0)" },
+      ],
+      { duration: 320, easing: "steps(4, end)" },
+    );
+  }
+  let line;
+  if (petSatiationHit(now)) {
+    line = petYawnLine();
+  } else if ($(".mascot-svg")?.classList.contains("decor-lv2")) {
+    line = PM().poke?.potSticker ?? POKE_FALLBACK.potSticker;
+  } else {
+    line = PM().poke?.pot ?? POKE_FALLBACK.pot;
+  }
+  showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Stem boop (item 3): quick 1.03 stretch + tummy-giggle line, "blip" cue. */
+function stemBoop(now) {
+  window.PMSfx?.play("blip");
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper && !prefersReducedMotion()) {
+    animateSafe(
+      wrapper,
+      [
+        { transform: "scale(1, 1)" },
+        { transform: "scale(0.99, 1.03)" },
+        { transform: "scale(1, 1)" },
+      ],
+      { duration: 200, easing: "steps(3, end)" },
+    );
+  }
+  const line = petSatiationHit(now) ? petYawnLine() : (PM().poke?.stem ?? POKE_FALLBACK.stem);
+  showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Map a pointer position into the mascot's 300x350 viewBox and name the
+ *  body part under it (stateless geometry; unknown/degenerate ⇒ head). */
+function mascotPartAt(clientX, clientY) {
+  const svg = $(".mascot-svg");
+  if (!svg) return "head";
+  const rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return "head";
+  const x = ((clientX - rect.left) / rect.width) * 300;
+  const y = ((clientY - rect.top) / rect.height) * 350;
+  if (y >= 190) return "pot"; // pot rim (y=190) downward
+  if (y > 120 && x >= 125 && x <= 175) return "stem"; // stem column below head
+  return "head"; // head block + leaves keep the shipped petting
+}
+
+// ── Mascot pointer pipeline (items 2/3/5/6) ─────────────────────────────
+// One pointerdown/move/up pipeline on .mascot-wrapper routes: quick tap →
+// body-part petting (on release), double tap → hop, ≥600ms head hold →
+// lean-in, and — only while asleep — a slow gentle drag → night lullaby.
+// A single active pointer at a time; pointercancel aborts quietly.
+
+let mascotDown = null; // { id, t, x, y, part, asleep, dist, lastX, lastY, spent }
+let leanTimer = null; // pending 600ms hold detector
+let leanSide = null; // "left" | "right" while the lean-in is held
+
+/** Drop every lean visual (and any pending hold timer). `settle` plays the
+ *  gentle steps() return-to-upright when motion is allowed. */
+function clearLean(settle) {
+  if (leanTimer !== null) {
+    clearTimeout(leanTimer);
+    leanTimer = null;
+  }
+  const side = leanSide;
+  leanSide = null;
+  $(".mascot-svg")?.classList.remove("lean-cheeks");
+  const wrapper = $(".mascot-wrapper");
+  if (!wrapper || !side) return;
+  wrapper.classList.remove("lean-left", "lean-right");
+  if (settle && !prefersReducedMotion()) {
+    const from = side === "left" ? -3 : 3;
+    animateSafe(
+      wrapper,
+      [
+        { transform: `rotate(${from}deg)` },
+        { transform: `rotate(${-from / 3}deg)` },
+        { transform: "rotate(0deg)" },
+      ],
+      { duration: 350, easing: "steps(4, end)" },
+    );
+  }
+}
+
+/** 600ms hold reached: begin the lean-in (head region, awake only). The
+ *  shared pet pacing still applies — satiated/cooldown holds do nothing,
+ *  and the release then falls through to petMascot's own guards. */
+function beginLean() {
+  leanTimer = null;
+  if (!mascotDown || mascotDown.asleep || sleepShown) return;
+  if (mascotDown.dist > LEAN_CANCEL_DIST) return; // a drag, not a hold
+  const now = Date.now();
+  if (now < petSatiatedUntil || now < petCooldownUntil) return;
+  const rect = mascotRect();
+  leanSide = mascotDown.x < rect.left + rect.width / 2 ? "left" : "right";
+  $(".mascot-svg")?.classList.add("lean-cheeks");
+  $(".mascot-wrapper")?.classList.add(leanSide === "left" ? "lean-left" : "lean-right");
+}
+
+/** Lean-in release: settle upright with ONE heart, a warm line, and the
+ *  purr cue. Counts as one pet (cooldown + satiation entry). */
+function releaseLean() {
+  clearLean(true);
+  if (sleepShown) return; // slipped into sleep mid-hold — let go quietly
+  const now = Date.now();
+  window.PMSfx?.play("purr");
+  petCooldownUntil = now + PET_COOLDOWN_MS; // a lean-in paces like a pet
+  petTapTimes = petTapTimes.filter((time) => now - time < PET_WINDOW_MS);
+  petTapTimes.push(now); // satiation still applies (one interaction)
+  spawnHeart(mascotRect()); // exactly one heart (skips itself under reduce)
+  const line = petSatiationHit(now) ? petYawnLine() : (PM().leanIn ?? LEAN_IN_FALLBACK);
+  showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Sleeping-mascot release: a slow gentle drag becomes a lullaby; anything
+ *  quicker keeps the shipped tick + shh behavior. */
+function evaluateLullaby(down) {
+  const duration = Date.now() - down.t;
+  const gentle =
+    duration >= LULLABY_MIN_MS &&
+    down.dist >= LULLABY_MIN_DIST &&
+    down.dist / duration < LULLABY_MAX_SPEED;
+  if (!gentle) {
+    window.PMSfx?.play("tick");
+    maybeWhyCard(PM().sleep?.why ?? SLEEP_FALLBACK.why, mascotRect());
+    return;
+  }
+  nightLullaby();
+}
+
+/** Night lullaby (item 6): ONE soft note pixel floats up, the sleeping
+ *  breath deepens ~10% for 5s, and (max once per 60s) a why-card explains
+ *  the hum. Jamkachu stays asleep — bubble and face are never touched. */
+function nightLullaby() {
+  window.PMSfx?.play("lullaby");
+  spawnLullabyNote(mascotRect());
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper) {
+    wrapper.classList.add("breath-deep");
+    if (lullabyBreathTimer !== null) clearTimeout(lullabyBreathTimer);
+    lullabyBreathTimer = setTimeout(() => {
+      lullabyBreathTimer = null;
+      $(".mascot-wrapper")?.classList.remove("breath-deep");
+    }, LULLABY_BREATH_MS);
+  }
+  const now = Date.now();
+  if (now - lullabyCardAt >= LULLABY_CARD_COOLDOWN_MS) {
+    lullabyCardAt = now;
+    floatWhyCard(PM().lullaby?.why ?? LULLABY_FALLBACK.why, mascotRect());
+  }
+}
+
+/** One pixel musical note drifting up from the sleeping mascot. Rides the
+ *  shared particle budget; skipped under reduced motion. */
+function spawnLullabyNote(rect) {
+  if (prefersReducedMotion() || !rect) return;
+  const layer = ensureFxLayer();
+  if (!layer || liveParticles >= MAX_PARTICLES) return;
+  const note = document.createElement("div");
+  note.className = "fx-note";
+  note.setAttribute("aria-hidden", "true");
+  note.textContent = "♪";
+  note.style.left = `${rect.left + rect.width * 0.5}px`;
+  note.style.top = `${rect.top + rect.height * 0.3}px`;
+  layer.appendChild(note);
+  liveParticles++;
+  animateSafe(
+    note,
+    [
+      { transform: "translateY(0)", opacity: 0 },
+      { transform: "translateY(-12px)", opacity: 0.9, offset: 0.25 },
+      { transform: "translateY(-46px)", opacity: 0 },
+    ],
+    { duration: 1800, easing: "steps(9, end)", fill: "forwards" },
+  );
+  removeLater(note, 1900, true);
+}
+
+function startMascotPointer(event) {
+  if (mascotDown) return; // one active pointer at a time
+  mascotDown = {
+    id: event.pointerId,
+    t: Date.now(),
+    x: event.clientX,
+    y: event.clientY,
+    part: mascotPartAt(event.clientX, event.clientY),
+    asleep: Boolean(sleepShown),
+    dist: 0,
+    lastX: event.clientX,
+    lastY: event.clientY,
+    spent: false,
+  };
+  try {
+    $(".mascot-wrapper")?.setPointerCapture?.(event.pointerId);
+  } catch {
+    // capture unavailable — moves outside the wrapper just end the gesture
+  }
+  if (!mascotDown.asleep && mascotDown.part === "head") {
+    if (leanTimer !== null) clearTimeout(leanTimer);
+    leanTimer = setTimeout(beginLean, LEAN_HOLD_MS);
+  }
+}
+
+function moveMascotPointer(event) {
+  if (!mascotDown || event.pointerId !== mascotDown.id) return;
+  mascotDown.dist += Math.hypot(event.clientX - mascotDown.lastX, event.clientY - mascotDown.lastY);
+  mascotDown.lastX = event.clientX;
+  mascotDown.lastY = event.clientY;
+  if (mascotDown.dist > LEAN_CANCEL_DIST && !mascotDown.asleep) {
+    // A real drag is a stroke, not a hold — cancel a pending or active lean.
+    if (leanTimer !== null) {
+      clearTimeout(leanTimer);
+      leanTimer = null;
+    }
+    if (leanSide !== null) {
+      clearLean(false); // drifted into a drag mid-lean: let go quietly
+      mascotDown.spent = true;
+    }
+  }
+}
+
+function endMascotPointer(event) {
+  const down = mascotDown;
+  if (!down || event.pointerId !== down.id) return;
+  mascotDown = null;
+  if (leanTimer !== null) {
+    clearTimeout(leanTimer);
+    leanTimer = null;
+  }
+  if (leanSide !== null) {
+    releaseLean();
+    return;
+  }
+  if (down.spent) return; // an aborted lean-in already consumed this press
+  if (down.asleep) {
+    if (sleepShown) evaluateLullaby(down);
+    return;
+  }
+  if (sleepShown) return; // fell asleep mid-press — never chat over sleep
+  petMascot(down.part);
+}
+
+function cancelMascotPointer(event) {
+  if (!mascotDown || event.pointerId !== mascotDown.id) return;
+  mascotDown = null;
+  clearLean(false); // also clears a pending hold timer
+}
+
+// ── Curious gaze (item 1) ───────────────────────────────────────────────
+// The pupil highlights (.pupils, index.html) drift up to 3px toward the
+// pointer while Jamkachu is awake. rAF-throttled, transform-only; eases
+// back to center on leave or after 3s idle (CSS transition). Skipped while
+// asleep or hatching; fully static under reduced motion. No audio.
+
+const GAZE_MAX_PX = 3;
+const GAZE_IDLE_MS = 3000;
+let gazeFrame = null;
+let gazePointer = null; // latest {x, y} awaiting the next frame
+let gazeIdleTimer = null;
+let gazeActive = false; // pupils are currently off-center
+
+function gazeReset() {
+  if (gazeIdleTimer !== null) {
+    clearTimeout(gazeIdleTimer);
+    gazeIdleTimer = null;
+  }
+  if (gazeFrame !== null) {
+    cancelAnimationFrame(gazeFrame);
+    gazeFrame = null;
+  }
+  gazePointer = null;
+  if (!gazeActive) return;
+  gazeActive = false;
+  const pupils = $(".mascot-svg .pupils");
+  if (pupils) pupils.style.transform = ""; // CSS transition eases them home
+}
+
+function gazeApply() {
+  gazeFrame = null;
+  if (!gazePointer) return;
+  if (sleepShown || hatchActive) {
+    gazeReset();
+    return;
+  }
+  const pupils = $(".mascot-svg .pupils");
+  const svg = $(".mascot-svg");
+  if (!pupils || !svg) return;
+  const rect = svg.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  // Eye-line center (~x 140, y 52 in the 300x350 viewBox) in screen px.
+  const cx = rect.left + (140 / 300) * rect.width;
+  const cy = rect.top + (52 / 350) * rect.height;
+  const dx = gazePointer.x - cx;
+  const dy = gazePointer.y - cy;
+  const len = Math.hypot(dx, dy) || 1;
+  const pull = Math.min(1, len / 40) * GAZE_MAX_PX; // nearby pointers pull less
+  // Clamp: the highlights sit 2px from each eye's left/top edge — never
+  // let them spill out of the pixel eye.
+  const tx = Math.max(-2, Math.min(3, (dx / len) * pull));
+  const ty = Math.max(-2, Math.min(3, (dy / len) * pull));
+  pupils.style.transform = `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px)`;
+  gazeActive = true;
+  if (gazeIdleTimer !== null) clearTimeout(gazeIdleTimer);
+  gazeIdleTimer = setTimeout(gazeReset, GAZE_IDLE_MS);
+}
+
+function onGazeMove(event) {
+  if (prefersReducedMotion() || sleepShown || hatchActive) return;
+  gazePointer = { x: event.clientX, y: event.clientY };
+  if (gazeFrame === null) gazeFrame = requestAnimationFrame(gazeApply);
 }
 
 // ── Pressable vital rows (plan T19) ─────────────────────────────────────
@@ -1615,7 +2154,25 @@ function setupCareInteractions() {
   );
 
   $("#care-action")?.addEventListener("pointerdown", onCareAction);
-  $(".mascot-wrapper")?.addEventListener("pointerdown", petMascot);
+
+  // Tactile mascot pipeline (items 2/3/5/6): taps resolve on release so a
+  // ≥600ms head hold can become the lean-in and a slow night drag the
+  // lullaby; quick taps still land in petMascot with their body part.
+  const mascotEl = $(".mascot-wrapper");
+  if (mascotEl) {
+    mascotEl.addEventListener("pointerdown", startMascotPointer);
+    mascotEl.addEventListener("pointermove", moveMascotPointer);
+    mascotEl.addEventListener("pointerup", endMascotPointer);
+    mascotEl.addEventListener("pointercancel", cancelMascotPointer);
+  }
+
+  // Curious gaze (item 1): pupils track the pointer across the mascot
+  // stage; leaving the stage eases them back to center.
+  const stageEl = $(".mascot-stage");
+  if (stageEl) {
+    stageEl.addEventListener("pointermove", onGazeMove, { passive: true });
+    stageEl.addEventListener("pointerleave", gazeReset);
+  }
 
   // Pressable vitals (plan T19): pointer + keyboard (role=button spans).
   const vitalSpans = { "#env-temp": "temp", "#env-hum": "hum", "#env-light": "light", "#env-ph": "ph" };
@@ -1653,6 +2210,343 @@ function setupCareInteractions() {
     }
   });
 }
+
+// ── Living world (dusk sky · fireflies · idle life · wind · grandpa NPC) ──
+// All pure presentation and STATE, never celebration: the night class
+// mirrors the WIB clock, the ambient behaviors grant nothing, count nothing
+// toward anything, and write nothing. Reduced motion: JS guards skip every
+// moving behavior here, and the CSS keyframes are additionally media-gated.
+
+// (2) Dusk sky: re-evaluated from updateCareUi (every mood render + the
+// existing 60s clock). INDEPENDENT of sleepShown on purpose — sleep is
+// Happy-only (spec §6.2) but the sky must stay honest about the real time
+// of day. Composes with room-warm/env-hot; the night overlay paints above
+// them. Silent — no cue, no copy.
+function applyNightUi() {
+  const night = isNightWIB();
+  document.body?.classList.toggle("night", night);
+  if (night) clearFarmerBubble(); // grandpa is gone at night — mid-line too
+  syncFireflies();
+}
+
+// (3) Fireflies: 6–8 glowing 4px pixels in slow CSS figure-eights (shell
+// drifts X over the full period, dot drifts Y at half period — a Lissajous
+// 1:2) with steps(1) blinks, only while body.night is active AND the tab is
+// visible. JS only spawns/removes the long-lived elements; they count
+// against the shared particle budget and release it on removal (the 06:00
+// flip or a tab hide).
+const FIREFLY_BASE = 6; // + up to 2 random extras → 6–8
+let fireflies = [];
+
+function spawnFireflies() {
+  if (fireflies.length > 0) return; // already lit
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const want = FIREFLY_BASE + Math.floor(Math.random() * 3);
+  const n = Math.max(0, Math.min(want, MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < n; i++) {
+    const fly = document.createElement("div");
+    fly.className = "fx-firefly";
+    fly.setAttribute("aria-hidden", "true");
+    fly.style.left = `${(4 + Math.random() * 88).toFixed(1)}vw`;
+    fly.style.bottom = `${Math.round(118 + Math.random() * 96)}px`; // above the grass
+    const period = 7 + Math.random() * 4; // full figure-eight period (s)
+    fly.style.animationDuration = `${period.toFixed(2)}s`;
+    fly.style.animationDelay = `${(-Math.random() * period).toFixed(2)}s`;
+    const dot = document.createElement("span");
+    dot.className = "fx-firefly-dot";
+    dot.style.animationDuration = `${(period / 2).toFixed(2)}s, ${(2.2 + Math.random() * 1.6).toFixed(2)}s`;
+    dot.style.animationDelay = `${(-Math.random() * period).toFixed(2)}s, ${(-Math.random() * 3).toFixed(2)}s`;
+    fly.appendChild(dot);
+    layer.appendChild(fly);
+    liveParticles++;
+    fireflies.push(fly);
+  }
+}
+
+function clearFireflies() {
+  for (const fly of fireflies) {
+    fly.remove();
+    liveParticles = Math.max(0, liveParticles - 1);
+  }
+  fireflies = [];
+}
+
+function syncFireflies() {
+  if (isNightWIB() && document.visibilityState === "visible") spawnFireflies();
+  else clearFireflies();
+}
+
+document.addEventListener("visibilitychange", syncFireflies);
+
+// (4) Idle micro-behaviors: after 60–120s with NO pointer interaction (and
+// only while: tab visible, awake, celebration queue idle, speech bubble
+// idle, not hatching, no active press), Jamkachu looks around, slowly
+// squash-stretches, or ruffles its leaves. The soft 'hum' cue plays on
+// every third behavior at most. The interaction timestamp is the ONLY
+// state — nothing is counted toward anything or persisted. Skipped
+// entirely under reduced motion.
+const IDLE_MIN_MS = 60_000;
+const IDLE_MAX_MS = 120_000;
+const IDLE_HUM_EVERY = 3;
+let lastPointerAt = Date.now();
+let idleBehaviorCount = 0;
+
+const notePointerActivity = () => {
+  lastPointerAt = Date.now();
+};
+document.addEventListener("pointerdown", notePointerActivity, { capture: true, passive: true });
+document.addEventListener("pointermove", notePointerActivity, { capture: true, passive: true });
+
+/** Pupil shift-and-hold glance (reuses the tactile stage's .pupils group +
+ *  its 0.3s ease-back transition). Never fights the curious gaze. */
+function idleLookAround() {
+  if (gazeActive) return; // the curious gaze owns the pupils right now
+  const pupils = $(".mascot-svg .pupils");
+  if (!pupils) return;
+  const tx = Math.random() < 0.5 ? -2 : 2;
+  const ty = Math.random() < 0.5 ? -1 : 1;
+  pupils.style.transform = `translate(${tx}px, ${ty}px)`; // shift…
+  setTimeout(() => {
+    // …hold, then ease home — unless the gaze took over meanwhile.
+    if (gazeActive) return;
+    const el = $(".mascot-svg .pupils");
+    if (el) el.style.transform = "";
+  }, 1200 + Math.random() * 900);
+}
+
+function idleSquashStretch() {
+  const wrapper = $(".mascot-wrapper");
+  if (!wrapper) return;
+  animateSafe(
+    wrapper,
+    [
+      { transform: "scale(1, 1)" },
+      { transform: "scale(1.035, 0.97)", offset: 0.35 },
+      { transform: "scale(0.985, 1.02)", offset: 0.7 },
+      { transform: "scale(1, 1)" },
+    ],
+    { duration: 1700, easing: "steps(8, end)" },
+  );
+}
+
+function idleLeafRuffle() {
+  const leaves = $(".animated-leaves");
+  if (!leaves) return;
+  animateSafe(
+    leaves,
+    [
+      { transform: "rotate(0deg)" },
+      { transform: "rotate(-1.6deg)" },
+      { transform: "rotate(1.4deg)" },
+      { transform: "rotate(-0.7deg)" },
+      { transform: "rotate(0deg)" },
+    ],
+    { duration: 550, easing: "steps(5, end)" },
+  );
+}
+
+function maybeIdleBehavior() {
+  if (prefersReducedMotion()) return; // spec: skipped entirely
+  if (document.visibilityState !== "visible") return;
+  if (sleepShown || hatchActive || mascotDown) return;
+  if (fxPlaying || fxQueue.length > 0) return; // never compete with a celebration
+  if (petRestoreTimer !== null || petSavedBubble !== null) return; // bubble busy
+  if (Date.now() - lastPointerAt < IDLE_MIN_MS) return; // user is around
+  idleBehaviorCount++;
+  if (idleBehaviorCount % IDLE_HUM_EVERY === 0) window.PMSfx?.play("hum");
+  const roll = Math.floor(Math.random() * 3);
+  if (roll === 0) idleLookAround();
+  else if (roll === 1) idleSquashStretch();
+  else idleLeafRuffle();
+}
+
+(function scheduleIdleBehavior() {
+  setTimeout(() => {
+    maybeIdleBehavior();
+    scheduleIdleBehavior();
+  }, IDLE_MIN_MS + Math.random() * (IDLE_MAX_MS - IDLE_MIN_MS));
+})();
+
+// (6) Wind gust: every random 3–6 minutes (tab visible, queue idle) the
+// grass bed, the cloud sheet, and Jamkachu's leaves lean the same way for
+// ~2.5s while a few leaf-green pixels drift across. Visual-only while
+// asleep; the soft 'breeze' cue (the whoosh recipe at low volume) is
+// daytime-only. Skipped entirely under reduced motion.
+const WIND_MIN_MS = 3 * 60_000;
+const WIND_MAX_MS = 6 * 60_000;
+const WIND_GUST_MS = 2500;
+const WIND_LEAF_COLORS = ["#69C455", "#89D974", "#397A2B"];
+
+function spawnWindLeaves() {
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const n = Math.max(0, Math.min(3 + Math.floor(Math.random() * 2), MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < n; i++) {
+    const bit = document.createElement("div");
+    bit.className = "fx-confetti";
+    bit.setAttribute("aria-hidden", "true");
+    const size = 5 + Math.floor(Math.random() * 3);
+    bit.style.width = `${size}px`;
+    bit.style.height = `${size}px`;
+    bit.style.background = WIND_LEAF_COLORS[i % WIND_LEAF_COLORS.length];
+    bit.style.left = "-20px";
+    bit.style.top = `${Math.round(window.innerHeight * (0.4 + Math.random() * 0.35))}px`;
+    layer.appendChild(bit);
+    liveParticles++;
+    const drift = window.innerWidth + 60;
+    const duration = 1700 + Math.random() * 700;
+    animateSafe(
+      bit,
+      [
+        { transform: "translate(0, 0) rotate(0deg)", opacity: 0 },
+        { transform: `translate(${Math.round(drift * 0.2)}px, ${-Math.round(12 + Math.random() * 18)}px) rotate(120deg)`, opacity: 1, offset: 0.2 },
+        { transform: `translate(${drift}px, ${Math.round(16 + Math.random() * 40)}px) rotate(${Math.round(300 + Math.random() * 120)}deg)`, opacity: 0.85 },
+      ],
+      { duration, delay: i * 140, easing: "steps(12, end)", fill: "forwards" },
+    );
+    removeLater(bit, duration + i * 140 + 100, true);
+  }
+}
+
+function maybeWindGust() {
+  if (prefersReducedMotion()) return; // spec: skipped entirely
+  if (document.visibilityState !== "visible") return;
+  if (fxPlaying || fxQueue.length > 0 || hatchActive) return;
+  document.body?.classList.add("fx-wind");
+  setTimeout(() => document.body?.classList.remove("fx-wind"), WIND_GUST_MS);
+  const leaves = $(".animated-leaves");
+  if (leaves) {
+    // WAAPI wins over the CSS breath animation for the gust's duration, so
+    // the leaves lean the same direction as the grass/cloud containers.
+    animateSafe(
+      leaves,
+      [
+        { transform: "skewX(0deg)" },
+        { transform: "skewX(-6deg)", offset: 0.25 },
+        { transform: "skewX(-6deg)", offset: 0.75 },
+        { transform: "skewX(0deg)" },
+      ],
+      { duration: WIND_GUST_MS, easing: "steps(10, end)" },
+    );
+  }
+  spawnWindLeaves();
+  // Daytime-only sound; a sleeping Jamkachu keeps the gust visual-only.
+  if (!sleepShown && !isNightWIB()) window.PMSfx?.play("breeze");
+}
+
+(function scheduleWindGust() {
+  setTimeout(() => {
+    maybeWindGust();
+    scheduleWindGust();
+  }, WIND_MIN_MS + Math.random() * (WIND_MAX_MS - WIND_MIN_MS));
+})();
+
+// (7) Farmer grandpa NPC: wanders the grass floor behind the stage (pure
+// CSS), gone at night (body.night hides him), and every 2–4 minutes — or
+// instantly when tapped, sharing ONE 60s cooldown — offers a grandpa-voiced
+// guidance line for the CURRENT mood. STRICTLY sensor-grounded, mirroring
+// the care button's honesty rules: only what the mood engine already knows,
+// and NEVER watering/fertilizing (those sensors do not exist). Tapping him
+// grants NOTHING, ever — he is pure guidance and charm.
+const FARMER_BUBBLE_MS = 6000;
+const FARMER_COOLDOWN_MS = 60_000;
+const FARMER_AUTO_MIN_MS = 2 * 60_000;
+const FARMER_AUTO_MAX_MS = 4 * 60_000;
+// English fallbacks — PM_STRINGS.farmer carries the localized sets. Both
+// soil moods share the "Soil" family, exactly like the care button.
+const FARMER_FALLBACK = {
+  Overheating: [
+    "Hoho… this room is toasty. A shadier, cooler spot would do the little one good.",
+    "Phew! Even my hat feels warm. Find your friend somewhere cooler, hm?",
+  ],
+  DryAir: [
+    "Hoho… the air is thirsty-dry. Away from fans and drafts it gets cozier.",
+    "My old whiskers feel the dry air too. A calmer corner would help, hm?",
+  ],
+  Sleepy: [
+    "Hoho… mighty dim in here. Open a curtain — plants love a bright morning.",
+    "A little sunshine works wonders. Scoot the pot near a window, hm?",
+  ],
+  Soil: [
+    "Hoho… the soil pH looks off. Check it together with your teacher, hm?",
+    "Soil business is grown-up business — never add anything to the pot alone.",
+  ],
+  Happy: [
+    "Hoho… a well-tended plant and a kind little farmer. Fine work!",
+    "Patience grows the best gardens — and you have plenty of it.",
+    "In all my farming years, care like yours is what makes things bloom.",
+    "Listen to the sensors, little farmer — they speak for the plant.",
+    "A happy plant means a watchful friend. Keep it up, hm?",
+  ],
+};
+let farmerCooldownUntil = 0;
+const farmerLineIndex = {}; // per-family rotation so he never repeats verbatim
+let farmerBubbleEl = null;
+let farmerBubbleTimer = null;
+
+/** Next grandpa line for the CURRENT mood (Sleepy is inherently daytime-only
+ *  here: at night farmerSpeak bails before ever picking a line). */
+function farmerLine() {
+  const family = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
+  const table = PM().farmer?.[family];
+  const set = Array.isArray(table) && table.length > 0 ? table : FARMER_FALLBACK[family];
+  const index = farmerLineIndex[family] ?? 0;
+  farmerLineIndex[family] = index + 1;
+  return set[index % set.length];
+}
+
+function clearFarmerBubble() {
+  if (farmerBubbleTimer !== null) {
+    clearTimeout(farmerBubbleTimer);
+    farmerBubbleTimer = null;
+  }
+  farmerBubbleEl?.remove();
+  farmerBubbleEl = null;
+  $("#npc-farmer")?.classList.remove("npc-talking");
+}
+
+/** Show one guidance bubble above grandpa's hat (he pauses mid-stride while
+ *  talking — .npc-talking freezes the wander). Returns false when the shared
+ *  60s cooldown, the night, or the hatching intro swallowed it. */
+function farmerSpeak() {
+  const farmer = $("#npc-farmer");
+  if (!farmer || isNightWIB() || hatchActive) return false;
+  const now = Date.now();
+  if (now < farmerCooldownUntil) return false;
+  farmerCooldownUntil = now + FARMER_COOLDOWN_MS;
+  clearFarmerBubble();
+  farmer.classList.add("npc-talking");
+  const rect = farmer.getBoundingClientRect();
+  const bubble = document.createElement("div");
+  bubble.className = "npc-bubble";
+  bubble.setAttribute("role", "status");
+  bubble.textContent = farmerLine();
+  bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
+  bubble.style.top = `${Math.round(rect.top - 8)}px`;
+  document.body.appendChild(bubble);
+  farmerBubbleEl = bubble;
+  farmerBubbleTimer = setTimeout(clearFarmerBubble, FARMER_BUBBLE_MS);
+  return true;
+}
+
+$("#npc-farmer")?.addEventListener("pointerdown", () => {
+  if (farmerSpeak()) window.PMSfx?.play("tick");
+});
+// Keyboard activation (he is a real <button>): click with detail 0 means
+// Enter/Space — pointer taps already went through pointerdown above.
+$("#npc-farmer")?.addEventListener("click", (event) => {
+  if (event.detail === 0 && farmerSpeak()) window.PMSfx?.play("tick");
+});
+
+(function scheduleFarmerTalk() {
+  setTimeout(() => {
+    if (document.visibilityState === "visible") farmerSpeak();
+    scheduleFarmerTalk();
+  }, FARMER_AUTO_MIN_MS + Math.random() * (FARMER_AUTO_MAX_MS - FARMER_AUTO_MIN_MS));
+})();
+
+// ── End living world ────────────────────────────────────────────────────
 
 setupCareInteractions();
 updateCareUi(); // initial paint — the care label must be correct before any data
@@ -1955,7 +2849,8 @@ function renderPlant(plant) {
     // (setMascotMood → updateCareUi just painted it) — never stomp it.
     if (bubble && !sleepShown) bubble.innerHTML = mood.bubble;
     cancelPetBubble(); // a real mood message must never be stomped by a stale pet-line restore
-    fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}`)
+    const dialogueTime = (wibNow()?.hour ?? 12) < 12 ? "morning" : "later";
+    fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}&stage=${encodeURIComponent(currentCompanionStage)}&time=${dialogueTime}&locale=${encodeURIComponent(appLocale)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data || typeof data.message !== "string") return;
@@ -1969,7 +2864,8 @@ function renderPlant(plant) {
         // template painted at fetch start remains the saved content.
         if (petRestoreTimer !== null || petSavedBubble !== null) return;
         const el = $(".speech-bubble");
-        if (el) el.textContent = `"${data.message}"`;
+        const fresh = chooseFreshDialogue(data.candidates ?? [data.message]);
+        if (el && fresh) el.textContent = `"${fresh}"`;
       })
       .catch(() => {});
   }
@@ -2267,7 +3163,8 @@ function maybeShowMemory() {
   } catch {
     return;
   }
-  const line = memoryLines[Math.floor(Math.random() * memoryLines.length)];
+  const line = chooseFreshDialogue(memoryLines);
+  if (!line) return;
   showTransientBubble(line, MEMORY_BUBBLE_MS);
 }
 
@@ -2351,6 +3248,10 @@ function renderSensors(reading) {
   if (reading?.temperature != null && Number.isFinite(temperature)) {
     setText("#env-temp", `${temperature.toFixed(1)}°C`);
     lastVitals.temperature = temperature; // pressable vitals (T19)
+    // Heat shimmer (living world, item 5): body.env-hot mirrors the SAME
+    // >32°C threshold the pressable vitals + mood engine use. Pure state —
+    // silent, no copy, removed as soon as readings return to range.
+    document.body?.classList.toggle("env-hot", temperature > VITAL_TEMP_HOT);
   }
 
   const humidity = Number(reading?.humidity);
@@ -2665,7 +3566,7 @@ async function main() {
   let plantName = null;
 
   const refresh = async () => {
-    const [plantRes, bondRes, sensorRes, questRes, eventsRes] = await Promise.all([
+    const [plantRes, bondRes, sensorRes, questRes, eventsRes, companionRes] = await Promise.all([
       supabase.from("plants").select("*").eq("id", PLANT_ID).maybeSingle(),
       supabase.from("bond_state").select("*").eq("plant_id", PLANT_ID).maybeSingle(),
       supabase
@@ -2696,6 +3597,7 @@ async function main() {
         .limit(6)
         .then((res) => res)
         .catch(() => ({ data: null })),
+      supabase.from("companion_state").select("stage, form_key, updated_at").eq("plant_id", PLANT_ID).maybeSingle().then((res) => res).catch(() => ({ data: null })),
     ]);
     if (bondRes.data) renderBond(bondRes.data, plantName ?? plantRes.data?.name);
     if (plantRes.data) {
@@ -2705,6 +3607,7 @@ async function main() {
     if (sensorRes.data) renderSensors(sensorRes.data);
     if (questRes.data) trackQuests(questRes.data);
     if (Array.isArray(eventsRes?.data)) noteMemoryRows(eventsRes.data);
+    if (companionRes?.data) renderCompanion(companionRes.data);
     maybeShowMemory(); // hour-gated; only into an idle Happy bubble
   };
 
@@ -2721,6 +3624,11 @@ async function main() {
         plantName = payload.new?.name ?? plantName;
         renderPlant(payload.new);
       },
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "companion_state", filter: `plant_id=eq.${PLANT_ID}` },
+      (payload) => renderCompanion(payload.new),
     )
     .on(
       "postgres_changes",

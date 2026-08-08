@@ -170,7 +170,7 @@ TypeScript 설정만으로 동작 — 스케줄러 서비스도, DB 테이블도
 
 ```text
 .env.local 에 추가 (서버 전용 — 브라우저 노출 금지):
-ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=...
 ```
 
   - 키가 없으면 → 즉시 `null` 반환 → 템플릿 사용. 게임은 AI 없이 완전히 동작합니다.
@@ -275,6 +275,6 @@ pwsh -File scripts/demo-reset.ps1 -Token <DEVICE_API_TOKEN 값> `
 
 ## 8. 다음 단계
 
-Core Game이 안정되면: AI 대화 레이어 활성화(`ANTHROPIC_API_KEY`) → UI 폴리시 →
+Core Game이 안정되면: AI 대화 레이어 활성화(`GEMINI_API_KEY`) → UI 폴리시 →
 실제 Arduino 플로우 연결(Phase 18) → 실패 테스트(Phase 19) → 데모 리허설(Phase 20).
 그 후에야 Node-RED의 레거시 XP 분기를 비활성화합니다 (Correction 1).

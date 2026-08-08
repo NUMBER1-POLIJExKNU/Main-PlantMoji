@@ -19,6 +19,9 @@ export interface QuestProgressProps {
   requiredSeconds: number;
   /** Plant whose quest this bar tracks — the completion sweep needs it. */
   plantId: string;
+  /** quests.id — stamps the one-shot "just completed" sessionStorage flag
+   *  (Quest Done-Pill Stamp) so quest-done-pill.tsx knows to animate. */
+  questId: string;
   locale: AppLocale;
 }
 
@@ -33,6 +36,7 @@ export default function QuestProgress({
   sinceIso,
   requiredSeconds,
   plantId,
+  questId,
   locale,
 }: QuestProgressProps) {
   const router = useRouter();
@@ -75,6 +79,18 @@ export default function QuestProgress({
     if (elapsedSeconds < requiredSeconds || firedRef.current) return;
     firedRef.current = true;
     const sweep = () => {
+      // Quest Done-Pill Stamp handshake: mark this quest as "just completed"
+      // BEFORE the refresh that will render its history pill, so
+      // quest-done-pill.tsx knows to stamp it in exactly once. Optimistic —
+      // set on local completion detection, not on server confirmation — but
+      // harmless if the sweep doesn't actually land COMPLETED, since only a
+      // COMPLETED pill ever reads this flag; try/catch covers private-mode
+      // storage denial (the stamp just won't fire).
+      try {
+        sessionStorage.setItem(`pm-just-completed:${questId}`, "1");
+      } catch {
+        /* sessionStorage unavailable — no stamp, refresh still proceeds */
+      }
       fetch("/api/game-tick", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,7 +107,7 @@ export default function QuestProgress({
       return;
     }
     sweep();
-  }, [mode, sinceMs, elapsedSeconds, requiredSeconds, plantId, router]);
+  }, [mode, sinceMs, elapsedSeconds, requiredSeconds, plantId, questId, router]);
 
   if (!Number.isFinite(sinceMs) || requiredSeconds <= 0) return null;
   const percent = (elapsedSeconds / requiredSeconds) * 100;

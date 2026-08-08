@@ -1,19 +1,19 @@
 // Settings screen (handoff §33) — plant name, species, personality (§13),
 // and manual growth stage (§14: sensors cannot infer real growth in MVP).
 
+import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
 import { BADGE_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { getBondState } from "@/game/progression/xp-engine";
-import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, getUnlockedBadges, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { AppLocale } from "@/lib/i18n";
-import { normalizePersonality, PERSONALITIES, STREAK_TIMEZONE, type PersonalityId } from "@/types/game";
-import { addGrowthRecord, updatePlantSettings } from "./actions";
+import { normalizePersonality, PERSONALITIES, type PersonalityId } from "@/types/game";
+import { updatePlantSettings } from "./actions";
 
 // Always reflect the latest saved values.
 export const dynamic = "force-dynamic";
@@ -56,12 +56,6 @@ export default async function SettingsPage({
   // the Demo Control Center only renders on /settings?demo=1.
   const showDemo = (await searchParams).demo === "1";
   const locale = await getRequestLocale();
-  const growthDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: STREAK_TIMEZONE,
-  });
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -77,12 +71,6 @@ export default async function SettingsPage({
     );
   }
 
-  // Started alongside getPlant — the growth log is keyed by PLANT_ID (the
-  // same id getPlant resolves) and fetchGrowthRecords never rejects (it
-  // returns [] on any failure), so kicking it off before the status checks
-  // can't change which Notice renders below; it's only awaited once the
-  // plant row is confirmed.
-  const growthRecordsPromise = fetchGrowthRecords(PLANT_ID);
   const result = await getPlant(supabase, PLANT_ID);
 
   if (result.status === "no-schema") {
@@ -125,9 +113,6 @@ export default async function SettingsPage({
   // Seed data uses lowercase stages ("growing") — map to the canonical label.
   const currentStage = normalizeGrowthStage(plant.growth_stage) ?? "New Plant";
 
-  // Manual growth log (handoff §14, §35). Empty when milestone5 hasn't been
-  // run yet — fetchGrowthRecords tolerates the missing table on its own.
-  const growthRecords = await growthRecordsPromise;
   let demoProgress = {
     level: 1,
     totalXp: 0,
@@ -237,115 +222,21 @@ export default async function SettingsPage({
         </button>
       </form>
 
-      <section className="pm-panel mt-5 flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <h2 className="pm-heading text-xs">{locale === "id" ? "Catatan Pertumbuhan" : "Growth Records"}</h2>
-          <p className={fieldHelpClass}>
+      <Link href="/diary" className="pm-panel mt-5 flex items-center gap-3">
+        <span className="text-3xl leading-none" role="img" aria-hidden="true">
+          🌱
+        </span>
+        <div>
+          <p className="text-sm font-bold text-[#243421]">
+            {locale === "id" ? "Buku Harian" : "Growth Diary"}
+          </p>
+          <p className="text-xs text-[#57684F]">
             {locale === "id"
-              ? "Tahap pertumbuhan hanya diperbarui lewat catatan ini — bukan oleh sensor. Menambah catatan baru juga memperbarui nilai Tahap pertumbuhan di atas."
-              : "Growth stage is updated only through these records — never by sensors. Adding a new record also updates the Growth stage value above."}
+              ? "Catatan pertumbuhan pindah ke halaman sendiri"
+              : "Growth records now live on their own page"}
           </p>
         </div>
-
-        <form action={addGrowthRecord} className="flex flex-col gap-4">
-          <input type="hidden" name="plantId" value={plant.id} />
-
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabelClass}>{locale === "id" ? "Tahap" : "Stage"}</span>
-            <select name="stage" defaultValue={currentStage} className={fieldInputClass}>
-              {GROWTH_STAGES.map((stage) => (
-                <option key={stage} value={stage}>
-                  {stage}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1.5">
-              <span className={fieldLabelClass}>{locale === "id" ? "Tinggi (cm)" : "Height (cm)"}</span>
-              <input
-                type="number"
-                name="heightCm"
-                min={0}
-                max={500}
-                step="0.1"
-                placeholder="—"
-                className={fieldInputClass}
-              />
-            </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={fieldLabelClass}>{locale === "id" ? "Jumlah Daun" : "Leaves"}</span>
-              <input
-                type="number"
-                name="leafCount"
-                min={0}
-                max={10000}
-                step={1}
-                placeholder="—"
-                className={fieldInputClass}
-              />
-            </label>
-          </div>
-
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabelClass}>{locale === "id" ? "Catatan" : "Note"}</span>
-            <input
-              type="text"
-              name="note"
-              maxLength={200}
-              placeholder={locale === "id" ? "Ada daun baru muncul" : "A new leaf appeared"}
-              autoComplete="off"
-              className={fieldInputClass}
-            />
-          </label>
-
-          <button type="submit" className="pm-btn pm-btn-primary w-full">
-            {locale === "id" ? "Tambah catatan" : "Add record"}
-          </button>
-        </form>
-
-        <div className="flex flex-col gap-2 border-t-2 border-dashed border-[#BCD3B4] pt-4">
-          {growthRecords.length === 0 ? (
-            <p className="text-xs text-[#57684F]">
-              {locale === "id"
-                ? "Belum ada catatan. Tambahkan catatan pertumbuhan pertamamu."
-                : "No records yet. Add your first growth record."}
-            </p>
-          ) : (
-            growthRecords.map((record) => {
-              const recordedMs = Date.parse(record.recorded_at);
-              const dateLabel = Number.isNaN(recordedMs)
-                ? ""
-                : growthDateFormat.format(new Date(recordedMs));
-              const details = [
-                record.height_cm != null ? `${record.height_cm}cm` : null,
-                record.leaf_count != null
-                  ? locale === "id"
-                    ? `${record.leaf_count} daun`
-                    : `${record.leaf_count} leaves`
-                  : null,
-              ]
-                .filter((part): part is string => part != null)
-                .join(" · ");
-
-              return (
-                <div
-                  key={record.id}
-                  className="flex flex-col gap-0.5 rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2 text-xs"
-                >
-                  <span className="text-[#57684F]">
-                    {dateLabel} ·{" "}
-                    <span className="font-semibold text-[#243421]">{record.stage}</span>
-                  </span>
-                  {details.length > 0 && <span className="text-[#57684F]">{details}</span>}
-                  {record.note && <span className="text-[#3A4A34]">{record.note}</span>}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </section>
+      </Link>
 
       {/* Presenter tooling keeps its amber tint but wears the same pixel
           frame as every farm card (3px border + chunky shadow ledge). */}

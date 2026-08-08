@@ -53,7 +53,32 @@ const strawberry: CropProfile = {
   },
 };
 
-export const CROP_PROFILES = { strawberry } as const satisfies Record<string, CropProfile>;
+const soybean: CropProfile = {
+  key: "soybean", version: 1, displayName: "Soybean", scientificName: "Glycine max", species: "Soybean",
+  varietyLabel: "Jember classroom candidate · variety unknown",
+  guidanceNote: "Container advisory based on Indonesian land-suitability guidance; local variety calibration may differ.",
+  timezone: CROP_PROFILE_TIMEZONE,
+  temperature: { recommended: { min: 23, max: 25 }, tolerated: { min: 18, max: 32 }, overheating: { enterAtOrAbove: 33, recoverAtOrBelow: 30 } },
+  airHumidity: { recommended: { min: 24, max: 80 }, dryAir: { enterBelow: 24, recoverAtOrAbove: 29 } },
+  soilPh: { recommended: { min: 5.5, max: 7.5 } },
+  light: { sensorType: "binary-ldr", requiredDuringLightingHours: 1, lightingHours: { start: 6, end: 18 } },
+};
+
+const cayennePepper: CropProfile = {
+  key: "cayenne-pepper", version: 1, displayName: "Cayenne pepper", scientificName: "Capsicum frutescens", species: "Cayenne Pepper",
+  varietyLabel: "Jember classroom candidate · variety unknown",
+  guidanceNote: "Classroom-pot advisory based on Indonesian cultivation guidance; local variety calibration may differ.",
+  timezone: CROP_PROFILE_TIMEZONE,
+  temperature: { recommended: { min: 18, max: 30 }, tolerated: { min: 18, max: 30 }, overheating: { enterAtOrAbove: 31, recoverAtOrBelow: 29 } },
+  airHumidity: { recommended: { min: 60, max: 80 }, dryAir: { enterBelow: 60, recoverAtOrAbove: 65 } },
+  soilPh: { recommended: { min: 6, max: 7 } },
+  light: { sensorType: "binary-ldr", requiredDuringLightingHours: 1, lightingHours: { start: 6, end: 18 } },
+};
+
+/** Only profiles with complete readings for every sensor in this kit are
+ * selectable. Catalog-only crops remain in milestone10 until their missing
+ * sensor evidence or classroom suitability is reviewed. */
+export const CROP_PROFILES = { strawberry, soybean, "cayenne-pepper": cayennePepper } as const satisfies Record<string, CropProfile>;
 export type CropProfileKey = keyof typeof CROP_PROFILES;
 
 export function isCropProfileKey(value: unknown): value is CropProfileKey {

@@ -1,12 +1,13 @@
 // Growth Diary screen (handoff §14, §35) — the manual growth-records log,
-// promoted out of Settings into its own page so the "Growth Diary" nav item
-// no longer lands on /settings. Sensors cannot infer real growth in the
-// MVP: this page is the human-written source of truth for growth stage.
+// promoted out of Settings into its own page. There is no dedicated "Diary"
+// item in the shared seven-destination nav (src/components/reno-app-shell.tsx);
+// this page is reached via the link-card on /settings instead. Sensors
+// cannot infer real growth in the MVP: this page is the human-written
+// source of truth for growth stage.
 //
-// The form/list below mirrors src/app/settings/page.tsx's "Growth Records"
-// section 1:1 (same fields, same addGrowthRecord action, same bilingual
-// copy) — that section stays in Settings temporarily until a later commit
-// removes it there; this file only adds the dedicated page.
+// The form/list below used to be mirrored 1:1 on src/app/settings/page.tsx
+// (same fields, same addGrowthRecord action, same bilingual copy) — that
+// section has since been removed from Settings in favor of this page.
 
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
@@ -103,6 +104,21 @@ export default async function DiaryPage() {
   // Manual growth log (handoff §14, §35). Empty when milestone5 hasn't been
   // run yet — fetchGrowthRecords tolerates the missing table on its own.
   const growthRecords = await growthRecordsPromise;
+  const [memoryResult, companionResult] = await Promise.all([
+    supabase.from("bond_events").select("event_id,type,data,occurred_at").eq("plant_id", PLANT_ID).in("type", ["QUEST_COMPLETED", "COMPANION_EVOLVED", "LEVEL_UP", "BADGE_UNLOCKED", "CHAPTER_UNLOCKED"]).order("occurred_at", { ascending: false }).limit(50),
+    supabase.from("companion_state").select("stage,form_key").eq("plant_id", PLANT_ID).maybeSingle(),
+  ]);
+  const memories = memoryResult.error ? [] : (memoryResult.data ?? []);
+  const companion = companionResult.error ? null : companionResult.data;
+
+  const memoryTitle = (row: { type: string; data: Record<string, unknown> | null }) => {
+    const data = row.data ?? {};
+    if (row.type === "QUEST_COMPLETED") return locale === "id" ? `Perawatan terverifikasi: ${data.title ?? data.questKey ?? "Quest"}` : `Verified care: ${data.title ?? data.questKey ?? "Quest"}`;
+    if (row.type === "COMPANION_EVOLVED") return locale === "id" ? `Companion berevolusi menjadi ${data.stage}` : `Companion evolved into ${data.stage}`;
+    if (row.type === "LEVEL_UP") return locale === "id" ? `Bond naik ke Level ${data.levelAfter ?? "?"}` : `Bond reached Level ${data.levelAfter ?? "?"}`;
+    if (row.type === "BADGE_UNLOCKED") return locale === "id" ? `Lencana terbuka: ${data.name ?? data.badgeKey}` : `Badge unlocked: ${data.name ?? data.badgeKey}`;
+    return locale === "id" ? `Bab cerita terbuka: ${data.title ?? data.chapter}` : `Story chapter unlocked: ${data.title ?? data.chapter}`;
+  };
 
   // Farm column: cards cap at 640px like the farm home stack (.pm-card).
   return (
@@ -118,10 +134,28 @@ export default async function DiaryPage() {
       />
 
       <div className="mx-auto w-full max-w-[640px]">
+        <section className="pm-panel mb-5 flex flex-col gap-4">
+          <div>
+            <h2 className="pm-heading text-xs">{locale === "id" ? "Kenangan Perawatan" : "Care Memories"}</h2>
+            <p className={fieldHelpClass}>
+              {companion
+                ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companion.stage} · ${companion.form_key}. ${locale === "id" ? "Ini terpisah dari tahap pertumbuhan tanaman asli." : "This is separate from the real plant growth stage."}`
+                : locale === "id" ? "Companion masih menggunakan tampilan awal sampai Milestone 11 aktif." : "The companion uses its original look until Milestone 11 is active."}
+            </p>
+          </div>
+          {memories.length === 0 ? (
+            <p className="text-xs text-[#57684F]">{locale === "id" ? "Belum ada kenangan perawatan." : "No care memories yet."}</p>
+          ) : memories.map((row) => (
+            <div key={row.event_id} className="rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2 text-xs">
+              <div className="font-semibold text-[#243421]">{memoryTitle(row as { type: string; data: Record<string, unknown> | null })}</div>
+              <div className="text-[#57684F]">{growthDateFormat.format(new Date(row.occurred_at))}</div>
+            </div>
+          ))}
+        </section>
         <section className="pm-panel flex flex-col gap-5">
           <div className="flex flex-col gap-1">
             <h2 className="pm-heading text-xs">
-              {locale === "id" ? "Catatan Pertumbuhan" : "Growth Records"}
+              {locale === "id" ? "Catatan Pertumbuhan" : "Growth Notes"}
             </h2>
             <p className={fieldHelpClass}>
               {locale === "id"

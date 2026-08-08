@@ -4,7 +4,7 @@ import { DEMO_RESET_TABLES, resetDemoProgress } from "@/game/demo/demo-reset";
 
 function fakeClient(plantExists = true) {
   const deleted: string[] = [];
-  let bondPayload: Record<string, unknown> | null = null;
+  const upserts: Record<string, Record<string, unknown>> = {};
   let plantPayload: Record<string, unknown> | null = null;
 
   const client = {
@@ -35,7 +35,7 @@ function fakeClient(plantExists = true) {
           };
         },
         upsert: async (payload: Record<string, unknown>) => {
-          bondPayload = payload;
+          upserts[table] = payload;
           return { error: null };
         },
         update(payload: Record<string, unknown>) {
@@ -50,7 +50,7 @@ function fakeClient(plantExists = true) {
     },
   } as unknown as SupabaseClient;
 
-  return { client, deleted, getBondPayload: () => bondPayload, getPlantPayload: () => plantPayload };
+  return { client, deleted, getBondPayload: () => upserts.bond_state, getCompanionPayload: () => upserts.companion_state, getPlantPayload: () => plantPayload };
 }
 
 describe("demo reset", () => {
@@ -66,6 +66,7 @@ describe("demo reset", () => {
       current_state: "Happy",
       state_changed_at: "1970-01-01T00:00:00Z",
     });
+    expect(fake.getCompanionPayload()).toMatchObject({ stage: "Seed", form_key: "balanced" });
   });
 
   it("rejects an unknown plant before deleting anything", async () => {

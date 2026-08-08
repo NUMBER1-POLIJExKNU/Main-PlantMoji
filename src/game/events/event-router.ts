@@ -28,6 +28,7 @@ import {
   wibHour,
 } from "@/game/random/daily-events";
 import { isLuckyQuest, luckyRewardKey } from "@/game/random/lucky";
+import { evaluateCompanion } from "@/game/companion/companion-engine";
 
 /**
  * Game Event Processor (handoff §25): the single orchestration point where a
@@ -364,6 +365,10 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
     await evaluateBadges(supabase, plantId);
     await evaluateChapters(supabase, plantId);
   }
+
+  // Virtual evolution only reads persisted, sensor-verified COMPLETED quests.
+  // It awards no XP and safely no-ops until milestone11 is installed.
+  await evaluateCompanion(supabase, plantId);
 }
 
 export interface ProcessOptions {

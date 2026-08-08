@@ -124,7 +124,7 @@ export default async function ReportsPage() {
     );
   }
 
-  // AI-personalized when ANTHROPIC_API_KEY is set (cached per report shape,
+  // AI-personalized when GEMINI_API_KEY is set (cached per report shape,
   // handoff §24); deterministic template otherwise — never blocks on
   // failure. No plant row (e.g. schema not seeded yet) simply skips the
   // narration — the stat tiles below still render from `report`.

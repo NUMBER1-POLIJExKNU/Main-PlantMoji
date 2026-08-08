@@ -12,6 +12,10 @@ import type { AppLocale } from "@/lib/i18n";
 import { getPlant } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { updateCropProfile } from "./actions";
+import { explainEnvironment } from "@/lib/environment-explanation";
+import CropExplorer from "@/components/crop-explorer";
+import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
+import { compareEnvironmentToCrops } from "@/lib/environment-analyzer";
 
 export const dynamic = "force-dynamic";
 const PLANT_ID = "plant-01";
@@ -34,11 +38,11 @@ const PAGE_COPY = {
   id: {
     eyebrow: "Profil tanaman",
     title: "Tanaman",
-    intro: "Lihat panduan lingkungan stroberi dan pembacaan sensor terbaru di satu tempat.",
+    intro: "Pilih profil tanaman yang didukung dan lihat status sensor terbaru di satu tempat.",
     profile: "Profil tanaman",
     save: "Simpan profil",
     variety: "Stroberi umum · varietas belum diketahui",
-    note: "Panduan umum untuk stroberi dalam pot di dalam ruangan. Kebutuhan dapat berbeda menurut varietas dan kalibrasi sensor.",
+    note: "Panduan profil untuk kit kelas. Kebutuhan dapat berbeda menurut varietas dan kalibrasi sensor.",
     temperature: "Suhu",
     humidity: "Kelembapan udara",
     soilPh: "pH tanah",
@@ -98,9 +102,10 @@ export default async function PlantsPage() {
   // Independent queries in parallel. Neither ever rejects (both map failures
   // to status objects / null), so the error Notice below still depends only
   // on getPlant — identical behavior, one round-trip instead of two.
-  const [result, snapshot] = await Promise.all([
+  const [result, snapshot, explorerCrops] = await Promise.all([
     getPlant(supabase, PLANT_ID),
     getLatestSensorSnapshot(supabase, PLANT_ID),
+    getJemberCropCatalog(supabase, locale),
   ]);
   if (result.status !== "ok") {
     return <Notice title="Couldn't load crop info" lines={[result.status === "error" ? result.message : "Check the migrations and the plant-01 seed."]} />;
@@ -110,11 +115,13 @@ export default async function PlantsPage() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: profile.timezone }).format(new Date()));
   const isLightingHours = hour >= profile.light.lightingHours.start && hour < profile.light.lightingHours.end;
   const states = evaluateCropEnvironment(snapshot, profile, isLightingHours);
+  const explanation = await explainEnvironment(profile, snapshot, states);
   const shown = (value: number | null | undefined, suffix: string) => value == null ? copy.waiting : `${value}${suffix}`;
 
   return (
     <main>
-      <PageHeader icon="🍓" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
+      <PageHeader icon="🌱" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
+      <CropExplorer locale={locale} initialSnapshot={snapshot} initialCrops={explorerCrops} initialResults={compareEnvironmentToCrops(snapshot, explorerCrops)} />
 
       <form action={updateCropProfile} className="pm-panel mb-6">
         <input type="hidden" name="plantId" value={result.plant.id} />
@@ -126,9 +133,9 @@ export default async function PlantsPage() {
           <button type="submit" className="pm-btn pm-btn-primary">{copy.save}</button>
         </div>
         <div className="mt-5 rounded-xl border-2 border-dashed border-[#BCD3B4] bg-[#F4FAF1] p-4">
-          <p className="font-bold">🍓 {locale === "id" ? "Stroberi" : profile.displayName} <span className="font-normal">({profile.scientificName})</span></p>
-          <p>{locale === "id" ? copy.variety : profile.varietyLabel} · {locale === "id" ? "profil" : "profile"} v{profile.version}</p>
-          <p className="mt-2 text-sm opacity-75">{locale === "id" ? copy.note : profile.guidanceNote}</p>
+          <p className="font-bold">🌱 {profile.displayName} <span className="font-normal">({profile.scientificName})</span></p>
+          <p>{profile.varietyLabel} · {locale === "id" ? "profil" : "profile"} v{profile.version}</p>
+          <p className="mt-2 text-sm opacity-75">{profile.guidanceNote}</p>
         </div>
       </form>
 
@@ -138,12 +145,13 @@ export default async function PlantsPage() {
         <Metric locale={locale} guideLabel={copy.guide} icon="🧪" label={copy.soilPh} guide={`${profile.soilPh.recommended.min}–${profile.soilPh.recommended.max}`} value={shown(snapshot?.soilPh, "")} status={states.soilPh} />
         <Metric locale={locale} guideLabel={copy.guide} icon="☀️" label={copy.light} guide={`${copy.lightGuide} ${profile.light.lightingHours.start}:00–${profile.light.lightingHours.end}:00`} value={shown(snapshot?.light, "")} status={states.light} />
       </section>
+      <section className="pm-panel mt-5" aria-labelledby="environment-explanation-title">
+        <h2 id="environment-explanation-title" className="pm-heading text-xs">✨ {locale === "id" ? "Penjelasan lingkungan" : "Environment explanation"}</h2>
+        <p className="mt-3 text-sm leading-6">{explanation}</p>
+        <p className="mt-2 text-[11px] opacity-65">{locale === "id" ? "Status ditentukan oleh penganalisis aturan; AI hanya menjelaskan hasilnya." : "Statuses are decided by the deterministic analyzer; AI only explains its results."}</p>
+      </section>
       <p className="mt-5 text-sm opacity-70">{copy.ldrNote}{snapshot?.recordedAt ? ` ${copy.latest}: ${snapshot.recordedAt}` : ""}</p>
-      <p className="mt-2 text-sm opacity-70">
-        {copy.sources}: <a className="underline" href="https://ohceac.osu.edu/CEBPI-Environment" target="_blank" rel="noreferrer">Ohio State CEA</a>{" · "}
-        <a className="underline" href="https://extension.umn.edu/strawberry-farming/strawberry-nutrient-management" target="_blank" rel="noreferrer">UMN Extension</a>{" · "}
-        <a className="underline" href="https://extension.psu.edu/strawberry-production" target="_blank" rel="noreferrer">Penn State Extension</a>
-      </p>
+      <p className="mt-2 text-sm opacity-70">{copy.sources}: {profile.key === "strawberry" ? "Ohio State CEA · UMN Extension · Penn State Extension" : "Kementerian Pertanian · BPS Kabupaten Jember 2025"}</p>
     </main>
   );
 }

@@ -499,6 +499,81 @@ body {
     margin-top: 8px;
     color: var(--color-text);
 }
+.quiz-chip {
+    width: 100%; min-height: 58px; border: 3px solid var(--color-yellow); cursor: pointer;
+    display: flex; align-items: center; gap: 12px; padding: 9px 14px; color: var(--color-text);
+    text-align: left; transition: transform .08s ease, filter .12s ease;
+}
+.quiz-chip:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.quiz-chip:active { transform: translateY(3px); }
+.quiz-chip:focus-visible { outline: 4px solid var(--color-water); outline-offset: 2px; }
+.quiz-chip > span:first-child { font-size: 27px; }
+.quiz-chip-copy { display: flex; flex: 1; flex-direction: column; gap: 4px; }
+.quiz-chip-copy strong { font: 9px/1.3 var(--font-heading); color: var(--color-forest); }
+.quiz-chip-copy small { font-size: 13px; }
+.quiz-chip-xp { border: 2px solid #D7A929; border-radius: 14px; background: #FFF7C7; padding: 5px 8px; font: 8px/1 var(--font-heading); white-space: nowrap; }
+.quiz-chip.quiz-complete { border-color: var(--color-grass); background: #E8F6E0; }
+
+.quiz-modal[hidden] { display: none; }
+.quiz-modal { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 18px; }
+.quiz-backdrop { position: absolute; inset: 0; background: rgba(27,43,24,.63); backdrop-filter: blur(3px); }
+.quiz-card { position: relative; width: min(540px,100%); max-height: min(680px,92dvh); overflow-y: auto; border: 4px solid var(--color-outline); border-radius: 22px; background: #FFFDF2; padding: clamp(18px,4vw,28px); box-shadow: 0 10px 0 #172215, 0 24px 55px rgba(0,0,0,.3); }
+.quiz-card:focus { outline: none; }
+.quiz-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.quiz-card-head h2 { margin-top: 6px; font: 14px/1.4 var(--font-heading); color: var(--color-forest); }
+#quiz-step { font: 8px/1 var(--font-heading); color: #7B8876; }
+#quiz-close { width: 44px; height: 44px; border: 3px solid var(--color-outline); border-radius: 12px; background: white; cursor: pointer; font: 26px/1 sans-serif; box-shadow: 0 3px 0 var(--color-outline); }
+#quiz-close:active { transform: translateY(3px); box-shadow: none; }
+.quiz-meter { height: 12px; margin: 16px 0 22px; overflow: hidden; border: 2px solid var(--color-outline); border-radius: 8px; background: #E2E9DE; }
+.quiz-meter i { display: block; width: 0; height: 100%; background: linear-gradient(90deg,var(--color-grass),var(--color-yellow)); transition: width .35s steps(4,end); }
+.quiz-timer { position: relative; height: 20px; margin: -10px 0 18px; overflow: hidden; border: 2px solid var(--color-outline); border-radius: 9px; background: #E9EEE6; }
+.quiz-timer i { display: block; width: 100%; height: 100%; background: #74B9FF; transition: width 1s linear, background .2s; }
+.quiz-timer strong { position: absolute; inset: 0; display: grid; place-items: center; font: 8px/1 var(--font-heading); }
+.quiz-timer.urgent i { background: #F4C95D; }
+.quiz-timer.urgent strong { color: #7B3D19; }
+.quiz-chip-gems { display: flex; gap: 4px; font-size: 10px; color: #B6BFB2; }
+.quiz-chip-gems i { font-style: normal; }
+.quiz-chip-gems i.lit { color: #F4C95D; filter: drop-shadow(0 1px 0 #8C6A21); }
+.quiz-question { min-height: 50px; font-size: 18px; font-weight: 700; line-height: 1.45; }
+.quiz-choices { display: grid; gap: 10px; margin-top: 18px; }
+.quiz-choice { width: 100%; min-height: 54px; border: 3px solid var(--color-border); border-radius: 14px; background: white; padding: 11px 14px; cursor: pointer; color: var(--color-text); text-align: left; font: inherit; font-weight: 650; box-shadow: 0 4px 0 #A7B4A2; }
+.quiz-choice:hover:not(:disabled),.quiz-choice:focus-visible { border-color: var(--color-water); transform: translateY(-1px); outline: none; }
+.quiz-choice:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+.quiz-choice.selected { border-color: var(--color-water); }
+.quiz-choice.correct { border-color: #397A2B; background: #E5F5DF; box-shadow: 0 4px 0 #397A2B; }
+.quiz-choice.wrong { border-color: #E8C46B; background: #FFF7DF; box-shadow: 0 4px 0 #C49936; }
+.quiz-feedback { margin-top: 17px; border: 2px dashed; border-radius: 13px; padding: 12px 14px; line-height: 1.45; }
+.quiz-feedback.correct { border-color: #65A852; background: #E8F6E0; }
+.quiz-feedback.retry { border-color: #D6A53B; background: #FFF7DF; }
+.quiz-next { width: 100%; margin-top: 14px; }
+body.quiz-open { overflow: hidden; }
+.quiz-xp-pod { position: fixed; z-index: 4000; pointer-events: none; transform: translate(-50%,-50%); border: 3px solid #8C6A21; border-radius: 14px; background: #FFF3A8; padding: 9px 12px; color: #6D5112; font: 10px/1 var(--font-heading); box-shadow: 0 4px 0 #8C6A21; animation: quiz-xp-flight 1.15s cubic-bezier(.2,.75,.25,1) forwards; }
+.quiz-xp-pod.loss { border-color: #9B5D56; background: #FCE3DF; color: #7E3630; box-shadow: 0 4px 0 #9B5D56; }
+.quiz-level-up { position: fixed; inset: 0; z-index: 4100; display: grid; place-content: center; justify-items: center; pointer-events: none; background: radial-gradient(circle,rgba(255,246,164,.88),rgba(57,122,43,.28) 42%,transparent 72%); animation: quiz-level-reveal 2.5s steps(8,end) forwards; }
+.quiz-level-up small,.quiz-level-up strong,.quiz-level-up span { padding: 8px 15px; color: #243421; text-shadow: 3px 3px 0 white; font-family: var(--font-heading); }
+.quiz-level-up strong { font-size: clamp(25px,7vw,54px); color: #397A2B; }
+.quiz-level-up span { font-size: 20px; }
+body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:3500; pointer-events:none; background:rgba(223,255,180,.34); animation:quiz-flash .4s steps(3,end) forwards; }
+@keyframes quiz-xp-flight { 0%{opacity:0;transform:translate(-50%,-50%) scale(.45)} 22%{opacity:1;transform:translate(-50%,-70%) scale(1.18)} 72%{opacity:1} 100%{opacity:0;transform:translate(calc(-50% + var(--xp-x,0px)),calc(-50% + var(--xp-y,-100px))) scale(.65)} }
+@keyframes quiz-flash { to{opacity:0} }
+@keyframes quiz-level-reveal { 0%{opacity:0;transform:scale(.7)} 18%,72%{opacity:1;transform:scale(1)} 100%{opacity:0;transform:scale(1.08)} }
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-wrapper.quiz-cheer { animation: quiz-mascot-cheer .8s steps(6,end); }
+  .mascot-wrapper.quiz-temperature { filter: drop-shadow(0 0 16px #74B9FF); }
+  .mascot-wrapper.quiz-humidity { filter: drop-shadow(0 0 16px #4DA1ED); }
+  .mascot-wrapper.quiz-light { filter: drop-shadow(0 0 18px #F4C95D); }
+  .mascot-wrapper.quiz-soil_ph,.mascot-wrapper.quiz-crop { filter: drop-shadow(0 0 16px #69B957); }
+  @keyframes quiz-mascot-cheer { 0%,100%{transform:translateY(0) scale(1)} 35%{transform:translateY(-24px) scale(1.08,.94)} 65%{transform:translateY(2px) scale(.96,1.05)} }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiz-xp-pod,.quiz-level-up,body.quiz-success-flash::after { animation:none; }
+  .quiz-xp-pod { opacity:1; }
+}
+.companion-stage { margin-top: 5px; font: 8px/1.4 var(--font-pixel); color: #57684f; letter-spacing: .06em; }
+.mascot-svg.companion-Sprout .animated-leaves { transform: scale(1.03); transform-origin: 150px 140px; }
+.mascot-svg.companion-Bud .animated-leaves { transform: scale(1.08); transform-origin: 150px 140px; }
+.mascot-svg.companion-Bloom .animated-leaves { transform: scale(1.13); transform-origin: 150px 140px; filter: saturate(1.15); }
+.mascot-svg.companion-Guardian .animated-leaves { transform: scale(1.18); transform-origin: 150px 140px; filter: saturate(1.3) drop-shadow(0 0 5px #f5c94a); }
 
 .speech-bubble {
     background: var(--color-surface);
@@ -528,10 +603,29 @@ body {
 }
 
 .mascot-wrapper {
+    position: relative;
     width: 300px;
     filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
 }
+.mascot-wrapper:active { cursor: grabbing; }
 .mascot-svg { width: 100%; height: auto; }
+.badge-tap-particle {
+    position: fixed; z-index: 1005; pointer-events: none; font-size: 30px; line-height: 1;
+    transform: translate(-50%,-50%); filter: drop-shadow(2px 3px 0 rgba(36,52,33,.24));
+    animation: pm-badge-tap-pop .85s steps(6,end) forwards;
+}
+@keyframes pm-badge-tap-pop {
+    0% { opacity: 0; transform: translate(-50%,-20%) scale(.4); }
+    24% { opacity: 1; transform: translate(-50%,-50%) scale(1.18); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--tap-x)), -115px) scale(.82); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .badge-tap-particle { animation: none; opacity: 1; transform: translate(-50%,-50%); }
+}
 
 /* Jamkachu mood faces (spec §2.2): one body, six swappable face groups.
    Variants are hidden until the matching face-* class lands on .mascot-svg;
@@ -611,6 +705,50 @@ body.room-warm {
 @keyframes pm-zz-drift {
     0%, 100% { opacity: 0.55; }
     50% { opacity: 1; }
+}
+
+/* ── Tactile interactions (curious gaze / hop / lean-in / lullaby) ─────── */
+
+/* Curious gaze: live.js nudges the .pupils group up to 3px toward the
+   pointer (inline transform, rAF-throttled); this transition is the
+   ease-back-to-center. Reduced motion: live.js never moves the pupils. */
+@media (prefers-reduced-motion: no-preference) {
+    .mascot-svg .pupils { transition: transform 0.3s ease-out; will-change: transform; }
+}
+
+/* Double-tap surprise: wide-eye pupils for a beat. A static style swap on
+   purpose — reduced-motion users keep the eye swap while the hop itself
+   is skipped by live.js. */
+.mascot-svg.eyes-wide .pupils rect {
+    transform: scale(1.6);
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+/* Long-press lean-in: Jamkachu slowly tilts ~3deg toward the pressing hand
+   with deepened cheeks while held (the cheek rects read --color-cheek, so
+   scoping the token to the face groups deepens only the face). Reduced
+   motion: cheeks only, no tilt. */
+.mascot-svg.lean-cheeks .mascot-face { --color-cheek: #FF8383; }
+@media (prefers-reduced-motion: no-preference) {
+    .mascot-wrapper.lean-left,
+    .mascot-wrapper.lean-right {
+        transform-origin: 50% 88%;
+        transition: transform 0.6s ease-out;
+    }
+    .mascot-wrapper.lean-left { transform: rotate(-3deg); }
+    .mascot-wrapper.lean-right { transform: rotate(3deg); }
+}
+
+/* Night lullaby stroke: the sleeping breath deepens ~10% for a few seconds
+   (live.js toggles .breath-deep). Inert under reduced motion — the breath
+   animation itself is disabled there. */
+@media (prefers-reduced-motion: no-preference) {
+    .animated-breath.breath-deep .animated-leaves { animation-name: pm-breath-deep; }
+}
+@keyframes pm-breath-deep {
+    from { transform: scaleY(1) scaleX(1); }
+    to { transform: scaleY(1.044) scaleX(1.022); }
 }
 
 /* Tap-to-Claim Reward Pod (pixel seed pod, CSS art via layered box-shadows).
@@ -753,17 +891,511 @@ body.room-warm {
     50% { outline-color: transparent; }
 }
 
+/* ── Living world (grass tufts · dusk sky · fireflies · heat · wind · NPC) ──
+   All STATE or ambient charm, never celebration. live.js only toggles body
+   classes (night / env-hot / fx-wind) and spawns the JS-budgeted particles;
+   everything below is persistent CSS. Every animation is gated behind
+   prefers-reduced-motion: no-preference — reduced motion gets the same
+   scene, still. */
+
+/* (1) Pixel grass tufts + flowers along the grass floor. Box-shadow sprite
+   art at a 4px pixel grid (same technique as .fx-pod). Each sways gently
+   (skewX ±3deg, staggered via negative delays so they never sync up). */
+.grass-decor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform-origin: 50% 100%;
+}
+.grass-tuft,
+.grass-flower {
+    position: absolute;
+    width: 20px;
+    height: 16px;
+    image-rendering: pixelated;
+    transform-origin: 50% 100%;
+}
+.grass-tuft::before,
+.grass-flower::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 4px;
+    background: transparent;
+}
+.grass-tuft::before {
+    box-shadow:
+        /* 3-tier blades: tall center, mid shoulders, short edges */
+        8px 0 0 var(--color-grass-light),
+        4px 4px 0 var(--color-grass),
+        8px 4px 0 var(--color-grass-light),
+        12px 4px 0 var(--color-grass),
+        0 8px 0 var(--color-forest),
+        4px 8px 0 var(--color-grass),
+        8px 8px 0 var(--color-grass-light),
+        12px 8px 0 var(--color-grass),
+        16px 8px 0 var(--color-forest),
+        0 12px 0 var(--color-forest),
+        4px 12px 0 var(--color-grass),
+        8px 12px 0 var(--color-grass),
+        12px 12px 0 var(--color-grass),
+        16px 12px 0 var(--color-forest);
+}
+.grass-flower { width: 12px; height: 16px; }
+.grass-flower::before {
+    box-shadow:
+        4px 0 0 var(--color-cheek),
+        0 4px 0 var(--color-cheek),
+        4px 4px 0 var(--color-yellow),
+        8px 4px 0 var(--color-cheek),
+        4px 8px 0 var(--color-cheek),
+        4px 12px 0 var(--color-forest);
+}
+.grass-flower.flower-2::before {
+    /* second flower: yellow-petal variant */
+    box-shadow:
+        4px 0 0 var(--color-yellow),
+        0 4px 0 var(--color-yellow),
+        4px 4px 0 var(--color-white),
+        8px 4px 0 var(--color-yellow),
+        4px 8px 0 var(--color-yellow),
+        4px 12px 0 var(--color-forest);
+}
+.tuft-1 { left: 7%; top: -12px; }
+.tuft-2 { left: 24%; top: -8px; }
+.tuft-3 { left: 46%; top: -12px; }
+.tuft-4 { left: 67%; top: -8px; }
+.tuft-5 { left: 88%; top: -12px; }
+.flower-1 { left: 16%; top: -10px; }
+.flower-2 { left: 78%; top: -12px; }
+@media (prefers-reduced-motion: no-preference) {
+    .grass-tuft,
+    .grass-flower { animation: pm-tuft-sway 5s ease-in-out infinite alternate; }
+    .tuft-2 { animation-duration: 5.8s; animation-delay: -1.4s; }
+    .tuft-3 { animation-duration: 4.4s; animation-delay: -2.1s; }
+    .tuft-4 { animation-duration: 6s; animation-delay: -0.8s; }
+    .tuft-5 { animation-duration: 4.8s; animation-delay: -2.9s; }
+    .flower-1 { animation-duration: 6.4s; animation-delay: -1.9s; }
+    .flower-2 { animation-duration: 5.5s; animation-delay: -3.3s; }
+}
+@keyframes pm-tuft-sway {
+    from { transform: skewX(-3deg); }
+    to { transform: skewX(3deg); }
+}
+
+/* (2) Dusk sky: body.night (live.js, WIB clock — INDEPENDENT of the sleep
+   presentation). A persistent indigo overlay crossfades in over ~3s; the
+   sun re-skins into a pale crescent moon (its ::after carves the crescent),
+   clouds dim, pixel stars twinkle. Zero JS particles, silent. Night paints
+   over room-warm/env-hot by sitting later in the env-background stack. */
+.env-night {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 25%, #2F3A69 0%, #222B52 55%, #161D3D 100%);
+    transition: opacity 3s ease;
+}
+body.night .env-night { opacity: 1; }
+
+/* 2px pixel stars as box-shadow fields (vw/vh offsets scale with viewport);
+   two groups twinkle out of phase with hard steps(1). */
+.env-stars {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+}
+.stars-a {
+    box-shadow:
+        6vw 8vh 0 #EAF0FF, 14vw 22vh 0 #B9C6F2, 23vw 5vh 0 #EAF0FF,
+        31vw 15vh 0 #8FA0DE, 38vw 30vh 0 #EAF0FF, 47vw 9vh 0 #B9C6F2,
+        55vw 21vh 0 #EAF0FF, 64vw 6vh 0 #8FA0DE, 72vw 17vh 0 #EAF0FF,
+        81vw 27vh 0 #B9C6F2, 90vw 11vh 0 #EAF0FF, 95vw 32vh 0 #8FA0DE;
+}
+.stars-b {
+    box-shadow:
+        3vw 18vh 0 #EAF0FF, 9vw 33vh 0 #B9C6F2, 18vw 12vh 0 #EAF0FF,
+        27vw 26vh 0 #8FA0DE, 35vw 4vh 0 #EAF0FF, 44vw 19vh 0 #B9C6F2,
+        52vw 34vh 0 #EAF0FF, 60vw 13vh 0 #B9C6F2, 69vw 29vh 0 #EAF0FF,
+        77vw 7vh 0 #8FA0DE, 85vw 20vh 0 #EAF0FF, 93vw 25vh 0 #B9C6F2;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .stars-a { animation: pm-star-twinkle 3.6s steps(1, end) infinite; }
+    .stars-b { animation: pm-star-twinkle 4.4s steps(1, end) infinite; animation-delay: 1.6s; }
+}
+@keyframes pm-star-twinkle {
+    0%, 42%, 58%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* Moon reskin: pale disc + a night-sky-colored ::after circle offset to the
+   top-right carves the crescent. The ::after is transparent by day. */
+.env-sun::after {
+    content: "";
+    position: absolute;
+    top: -14px;
+    right: -18px;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: transparent;
+    transition: background 3s ease;
+}
+body.night .env-sun {
+    background: #E9EDF9;
+    box-shadow: 0 0 44px rgba(197, 212, 255, 0.5);
+    animation: none;
+}
+body.night .env-sun::after { background: #2A3560; }
+
+/* Clouds keep floating at night, just dimmer. inset:0 on .env-clouds keeps
+   the clouds' absolute geometry identical while letting the container skew
+   as one sheet during wind gusts. */
+.env-clouds {
+    position: absolute;
+    inset: 0;
+}
+.env-clouds .cloud { transition: opacity 3s ease, filter 3s ease; }
+body.night .cloud { opacity: 0.35; filter: brightness(0.62) saturate(0.7); }
+
+/* The grass settles into evening shade with the same 3s crossfade. */
+.grass-floor { transition: filter 3s ease; }
+body.night .grass-floor { filter: brightness(0.72) saturate(0.85); }
+
+/* (3) Fireflies (live.js spawns/removes them with body.night + tab
+   visibility; they ride the shared particle budget). Figure-eight drift is
+   a Lissajous 1:2: the shell drifts X over the full period, the dot drifts
+   Y at half the period; the dot also blinks with steps(1). Reduced motion:
+   static soft glows. */
+.fx-firefly {
+    position: fixed;
+    width: 4px;
+    height: 4px;
+    pointer-events: none;
+    image-rendering: pixelated;
+}
+.fx-firefly-dot {
+    display: block;
+    width: 4px;
+    height: 4px;
+    background: #FFE98A;
+    box-shadow: 0 0 6px 2px rgba(255, 233, 138, 0.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .fx-firefly { animation: pm-ff-drift-x 9s ease-in-out infinite alternate; }
+    .fx-firefly-dot {
+        animation:
+            pm-ff-drift-y 4.5s ease-in-out infinite alternate,
+            pm-ff-blink 2.8s steps(1, end) infinite;
+    }
+}
+@keyframes pm-ff-drift-x {
+    from { transform: translateX(-34px); }
+    to { transform: translateX(34px); }
+}
+@keyframes pm-ff-drift-y {
+    from { transform: translateY(-12px); }
+    to { transform: translateY(12px); }
+}
+@keyframes pm-ff-blink {
+    0%, 22%, 70%, 100% { opacity: 1; }
+    12% { opacity: 0.15; }
+    61% { opacity: 0.3; }
+}
+
+/* (5) Heat shimmer: body.env-hot (live.js renderSensors, >32°C — the SAME
+   threshold the pressable vitals use). Amber sky wash + a translucent haze
+   band above the grass line. Removed the moment readings return to range. */
+.env-heat {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(255, 176, 84, 0.3) 0%, rgba(255, 222, 106, 0.16) 45%, rgba(255, 222, 106, 0) 72%);
+    transition: opacity 2s ease;
+}
+body.env-hot .env-heat { opacity: 1; }
+.env-haze {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 142px; /* just above the 140px grass floor */
+    height: 44px;
+    opacity: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 236, 160, 0.35) 45%, rgba(255, 255, 255, 0.18) 75%, rgba(255, 255, 255, 0) 100%);
+    transition: opacity 2s ease;
+}
+body.env-hot .env-haze { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+    body.env-hot .env-haze { animation: pm-haze-shimmer 2.6s steps(7, end) infinite alternate; }
+}
+@keyframes pm-haze-shimmer {
+    from { transform: translateX(-8px) scaleY(1); }
+    to { transform: translateX(8px) scaleY(1.18); }
+}
+
+/* (6) Wind gust: live.js adds body.fx-wind for ~2.5s (never under reduced
+   motion). The grass bed and the cloud sheet lean the same way as
+   Jamkachu's leaves (leaned via WAAPI in live.js). Containers skew so the
+   tufts' sway and the clouds' float keep running underneath. */
+@media (prefers-reduced-motion: no-preference) {
+    .grass-decor { transition: transform 0.9s ease-in-out; }
+    .env-clouds { transition: transform 1s ease-in-out; }
+    body.fx-wind .grass-decor { transform: skewX(-8deg); }
+    body.fx-wind .env-clouds { transform: skewX(-5deg) translateX(14px); }
+}
+
+/* (7) Farmer grandpa NPC. Box-shadow pixel sprite on a 4px grid (~44×52px
+   drawn area — Jamkachu stays the hero): straw hat, white beard, work
+   shirt. ::before/::after are the two walk frames, swapped with steps(1);
+   a long keyframe loop wanders him along the grass with scaleX direction
+   flips and baked-in pauses. z-index 1 keeps him BEHIND the mascot (z 2)
+   and above the grass floor (z 0); pointer-events only on his own sprite.
+   Reduced motion: he stands still. Night: he is gone (body.night fade). */
+.npc-farmer {
+    position: fixed;
+    left: 5vw;
+    bottom: 84px;
+    width: 48px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 1;
+    image-rendering: pixelated;
+    transform-origin: 50% 100%;
+    transition: opacity 2s ease;
+}
+body.night .npc-farmer { opacity: 0; pointer-events: none; }
+.npc-farmer::before,
+.npc-farmer::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 0;
+    width: 4px;
+    height: 4px;
+    background: transparent;
+    box-shadow:
+        /* straw hat */
+        16px 0 0 var(--color-yellow), 20px 0 0 var(--color-yellow), 24px 0 0 var(--color-yellow),
+        12px 4px 0 var(--color-yellow), 16px 4px 0 var(--color-yellow), 20px 4px 0 var(--color-yellow),
+        24px 4px 0 var(--color-yellow), 28px 4px 0 var(--color-yellow),
+        4px 8px 0 #E8C46B, 8px 8px 0 #E8C46B, 12px 8px 0 #E8C46B, 16px 8px 0 #E8C46B,
+        20px 8px 0 #E8C46B, 24px 8px 0 #E8C46B, 28px 8px 0 #E8C46B, 32px 8px 0 #E8C46B, 36px 8px 0 #E8C46B,
+        /* face + eyes */
+        12px 12px 0 #F2C592, 16px 12px 0 var(--color-outline), 20px 12px 0 #F2C592,
+        24px 12px 0 var(--color-outline), 28px 12px 0 #F2C592,
+        12px 16px 0 #F2C592, 16px 16px 0 #F2C592, 20px 16px 0 #F2C592, 24px 16px 0 #F2C592, 28px 16px 0 #F2C592,
+        /* white beard */
+        8px 20px 0 #F7F3E7, 12px 20px 0 #F7F3E7, 16px 20px 0 #F7F3E7, 20px 20px 0 #F7F3E7,
+        24px 20px 0 #F7F3E7, 28px 20px 0 #F7F3E7, 32px 20px 0 #F7F3E7,
+        /* shoulders + beard tip */
+        12px 24px 0 var(--color-soil-light), 16px 24px 0 var(--color-soil-light), 20px 24px 0 #F7F3E7,
+        24px 24px 0 var(--color-soil-light), 28px 24px 0 var(--color-soil-light),
+        /* arms + torso */
+        8px 28px 0 #F2C592, 12px 28px 0 var(--color-soil-light), 16px 28px 0 var(--color-soil-light),
+        20px 28px 0 var(--color-soil-light), 24px 28px 0 var(--color-soil-light),
+        28px 28px 0 var(--color-soil-light), 32px 28px 0 #F2C592,
+        12px 32px 0 var(--color-soil-light), 16px 32px 0 var(--color-soil-light),
+        20px 32px 0 var(--color-soil-light), 24px 32px 0 var(--color-soil-light), 28px 32px 0 var(--color-soil-light),
+        /* belt */
+        12px 36px 0 var(--color-soil-dark), 16px 36px 0 var(--color-soil-dark), 20px 36px 0 var(--color-soil-dark),
+        24px 36px 0 var(--color-soil-dark), 28px 36px 0 var(--color-soil-dark),
+        /* trousers */
+        12px 40px 0 var(--color-soil-dark), 16px 40px 0 var(--color-soil-dark),
+        24px 40px 0 var(--color-soil-dark), 28px 40px 0 var(--color-soil-dark),
+        /* legs + boots, frame A (standing) */
+        16px 44px 0 var(--color-soil-dark), 24px 44px 0 var(--color-soil-dark),
+        12px 48px 0 var(--color-outline), 16px 48px 0 var(--color-outline),
+        24px 48px 0 var(--color-outline), 28px 48px 0 var(--color-outline);
+}
+.npc-farmer::after {
+    opacity: 0;
+    box-shadow:
+        /* straw hat */
+        16px 0 0 var(--color-yellow), 20px 0 0 var(--color-yellow), 24px 0 0 var(--color-yellow),
+        12px 4px 0 var(--color-yellow), 16px 4px 0 var(--color-yellow), 20px 4px 0 var(--color-yellow),
+        24px 4px 0 var(--color-yellow), 28px 4px 0 var(--color-yellow),
+        4px 8px 0 #E8C46B, 8px 8px 0 #E8C46B, 12px 8px 0 #E8C46B, 16px 8px 0 #E8C46B,
+        20px 8px 0 #E8C46B, 24px 8px 0 #E8C46B, 28px 8px 0 #E8C46B, 32px 8px 0 #E8C46B, 36px 8px 0 #E8C46B,
+        /* face + eyes */
+        12px 12px 0 #F2C592, 16px 12px 0 var(--color-outline), 20px 12px 0 #F2C592,
+        24px 12px 0 var(--color-outline), 28px 12px 0 #F2C592,
+        12px 16px 0 #F2C592, 16px 16px 0 #F2C592, 20px 16px 0 #F2C592, 24px 16px 0 #F2C592, 28px 16px 0 #F2C592,
+        /* white beard */
+        8px 20px 0 #F7F3E7, 12px 20px 0 #F7F3E7, 16px 20px 0 #F7F3E7, 20px 20px 0 #F7F3E7,
+        24px 20px 0 #F7F3E7, 28px 20px 0 #F7F3E7, 32px 20px 0 #F7F3E7,
+        /* shoulders + beard tip */
+        12px 24px 0 var(--color-soil-light), 16px 24px 0 var(--color-soil-light), 20px 24px 0 #F7F3E7,
+        24px 24px 0 var(--color-soil-light), 28px 24px 0 var(--color-soil-light),
+        /* arms + torso */
+        8px 28px 0 #F2C592, 12px 28px 0 var(--color-soil-light), 16px 28px 0 var(--color-soil-light),
+        20px 28px 0 var(--color-soil-light), 24px 28px 0 var(--color-soil-light),
+        28px 28px 0 var(--color-soil-light), 32px 28px 0 #F2C592,
+        12px 32px 0 var(--color-soil-light), 16px 32px 0 var(--color-soil-light),
+        20px 32px 0 var(--color-soil-light), 24px 32px 0 var(--color-soil-light), 28px 32px 0 var(--color-soil-light),
+        /* belt */
+        12px 36px 0 var(--color-soil-dark), 16px 36px 0 var(--color-soil-dark), 20px 36px 0 var(--color-soil-dark),
+        24px 36px 0 var(--color-soil-dark), 28px 36px 0 var(--color-soil-dark),
+        /* trousers */
+        12px 40px 0 var(--color-soil-dark), 16px 40px 0 var(--color-soil-dark),
+        24px 40px 0 var(--color-soil-dark), 28px 40px 0 var(--color-soil-dark),
+        /* legs + boots, frame B (mid-stride) */
+        12px 44px 0 var(--color-soil-dark), 28px 44px 0 var(--color-soil-dark),
+        8px 48px 0 var(--color-outline), 12px 48px 0 var(--color-outline),
+        28px 48px 0 var(--color-outline), 32px 48px 0 var(--color-outline);
+}
+@media (prefers-reduced-motion: no-preference) {
+    .npc-farmer { animation: pm-npc-wander 84s linear infinite; }
+    .npc-farmer::before { animation: pm-npc-step-a 0.7s steps(1, end) infinite; }
+    .npc-farmer::after { animation: pm-npc-step-b 0.7s steps(1, end) infinite; }
+    /* He stops mid-stride while a speech bubble is up (live.js). */
+    .npc-farmer.npc-talking,
+    .npc-farmer.npc-talking::before,
+    .npc-farmer.npc-talking::after { animation-play-state: paused; }
+}
+@keyframes pm-npc-step-a {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+@keyframes pm-npc-step-b {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+}
+@keyframes pm-npc-wander {
+    0% { transform: translateX(0) scaleX(1); }
+    16% { transform: translateX(26vw) scaleX(1); }
+    21% { transform: translateX(26vw) scaleX(1); } /* pause */
+    22% { transform: translateX(26vw) scaleX(-1); } /* flip */
+    40% { transform: translateX(6vw) scaleX(-1); }
+    46% { transform: translateX(6vw) scaleX(-1); } /* pause */
+    47% { transform: translateX(6vw) scaleX(1); } /* flip */
+    68% { transform: translateX(34vw) scaleX(1); }
+    74% { transform: translateX(34vw) scaleX(1); } /* pause */
+    75% { transform: translateX(34vw) scaleX(-1); } /* flip */
+    99% { transform: translateX(0.5vw) scaleX(-1); }
+    100% { transform: translateX(0) scaleX(1); }
+}
+
+/* Grandpa's small speech bubble (live.js positions it above his hat and
+   removes it after ~6s). Body copy face, guidance tone — no celebration. */
+.npc-bubble {
+    position: fixed;
+    z-index: 900;
+    transform: translate(-50%, -100%);
+    max-width: 230px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 0 rgba(36, 52, 33, 0.15);
+    padding: 8px 12px;
+    text-align: center;
+    pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .npc-bubble { animation: pm-npc-bubble-in 0.25s steps(3, end); }
+}
+@keyframes pm-npc-bubble-in {
+    from { transform: translate(-50%, -100%) translateY(6px); opacity: 0; }
+    to { transform: translate(-50%, -100%) translateY(0); opacity: 1; }
+}
+
 /* Responsive adjustments */
 @media (max-width: 1100px) {
     .mascot-wrapper { width: 260px; }
 }
 @media (max-width: 800px) {
-    .app-layout { flex-direction: column; overflow-y: auto; height: auto; }
-    body { overflow-y: auto; height: auto; }
-    .sidebar { width: 100%; height: auto; flex-direction: row; flex-wrap: wrap; position: static; }
-    .nav-links { flex-direction: row; overflow-x: auto; flex-wrap: nowrap; width: 100%; }
-    .locale-switch { width: 116px; margin-top: 0; margin-left: auto; }
-    .game-world { overflow-y: visible; }
+    body { min-width: 0; height: auto; overflow-x: hidden; overflow-y: auto; }
+    .app-layout {
+        min-width: 0;
+        min-height: 100vh;
+        height: auto;
+        padding: 0;
+        gap: 0;
+        flex-direction: column;
+        overflow: visible;
+    }
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 80;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        height: 70px;
+        padding: 10px 14px;
+        gap: 10px;
+        border-width: 0 0 3px;
+        border-radius: 0;
+        box-shadow: 0 4px 0 rgba(36, 52, 33, .12);
+    }
+    .brand {
+        min-width: 0;
+        padding: 0;
+        gap: 10px;
+        border: 0;
+    }
+    .logo-img { width: 38px; height: 38px; }
+    .brand h1 { font-size: 10px; }
+    .nav-links {
+        position: fixed;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: 8px;
+        z-index: 100;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+        width: auto;
+        padding: 6px;
+        overflow: visible;
+        border: 3px solid var(--color-border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, .97);
+        box-shadow: 0 5px 0 rgba(36, 52, 33, .16);
+        backdrop-filter: blur(10px);
+    }
+    .nav-item {
+        min-width: 0;
+        padding: 7px 2px 6px;
+        gap: 3px;
+        flex-direction: column;
+        font-size: 7px;
+        line-height: 1.25;
+        text-align: center;
+    }
+    .nav-item .icon { font-size: 17px; }
+    .nav-item span {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .nav-item:hover { transform: translateY(-2px); }
+    .nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, .35); }
+    .locale-switch { width: 94px; margin: 0; padding: 3px; }
+    .locale-switch button { min-height: 36px; padding: 6px 4px; font-size: 8px; }
+    .game-world {
+        width: calc(100% - 20px);
+        min-width: 0;
+        min-height: calc(100dvh - 80px);
+        margin: 10px;
+        padding: 4px 4px 104px;
+        overflow-y: visible;
+    }
     .hud-top { justify-content: center; }
 }
 
@@ -799,8 +1431,8 @@ body.room-warm {
     /* Locale switch buttons were ~29px tall (9px font, 9px/6px padding) —
        under the 44px tap-target guideline. */
     .locale-switch button {
-        font-size: 10px;
-        min-height: 44px;
+        font-size: 9px;
+        min-height: 38px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -817,4 +1449,130 @@ body.room-warm {
 
     /* Hatch-intro Skip must always be reachable; was ~38px tall. */
     .hatch-skip { min-height: 44px; padding: 12px 16px; }
+}
+
+@media (max-width: 360px) {
+    .nav-item { font-size: 6px; }
+    .brand h1 { display: none; }
+}
+
+/* ── One-screen desktop game board ──────────────────────────────────────
+   The left navigation remains exactly as authored. Only the Home playfield
+   becomes a game-style two-column board: Jamkachu owns the large left stage,
+   while the right rail contains the compact HUD, one request and one action.
+   Existing IDs and DOM order stay intact so live.js, realtime and demo hooks
+   keep working without a second state path. */
+@media (min-width: 801px) {
+    .game-world {
+        display: grid;
+        grid-template-columns: minmax(360px, 1.3fr) minmax(330px, .9fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: clamp(18px, 2.4vw, 38px);
+        height: 100%;
+        padding: 4px 8px 8px;
+        overflow: hidden;
+    }
+
+    .mascot-stage {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 0;
+        justify-content: center;
+        padding-top: 22px;
+    }
+
+    .mascot-container { max-height: 100%; }
+    .mascot-wrapper { width: min(300px, 34vh); }
+    .speech-bubble {
+        width: min(400px, 38vw);
+        min-height: 58px;
+        max-height: 92px;
+        margin-bottom: clamp(8px, 1.5vh, 18px);
+        padding: 12px 18px;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+    }
+    .char-id { margin-top: 0; }
+    .char-id h2 { font-size: clamp(17px, 2.2vh, 24px); }
+    #char-mood { margin-top: 5px; }
+
+    .home-stack {
+        grid-column: 2;
+        grid-row: 1;
+        align-self: center;
+        width: 100%;
+        max-width: 560px;
+        max-height: 100%;
+        margin: 0;
+        padding-top: 70px;
+        gap: clamp(9px, 1.4vh, 14px);
+    }
+
+    .home-stack .user-gamification { order: -3; }
+    .quiz-chip { order: -2; }
+    #current-quest { order: -1; }
+    .actions-panel { order: 0; }
+    .home-divider { display: none; }
+    #env-strip { order: 1; }
+
+    .user-gamification {
+        gap: 12px;
+        padding: 11px 14px;
+    }
+    .quiz-chip { min-height: 52px; padding: 7px 12px; }
+    .avatar-img { width: 48px; height: 48px; }
+    .username { font-size: 10px; }
+    .xp-bar-wrap { width: min(150px, 12vw); }
+    .badges { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .badge { padding: 5px 9px; font-size: 8px; }
+
+    #current-quest {
+        min-height: 68px;
+        padding: 12px 16px;
+        display: grid;
+        place-items: center;
+    }
+    #care-action {
+        max-width: none;
+        min-height: 58px;
+        padding: 12px 18px;
+        font-size: 11px;
+    }
+    #env-strip { padding: 9px 12px; font-size: 14px; white-space: nowrap; }
+
+    .hud-top {
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        z-index: 20;
+    }
+    .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
+    .weather-icon { font-size: 22px; }
+    .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }
+    .weather-text .temp { font-size: 11px; }
+    .weather-text .desc { max-width: 145px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .weather-text .weather-source,
+    .weather-text .forecast-time,
+    .weather-text .indoor-reading { display: none; }
+
+    .panel-glass:hover { transform: none; }
+    .grass-floor { left: 272px; width: calc(100% - 272px); height: 105px; }
+}
+
+/* Short classroom laptops get the same information hierarchy with a smaller
+   character and tighter cards; the page itself still never scrolls. */
+@media (min-width: 801px) and (max-height: 720px) {
+    .app-layout { padding-top: 14px; padding-bottom: 14px; }
+    .sidebar { padding-top: 14px; padding-bottom: 14px; gap: 18px; }
+    .brand { padding-bottom: 14px; }
+    .nav-item { padding-top: 9px; padding-bottom: 9px; }
+    .mascot-wrapper { width: min(250px, 32vh); }
+    .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
+    .companion-stage { margin-top: 2px; }
+    .home-stack { padding-top: 54px; gap: 7px; }
+    .user-gamification { padding: 8px 11px; }
+    #current-quest { min-height: 54px; padding: 8px 12px; }
+    #care-action { min-height: 50px; padding: 9px 14px; }
+    #env-strip { padding-top: 5px; padding-bottom: 5px; }
 }

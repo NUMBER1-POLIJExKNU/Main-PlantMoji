@@ -13,6 +13,7 @@
 import { normalizeMood } from "@/types/events";
 import { normalizePersonality } from "@/types/game";
 import type { BondEventType, PersonalityId, PlantMood } from "@/types/game";
+import { dialogueForMood } from "./dialogue-bank";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -200,9 +201,10 @@ const EVENT_MESSAGES: Record<MessageEventKind, Record<PersonalityId, EventTempla
  * Tolerates un-normalized runtime values (DB rows store personality as a raw
  * string; Node-RED sometimes sends label variants like "Dry Air").
  */
-export function getMoodMessage(personality: PersonalityId, mood: PlantMood): string {
+export function getMoodMessage(personality: PersonalityId, mood: PlantMood, seed?: string): string {
   const voice = MOOD_MESSAGES[normalizePersonality(personality)];
   const message: string | undefined = voice[normalizeMood(mood) ?? mood];
+  if (seed && normalizeMood(mood)) return dialogueForMood(normalizeMood(mood)!, `${personality}|${seed}`);
   // Unreachable with typed callers; keeps a garbage cast from returning undefined.
   return message ?? "I’m not sure how I’m feeling right now…";
 }

@@ -100,6 +100,7 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
           sinceIso={quest.started_at}
           requiredSeconds={def.requiredSeconds}
           plantId={PLANT_ID}
+          questId={quest.id}
           locale={locale}
         />
       )}
@@ -110,6 +111,7 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
           sinceIso={quest.verifying_since as string}
           requiredSeconds={def.requiredSeconds}
           plantId={PLANT_ID}
+          questId={quest.id}
           locale={locale}
         />
       )}

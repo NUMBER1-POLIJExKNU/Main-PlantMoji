@@ -178,7 +178,9 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
     console.error(`addGrowthRecord(${plantId}) growth_stage update failed:`, updateError.message);
   }
 
-  revalidatePath("/settings");
+  // The add-record form now lives on /diary (Growth Records moved out of
+  // Settings) — revalidate that route instead of /settings.
+  revalidatePath("/diary");
 }
 
 /**

@@ -12,6 +12,19 @@
     <!-- Background Environment (Decorations) -->
     <div class="env-background">
         <div class="env-sky"></div>
+        <!-- Heat shimmer (live.js body.env-hot, >32°C — the SAME threshold the
+             pressable vitals use): amber sky wash + a haze band shimmering
+             above the grass. State, not celebration — silent. -->
+        <div class="env-heat" aria-hidden="true"></div>
+        <div class="env-haze" aria-hidden="true"></div>
+        <!-- Dusk sky (live.js body.night, 18:00–06:00 WIB, independent of the
+             sleep presentation so the sky stays honest when a problem mood
+             keeps Jamkachu awake): indigo crossfade + twinkling pixel stars;
+             the sun below re-skins into a crescent moon via CSS. -->
+        <div class="env-night" aria-hidden="true">
+            <div class="env-stars stars-a"></div>
+            <div class="env-stars stars-b"></div>
+        </div>
         <div class="env-sun"></div>
         <div class="env-clouds">
             <div class="cloud cloud-1"></div>
@@ -32,10 +45,10 @@
             <nav class="nav-links">
                 <a href="/" class="nav-item active"><i class="icon">🏠</i> <span data-i18n="nav.home">Beranda</span></a>
                 <a href="/quests" class="nav-item"><i class="icon">📜</i> <span data-i18n="nav.quests">Misi</span></a>
-                <a href="/settings" class="nav-item"><i class="icon">🌱</i> <span data-i18n="nav.diary">Buku Harian</span></a>
-                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> <span data-i18n="nav.status">Status Tanaman</span></a>
+                <a href="/plants" class="nav-item"><i class="icon">🌾</i> <span data-i18n="nav.plants">Tanaman</span></a>
+                <a href="/monitoring" class="nav-item"><i class="icon">📈</i> <span data-i18n="nav.status">Dashboard</span></a>
                 <a href="/collection" class="nav-item"><i class="icon">🏆</i> <span data-i18n="nav.collection">Koleksi</span></a>
-                <a href="/reports" class="nav-item"><i class="icon">📊</i> <span data-i18n="nav.reports">Laporan Mingguan</span></a>
+                <a href="/reports" class="nav-item"><i class="icon">📊</i> <span data-i18n="nav.reports">Laporan</span></a>
                 <a href="/settings" class="nav-item"><i class="icon">⚙️</i> <span data-i18n="nav.settings">Pengaturan</span></a>
             </nav>
             <div class="locale-switch" role="group" aria-label="Language / Bahasa">
@@ -65,8 +78,28 @@
 
             <!-- 1) Center Stage: Jamkachu -->
             <div class="mascot-stage">
-                <!-- Grass Floor (fixed decoration at the bottom of the scene) -->
-                <div class="grass-floor"></div>
+                <!-- Grass Floor (fixed decoration at the bottom of the scene).
+                     Tufts + flowers are box-shadow sprite art (same technique
+                     as .fx-pod); .grass-decor leans as ONE bed during wind
+                     gusts (body.fx-wind) so the tufts' own sway keeps running. -->
+                <div class="grass-floor">
+                    <div class="grass-decor" aria-hidden="true">
+                        <div class="grass-tuft tuft-1"></div>
+                        <div class="grass-tuft tuft-2"></div>
+                        <div class="grass-tuft tuft-3"></div>
+                        <div class="grass-tuft tuft-4"></div>
+                        <div class="grass-tuft tuft-5"></div>
+                        <div class="grass-flower flower-1"></div>
+                        <div class="grass-flower flower-2"></div>
+                    </div>
+                </div>
+
+                <!-- Farmer grandpa NPC (living world): pixel sprite drawn with
+                     box-shadows (::before/::after are the two walk frames),
+                     pure-CSS wander BEHIND the mascot, hidden while body.night.
+                     A plain button so taps/keyboard reach live.js — tapping
+                     grants NOTHING, he only shares mood-grounded guidance. -->
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Farmer grandpa"></button>
 
                 <!-- Mascot -->
                 <div class="mascot-container">
@@ -75,10 +108,13 @@
                     </div>
                     <div class="mascot-wrapper animated-breath">
                         <svg viewBox="0 0 300 350" class="mascot-svg">
-                            <!-- Pot (Clay) -->
-                            <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke="var(--color-outline)" stroke-width="8"/>
-                            <rect x="60" y="190" width="180" height="30" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="8"/>
-                            <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
+                            <!-- Pot (Clay) — grouped so the body-part poke router can
+                                 knock-shake ONLY the pot (live.js potKnock). -->
+                            <g class="mascot-pot">
+                                <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="60" y="190" width="180" height="30" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
+                            </g>
 
                             <!-- Stem (classed so the hatching intro can hide the plant, pot stays) -->
                             <rect class="mascot-stem" x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="8"/>
@@ -97,10 +133,13 @@
                                     <!-- Eyes -->
                                     <g class="eyes">
                                         <rect x="110" y="45" width="15" height="15" fill="var(--color-outline)"/>
-                                        <rect x="112" y="47" width="5" height="5" fill="#FFF"/>
-
                                         <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/>
-                                        <rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                        <!-- Pupil highlights (curious gaze): live.js nudges this
+                                             group a few px toward the pointer while awake. -->
+                                        <g class="pupils">
+                                            <rect x="112" y="47" width="5" height="5" fill="#FFF"/>
+                                            <rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                        </g>
                                     </g>
 
                                     <!-- Cheeks -->
@@ -253,12 +292,19 @@
                         <h2 id="char-name">JAMKACHU</h2>
                         <span id="bff-token" class="bff-token" hidden>Best Friend 💛</span>
                         <div id="char-mood">--</div>
+                        <div id="companion-stage" class="companion-stage">COMPANION · SEED</div>
                     </div>
                 </div>
             </div>
 
             <!-- 3+) Info stack below the character -->
             <div class="home-stack">
+
+                <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
+                    <span aria-hidden="true">🧠</span>
+                    <span class="quiz-chip-copy"><strong>QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
+                    <span class="quiz-chip-xp">+9 XP</span>
+                </button>
 
                 <!-- Current Quest (fed by the existing quests query) -->
                 <div id="current-quest" class="panel-glass">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></div>
@@ -333,9 +379,22 @@
 
         </main>
     </div>
+    <div id="daily-quiz-modal" class="quiz-modal" hidden>
+        <div class="quiz-backdrop" data-quiz-close></div>
+        <section class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quiz-title" tabindex="-1">
+            <header class="quiz-card-head"><div><span id="quiz-step">1 / 3</span><h2 id="quiz-title">Quiz Jamkachu</h2></div><button id="quiz-close" type="button" aria-label="Tutup">×</button></header>
+            <div class="quiz-meter"><i id="quiz-meter-fill"></i></div>
+            <div class="quiz-timer" aria-label="Waktu tersisa"><i id="quiz-timer-fill"></i><strong id="quiz-timer-text">15</strong></div>
+            <p id="quiz-question" class="quiz-question"></p>
+            <div id="quiz-choices" class="quiz-choices"></div>
+            <div id="quiz-feedback" class="quiz-feedback" hidden></div>
+            <button id="quiz-next" class="pixel-btn quiz-next" type="button" hidden>Berikutnya →</button>
+        </section>
+    </div>
     <script src="/farm/strings.js"></script>
     <script src="/farm/sfx.js"></script>
     <script src="/farm/demo.js"></script>
+    <script src="/farm/quiz.js"></script>
     <script type="module" src="/farm/live.js"></script>
 </body>
 </html>

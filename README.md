@@ -143,7 +143,7 @@ Bond Level represents care and progression. It is intentionally separate from th
 - 📊 **Weekly Report** — healthy time, quests completed, streak, an AI-narrated (template-fallback) summary, and an animated count-up recap
 - 🎉 **Seasonal Events** — date-window XP multipliers: Musim Kemarau Heat Challenge (×1.2), Weekend Growth (×1.1), Musim Hujan Growing Season (×1.15, Nov–Apr); highest multiplier wins, never stacked
 - 🎲 **Daily Events** — one deterministic event per WIB day per plant (hash-picked, replay-safe): Jember-flavored XP boosts (*Golden Hour over the Sawah* ×1.5), care challenges (+10–15 XP, ledger-guarded), and flavor days (*Carnaval Day*, *Market Morning*, *Volcano-Soil Pride Day*…)
-- 🤖 **AI-personalized dialogue** — optional Claude-powered mood messages; always falls back to deterministic personality templates
+- 🤖 **AI-personalized dialogue** — optional Gemini-powered grounded explanations; always falls back to deterministic templates
 
 ### Tamagotchi Continuity
 
@@ -331,7 +331,7 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 | Realtime | Supabase Realtime |
 | Sound | 8-bit SFX synthesized in WebAudio *(zero audio files)* |
 | UI languages | Bahasa Indonesia (default) · English |
-| AI | Claude API, server-side only *(optional — deterministic template fallback)* |
+| AI | Gemini API (`gemini-3.5-flash-lite`), server-side only *(optional — deterministic template fallback)* |
 | Testing / CI | Vitest + GitHub Actions (lint · test · build) |
 | Deployment | Vercel + Supabase Cloud |
 
@@ -440,7 +440,7 @@ BMKG_ADM4_CODE=35.09.21.1005
 # Optional — enables the AI personality layer (server-side only). When unset,
 # or when a call fails, the game always falls back to the deterministic
 # personality templates.
-ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
 ```
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.

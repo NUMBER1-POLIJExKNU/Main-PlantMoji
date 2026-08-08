@@ -12,6 +12,83 @@
   --foreground: #243421;
 }
 
+/* Shared route transition: tiny CSS pixel Jamkachu, no image/network wait. */
+.pm-pixel-loading {
+  position: relative;
+  min-height: min(520px, 72dvh);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+}
+.pm-loading-copy {
+  position: absolute;
+  z-index: 2;
+  top: calc(50% + 88px);
+  left: 16px;
+  right: 16px;
+  pointer-events: none;
+}
+.pm-loading-toy { position: absolute; inset: 0; z-index: 1; appearance: none; border: 0; padding: 0; margin: 0; display: grid; place-items: center; background: transparent; color: inherit; cursor: pointer; border-radius: 18px; }
+.pm-loading-toy:focus-visible { outline: 4px solid #4da1ed; outline-offset: -6px; }
+.pm-loading-scene { position: relative; display: block; width: 112px; height: 132px; image-rendering: pixelated; }
+.pm-loading-face { position: absolute; left: 32px; top: 38px; width: 48px; height: 42px; background: #8fd36f; border: 4px solid #243421; box-shadow: inset 0 -7px #69b957; }
+.pm-loading-face i { position: absolute; top: 14px; width: 7px; height: 9px; background: #243421; }
+.pm-loading-face i:first-child { left: 9px; }
+.pm-loading-face i:last-child { right: 9px; }
+.pm-loading-sprout { position: absolute; z-index: 2; left: 52px; top: 14px; width: 8px; height: 28px; background: #397a2b; }
+.pm-loading-sprout i { position: absolute; top: -3px; width: 24px; height: 14px; background: #69b957; border: 4px solid #243421; }
+.pm-loading-sprout i:first-child { right: 5px; transform: rotate(12deg); }
+.pm-loading-sprout i:last-child { left: 5px; transform: rotate(-12deg); }
+.pm-loading-pot { position: absolute; z-index: 3; left: 25px; bottom: 14px; width: 62px; height: 49px; background: #c98452; border: 4px solid #243421; border-top-width: 10px; }
+.pm-loading-pot i { position: absolute; left: -10px; top: -13px; width: 74px; height: 12px; background: #e5a06b; border: 4px solid #243421; }
+.pm-loading-dirt { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 14px; background: #6f9f48; border: 4px solid #243421; }
+.pm-loading-heart { position: absolute; z-index: 8; top: 18px; right: 4px; color: #e5697c; font: 24px/1 monospace; opacity: 0; transform: translateY(8px) scale(.5); }
+.pm-loading-prop { position: absolute; z-index: 5; right: -5px; top: 55px; width: 34px; height: 34px; }
+.pm-loading-prop i { position: absolute; display: block; }
+.pm-loading-prop[data-variant="quests"] { background: #fff0b8; border: 4px solid #243421; }
+.pm-loading-prop[data-variant="quests"] i:first-child { left: 5px; top: 7px; width: 17px; height: 4px; background: #c98452; box-shadow: 0 8px #c98452, 0 16px #c98452; }
+.pm-loading-prop[data-variant="plants"] { border-left: 5px solid #397a2b; transform: rotate(-8deg); }
+.pm-loading-prop[data-variant="plants"] i { width: 19px; height: 11px; background: #69b957; border: 3px solid #243421; }
+.pm-loading-prop[data-variant="plants"] i:nth-child(1) { left: -1px; top: 2px; } .pm-loading-prop[data-variant="plants"] i:nth-child(2) { right: 2px; top: 15px; }
+.pm-loading-prop[data-variant="monitoring"] { display: flex; align-items: end; gap: 3px; padding: 4px; border: 4px solid #243421; background: #e8f6e0; }
+.pm-loading-prop[data-variant="monitoring"] i { position: static; width: 5px; height: 7px; background: #4da1ed; box-shadow: 0 -5px #4da1ed; }
+.pm-loading-prop[data-variant="monitoring"] i:nth-child(2) { height: 13px; } .pm-loading-prop[data-variant="monitoring"] i:nth-child(3) { height: 19px; }
+.pm-loading-prop[data-variant="collection"] { background: #f5c94a; border: 4px solid #243421; transform: rotate(45deg); }
+.pm-loading-prop[data-variant="collection"] i:first-child { inset: 7px; background: #fff4b2; }
+.pm-loading-prop[data-variant="reports"] { display: flex; align-items: end; gap: 3px; padding: 3px; border-bottom: 4px solid #243421; }
+.pm-loading-prop[data-variant="reports"] i { position: static; width: 7px; background: #69b957; } .pm-loading-prop[data-variant="reports"] i:nth-child(1) { height: 9px; } .pm-loading-prop[data-variant="reports"] i:nth-child(2) { height: 17px; } .pm-loading-prop[data-variant="reports"] i:nth-child(3) { height: 25px; }
+.pm-loading-prop[data-variant="settings"] { border: 7px dotted #57684f; border-radius: 50%; box-shadow: inset 0 0 0 5px #bcd3b4; }
+.pm-loading-prop[data-variant="diary"] { width: 30px; height: 38px; background: #fff; border: 4px solid #243421; }
+.pm-loading-prop[data-variant="diary"] i:first-child { left: 4px; top: 7px; width: 15px; height: 3px; background: #4da1ed; box-shadow: 0 8px #4da1ed, 0 16px #4da1ed; }
+@media (prefers-reduced-motion: no-preference) {
+  .pm-loading-scene { animation: pm-loading-hop .8s steps(2, end) infinite; }
+  .pm-loading-face i { animation: pm-loading-blink 1.6s steps(1, end) infinite; }
+  .pm-loading-sprout { animation: pm-loading-sway .8s steps(2, end) infinite alternate; transform-origin: 50% 100%; }
+  .pm-loading-prop[data-variant="quests"], .pm-loading-prop[data-variant="diary"] { animation: pm-loading-page .8s steps(2, end) infinite alternate; }
+  .pm-loading-prop[data-variant="plants"] { animation: pm-loading-grow 1s steps(3, end) infinite alternate; transform-origin: 50% 100%; }
+  .pm-loading-prop[data-variant="monitoring"] i, .pm-loading-prop[data-variant="reports"] i { animation: pm-loading-bars .9s steps(2, end) infinite alternate; transform-origin: 50% 100%; }
+  .pm-loading-prop[data-variant="collection"] { animation: pm-loading-shine .8s steps(2, end) infinite alternate; }
+  .pm-loading-prop[data-variant="settings"] { animation: pm-loading-gear 1.2s steps(4, end) infinite; }
+  .pm-loading-toy.is-poked .pm-loading-scene { animation: pm-loading-poke .48s steps(3, end); }
+  .pm-loading-toy.is-poked .pm-loading-prop { animation-duration: .24s; }
+  .pm-loading-toy.is-poked .pm-loading-heart { animation: pm-loading-heart-pop .48s steps(3, end); }
+}
+@keyframes pm-loading-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes pm-loading-blink { 0%, 42%, 50%, 100% { transform: scaleY(1); } 45%, 48% { transform: scaleY(.2); } }
+@keyframes pm-loading-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+@keyframes pm-loading-page { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+@keyframes pm-loading-grow { from { transform: scale(.72) rotate(-8deg); } to { transform: scale(1) rotate(-8deg); } }
+@keyframes pm-loading-bars { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
+@keyframes pm-loading-shine { from { filter: brightness(1); } to { filter: brightness(1.5) drop-shadow(0 0 5px #f5c94a); } }
+@keyframes pm-loading-gear { to { transform: rotate(360deg); } }
+@keyframes pm-loading-poke { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-13px) scale(1.04); } 70% { transform: translateY(2px) scale(.98); } }
+@keyframes pm-loading-heart-pop { 0% { opacity: 0; transform: translateY(8px) scale(.5); } 35%, 75% { opacity: 1; transform: translateY(-5px) scale(1); } 100% { opacity: 0; transform: translateY(-13px) scale(.8); } }
+@media (prefers-reduced-motion: reduce) {
+  .pm-loading-toy.is-poked .pm-loading-face { background: #a9df8f; }
+  .pm-loading-toy.is-poked .pm-loading-heart { opacity: 1; transform: none; }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -105,6 +182,39 @@ body {
   line-height: 1.4;
   color: var(--color-text);
   box-shadow: 0 2px 0 rgba(36, 52, 33, 0.12);
+}
+
+/* .pm-done-pill-stamp — Quest Done-Pill Stamp micro-interaction: the "✓
+   Done"/"Selesai" history pill (src/components/quest-done-pill.tsx) stamps in
+   like an ink stamp exactly once per completion. quest-progress.tsx writes a
+   one-shot sessionStorage flag right before its post-completion
+   router.refresh(); quest-done-pill.tsx reads-and-clears it after mount and
+   adds this class only then, so ordinary visits to the history list (flag
+   absent) never animate. Gated behind prefers-reduced-motion like .pm-btn
+   above — reduced-motion users still consume the flag, they just see the
+   pill appear instantly with no animation. */
+@media (prefers-reduced-motion: no-preference) {
+  .pm-done-pill-stamp {
+    position: relative;
+    animation: pm-stamp-settle 280ms steps(4, jump-end) both;
+  }
+  .pm-done-pill-stamp::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    border-radius: inherit;
+    animation: pm-stamp-flash 70ms steps(1, jump-end) forwards;
+    pointer-events: none;
+  }
+  @keyframes pm-stamp-settle {
+    0% { transform: scale(1.6) rotate(-6deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  @keyframes pm-stamp-flash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
 }
 
 /* .pm-btn — chunky pixel button (farm .pixel-btn): hard outline, solid

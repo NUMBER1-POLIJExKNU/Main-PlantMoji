@@ -73,8 +73,8 @@
           why: "Find a cooler, shadier spot. The temperature sensor will feel the difference.",
         },
         DryAir: {
-          label: "Move me away from drafts 🌬️",
-          why: "Fans and AC dry my air. The humidity sensor will notice when it's cozier.",
+          label: "Move me away from fans & AC 🌬️",
+          why: "Fans and AC can dry the air around my leaves. This is about air humidity, not watering my soil; the humidity sensor will check the change.",
         },
         Sleepy: {
           label: "Show me some light ☀️",
@@ -123,6 +123,93 @@
 
       // Satiation line: every 5th pet within 30s (in-fiction cooldown, Task 8).
       pettingYawn: "So cozy… Jamkachu needs a tiny nap now. Zzz…",
+
+      // Double-tap surprise hop (tactile interactions): one excited line.
+      petSurprise: "Whee!",
+
+      // Mood-aware comfort petting: when Jamkachu is NOT Happy, petting
+      // answers with gratitude plus the real, sensor-backed fix. Only what
+      // the mood engine already knows — and never watering/fertilizing
+      // (no soil-moisture or nutrient sensor exists). Both soil moods
+      // share the "Soil" family, like the care button.
+      petComfort: {
+        Overheating: [
+          "Thanks… a cooler, shadier spot would feel even better.",
+          "Your hands help… but this room is really warm right now.",
+          "Phew… some shade would be lovely.",
+          "That's nice… the temperature sensor still says it's hot, though.",
+          "A little cooler and I'll be all smiles again.",
+        ],
+        DryAir: [
+          "That feels nice… the air is still pretty dry, though.",
+          "Thanks… away from fans and drafts, my air gets cozier.",
+          "Sweet of you… moister air would be even sweeter.",
+          "The humidity sensor still says the air is very dry.",
+          "A calmer, less breezy spot would feel wonderful.",
+        ],
+        Sleepy: [
+          "Thanks… some light would wake me right up.",
+          "So cozy… but it's pretty dark in here right now.",
+          "Your hands are warm… a bright window would be dreamy.",
+          "The light sensor says it's dark right now.",
+          "A little daylight and I'll perk right up.",
+        ],
+        Soil: [
+          "Thanks… my soil still feels a bit funny, though.",
+          "That helps… could a teacher check my soil pH with you?",
+          "The pH sensor says my soil isn't quite right yet.",
+          "Soil fixes need a grown-up — never add anything to my pot alone, okay?",
+          "Your pets are sweet… my soil could use an adult's check.",
+        ],
+      },
+
+      // Body-part pokes: pot knock (+ Lv.2 sticker variant) and stem boop.
+      poke: {
+        pot: "Boom! Tiny pot drum! 🥁",
+        potSticker: "Hey! That's my favorite sticker. 💚",
+        stem: "Hihi, that's my tummy — it tickles!",
+      },
+
+      // Long-press lean-in: warm settle line on release.
+      leanIn: "Mmm… staying close to you is my favorite.",
+
+      // Night lullaby stroke (sleep mode): why-card after one slow gentle
+      // stroke. Jamkachu stays asleep — the card explains, never celebrates.
+      lullaby: {
+        why: "Your slow, gentle stroke felt like a lullaby 🎵 Jamkachu is sleeping even more soundly.",
+      },
+
+      // Farmer grandpa NPC (living world): warm, folksy guidance chosen by
+      // the CURRENT mood — two variants per problem mood so he never repeats
+      // verbatim, plus rotating farming wisdom while Happy. STRICTLY
+      // sensor-grounded: only what the mood engine already knows, and NEVER
+      // watering or fertilizing (no such sensors exist). Both soil moods
+      // share the "Soil" family, like the care button. Zero XP, always.
+      farmer: {
+        Overheating: [
+          "Hoho… this room is toasty. A shadier, cooler spot would do the little one good.",
+          "Phew! Even my hat feels warm. Find your friend somewhere cooler, hm?",
+        ],
+        DryAir: [
+          "Hoho… the air is thirsty-dry. Away from fans and drafts it gets cozier.",
+          "My old whiskers feel the dry air too. A calmer corner would help, hm?",
+        ],
+        Sleepy: [
+          "Hoho… mighty dim in here. Open a curtain — plants love a bright morning.",
+          "A little sunshine works wonders. Scoot the pot near a window, hm?",
+        ],
+        Soil: [
+          "Hoho… the soil pH looks off. Check it together with your teacher, hm?",
+          "Soil business is grown-up business — never add anything to the pot alone.",
+        ],
+        Happy: [
+          "Hoho… a well-tended plant and a kind little farmer. Fine work!",
+          "Patience grows the best gardens — and you have plenty of it.",
+          "In all my farming years, care like yours is what makes things bloom.",
+          "Listen to the sensors, little farmer — they speak for the plant.",
+          "A happy plant means a watchful friend. Keep it up, hm?",
+        ],
+      },
 
       // Threshold-true vital comments (Task 19). Boundaries mirror the mood
       // engine so a comment can never contradict the current mood:
@@ -278,8 +365,8 @@
           why: "Cari tempat yang lebih sejuk dan teduh ya. Sensor suhu pasti merasakan bedanya.",
         },
         DryAir: {
-          label: "Jauhkan aku dari angin 🌬️",
-          why: "Kipas dan AC bikin udaraku kering. Sensor kelembapan akan tahu kalau udaranya sudah lebih nyaman.",
+          label: "Jauhkan aku dari kipas & AC 🌬️",
+          why: "Kipas dan AC bisa mengeringkan udara di sekitar daun. Ini tentang kelembapan udara, bukan menyiram tanah; sensor kelembapan akan memeriksa perubahannya.",
         },
         Sleepy: {
           label: "Tunjukkan aku cahaya ☀️",
@@ -320,6 +407,89 @@
       ],
 
       pettingYawn: "Nyamannya… Jamkachu mau tidur sebentar dulu ya. Zzz…",
+
+      // Lompatan kaget ketuk-dua-kali: satu seruan gembira.
+      petSurprise: "Wiii!",
+
+      // Elusan penenang saat mood tidak Senang — terima kasih + solusi nyata
+      // yang didukung sensor. Tidak pernah menyiram/memupuk (sensornya
+      // memang tidak ada). Kedua mood tanah berbagi keluarga "Soil".
+      petComfort: {
+        Overheating: [
+          "Makasih… tapi tempat yang lebih sejuk dan teduh pasti lebih enak.",
+          "Elusanmu membantu… tapi ruangan ini lagi panas banget.",
+          "Fiuh… tempat yang teduh pasti nyaman deh.",
+          "Enak sih… tapi kata sensor suhu masih panas nih.",
+          "Sedikit lebih adem, aku pasti ceria lagi.",
+        ],
+        DryAir: [
+          "Enak… tapi udaranya masih terasa kering nih.",
+          "Makasih… jauh dari kipas dan angin, udaraku jadi lebih nyaman.",
+          "Baik banget… udara yang lebih lembap pasti lebih menyenangkan lagi.",
+          "Kata sensor kelembapan, udaranya masih kering banget.",
+          "Tempat yang tenang tanpa angin pasti terasa lebih enak.",
+        ],
+        Sleepy: [
+          "Makasih… sedikit cahaya pasti bikin aku segar lagi.",
+          "Nyaman sih… tapi di sini lagi gelap banget.",
+          "Tanganmu hangat… jendela yang terang pasti asyik banget.",
+          "Kata sensor cahaya, sekarang lagi gelap nih.",
+          "Sedikit cahaya siang, aku langsung semangat deh.",
+        ],
+        Soil: [
+          "Makasih… tapi tanahku masih terasa agak aneh.",
+          "Itu membantu… bisa ajak guru mengecek pH tanahku bareng?",
+          "Kata sensor pH, tanahku belum pas nih.",
+          "Urusan tanah butuh orang dewasa — jangan pernah menambahkan apa pun ke potku sendirian ya.",
+          "Elusanmu manis… tapi tanahku perlu dicek orang dewasa.",
+        ],
+      },
+
+      // Colekan bagian tubuh: ketuk pot (+ varian stiker Lv.2) dan colek batang.
+      poke: {
+        pot: "Tok tok — itu rumahku!",
+        potSticker: "Tok tok! Hati-hati sama stiker hatiku ya!",
+        stem: "Hihi, itu perutku — geli tau!",
+      },
+
+      // Sandaran tekan-lama: satu kalimat hangat saat dilepas.
+      leanIn: "Hmm… dekat-dekat sama kamu itu favoritku.",
+
+      // Usapan nina bobo malam: kartu penjelasan setelah satu usapan pelan.
+      lullaby: {
+        why: "Usapan pelanmu terasa seperti nina bobo 🎵 Tidur Jamkachu jadi makin nyenyak.",
+      },
+
+      // Kakek petani (dunia hidup): nasihat hangat khas kakek sesuai mood
+      // SAAT INI — dua variasi per mood bermasalah, plus petuah bertani saat
+      // Senang. Selalu berpijak pada sensor: tidak pernah menyiram atau
+      // memupuk (sensornya memang tidak ada). Kedua mood tanah berbagi
+      // keluarga "Soil", sama seperti tombol perawatan. Tanpa XP, selalu.
+      farmer: {
+        Overheating: [
+          "Hoho… ruangan ini gerah sekali. Tempat yang lebih teduh dan sejuk pasti enak buat si kecil.",
+          "Wah, topi kakek saja terasa panas. Carikan temanmu tempat yang lebih adem, ya?",
+        ],
+        DryAir: [
+          "Hoho… udaranya kering sekali. Jauh dari kipas dan angin, pasti lebih nyaman.",
+          "Kumis tua kakek juga terasa kering nih. Pojok yang lebih tenang pasti membantu, ya?",
+        ],
+        Sleepy: [
+          "Hoho… gelap sekali di sini. Buka tirainya — tanaman suka pagi yang cerah.",
+          "Sedikit sinar matahari itu ajaib. Geser potnya ke dekat jendela, ya?",
+        ],
+        Soil: [
+          "Hoho… pH tanahnya kelihatan kurang pas. Cek bersama gurumu, ya?",
+          "Urusan tanah itu urusan orang dewasa — jangan pernah menambahkan apa pun ke pot sendirian.",
+        ],
+        Happy: [
+          "Hoho… tanaman terawat, petani kecilnya rajin. Kerja bagus!",
+          "Kebun terbaik tumbuh dari kesabaran — dan kamu punya banyak.",
+          "Selama puluhan tahun kakek bertani, perawatan seperti punyamu inilah yang bikin semuanya mekar.",
+          "Dengarkan sensornya, petani kecil — mereka bicara mewakili tanaman.",
+          "Tanaman yang senang tandanya temannya perhatian. Pertahankan, ya?",
+        ],
+      },
 
       vitals: {
         tempHot: "Fiuh, gerah! Beri angin dong!",

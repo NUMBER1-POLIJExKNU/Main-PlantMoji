@@ -21,6 +21,7 @@ import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { dayString } from "@/game/progression/streak-engine";
 import { PLANT_MOODS } from "@/types/events";
 import { BADGE_KEYS, QUEST_KEYS } from "@/types/game";
+import { COMPANION_STAGES } from "@/types/game";
 
 /** Level 10 unlocks every currently shipped badge and story chapter. */
 export const DEMO_MAX_LEVEL = 10;
@@ -121,7 +122,23 @@ export function buildDemoMaxSeed(plantId: string, now: Date = new Date()) {
       data: { currentStreak: DEMO_MAX_STREAK, longestStreak: DEMO_MAX_STREAK, demoMax: true },
     },
   ];
-  const bondEventRows = [...badgeEvents, ...chapterEvents, ...questEvents, ...progressEvents];
+  const bondEventRows: Array<{ event_id: string; plant_id: string; type: string; occurred_at: string; data: Record<string, unknown> }> = [...badgeEvents, ...chapterEvents, ...questEvents, ...progressEvents];
+  const companionEvolutionRows = COMPANION_STAGES.slice(1).map((stage, index) => ({
+    plant_id: plantId,
+    cycle: 1,
+    stage,
+    from_stage: COMPANION_STAGES[index],
+    form_key: "balanced",
+    care_snapshot: { demoMax: 1 },
+    evolved_at: isoBefore(now, COMPANION_STAGES.length - index),
+  }));
+  bondEventRows.push(...companionEvolutionRows.map((row) => ({
+    event_id: `companion:${plantId}:1:${row.stage}`,
+    plant_id: plantId,
+    type: "COMPANION_EVOLVED",
+    occurred_at: row.evolved_at,
+    data: { fromStage: row.from_stage, stage: row.stage, formKey: "balanced", demoMax: true },
+  })));
 
   // Seed every self-healing reward key used by the engine. Otherwise the
   // next page-load tick would award old unlock bonuses again and jump above
@@ -173,7 +190,7 @@ export function buildDemoMaxSeed(plantId: string, now: Date = new Date()) {
     amount: DEMO_MAX_XP - representedXp,
   });
 
-  return { occurredAt, badgeRows, moodEventRows, questRows, bondEventRows, xpRewardRows };
+  return { occurredAt, badgeRows, moodEventRows, questRows, bondEventRows, xpRewardRows, companionEvolutionRows };
 }
 
 async function throwOnError(
@@ -228,6 +245,8 @@ export async function applyDemoMaxState(
       ignoreDuplicates: true,
     }),
   );
+  await throwOnError("companion evolutions", supabase.from("companion_evolutions").upsert(seed.companionEvolutionRows, { onConflict: "plant_id,cycle,stage", ignoreDuplicates: true }));
+  await throwOnError("companion state", supabase.from("companion_state").upsert({ plant_id: plantId, cycle: 1, stage: "Guardian", form_key: "balanced", last_evolved_at: seed.occurredAt, updated_at: seed.occurredAt }, { onConflict: "plant_id" }));
   await throwOnError(
     "rewards",
     supabase.from("xp_rewards").upsert(seed.xpRewardRows, {
@@ -274,5 +293,7 @@ export async function applyDemoMaxState(
     badges: BADGE_KEYS.length,
     chapters: CHAPTER_DEFINITIONS.length,
     quests: QUEST_KEYS.length,
+    companionStage: "Guardian",
+    companionForm: "balanced",
   };
 }

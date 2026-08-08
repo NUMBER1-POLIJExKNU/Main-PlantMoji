@@ -4,7 +4,7 @@
 // this module only rewrites those facts in the plant's personality voice.
 // It is impossible for this module to break the game:
 //
-//   - No ANTHROPIC_API_KEY          → returns null immediately.
+//   - No GEMINI_API_KEY             → returns null immediately.
 //   - Network error / timeout       → returns null.
 //   - Non-2xx / malformed response  → returns null.
 //   - Suspiciously long response    → returns null.
@@ -23,6 +23,7 @@ import "server-only";
 import { MOOD_LABELS, normalizeMood } from "@/types/events";
 import { normalizePersonality } from "@/types/game";
 import type { PersonalityId, PlantMood } from "@/types/game";
+import type { AppLocale } from "@/lib/i18n";
 
 // ── Public contract ─────────────────────────────────────────────────────
 
@@ -35,7 +36,8 @@ export type AiMessageKind =
   | "LEVEL_UP"
   | "BADGE_UNLOCKED"
   | "CHAPTER_UNLOCKED"
-  | "WEEKLY_REPORT";
+  | "WEEKLY_REPORT"
+  | "ENVIRONMENT_ANALYSIS";
 
 export interface AiMessageInput {
   kind: AiMessageKind;
@@ -48,14 +50,14 @@ export interface AiMessageInput {
   badgeName?: string;
   chapterTitle?: string;
   reportSummary?: string;
+  environmentSummary?: string;
+  locale?: AppLocale;
 }
 
-// ── Anthropic Messages API constants ────────────────────────────────────
+// ── Gemini generateContent constants ───────────────────────────────────
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION = "2023-06-01";
-/** Small fast model — one or two short sentences do not need Opus-tier. */
-const ANTHROPIC_MODEL = "claude-haiku-4-5";
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_TOKENS = 120;
 const TIMEOUT_MS = 4_000;
 /** Anything longer than this is not a valid 1–2 sentence plant line. */
@@ -80,7 +82,8 @@ const SYSTEM_PROMPT = [
   "- The user message contains verified facts from the game engine. You may only restate or rephrase them. Never alter, extend, or contradict them, and never add a new diagnosis.",
   "- NEVER invent sensor values, measurements, or numbers that were not given to you.",
   "- NEVER give chemical or fertilizer dosing, hardware instructions, or medical-style instructions. At most, gently ask your caretaker for help in general terms.",
-  "- Reply in English with 1-2 short sentences of plain text only: no lists, no markdown, no emoji spam, and no quotation marks around the reply.",
+  "- For environment analysis, the deterministic analyzer has already decided every match or mismatch. Explain only those supplied decisions. Never recalculate, override, or add one.",
+  "- Reply in the requested language with 1-2 short sentences of plain text only: no lists, no markdown, no emoji spam, and no quotation marks around the reply.",
 ].join("\n");
 
 // ── Fact assembly ───────────────────────────────────────────────────────
@@ -147,6 +150,11 @@ function buildFacts(input: AiMessageInput): string | null {
       if (!summary) return null;
       return `Event: my weekly care report is ready. Verified summary of the week: ${summary}`;
     }
+    case "ENVIRONMENT_ANALYSIS": {
+      const summary = cleanFragment(input.environmentSummary, 700);
+      if (!summary) return null;
+      return `Event: the deterministic Environment Analyzer completed. Its authoritative results are: ${summary}`;
+    }
     default:
       return null;
   }
@@ -159,28 +167,24 @@ function buildUserMessage(input: AiMessageInput, facts: string): string {
     `My name is “${name}”.`,
     `My personality voice: ${personality} — ${VOICE_DESCRIPTIONS[personality]}.`,
     facts,
+    `Reply language: ${input.locale === "id" ? "Bahasa Indonesia" : "English"}.`,
     "Say one short in-character line (1-2 sentences) to my caretaker about this event.",
   ].join("\n");
 }
 
 // ── Response validation ─────────────────────────────────────────────────
 
-/** Extracts the first non-empty text block from a Messages API response,
+/** Extracts the first non-empty text part from a Gemini response,
  *  tolerating any malformed shape by returning null. */
 function extractText(payload: unknown): string | null {
   if (typeof payload !== "object" || payload === null) return null;
-  const content = (payload as { content?: unknown }).content;
-  if (!Array.isArray(content)) return null;
-  for (const block of content) {
-    if (
-      typeof block === "object" &&
-      block !== null &&
-      (block as { type?: unknown }).type === "text" &&
-      typeof (block as { text?: unknown }).text === "string"
-    ) {
-      const text = ((block as { text: string }).text).replace(/\s+/g, " ").trim();
-      if (text) return text;
-    }
+  const candidates = (payload as { candidates?: unknown }).candidates;
+  if (!Array.isArray(candidates)) return null;
+  const parts = (candidates[0] as { content?: { parts?: unknown } } | undefined)?.content?.parts;
+  if (!Array.isArray(parts)) return null;
+  for (const part of parts) if (typeof part === "object" && part !== null && typeof (part as { text?: unknown }).text === "string") {
+    const text = (part as { text: string }).text.replace(/\s+/g, " ").trim();
+    if (text) return text;
   }
   return null;
 }
@@ -188,32 +192,29 @@ function extractText(payload: unknown): string | null {
 // ── Public API ──────────────────────────────────────────────────────────
 
 /**
- * Generates a plant-voiced message for a game event via the Anthropic
- * Messages API, or returns null so the caller falls back to the
+ * Generates grounded wording via Gemini, or returns null so the caller falls back to the
  * deterministic templates in "@/game/personality/templates".
  *
  * Never throws. Never blocks longer than ~4 seconds.
  */
 export async function generateAiMessage(input: AiMessageInput): Promise<string | null> {
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return null;
 
     const facts = buildFacts(input);
     if (!facts) return null;
 
-    const response = await fetch(ANTHROPIC_API_URL, {
+    const response = await fetch(GEMINI_API_URL, {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": ANTHROPIC_VERSION,
+        "x-goog-api-key": apiKey,
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: buildUserMessage(input, facts) }],
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: "user", parts: [{ text: buildUserMessage(input, facts) }] }],
+        generationConfig: { maxOutputTokens: MAX_TOKENS, temperature: 0.4 },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",

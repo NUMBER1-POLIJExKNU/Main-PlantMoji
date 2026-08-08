@@ -18,7 +18,7 @@ Vercel → Project → **Settings → Environment Variables**. Set for **Product
 - [ ] `SUPABASE_SECRET_KEY` — `sb_secret_...` (**server only, never in browser code**; legacy `service_role` key also works)
 - [ ] `DEVICE_API_TOKEN` — shared token for the device endpoints. When set, Node-RED must send `Authorization: Bearer <value>`. Keep it set for go-live: when unset the endpoint accepts unauthenticated posts (local prototype mode only).
 - [ ] `DEMO_CHEAT_CODE` — **8+ characters**. Powers Settings → Demo Control Center ("Unlock everything" = replay-safe Lv.10 showcase; "Reset to start" = back to Lv.1 / 0 XP). Checked server-side, never exposed to the browser.
-- [ ] `ANTHROPIC_API_KEY` *(optional)* — AI personality layer, language only. When unset or when a call fails, deterministic personality templates take over automatically.
+- [ ] `GEMINI_API_KEY` *(optional)* — Gemini explanation layer, server-side only. When unset or when a call fails, deterministic templates take over automatically.
 - [ ] *(optional)* `BMKG_ADM4_CODE` — village forecast code; defaults to Tegalgede, Sumbersari, Jember (`35.09.21.1005`), so usually leave it alone.
 - [ ] **Redeploy** after saving. Environment variable changes only apply to a new deployment.
 
@@ -111,7 +111,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] `SUPABASE_SECRET_KEY` — `sb_secret_...` (**khusus server, jangan pernah di kode browser**; kunci lama `service_role` juga bisa)
 - [ ] `DEVICE_API_TOKEN` — token bersama untuk endpoint perangkat. Jika diisi, Node-RED wajib mengirim `Authorization: Bearer <nilai>`. Biarkan terisi saat go-live: jika kosong, endpoint menerima kiriman tanpa autentikasi (hanya untuk mode prototipe lokal).
 - [ ] `DEMO_CHEAT_CODE` — **minimal 8 karakter**. Mengaktifkan Settings → Demo Control Center ("Buka semuanya" = pameran Lv.10 yang aman diulang; "Kembali ke awal" = kembali ke Lv.1 / 0 XP). Diperiksa di sisi server, tidak pernah terkirim ke browser.
-- [ ] `ANTHROPIC_API_KEY` *(opsional)* — lapisan kepribadian AI, hanya bahasa. Jika kosong atau panggilan gagal, template kepribadian deterministik otomatis mengambil alih.
+- [ ] `GEMINI_API_KEY` *(opsional)* — lapisan penjelasan Gemini, hanya di server. Jika kosong atau gagal, template deterministik mengambil alih.
 - [ ] *(opsional)* `BMKG_ADM4_CODE` — kode prakiraan desa; default Tegalgede, Sumbersari, Jember (`35.09.21.1005`), jadi biasanya tidak perlu diubah.
 - [ ] **Redeploy** setelah menyimpan. Perubahan variabel lingkungan hanya berlaku pada deployment baru.
 
@@ -204,7 +204,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] `SUPABASE_SECRET_KEY` — `sb_secret_...` (**서버 전용, 브라우저 코드에 절대 노출 금지**; 구형 `service_role` 키도 사용 가능)
 - [ ] `DEVICE_API_TOKEN` — 디바이스 엔드포인트용 공유 토큰. 설정하면 Node-RED가 `Authorization: Bearer <값>`을 보내야 합니다. 고라이브 시 반드시 설정 유지: 비워 두면 엔드포인트가 인증 없는 요청을 받습니다 (로컬 프로토타입 모드 전용).
 - [ ] `DEMO_CHEAT_CODE` — **8자 이상**. Settings → Demo Control Center를 활성화 ("Unlock everything" = 재실행 안전한 Lv.10 쇼케이스; "Reset to start" = Lv.1 / 0 XP로 복원). 서버에서만 검사하며 브라우저에 노출되지 않습니다.
-- [ ] `ANTHROPIC_API_KEY` *(선택)* — AI 성격 레이어, 언어 표현만 담당. 미설정이거나 호출 실패 시 결정론적 성격 템플릿으로 자동 대체됩니다.
+- [ ] `GEMINI_API_KEY` *(선택)* — 서버 전용 Gemini 설명 레이어입니다. 미설정이거나 실패하면 결정론적 템플릿으로 대체됩니다.
 - [ ] *(선택)* `BMKG_ADM4_CODE` — 마을 단위 예보 코드; 기본값은 Tegalgede, Sumbersari, Jember (`35.09.21.1005`)이므로 보통 그대로 둡니다.
 - [ ] 저장 후 **Redeploy**. 환경 변수 변경은 새 배포에만 적용됩니다.
 

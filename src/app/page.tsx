@@ -69,7 +69,7 @@ export default async function Home() {
   const [bond, quest, moodMessage] = await Promise.all([
     fetchBondState(PLANT_ID),
     fetchTopActiveQuest(PLANT_ID),
-    // AI-personalized when ANTHROPIC_API_KEY is set (cached per mood change,
+    // AI-personalized when GEMINI_API_KEY is set (cached per mood change,
     // handoff §24); deterministic template otherwise — never blocks on failure.
     getHomeMoodMessage(result.plant),
   ]);

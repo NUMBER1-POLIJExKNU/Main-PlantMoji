@@ -95,6 +95,7 @@ export default function DesignSandboxPage() {
             sinceIso={MAINTAIN_SINCE_ISO}
             requiredSeconds={1800}
             plantId="design-sandbox"
+            questId="design-maintain"
             locale="en"
           />
         </div>
@@ -107,6 +108,7 @@ export default function DesignSandboxPage() {
             sinceIso={VERIFYING_SINCE_ISO}
             requiredSeconds={600}
             plantId="design-sandbox"
+            questId="design-verifying"
             locale="en"
           />
         </div>

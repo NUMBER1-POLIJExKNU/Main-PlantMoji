@@ -25,6 +25,7 @@ describe("demo max seed", () => {
     expect(seed.badgeRows.map((row) => row.badge_key)).toEqual([...BADGE_KEYS]);
     expect(seed.questRows.map((row) => row.quest_key)).toEqual([...QUEST_KEYS]);
     expect(seed.questRows.every((row) => row.status === "COMPLETED")).toBe(true);
+    expect(seed.companionEvolutionRows.map((row) => row.stage)).toEqual(["Sprout", "Bud", "Bloom", "Guardian"]);
     expect(
       seed.bondEventRows.filter((row) => row.type === "CHAPTER_UNLOCKED"),
     ).toHaveLength(CHAPTER_DEFINITIONS.length);

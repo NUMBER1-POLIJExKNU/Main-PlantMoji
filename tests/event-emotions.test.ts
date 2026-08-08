@@ -22,6 +22,7 @@ describe("emotionForBondEvent", () => {
     STREAK_UPDATED: null,
     BADGE_UNLOCKED: null,
     CHAPTER_UNLOCKED: "Curious",
+    COMPANION_EVOLVED: "Curious",
   };
 
   it("covers every BondEventType with the exact expected mapping", () => {

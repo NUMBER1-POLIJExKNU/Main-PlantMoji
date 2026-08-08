@@ -5,8 +5,14 @@
 // Exposes:
 //
 //   window.PMSfx = {
-//     play(cue)   — fire one of the synthesized cues below (silent no-op
-//                   when muted, rate-limited, or audio is still locked)
+//     play(cue, opts) — fire one of the synthesized cues below (silent no-op
+//                   when muted, rate-limited, or audio is still locked).
+//                   opts (optional, celebration bundle item 1):
+//                     noLimit  — bypass the 1.5s per-cue rate limit for THIS
+//                                call only (the call neither checks nor
+//                                refreshes the cue's limit window)
+//                     semitone — transpose the cue's TONAL notes by
+//                                2^(n/12) (noise recipes are unaffected)
 //     muted()     — current mute preference (read fresh from localStorage)
 //     toggle()    — flip the preference, update the #sound-toggle button,
 //                   sync same-page listeners; returns the NEW muted state
@@ -14,12 +20,13 @@
 //   }
 //
 // Cues: blip, coin, cascade, pod, jackpot, fanfare, chapter, pet, splash,
-// whoosh, tick — all WebAudio-synthesized square/triangle oscillators (or a
-// white-noise buffer through a filter). Zero external assets, zero network
-// (spec D1).
+// whoosh, tick, boing, knock, purr, lullaby, hum, breeze, emberCrackle,
+// reliefCool, reliefMist, reliefLight, reliefSoil, stamp — all
+// WebAudio-synthesized square/triangle oscillators (or a white-noise buffer
+// through a filter). Zero external assets, zero network (spec D1).
 //
-// Sound is default ON. The preference lives at localStorage["pm_sound"]
-// ("off" = muted, anything else = on) and syncs across tabs/pages via
+// Sound is default OFF. The preference lives at localStorage["pm_sound"]
+// ("on" = enabled; missing or "off" = muted) and syncs across tabs/pages via
 // storage events. The AudioContext is created + resumed on the FIRST
 // pointerdown (capture phase, once); if the browser keeps it suspended
 // across several real gestures WITHOUT ever having run, the speaker toggle
@@ -30,8 +37,10 @@
 // return to the tab.
 //
 // Guardrails (spec §4): mute short-circuits BEFORE any audio node is
-// created; every cue is rate-limited to once per 1.5s; this engine is pure
-// presentation — it never grants, implies, or counts anything.
+// created; every cue is rate-limited to once per 1.5s (callers may bypass
+// it per-call via {noLimit} for deliberately dense textures like the orb
+// cascade's landings); this engine is pure presentation — it never grants,
+// implies, or counts anything.
 
 (() => {
   "use strict";
@@ -47,7 +56,7 @@
 
   function readMuted() {
     try {
-      return localStorage.getItem(STORAGE_KEY) === "off";
+      return localStorage.getItem(STORAGE_KEY) !== "on";
     } catch {
       return false; // storage unavailable → default ON, nothing persists
     }
@@ -175,16 +184,21 @@
     G6: 1567.98,
   };
 
+  // Per-call transpose set by play({semitone}) around the recipe call and
+  // always reset to 1 (celebration bundle item 1). Applied to TONAL notes
+  // only — noise filter sweeps keep their character untransposed.
+  let pitchTranspose = 1;
+
   function tone(c, opts) {
     const t0 = c.currentTime + (opts.at || 0);
     const dur = opts.dur || 0.05;
     const osc = c.createOscillator();
     osc.type = opts.type || "square";
-    osc.frequency.setValueAtTime(opts.freq, t0);
+    osc.frequency.setValueAtTime(opts.freq * pitchTranspose, t0);
     // Chiptune hard pitch step at the halfway point (e.g. the coin cue).
-    if (opts.stepTo) osc.frequency.setValueAtTime(opts.stepTo, t0 + dur / 2);
+    if (opts.stepTo) osc.frequency.setValueAtTime(opts.stepTo * pitchTranspose, t0 + dur / 2);
     // Smooth glide across the note (e.g. the pet boing).
-    if (opts.glideTo) osc.frequency.exponentialRampToValueAtTime(opts.glideTo, t0 + dur);
+    if (opts.glideTo) osc.frequency.exponentialRampToValueAtTime(opts.glideTo * pitchTranspose, t0 + dur);
     const gain = c.createGain();
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.linearRampToValueAtTime(opts.vol ?? 0.055, t0 + 0.006);
@@ -277,11 +291,93 @@
     // Whoosh: noise through a rising bandpass sweep.
     whoosh: (c) =>
       noise(c, { dur: 0.25, filter: "bandpass", freq: 400, glideTo: 2400, q: 1.2, vol: 0.1 }),
+    // Surprise-hop boing: bigger triangle glide 300→650Hz (tactile item 2).
+    boing: (c) => tone(c, { freq: 300, glideTo: 650, dur: 0.16, type: "triangle", vol: 0.09 }),
+    // Pot knock: two woodblock thumps — tight bandpassed noise taps (item 3).
+    knock: (c) => {
+      noise(c, { dur: 0.055, filter: "bandpass", freq: 750, q: 8, vol: 0.16 });
+      noise(c, { at: 0.13, dur: 0.055, filter: "bandpass", freq: 640, q: 8, vol: 0.13 });
+    },
+    // Lean-in purr (on release): low triangle with a 6Hz gain wobble, ~400ms
+    // (item 5). The LFO output SUMS into the envelope's gain AudioParam.
+    purr: (c) => {
+      const t0 = c.currentTime;
+      const dur = 0.4;
+      const osc = c.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(180, t0);
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.linearRampToValueAtTime(0.06, t0 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      const lfo = c.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.setValueAtTime(6, t0);
+      const lfoGain = c.createGain();
+      lfoGain.gain.setValueAtTime(0.025, t0);
+      lfo.connect(lfoGain);
+      lfoGain.connect(gain.gain);
+      osc.connect(gain);
+      gain.connect(c.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.03);
+      lfo.start(t0);
+      lfo.stop(t0 + dur + 0.03);
+    },
+    // Night lullaby: two very quiet triangle notes G4→E5, ≈half the pet
+    // volume (item 6) — soft enough to keep the sleep fiction intact.
+    lullaby: (c) => {
+      tone(c, { freq: N.G4, dur: 0.22, type: "triangle", vol: 0.045 });
+      tone(c, { freq: N.E5, at: 0.3, dur: 0.32, type: "triangle", vol: 0.04 });
+    },
+    // Idle hum (living world, item 4): a very soft two-note triangle motif —
+    // Jamkachu humming to itself, quieter than the lullaby's second note.
+    hum: (c) => {
+      tone(c, { freq: N.C5, dur: 0.16, type: "triangle", vol: 0.035 });
+      tone(c, { freq: N.E5, at: 0.2, dur: 0.24, type: "triangle", vol: 0.03 });
+    },
+    // Ambient wind gust (living world, item 6): the whoosh recipe at low
+    // volume, under its own cue name so the gentle gust never consumes the
+    // celebration whoosh's 1.5s rate-limit slot (nor vice versa).
+    breeze: (c) =>
+      noise(c, { dur: 0.5, filter: "bandpass", freq: 300, glideTo: 1600, q: 1.1, vol: 0.045 }),
+    // Streak flame tier-up ignition (celebration bundle item 7): three tiny
+    // filtered-noise crackle ticks, like an ember settling.
+    emberCrackle: (c) => {
+      noise(c, { dur: 0.035, filter: "bandpass", freq: 2100, q: 7, vol: 0.09 });
+      noise(c, { at: 0.09, dur: 0.03, filter: "bandpass", freq: 1600, q: 7, vol: 0.07 });
+      noise(c, { at: 0.18, dur: 0.04, filter: "bandpass", freq: 2500, q: 7, vol: 0.08 });
+    },
+    // Mood-flavored care-button relief textures (bundle item 9) — each
+    // 100–150ms, audio-only flavor on the same zero-XP press.
+    // Overheating: a cool falling hiss.
+    reliefCool: (c) =>
+      noise(c, { dur: 0.13, filter: "lowpass", freq: 2400, glideTo: 400, vol: 0.07 }),
+    // DryAir: two soft mist puffs.
+    reliefMist: (c) => {
+      noise(c, { dur: 0.05, filter: "lowpass", freq: 2600, vol: 0.05 });
+      noise(c, { at: 0.07, dur: 0.06, filter: "lowpass", freq: 2200, vol: 0.045 });
+    },
+    // Sleepy: bright rising sunlight — triangle gliding up an octave.
+    reliefLight: (c) =>
+      tone(c, { freq: 660, glideTo: 1320, dur: 0.14, type: "triangle", vol: 0.07 }),
+    // Soil (both pH moods): a small square wobble, down then back up.
+    reliefSoil: (c) => {
+      tone(c, { freq: 235, stepTo: 205, dur: 0.07, vol: 0.06 });
+      tone(c, { at: 0.07, freq: 205, stepTo: 235, dur: 0.07, vol: 0.055 });
+    },
+    // Heavier sibling of `tick` (bundle item 10): low square thunk with a
+    // 30ms noise click. Registered for the React-side PMSfx callers — NOT
+    // wired anywhere on the farm page.
+    stamp: (c) => {
+      tone(c, { freq: 240, stepTo: 190, dur: 0.12, vol: 0.09 });
+      noise(c, { dur: 0.03, filter: "lowpass", freq: 1000, vol: 0.12 });
+    },
   };
 
   const lastPlayedAt = Object.create(null);
 
-  function play(cue) {
+  function play(cue, opts) {
     if (readMuted()) return; // mute short-circuits before ANY node creation
     if (blocked) return; // audio policy said no — stay silent
     const recipe = CUES[cue];
@@ -297,13 +393,23 @@
       listenForUnlock();
       return;
     }
-    const now = Date.now();
-    if (now - (lastPlayedAt[cue] || 0) < RATE_LIMIT_MS) return; // 1.5s/cue
-    lastPlayedAt[cue] = now;
+    const o = opts && typeof opts === "object" ? opts : null;
+    // noLimit is scoped to THIS call: it neither checks nor refreshes the
+    // cue's rate-limit window, so surrounding plain calls behave exactly as
+    // if the noLimit call never happened.
+    if (!(o && o.noLimit === true)) {
+      const now = Date.now();
+      if (now - (lastPlayedAt[cue] || 0) < RATE_LIMIT_MS) return; // 1.5s/cue
+      lastPlayedAt[cue] = now;
+    }
+    const semitone = o ? Number(o.semitone) : NaN;
+    pitchTranspose = Number.isFinite(semitone) ? Math.pow(2, semitone / 12) : 1;
     try {
       recipe(c);
     } catch {
       /* a synthesis failure must never break the page */
+    } finally {
+      pitchTranspose = 1; // never leak a transpose into the next cue
     }
   }
 

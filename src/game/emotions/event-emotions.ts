@@ -53,6 +53,7 @@ export function emotionForBondEvent(
     case "LEVEL_UP":
       return EMOTION_META.Excited;
     case "CHAPTER_UNLOCKED":
+    case "COMPANION_EVOLVED":
       return EMOTION_META.Curious;
     // QUEST_CREATED, QUEST_EXPIRED, XP_AWARDED, STREAK_UPDATED,
     // BADGE_UNLOCKED: no event-emotion overlay defined for these (yet).

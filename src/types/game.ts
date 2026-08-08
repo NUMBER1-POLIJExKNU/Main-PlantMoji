@@ -93,6 +93,32 @@ export interface AwardXpResult {
   leveledUp: boolean;
 }
 
+// Companion evolution is deliberately separate from the real plant's
+// manually recorded growth_stage.
+export const COMPANION_STAGES = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"] as const;
+export type CompanionStage = (typeof COMPANION_STAGES)[number];
+export const CARE_AFFINITIES = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
+export type CareAffinity = (typeof CARE_AFFINITIES)[number];
+
+export interface CompanionState {
+  plant_id: string;
+  cycle: number;
+  stage: CompanionStage;
+  form_key: CareAffinity;
+  last_evolved_at: string | null;
+  updated_at: string;
+}
+
+export interface CompanionEvolution {
+  plant_id: string;
+  cycle: number;
+  stage: CompanionStage;
+  from_stage: CompanionStage;
+  form_key: CareAffinity;
+  care_snapshot: Record<string, number>;
+  evolved_at: string;
+}
+
 // ── Streak (handoff §21) ────────────────────────────────────────────────
 
 /** Calendar days are counted in the demo location's timezone (Jember, WIB). */
@@ -155,6 +181,7 @@ export const BOND_EVENT_TYPES = [
   "STREAK_UPDATED",
   "BADGE_UNLOCKED",
   "CHAPTER_UNLOCKED",
+  "COMPANION_EVOLVED",
 ] as const;
 export type BondEventType = (typeof BOND_EVENT_TYPES)[number];
 

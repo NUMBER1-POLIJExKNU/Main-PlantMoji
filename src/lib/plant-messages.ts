@@ -16,6 +16,8 @@ import "server-only";
 
 import { generateAiMessage } from "@/lib/ai";
 import { getMoodMessage } from "@/game/personality/templates";
+import { personalityDialogueCandidates } from "@/game/personality/dialogue-bank";
+import type { AppLocale } from "@/lib/i18n";
 import { normalizePersonality } from "@/types/game";
 import type { PersonalityId, WeeklyReport } from "@/types/game";
 import type { Plant } from "@/types/plant";
@@ -33,8 +35,8 @@ const settledCache = new Map<string, string | null>();
  *  generateAiMessage timeout), so this map needs no size cap. */
 const inFlightCache = new Map<string, Promise<string | null>>();
 
-function cacheKey(plant: Plant, personality: string): string {
-  return `${plant.id}|${plant.current_state}|${personality}|${plant.state_changed_at}`;
+function cacheKey(plant: Plant, personality: string, locale: AppLocale): string {
+  return `${plant.id}|${plant.current_state}|${personality}|${locale}|${plant.state_changed_at}`;
 }
 
 /** Oldest-first eviction via Map insertion order (re-setting an existing key
@@ -125,19 +127,21 @@ function buildReportSummary(report: WeeklyReport): string {
  * Plant-voiced line for the plant's current mood, AI-flavored when possible.
  *
  * Always resolves to a displayable string; never throws. Without an
- * ANTHROPIC_API_KEY this is fully synchronous in effect — the deterministic
+ * GEMINI_API_KEY this is fully synchronous in effect — the deterministic
  * template is returned without touching the cache or awaiting anything.
  */
-export async function getHomeMoodMessage(plant: Plant): Promise<string> {
+export async function getHomeMoodMessage(plant: Plant, locale: AppLocale = "en"): Promise<string> {
   const personality = normalizePersonality(plant.personality);
-  const template = getMoodMessage(personality, plant.current_state);
+  const template = locale === "id"
+    ? personalityDialogueCandidates(personality, plant.current_state, locale, plant.state_changed_at, 1)[0]
+    : getMoodMessage(personality, plant.current_state, plant.state_changed_at);
 
   try {
     // generateAiMessage guards too, but returning here skips a pointless
     // await/cache round-trip in the common key-less (demo/offline) setup.
-    if (!process.env.ANTHROPIC_API_KEY) return template;
+    if (!process.env.GEMINI_API_KEY) return template;
 
-    const key = cacheKey(plant, personality);
+    const key = cacheKey(plant, personality, locale);
 
     if (settledCache.has(key)) {
       return settledCache.get(key) ?? template;
@@ -150,6 +154,7 @@ export async function getHomeMoodMessage(plant: Plant): Promise<string> {
         personality,
         plantName: plant.name,
         mood: plant.current_state,
+        locale,
       });
       inFlightCache.set(key, pending);
     }
@@ -172,7 +177,7 @@ export async function getHomeMoodMessage(plant: Plant): Promise<string> {
 /**
  * Plant-voiced one-liner summarizing the week's report, AI-flavored when
  * possible. Always resolves to a displayable string; never throws. Without
- * an ANTHROPIC_API_KEY this is fully synchronous in effect — the
+ * a GEMINI_API_KEY this is fully synchronous in effect — the
  * deterministic template is returned without touching the cache or awaiting
  * anything. Cached per plant/personality/week/quest-count/bond-level, so an
  * unchanged report costs at most one API call no matter how many times the
@@ -188,7 +193,7 @@ export async function getWeeklyReportNarration(
   try {
     // generateAiMessage guards too, but returning here skips a pointless
     // await/cache round-trip in the common key-less (demo/offline) setup.
-    if (!process.env.ANTHROPIC_API_KEY) return fallback;
+    if (!process.env.GEMINI_API_KEY) return fallback;
 
     const key = reportCacheKey(plant, personality, report);
 

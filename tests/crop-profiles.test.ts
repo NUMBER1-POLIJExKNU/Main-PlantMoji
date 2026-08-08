@@ -15,6 +15,13 @@ describe("strawberry crop profile", () => {
     expect(isCropProfileKey("tomato")).toBe(false);
   });
 
+  it("offers the complete-sensor Jember classroom profiles", () => {
+    expect(isCropProfileKey("soybean")).toBe(true);
+    expect(isCropProfileKey("cayenne-pepper")).toBe(true);
+    expect(getCropProfile("soybean").soilPh.recommended).toEqual({ min: 5.5, max: 7.5 });
+    expect(getCropProfile("cayenne-pepper").airHumidity.recommended).toEqual({ min: 60, max: 80 });
+  });
+
   it("defines temperature and dry-air hysteresis boundaries", () => {
     expect(profile.temperature.tolerated.max).toBe(27);
     expect(profile.temperature.overheating.enterAtOrAbove).toBe(28);
