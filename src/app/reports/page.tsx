@@ -9,6 +9,8 @@ import { fetchPlant } from "@/lib/plants";
 import { getWeeklyReportNarration } from "@/lib/plant-messages";
 import { computeWeeklyReport } from "@/lib/weekly-report";
 import { getServerSupabase } from "@/lib/supabase/server";
+import type { AppLocale } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/i18n-server";
 import { STREAK_TIMEZONE, type WeeklyReport } from "@/types/game";
 
 // The report window is capped at "now" — always render fresh.
@@ -16,23 +18,27 @@ export const dynamic = "force-dynamic";
 
 const PLANT_ID = "plant-01";
 
-const weekDateFormat = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  timeZone: STREAK_TIMEZONE,
-});
-
-/** 66840s → "18h 34m"; 1500s → "25m"; 0 → "0m". */
-function formatDuration(totalSeconds: number): string {
+/** 66840s → "18h 34m" / "18j 34mnt"; 1500s → "25m" / "25mnt"; 0 → "0m" / "0mnt". */
+function formatDuration(totalSeconds: number, locale: AppLocale): string {
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
+  if (locale === "id") {
+    return hours > 0 ? `${hours}j ${minutes}mnt` : `${minutes}mnt`;
+  }
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-function formatWeekRange(report: WeeklyReport): string {
+function formatWeekRange(report: WeeklyReport, locale: AppLocale): string {
   const startMs = Date.parse(report.weekStart);
   const endMs = Date.parse(report.weekEnd);
-  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return "This week";
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+    return locale === "id" ? "Minggu ini" : "This week";
+  }
+  const weekDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: STREAK_TIMEZONE,
+  });
   return `${weekDateFormat.format(new Date(startMs))} – ${weekDateFormat.format(new Date(endMs))}`;
 }
 
@@ -75,6 +81,7 @@ function StatTile({
 }
 
 export default async function ReportsPage() {
+  const locale = await getRequestLocale();
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -132,17 +139,19 @@ export default async function ReportsPage() {
           <span className="text-3xl leading-none" role="img" aria-hidden="true">
             📊
           </span>
-          Weekly Report
+          {locale === "id" ? "Laporan Mingguan" : "Weekly Report"}
         </h1>
         <p className="mt-3">
-          <span className="pm-chip">🗓️ {formatWeekRange(report)}</span>
+          <span className="pm-chip">🗓️ {formatWeekRange(report, locale)}</span>
         </p>
       </header>
 
       {narration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="mb-6">
           <p className="pm-heading mb-2 text-center text-[9px] uppercase" style={{ color: INK_MUTED }}>
-            A word from {plantResult.plant.name}
+            {locale === "id"
+              ? `Sepatah kata dari ${plantResult.plant.name}`
+              : `A word from ${plantResult.plant.name}`}
           </p>
           <div
             className="pm-panel text-center text-sm leading-6"
@@ -161,6 +170,7 @@ export default async function ReportsPage() {
           XP as the closest equivalent and no bestDay (its 🌟 line stays
           hidden until a future report field provides one). */}
       <ReportsRecap
+        locale={locale}
         xpTotal={report.totalXp}
         questsWeek={report.questsCompleted}
         streak={report.currentStreak}
@@ -170,32 +180,36 @@ export default async function ReportsPage() {
       <section aria-label="Weekly stats" className="grid grid-cols-2 gap-3">
         <StatTile
           emoji="💚"
-          label="Healthy time"
-          value={formatDuration(report.healthySeconds)}
-          sub="sensor-verified"
+          label={locale === "id" ? "Waktu sehat" : "Healthy time"}
+          value={formatDuration(report.healthySeconds, locale)}
+          sub={locale === "id" ? "terverifikasi sensor" : "sensor-verified"}
           accent="var(--color-grass)"
         />
         <StatTile
           emoji="🎯"
-          label="Quests completed"
+          label={locale === "id" ? "Misi selesai" : "Quests completed"}
           value={String(report.questsCompleted)}
           accent="var(--color-yellow)"
         />
         <StatTile
           emoji="🔥"
-          label="Overheating events"
+          label={locale === "id" ? "Kejadian kepanasan" : "Overheating events"}
           value={String(report.overheatingEvents)}
-          sub="state entries, not samples"
+          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
           accent="#F08A6B"
         />
         <StatTile
           emoji="🤝"
-          label="Bond level"
+          label={locale === "id" ? "Level ikatan" : "Bond level"}
           value={`Lv.${report.bondLevel}`}
           sub={
             report.currentStreak > 0
-              ? `🔥 ${report.currentStreak}-day streak`
-              : `${report.totalXp} XP total`
+              ? locale === "id"
+                ? `🔥 ${report.currentStreak} hari beruntun`
+                : `🔥 ${report.currentStreak}-day streak`
+              : locale === "id"
+                ? `Total ${report.totalXp} XP`
+                : `${report.totalXp} XP total`
           }
           accent="var(--color-water)"
         />
@@ -204,13 +218,14 @@ export default async function ReportsPage() {
       {/* .pm-btn centers its content; space-between must be inline since the
           unlayered pm-* contract beats Tailwind utilities. */}
       <Link href="/monitoring" className="pm-btn mt-4 w-full" style={{ justifyContent: "space-between" }}>
-        <span>Live monitoring</span>
+        <span>{locale === "id" ? "Pemantauan langsung" : "Live monitoring"}</span>
         <span aria-hidden="true">→</span>
       </Link>
 
       <p className="mt-6 text-center text-xs leading-5" style={{ color: INK_MUTED }}>
-        Computed live from this week&apos;s history — healthy time excludes
-        sensor-offline periods.
+        {locale === "id"
+          ? "Dihitung langsung dari riwayat minggu ini — waktu sehat tidak menghitung saat sensor offline."
+          : "Computed live from this week's history — healthy time excludes sensor-offline periods."}
       </p>
     </main>
   );

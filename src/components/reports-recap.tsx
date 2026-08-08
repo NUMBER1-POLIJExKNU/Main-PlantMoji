@@ -8,11 +8,13 @@
 // count-up — the same curve as live.js `animateXpCount`.
 
 import { useEffect, useRef, useState } from "react";
+import type { AppLocale } from "@/lib/i18n";
 
 const STREAK_MILESTONES = [3, 7, 14, 30] as const;
 const COUNT_UP_MS = 800;
 
 export interface ReportsRecapProps {
+  locale: AppLocale;
   /** Lifetime bond XP — the page has no per-week XP figure (closest equivalent). */
   xpTotal: number;
   /** Quests completed inside the report week. */
@@ -25,6 +27,7 @@ export interface ReportsRecapProps {
 }
 
 export default function ReportsRecap({
+  locale,
   xpTotal,
   questsWeek,
   streak,
@@ -73,10 +76,16 @@ export default function ReportsRecap({
   const arcPercent = Math.min(100, (streak / arcTarget) * 100);
   const streakLabel =
     streak <= 0
-      ? "Streak milestones: 3 · 7 · 14 · 30 days"
+      ? locale === "id"
+        ? "Target hari beruntun: 3 · 7 · 14 · 30 hari"
+        : "Streak milestones: 3 · 7 · 14 · 30 days"
       : nextMilestone !== null
-        ? `🔥 ${streak} of ${nextMilestone} days — next streak milestone`
-        : `🔥 ${streak} days — every milestone reached!`;
+        ? locale === "id"
+          ? `🔥 ${streak} dari ${nextMilestone} hari — target hari beruntun berikutnya`
+          : `🔥 ${streak} of ${nextMilestone} days — next streak milestone`
+        : locale === "id"
+          ? `🔥 ${streak} hari — semua target tercapai!`
+          : `🔥 ${streak} days — every milestone reached!`;
 
   // Farm surface card (.pm-panel) with a harvest-yellow accent; the big
   // count-up numbers render in Press Start 2P (.pm-heading). Accents stay
@@ -88,7 +97,7 @@ export default function ReportsRecap({
       style={{ borderColor: "var(--color-yellow)" }}
     >
       <p className="pm-heading text-center text-[9px] uppercase" style={{ color: "#A97B12" }}>
-        This week&apos;s recap
+        {locale === "id" ? "Rekap minggu ini" : "This week's recap"}
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-3 text-center">
@@ -101,7 +110,7 @@ export default function ReportsRecap({
         <div>
           <p className="pm-heading text-xl tabular-nums">{shown(questsWeek)}</p>
           <p className="mt-1 text-xs font-semibold" style={{ color: "#5B6B57" }}>
-            Quests this week
+            {locale === "id" ? "Misi minggu ini" : "Quests this week"}
           </p>
         </div>
       </div>
@@ -138,7 +147,7 @@ export default function ReportsRecap({
           <span role="img" aria-hidden="true">
             🌟
           </span>{" "}
-          Best care day: {bestDay}
+          {locale === "id" ? `Hari perawatan terbaik: ${bestDay}` : `Best care day: ${bestDay}`}
         </p>
       )}
     </section>

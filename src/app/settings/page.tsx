@@ -10,6 +10,7 @@ import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, getUnlockedBadges, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
+import type { AppLocale } from "@/lib/i18n";
 import { normalizePersonality, PERSONALITIES, STREAK_TIMEZONE, type PersonalityId } from "@/types/game";
 import { addGrowthRecord, updatePlantSettings } from "./actions";
 
@@ -18,12 +19,24 @@ export const dynamic = "force-dynamic";
 
 const PLANT_ID = "plant-01";
 
-const PERSONALITY_LABELS: Record<PersonalityId, string> = {
-  cute: "🎀 Cute",
-  calm: "🧘 Calm",
-  funny: "🤡 Funny",
-  energetic: "⚡ Energetic",
-  shy: "😳 Shy",
+// Personality VALUES stay English (stored/db enum, normalizePersonality
+// contract) — only the displayed word is localized, same pattern as every
+// other id/en copy pair on this page.
+const PERSONALITY_LABELS: Record<AppLocale, Record<PersonalityId, string>> = {
+  en: {
+    cute: "🎀 Cute",
+    calm: "🧘 Calm",
+    funny: "🤡 Funny",
+    energetic: "⚡ Energetic",
+    shy: "😳 Shy",
+  },
+  id: {
+    cute: "🎀 Imut",
+    calm: "🧘 Tenang",
+    funny: "🤡 Lucu",
+    energetic: "⚡ Enerjik",
+    shy: "😳 Pemalu",
+  },
 };
 
 // Farm form chrome (public/farm design language): tiny pixel labels and
@@ -32,13 +45,6 @@ const fieldLabelClass = "pm-heading text-[10px] uppercase opacity-80";
 const fieldInputClass =
   "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-sm text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
 const fieldHelpClass = "text-[11px] leading-4 text-[#57684F]";
-
-const growthDateFormat = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  timeZone: STREAK_TIMEZONE,
-});
 
 export default async function SettingsPage({
   searchParams,
@@ -49,6 +55,12 @@ export default async function SettingsPage({
   // the Demo Control Center only renders on /settings?demo=1.
   const showDemo = (await searchParams).demo === "1";
   const locale = await getRequestLocale();
+  const growthDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: STREAK_TIMEZONE,
+  });
   const supabase = getServerSupabase();
 
   if (!supabase) {
@@ -145,9 +157,11 @@ export default async function SettingsPage({
         <span className="text-4xl" role="img" aria-hidden="true">
           ⚙️
         </span>
-        <h1 className="pm-heading text-lg">Settings</h1>
+        <h1 className="pm-heading text-lg">{locale === "id" ? "Pengaturan" : "Settings"}</h1>
         <p className="text-sm text-[#57684F]">
-          Who your plant is, and how it talks to you.
+          {locale === "id"
+            ? "Siapa tanamanmu, dan bagaimana ia bicara denganmu."
+            : "Who your plant is, and how it talks to you."}
         </p>
       </header>
 
@@ -158,7 +172,7 @@ export default async function SettingsPage({
         <div>
           <p className="text-sm font-bold text-[#243421]">{plant.name}</p>
           <p className="text-xs text-[#57684F]">
-            {plant.species ?? "Unknown species"} · {PLANT_ID}
+            {plant.species ?? (locale === "id" ? "Spesies tidak diketahui" : "Unknown species")} · {PLANT_ID}
           </p>
         </div>
       </section>
@@ -167,7 +181,7 @@ export default async function SettingsPage({
         <input type="hidden" name="plantId" value={plant.id} />
 
         <label className="flex flex-col gap-1.5">
-          <span className={fieldLabelClass}>Name</span>
+          <span className={fieldLabelClass}>{locale === "id" ? "Nama" : "Name"}</span>
           <input
             type="text"
             name="name"
@@ -181,21 +195,23 @@ export default async function SettingsPage({
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className={fieldLabelClass}>Personality</span>
+          <span className={fieldLabelClass}>{locale === "id" ? "Kepribadian" : "Personality"}</span>
           <select name="personality" defaultValue={currentPersonality} className={fieldInputClass}>
             {PERSONALITIES.map((personality) => (
               <option key={personality} value={personality}>
-                {PERSONALITY_LABELS[personality]}
+                {PERSONALITY_LABELS[locale][personality]}
               </option>
             ))}
           </select>
           <span className={fieldHelpClass}>
-            Changes how your plant talks — never the diagnosis itself.
+            {locale === "id"
+              ? "Mengubah cara tanamanmu bicara — bukan diagnosis kondisinya."
+              : "Changes how your plant talks — never the diagnosis itself."}
           </span>
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className={fieldLabelClass}>Growth stage</span>
+          <span className={fieldLabelClass}>{locale === "id" ? "Tahap pertumbuhan" : "Growth stage"}</span>
           <select name="growthStage" defaultValue={currentStage} className={fieldInputClass}>
             {GROWTH_STAGES.map((stage) => (
               <option key={stage} value={stage}>
@@ -204,22 +220,24 @@ export default async function SettingsPage({
             ))}
           </select>
           <span className={fieldHelpClass}>
-            Tracked manually in the MVP — sensors can&apos;t measure real growth.
-            Separate from Bond Level, which never decreases.
+            {locale === "id"
+              ? "Dicatat manual di versi MVP ini — sensor belum bisa mengukur pertumbuhan asli. Terpisah dari Bond Level, yang tidak pernah turun."
+              : "Tracked manually in the MVP — sensors can't measure real growth. Separate from Bond Level, which never decreases."}
           </span>
         </label>
 
         <button type="submit" className="pm-btn pm-btn-primary mt-1 w-full">
-          Save changes
+          {locale === "id" ? "Simpan perubahan" : "Save changes"}
         </button>
       </form>
 
       <section className="pm-panel mt-5 flex flex-col gap-5">
         <div className="flex flex-col gap-1">
-          <h2 className="pm-heading text-xs">Growth Records</h2>
+          <h2 className="pm-heading text-xs">{locale === "id" ? "Catatan Pertumbuhan" : "Growth Records"}</h2>
           <p className={fieldHelpClass}>
-            Growth stage is updated only through these records — never by sensors. Adding a new
-            record also updates the Growth stage value above.
+            {locale === "id"
+              ? "Tahap pertumbuhan hanya diperbarui lewat catatan ini — bukan oleh sensor. Menambah catatan baru juga memperbarui nilai Tahap pertumbuhan di atas."
+              : "Growth stage is updated only through these records — never by sensors. Adding a new record also updates the Growth stage value above."}
           </p>
         </div>
 
@@ -227,7 +245,7 @@ export default async function SettingsPage({
           <input type="hidden" name="plantId" value={plant.id} />
 
           <label className="flex flex-col gap-1.5">
-            <span className={fieldLabelClass}>Stage</span>
+            <span className={fieldLabelClass}>{locale === "id" ? "Tahap" : "Stage"}</span>
             <select name="stage" defaultValue={currentStage} className={fieldInputClass}>
               {GROWTH_STAGES.map((stage) => (
                 <option key={stage} value={stage}>
@@ -239,7 +257,7 @@ export default async function SettingsPage({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className={fieldLabelClass}>Height (cm)</span>
+              <span className={fieldLabelClass}>{locale === "id" ? "Tinggi (cm)" : "Height (cm)"}</span>
               <input
                 type="number"
                 name="heightCm"
@@ -251,7 +269,7 @@ export default async function SettingsPage({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className={fieldLabelClass}>Leaves</span>
+              <span className={fieldLabelClass}>{locale === "id" ? "Jumlah Daun" : "Leaves"}</span>
               <input
                 type="number"
                 name="leafCount"
@@ -265,26 +283,28 @@ export default async function SettingsPage({
           </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className={fieldLabelClass}>Note</span>
+            <span className={fieldLabelClass}>{locale === "id" ? "Catatan" : "Note"}</span>
             <input
               type="text"
               name="note"
               maxLength={200}
-              placeholder="A new leaf appeared"
+              placeholder={locale === "id" ? "Ada daun baru muncul" : "A new leaf appeared"}
               autoComplete="off"
               className={fieldInputClass}
             />
           </label>
 
           <button type="submit" className="pm-btn pm-btn-primary w-full">
-            Add record
+            {locale === "id" ? "Tambah catatan" : "Add record"}
           </button>
         </form>
 
         <div className="flex flex-col gap-2 border-t-2 border-dashed border-[#BCD3B4] pt-4">
           {growthRecords.length === 0 ? (
             <p className="text-xs text-[#57684F]">
-              No records yet. Add your first growth record.
+              {locale === "id"
+                ? "Belum ada catatan. Tambahkan catatan pertumbuhan pertamamu."
+                : "No records yet. Add your first growth record."}
             </p>
           ) : (
             growthRecords.map((record) => {
@@ -294,7 +314,11 @@ export default async function SettingsPage({
                 : growthDateFormat.format(new Date(recordedMs));
               const details = [
                 record.height_cm != null ? `${record.height_cm}cm` : null,
-                record.leaf_count != null ? `${record.leaf_count} leaves` : null,
+                record.leaf_count != null
+                  ? locale === "id"
+                    ? `${record.leaf_count} daun`
+                    : `${record.leaf_count} leaves`
+                  : null,
               ]
                 .filter((part): part is string => part != null)
                 .join(" · ");
