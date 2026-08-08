@@ -85,6 +85,25 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+type RewardPreview = { kind: TabId; emoji: string; title: string; line: string; particles: string[] };
+
+const MOOD_REACTIONS: Record<string, { id: string; en: string; particles: string[] }> = {
+  Happy: { id: "Yay! Daunku ikut menari!", en: "Yay! My leaves are dancing!", particles: ["💚", "✨", "🌱"] },
+  Overheating: { id: "Fuuuh… anginnya enak!", en: "Phew… that breeze feels good!", particles: ["💨", "❄️", "✨"] },
+  DryAir: { id: "Awan kecil, datanglah!", en: "Little cloud, come closer!", particles: ["☁️", "💧", "💦"] },
+  Sleepy: { id: "Ssst… satu lagu sebelum tidur.", en: "Shh… one song before bed.", particles: ["🌙", "⭐", "💤"] },
+  SoilAcidic: { id: "Detektif tanah, ayo periksa bersama guru!", en: "Soil detectives—let's check with a teacher!", particles: ["🔍", "🧪", "🌱"] },
+  SoilAlkaline: { id: "Hmm… tanahnya perlu diperiksa orang dewasa.", en: "Hmm… an adult should help check this soil.", particles: ["🔍", "🟣", "🌿"] },
+};
+
+const WISDOM_TRIALS: Record<string, { prompt: { id: string; en: string }; choices: { id: string[]; en: string[] }; answer: number }> = {
+  "heavy-air-at-midday": { prompt: { id: "Udara siang terasa berat. Sensor mana yang dicek?", en: "Midday air feels heavy. Which sensors should you check?" }, choices: { id: ["Suhu + kelembapan udara", "pH tanah"], en: ["Temperature + air humidity", "Soil pH"] }, answer: 0 },
+  "dry-lips-dry-leaves": { prompt: { id: "Daun menghadapi udara kering. Ukur apa?", en: "Leaves face dry air. What should you measure?" }, choices: { id: ["Kelembapan udara", "Kelembapan tanah"], en: ["Air humidity", "Soil moisture"] }, answer: 0 },
+  "coffee-shade-lesson": { prompt: { id: "Daun terlalu lama gelap. Sensor apa yang membantu?", en: "Leaves stay dark too long. Which sensor helps?" }, choices: { id: ["Sensor cahaya", "Sensor pH"], en: ["Light sensor", "pH sensor"] }, answer: 0 },
+  "sour-soil-after-rains": { prompt: { id: "Tanah diduga asam. Apa yang harus diukur bersama guru?", en: "Soil may be acidic. What should you measure with a teacher?" }, choices: { id: ["pH tanah", "Kelembapan udara"], en: ["Soil pH", "Air humidity"] }, answer: 0 },
+  "pale-leaves-green-veins": { prompt: { id: "Daun pucat bisa terkait tanah basa. Cek apa?", en: "Pale leaves may relate to alkaline soil. Check what?" }, choices: { id: ["pH tanah", "Jam di dinding"], en: ["Soil pH", "The wall clock"] }, answer: 0 },
+  "water-before-the-heat": { prompt: { id: "Kapan pengamatan dan penyiraman paling aman?", en: "When is observation and watering usually gentlest?" }, choices: { id: ["Pagi yang sejuk", "Puncak panas siang"], en: ["Cool morning", "Peak midday heat"] }, answer: 0 },
+};
 
 // Muted ink tints derived from the farm text color #243421 (spec §2.5).
 const INK_MUTED = "#5B6B57";
@@ -185,6 +204,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
       return null;
     }
   });
+  const [preview, setPreview] = useState<RewardPreview | null>(null);
+  const [previewPulse, setPreviewPulse] = useState(0);
+  const [wisdomTrial, setWisdomTrial] = useState<string | null>(null);
+  const [wisdomAnswer, setWisdomAnswer] = useState<number | null>(null);
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -240,8 +263,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   // luckyOdds duplicates public/farm/strings.js → PM_STRINGS.luckyOdds
   // knowingly: React can't read the farm string table at build time.
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!", gemIntro: "Pilih lencana untuk mengubah efek saat Jamkachu diketuk.", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan" }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!", gemIntro: "Choose a badge to change Jamkachu’s tap effect.", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off" };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!", gemIntro: "Pilih lencana, coba efeknya, lalu gunakan saat Jamkachu diketuk.", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", practice: "Mode latihan · tidak mengubah sensor atau XP" }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!", gemIntro: "Choose a badge, try its effect, then use it when tapping Jamkachu.", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", practice: "Practice mode · does not change sensors or XP" };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
   const unlockedBadges = badges.filter(
@@ -259,6 +282,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
     setActiveEffect(next);
     if (next) localStorage.setItem(BADGE_EFFECT_STORAGE_KEY, next); else localStorage.removeItem(BADGE_EFFECT_STORAGE_KEY);
     window.PMSfx?.play(selectedEffectActive ? "tick" : "coin");
+  };
+
+  const playReward = (next: RewardPreview) => {
+    setPreview(next);
+    setPreviewPulse((value) => value + 1);
+    window.PMSfx?.play(next.kind === "story" ? "levelup" : "coin");
   };
 
   return (
@@ -290,6 +319,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             0% { opacity: 0; transform: translateY(6px); }
             100% { opacity: 1; transform: translateY(0); }
           }
+          .pm-reward-pop { animation: pm-reward-pop .62s steps(4, jump-end) both; }
+          .pm-reward-particle { animation: pm-reward-particle .72s steps(4, jump-end) both; }
+          @keyframes pm-reward-pop { 0% { transform: scale(.82); } 55% { transform: scale(1.06); } 100% { transform: scale(1); } }
+          @keyframes pm-reward-particle { 0% { opacity: 0; transform: translate(0,12px) scale(.5); } 35% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--reward-x),-48px) scale(1.2); } }
         }
         @media (prefers-reduced-motion: reduce) {
           .pm-bar-fill { transition: none; }
@@ -346,6 +379,22 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         })}
       </div>
 
+      {preview && (
+        <section key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
+          <p className="pm-heading text-[8px] text-[#A97B12]">{copy.practice}</p>
+          <div className="relative mx-auto mt-2 grid size-24 place-items-center rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
+            <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
+            {Array.from({ length: 9 }, (_, index) => (
+              <span key={`${previewPulse}-${index}`} className="pm-reward-particle pointer-events-none absolute text-xl" style={{ "--reward-x": `${((index % 5) - 2) * 20}px`, animationDelay: `${index * 45}ms` } as CSSProperties} aria-hidden="true">
+                {preview.particles[index % preview.particles.length]}
+              </span>
+            ))}
+          </div>
+          <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
+          <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
+        </section>
+      )}
+
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
           <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
@@ -354,13 +403,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             {moods.map((mood, index) => (
               <li
                 key={mood.mood}
-                className="pm-panel pm-card-cascade flex flex-col items-center gap-1.5 text-center"
+                className="pm-card-cascade"
                 style={
-                  mood.discovered
-                    ? { padding: "14px 10px", borderColor: "var(--color-grass-light)", ...cascadeStyle(index) }
-                    : { padding: "14px 10px", ...LOCKED_PANEL, ...cascadeStyle(index) }
+                  cascadeStyle(index)
                 }
               >
+                <button type="button" disabled={!mood.discovered} onClick={() => { const reaction = MOOD_REACTIONS[mood.mood]; if (reaction) playReward({ kind: "moods", emoji: mood.emoji, title: mood.label, line: reaction[locale], particles: reaction.particles }); }} className="pm-panel flex w-full cursor-pointer flex-col items-center gap-1.5 text-center disabled:cursor-not-allowed" style={mood.discovered ? { padding: "14px 10px", borderColor: "var(--color-grass-light)" } : { padding: "14px 10px", ...LOCKED_PANEL }}>
                 <span
                   className={`text-3xl leading-none ${mood.discovered ? "" : "brightness-0 opacity-30"}`}
                   role="img"
@@ -381,6 +429,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 >
                   {mood.discovered ? "✓" : "?"}
                 </span>
+                {mood.discovered && <span className="pm-heading mt-1 text-[7px] text-[#397A2B]">▶ {copy.tryIt}</span>}
+                </button>
               </li>
             ))}
           </ul>
@@ -484,6 +534,11 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   </button>
                 </div>
               )}
+              {selectedEffect && selectedBadgeUnlocked && (
+                <button type="button" className="pm-btn pm-btn-primary mt-3 cursor-pointer px-4 py-2 text-[9px]" onClick={() => playReward({ kind: "badges", emoji: "🌱", title: selectedEffect.name[locale], line: locale === "id" ? "Ketuk! Efek lencana ini siap dipakai bersama Jamkachu." : "Tap! This badge effect is ready to use with Jamkachu.", particles: selectedEffect.particles })}>
+                  ✨ {copy.tryIt}
+                </button>
+              )}
             </article>
           )}
           {/* Honest lucky-odds disclosure (spec D2 / §4.2). English copy is
@@ -511,6 +566,11 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   unlocked={chapter.unlocked}
                   scene={chapter.scene}
                 />
+                {chapter.unlocked && chapter.scene && (
+                  <button type="button" className="pm-btn mt-2 w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: chapter.chapter >= 5 ? "🎆" : "🌱", title: chapter.title, line: chapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? chapter.description, particles: ["✨", "📖", "💚"] })}>
+                    🎬 {copy.replay}
+                  </button>
+                )}
               </li>
             ))}
           </ol>
@@ -549,6 +609,28 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 <p className="mt-2 text-[10px] font-medium leading-4" style={{ color: INK_FAINT }}>
                   {entry.source}
                 </p>
+                <button type="button" className="pm-btn mt-3 w-full cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
+                  🔍 {copy.challenge}
+                </button>
+                {wisdomTrial === entry.id && WISDOM_TRIALS[entry.id] && (
+                  <div className="mt-3 rounded-xl border-2 border-[#A9D2F2] bg-[#EEF8FF] p-3" aria-live="polite">
+                    <p className="text-sm font-bold leading-5">{WISDOM_TRIALS[entry.id].prompt[locale]}</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {WISDOM_TRIALS[entry.id].choices[locale].map((choice, choiceIndex) => {
+                        const answered = wisdomAnswer !== null;
+                        const correct = choiceIndex === WISDOM_TRIALS[entry.id].answer;
+                        return <button key={choice} type="button" disabled={answered} onClick={() => { setWisdomAnswer(choiceIndex); window.PMSfx?.play(correct ? "coin" : "tick"); }} className="cursor-pointer rounded-xl border-2 px-3 py-2 text-xs font-semibold disabled:cursor-default" style={answered && correct ? { borderColor: "#397A2B", background: "#E8F6E0", color: "#397A2B" } : answered && choiceIndex === wisdomAnswer ? { borderColor: "#D66B6B", background: "#FFE9E9", color: "#A03030" } : { borderColor: "#A9D2F2", background: "#fff" }}>{choice}</button>;
+                      })}
+                    </div>
+                    {wisdomAnswer !== null && (
+                      <div className="mt-3 text-xs leading-5">
+                        <p className="font-bold" style={{ color: wisdomAnswer === WISDOM_TRIALS[entry.id].answer ? "#397A2B" : "#A03030" }}>{wisdomAnswer === WISDOM_TRIALS[entry.id].answer ? copy.correct : copy.wrong}</p>
+                        <p className="mt-1" style={{ color: INK_MUTED }}>{entry.example}</p>
+                        {wisdomAnswer !== WISDOM_TRIALS[entry.id].answer && <button type="button" className="mt-2 cursor-pointer font-bold underline" onClick={() => setWisdomAnswer(null)}>{copy.tryIt}</button>}
+                      </div>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
