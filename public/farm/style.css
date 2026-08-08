@@ -300,6 +300,11 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
+/* Streak flame is pressable (Task 15): tap → honest "N days in a row"
+   line + blip. Pure celebration of real history — grants nothing. */
+.badge.streak { cursor: pointer; user-select: none; }
+.badge.streak:active { transform: translateY(1px); }
+
 .weather-widget {
     display: flex;
     align-items: center;
@@ -336,6 +341,27 @@ body {
     padding: 14px 20px;
 }
 #cq-progress { color: var(--color-primary); }
+
+/* Verifying shimmer (Task 12): while the sensor is confirming real care the
+   quest slot turns amber with a magnifier and three blinking dots — honest
+   anticipation, not celebration. Dots animate with hard steps() toggles
+   (pixel feel) and stay static under reduced motion. */
+#current-quest.verifying {
+    background: #FFF7DF;
+    border-color: #E8C46B;
+    color: #7A5B12;
+}
+#current-quest.verifying #cq-progress { color: #A97B12; }
+.cq-dots span { opacity: 0.25; }
+@media (prefers-reduced-motion: no-preference) {
+    .cq-dots span { animation: pm-dot-blink 1.2s steps(1, end) infinite; }
+    .cq-dots span:nth-child(2) { animation-delay: 0.4s; }
+    .cq-dots span:nth-child(3) { animation-delay: 0.8s; }
+}
+@keyframes pm-dot-blink {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+}
 
 .home-divider {
     border: 0;

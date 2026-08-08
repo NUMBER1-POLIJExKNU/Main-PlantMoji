@@ -251,6 +251,10 @@ const FX_CSS = `
 .fx-banner-detail { font-size: 11px; }
 .fx-xp { color: var(--color-forest, #397A2B); }
 .fx-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 1001; }
+.fx-hold-dim { position: fixed; inset: 0; background: rgba(36, 52, 33, 0.1); opacity: 0; }
+.fx-orb { position: fixed; width: 10px; height: 10px; background: var(--color-grass, #69C455); image-rendering: pixelated; will-change: transform, opacity; }
+.fx-orb-gold { background: var(--color-yellow, #FFDE6A); box-shadow: 0 0 6px rgba(255, 222, 106, 0.85); }
+.fx-lucky-stamp { font-family: var(--font-heading, monospace); font-size: 26px; color: #7A5B12; background: linear-gradient(180deg, #FFE98A, #FFC93C); border: 4px solid #A97B12; border-radius: 12px; box-shadow: 0 6px 0 #A97B12; padding: 18px 30px; text-shadow: 2px 2px 0 #FFF7DF; white-space: nowrap; will-change: transform, opacity; }
 .fx-levelup-card { font-family: var(--font-heading, monospace); background: var(--color-white, #fff); border: 4px solid var(--color-outline, #2B3A27); border-radius: 18px; box-shadow: 0 8px 0 var(--color-outline, #2B3A27); padding: 32px 48px; text-align: center; will-change: transform, opacity; }
 .fx-levelup-title { font-size: 26px; color: var(--color-forest, #397A2B); text-shadow: 3px 3px 0 var(--color-yellow, #FFDE6A); }
 .fx-levelup-sub { font-size: 12px; margin-top: 14px; color: var(--color-outline, #2B3A27); }
@@ -392,12 +396,13 @@ function removeLater(el, ms, isParticle = false) {
 
 /** Pixel-square confetti burst at viewport point (x, y). Square particles +
  *  stepped easing keep the retro pixel-art feel. Skipped under
- *  prefers-reduced-motion. */
-function spawnConfetti(x, y, count) {
+ *  prefers-reduced-motion. Optional `palette` overrides the default colors
+ *  (the lucky stamp bursts gold, Task 14). */
+function spawnConfetti(x, y, count, palette) {
   if (prefersReducedMotion()) return;
   const layer = ensureFxLayer();
   if (!layer) return;
-  const colors = getPalette().confetti;
+  const colors = Array.isArray(palette) && palette.length > 0 ? palette : getPalette().confetti;
   const n = Math.max(0, Math.min(count, MAX_PARTICLES - liveParticles));
   for (let i = 0; i < n; i++) {
     const p = document.createElement("div");
@@ -594,13 +599,16 @@ function floatWhyCard(text, rect) {
   removeLater(card, 3500);
 }
 
-/** Immediate XP chip presentation (queue item body). */
-function fxXpChipNow(amount) {
+/** Immediate XP chip presentation (queue item body). `silent` skips the
+ *  coin cue (the orb cascade's landings already played it). A fresh reason
+ *  from bond_events (Task 14) labels the chip: "+30 XP · Quest complete". */
+function fxXpChipNow(amount, opts = {}) {
   const wrap = $(".xp-bar-wrap");
   if (!wrap) return;
-  window.PMSfx?.play("coin");
-  const text = PM().fx?.xpGain?.(amount) ?? `+${amount} XP`;
-  floatChip(text, wrap.getBoundingClientRect());
+  if (!opts.silent) window.PMSfx?.play("coin");
+  const base = PM().fx?.xpGain?.(amount) ?? `+${amount} XP`;
+  const label = takeReasonLabel(amount);
+  floatChip(label ? `${base} · ${label}` : base, wrap.getBoundingClientRect());
 }
 
 /** T2: XP gain chip — routed through the celebration queue; carries its
@@ -719,6 +727,126 @@ function showQuestBannerNow(quest) {
   spawnConfetti(rect.left + rect.width / 2, rect.bottom, 18);
 }
 
+// ── XP Orb Cascade + presentation ledger (Task 13) ──────────────────────
+// The pod pop (and the lucky reveal, Task 14) present an XP award as pixel
+// orbs arcing into the XP bar; each landing advances the bar's share and
+// ticks the counter. Presentation-only — the XP is already in the ledger
+// before any orb flies.
+//
+// Double-chip fix: any amount a pod/orb presentation will show is recorded
+// via notePresented() the moment that presentation is enqueued; renderBond's
+// XP diff consumes this ledger before floating a generic "+N XP" chip, so
+// one award is never chipped twice — while genuinely un-presented awards
+// (badges, diary bonuses, seasonal-boost remainders) still get their chip.
+
+const ORB_FLIGHT_MS = 400;
+const ORB_CASCADE_TOTAL_MS = 2500; // hard budget: last landing inside this
+const ORB_CAP = 8;
+const ORB_CAP_GOLD = 16;
+const PRESENTED_TTL_MS = 30_000;
+const XP_CHIP_GRACE_MS = 900;
+
+let pendingPresentedXp = []; // [{ amount, at }] — awaiting renderBond's diff
+
+function notePresented(amount) {
+  if (Number.isFinite(amount) && amount > 0) {
+    pendingPresentedXp.push({ amount, at: Date.now() });
+  }
+}
+
+/** Subtract presented amounts from a bond XP delta; returns the remainder
+ *  that still deserves a generic chip. Stale entries (a presentation whose
+ *  bond update never arrived) expire after 30s so they can never eat a
+ *  future, unrelated award. */
+function consumePresented(delta) {
+  const now = Date.now();
+  pendingPresentedXp = pendingPresentedXp.filter((entry) => now - entry.at <= PRESENTED_TTL_MS);
+  let remainder = delta;
+  while (remainder > 0 && pendingPresentedXp.length > 0) {
+    const head = pendingPresentedXp[0];
+    const used = Math.min(head.amount, remainder);
+    head.amount -= used;
+    remainder -= used;
+    if (head.amount <= 0) pendingPresentedXp.shift();
+  }
+  return remainder;
+}
+
+/** ceil(amount/10) 10px pixel orbs (cap 8; 16 when `gold`) fly staggered
+ *  400ms transform-only arcs from `origin` (pod/banner rect) to the XP bar.
+ *  Each landing advances the bar's share, ticks the counter, and plays the
+ *  coin cue (sfx.js's own 1.5s per-cue rate limit thins the repeats). The
+ *  last landing floats the "+N XP" receipt chip. Returns the cascade's
+ *  total duration in ms (0 when it fell back to the plain chip). Reduced
+ *  motion: the existing single chip + snap count path, unchanged. */
+function orbCascade(amount, opts = {}) {
+  const xp = Math.max(0, Math.round(Number(amount) || 0));
+  if (xp <= 0) return 0;
+  const wrap = $(".xp-bar-wrap");
+  const layer = ensureFxLayer();
+  const budget = MAX_PARTICLES - liveParticles;
+  if (prefersReducedMotion() || !wrap || !layer || budget < 1) {
+    fxXpChipNow(xp);
+    return 0;
+  }
+  const numEl = ensureCoinNumber();
+  const n = Math.min(Math.ceil(xp / 10), opts.gold ? ORB_CAP_GOLD : ORB_CAP, budget);
+  const stagger = Math.min(250, Math.max(60, Math.floor((ORB_CASCADE_TOTAL_MS - ORB_FLIGHT_MS - 100) / n)));
+  const origin = opts.origin ?? mascotRect();
+  const target = wrap.getBoundingClientRect();
+  const targetX = target.left + target.width / 2;
+  const targetY = target.top + target.height / 2;
+  // Counter re-roll: by claim time renderBond has usually applied the
+  // authoritative total already, so replay the awarded segment ENDING at
+  // the number on screen — the cascade never counts beyond truth.
+  const shownRaw = Number.parseInt(numEl?.textContent ?? "", 10);
+  const end = Number.isFinite(shownRaw) ? shownRaw : Math.max(prevXp ?? 0, xp);
+  const start = Math.max(0, end - xp);
+  cancelXpCount(); // the landings own the counter for the next ~2.5s
+  if (numEl) numEl.textContent = String(start);
+  setXpBar(start % 100, false);
+  let lastShown = start;
+  for (let i = 0; i < n; i++) {
+    const orb = document.createElement("div");
+    orb.className = opts.gold ? "fx-orb fx-orb-gold" : "fx-orb";
+    orb.setAttribute("aria-hidden", "true");
+    const sx = origin.left + (origin.width ?? 0) * (0.3 + Math.random() * 0.4);
+    const sy = origin.top + (origin.height ?? 0) * (0.2 + Math.random() * 0.4);
+    orb.style.left = `${sx}px`;
+    orb.style.top = `${sy}px`;
+    layer.appendChild(orb);
+    liveParticles++;
+    const dx = targetX - sx;
+    const dy = targetY - sy;
+    const lift = 40 + Math.random() * 50;
+    animateSafe(
+      orb,
+      [
+        { transform: "translate(0px, 0px) scale(1)", opacity: 1 },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - lift}px) scale(1.2)`, opacity: 1, offset: 0.55 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0.7)`, opacity: 1 },
+      ],
+      { duration: ORB_FLIGHT_MS, delay: i * stagger, easing: "steps(8, end)", fill: "both" },
+    );
+    setTimeout(() => {
+      orb.remove();
+      liveParticles = Math.max(0, liveParticles - 1);
+      const value = Math.round(start + (xp * (i + 1)) / n);
+      if (numEl) numEl.textContent = String(value);
+      // The bar advances its share; crossing a 100-XP boundary reuses the
+      // wrap-around snap juice already built into setXpBar.
+      setXpBar(value % 100, Math.floor(lastShown / 100) < Math.floor(value / 100));
+      lastShown = value;
+      window.PMSfx?.play("coin");
+    }, i * stagger + ORB_FLIGHT_MS);
+  }
+  const totalMs = (n - 1) * stagger + ORB_FLIGHT_MS + 150;
+  // Landing receipt: the "+N XP" chip floats once the last orb has landed
+  // (Task 14 attaches the reason label when a bond_event named one).
+  setTimeout(() => fxXpChipNow(xp, { silent: true }), totalMs - 100);
+  return totalMs;
+}
+
 // ── Tap-to-Claim Reward Pod (Task 9) ────────────────────────────────────
 // Quest completes → a pixel seed pod drops beside Jamkachu and wiggles;
 // tapping it pops the celebration. Presentation-only: the XP is already in
@@ -775,10 +903,13 @@ function podDrop(quest, done) {
     window.PMSfx?.buzz(15);
     spawnConfetti(podRect.left + podRect.width / 2, podRect.top + podRect.height / 2, 20);
     showQuestBannerNow(quest);
-    // XP presentation: orb cascade when present (later task), else XP chip.
+    // XP presentation (Task 13): orbs arc from the popped pod into the XP
+    // bar; the queue item holds until the last orb lands (the item's own
+    // duration cap still force-advances a stuck cascade).
     const xp = Number(quest.xp_reward) || 0;
-    if (xp > 0) fxXpGain(xp);
-    done();
+    const cascadeMs = xp > 0 ? orbCascade(xp, { origin: podRect }) : 0;
+    if (cascadeMs > 0) setTimeout(done, cascadeMs);
+    else done();
   };
   pod.addEventListener("pointerdown", pop);
   autoTimer = setTimeout(pop, POD_AUTO_BURST_MS);
@@ -789,7 +920,199 @@ function podDrop(quest, done) {
  *  explicit duration covers the full 8s claim window; tapping resolves the
  *  queue item early through done(). */
 function celebrateQuest(quest) {
+  // The pod will present this award (Task 13): record it up front so
+  // renderBond's XP diff — whose bond update usually arrives before the pod
+  // is tapped — doesn't float a duplicate chip for the same XP.
+  notePresented(Number(quest.xp_reward) || 0);
   fxEnqueue(3, (done) => podDrop(quest, done), POD_AUTO_BURST_MS + 700);
+}
+
+// ── Verifying shimmer sound + completion hold (Task 12) ─────────────────
+// Soft anticipation ticks while the sensor confirms real care: at most five
+// ticks, two seconds apart, and ONLY when a quest transitions INTO
+// VERIFYING (diff-gated — never on the first snapshot or a poll repeat).
+// The interval self-cancels as soon as no quest is VERIFYING anymore.
+
+const VERIFY_TICK_INTERVAL_MS = 2000;
+const VERIFY_TICK_MAX = 5;
+const VERIFY_HOLD_MS = 600;
+let verifyTickTimer = null;
+let verifyTicksLeft = 0;
+
+function startVerifyTicks() {
+  verifyTicksLeft = VERIFY_TICK_MAX;
+  // First tick fires immediately (lastQuestRows may not include the new
+  // VERIFYING row yet); the interval re-checks reality every 2s.
+  window.PMSfx?.play("tick");
+  verifyTicksLeft -= 1;
+  if (verifyTickTimer !== null) return;
+  verifyTickTimer = setInterval(() => {
+    if (verifyTicksLeft <= 0 || !anyQuestVerifying()) {
+      clearInterval(verifyTickTimer);
+      verifyTickTimer = null;
+      return;
+    }
+    verifyTicksLeft -= 1;
+    window.PMSfx?.play("tick");
+  }, VERIFY_TICK_INTERVAL_MS);
+}
+
+/** 600ms anticipation hold between "sensor confirmed" and the reward pod:
+ *  the screen dims 10% while a rising 3-note arpeggio plays. Enqueued as T3
+ *  right before the pod (same tier ⇒ FIFO keeps it first). */
+function enqueueVerifyHold() {
+  fxEnqueue(3, (done) => {
+    window.PMSfx?.play("cascade");
+    const layer = ensureFxLayer();
+    if (layer) {
+      const dim = document.createElement("div");
+      dim.className = "fx-hold-dim";
+      dim.setAttribute("aria-hidden", "true");
+      layer.appendChild(dim);
+      animateSafe(
+        dim,
+        [
+          { opacity: 0 },
+          { opacity: 1, offset: 0.2 },
+          { opacity: 1, offset: 0.8 },
+          { opacity: 0 },
+        ],
+        { duration: VERIFY_HOLD_MS, easing: "linear", fill: "forwards" },
+      );
+      removeLater(dim, VERIFY_HOLD_MS + 50);
+    }
+    setTimeout(done, VERIFY_HOLD_MS);
+  }, VERIFY_HOLD_MS);
+}
+
+// ── Reason chips + lucky jackpot reveal (Task 14) ───────────────────────
+// bond_events INSERTs (after the milestone8 migration adds the table to the
+// realtime publication) tell us WHY XP arrived: data = {amount, reason}.
+// The reason maps by prefix to a friendly label appended to the XP chip
+// ("+30 XP · Quest complete"). Everything degrades to the plain unlabeled
+// chip when the channel errors or stays silent — never blocks.
+
+const REASON_TTL_MS = 10_000; // pending reasons expire after 10s
+const LUCKY_STAMP_MS = 1600;
+const LUCKY_DEFER_MS = 600;
+const GOLD_CONFETTI = ["#FFDE6A", "#FFC93C", "#FFF3C4", "#FFFFFF"];
+
+// Prefix → PM_STRINGS.reasons key. Bare quest_key reasons (quest awards)
+// and anything unrecognized fall through to "quest".
+const REASON_PREFIXES = [
+  ["lucky-bonus:", "lucky"],
+  ["badge:", "badge"],
+  ["chapter:", "chapter"],
+  ["streak-milestone:", "streak"],
+  ["mood:", "mood"],
+  ["daily:", "daily"],
+  ["growth", "growth"],
+];
+const REASON_FALLBACK = {
+  quest: "Quest complete",
+  lucky: "Lucky ×2!",
+  badge: "New badge",
+  chapter: "Story unlocked",
+  streak: "Streak bonus",
+  mood: "New mood found",
+  daily: "Daily challenge",
+  growth: "Diary entry",
+};
+
+function reasonLabelFor(reason) {
+  const value = String(reason ?? "");
+  const match = REASON_PREFIXES.find(([prefix]) => value.startsWith(prefix));
+  const key = match ? match[1] : "quest";
+  return PM().reasons?.[key] ?? REASON_FALLBACK[key];
+}
+
+let pendingReasons = []; // [{ amount, label, at }] — newest last
+
+function noteReason(amount, reason) {
+  pendingReasons.push({ amount, label: reasonLabelFor(reason), at: Date.now() });
+  if (pendingReasons.length > 8) pendingReasons.shift();
+}
+
+/** Pick (and consume) the pending reason label for a chip of `amount`:
+ *  exact-amount match first (so a base award and its equal lucky bonus each
+ *  keep their own label), else the oldest fresh entry. Null when nothing
+ *  fresh is pending — the chip just stays unlabeled. */
+function takeReasonLabel(amount) {
+  const now = Date.now();
+  pendingReasons = pendingReasons.filter((entry) => now - entry.at <= REASON_TTL_MS);
+  if (pendingReasons.length === 0) return null;
+  const index = pendingReasons.findIndex((entry) => entry.amount === amount);
+  const entry = index >= 0 ? pendingReasons.splice(index, 1)[0] : pendingReasons.shift();
+  return entry.label;
+}
+
+/** T3 gold "LUCKY! ×2" stamp: scale-slam + gold confetti + jackpot arpeggio
+ *  + a firm buzz. Pure reveal of a server-granted bonus (spec D2) — the XP
+ *  itself was already awarded and is presented by the gold orb cascade. */
+function fxLuckyStampNow(done) {
+  const layer = ensureFxLayer();
+  if (!layer) {
+    done();
+    return;
+  }
+  window.PMSfx?.play("jackpot");
+  window.PMSfx?.buzz(25);
+  const overlay = document.createElement("div");
+  overlay.className = "fx-overlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  const stamp = document.createElement("div");
+  stamp.className = "fx-lucky-stamp";
+  stamp.textContent = PM().fx?.luckyStamp ?? "LUCKY! ×2";
+  overlay.appendChild(stamp);
+  layer.appendChild(overlay);
+  const reduce = prefersReducedMotion();
+  animateSafe(
+    stamp,
+    reduce
+      ? [
+          { opacity: 0 },
+          { opacity: 1, offset: 0.15 },
+          { opacity: 1, offset: 0.85 },
+          { opacity: 0 },
+        ]
+      : [
+          { transform: "scale(2.8) rotate(-6deg)", opacity: 0 },
+          { transform: "scale(1) rotate(-6deg)", opacity: 1, offset: 0.2 },
+          { transform: "scale(1.12) rotate(-6deg)", opacity: 1, offset: 0.28 },
+          { transform: "scale(1) rotate(-6deg)", opacity: 1, offset: 0.36 },
+          { transform: "scale(1) rotate(-6deg)", opacity: 1, offset: 0.85 },
+          { transform: "scale(0.9) rotate(-6deg)", opacity: 0 },
+        ],
+    { duration: LUCKY_STAMP_MS, easing: reduce ? "linear" : "steps(16, end)", fill: "forwards" },
+  );
+  removeLater(overlay, LUCKY_STAMP_MS + 100);
+  spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.35, 24, GOLD_CONFETTI);
+  setTimeout(done, LUCKY_STAMP_MS);
+}
+
+/** Realtime bond_events INSERT → remember the award's reason; a lucky
+ *  bonus additionally queues its gold reveal AFTER the base celebration. */
+function onBondEventInsert(row) {
+  if (!row || row.type !== "XP_AWARDED") return;
+  const data = row.data && typeof row.data === "object" ? row.data : {};
+  const amount = Number(data.amount) || 0;
+  const reason = String(data.reason ?? "");
+  noteReason(amount, reason);
+  if (reason.startsWith("lucky-bonus:")) {
+    // The bonus gets its own gold presentation → note it so renderBond's
+    // diff never chips the same XP again (Task 13 ledger).
+    notePresented(amount);
+    // AFTER the base presentation: the COMPLETED quest UPDATE lands in the
+    // same realtime beat as this INSERT — defer so the pod (T3) enqueues
+    // first; same-tier FIFO then keeps stamp + gold orbs behind it.
+    setTimeout(() => {
+      fxEnqueue(3, (done) => fxLuckyStampNow(done), LUCKY_STAMP_MS + 100);
+      if (amount > 0) {
+        fxEnqueue(2, () => orbCascade(amount, { gold: true }), ORB_CASCADE_TOTAL_MS + 200);
+      }
+    }, LUCKY_DEFER_MS);
+  }
 }
 
 /** Record a quest row's status; celebrate only a real transition INTO
@@ -801,11 +1124,16 @@ function trackQuest(row, primed = questsPrimed) {
   const prev = questStatuses.get(row.id);
   questStatuses.set(row.id, row.status);
   if (!primed) return;
+  // Verifying shimmer sound (Task 12): only on a real ENTER transition.
+  if (row.status === "VERIFYING" && prev !== "VERIFYING") startVerifyTicks();
   if (row.status !== "COMPLETED" || prev === "COMPLETED") return;
   if (prev === undefined) {
     const finishedAt = Date.parse(row.completed_at ?? "");
     if (!Number.isFinite(finishedAt) || Date.now() - finishedAt > 5 * 60_000) return;
   }
+  // VERIFYING → COMPLETED gets the 600ms anticipation hold before the pod;
+  // rows first seen already COMPLETED (prev undefined) skip it.
+  if (prev === "VERIFYING") enqueueVerifyHold();
   celebrateQuest(row);
 }
 
@@ -1058,6 +1386,28 @@ function setupCareInteractions() {
   $(".water-btn")?.addEventListener("pointerdown", () => runRitual("water"));
   $(".feed-btn")?.addEventListener("pointerdown", () => runRitual("fertilize"));
   $(".mascot-wrapper")?.addEventListener("pointerdown", petMascot);
+
+  // Streak flame press (Task 15): tap → "N days in a row! Care today makes
+  // N+1." + blip + a little flame pulse. Celebrates only what is already
+  // real (prevStreak stays null until real data renders); grants nothing.
+  $(".badge.streak")?.addEventListener("pointerdown", () => {
+    const days = prevStreak;
+    if (typeof days !== "number" || days <= 0) return;
+    const nowTs = Date.now();
+    if (nowTs < flamePressCooldownUntil) return;
+    flamePressCooldownUntil = nowTs + FLAME_PRESS_COOLDOWN_MS;
+    window.PMSfx?.play("blip");
+    const text = PM().streakKeeper?.flame?.(days) ?? STREAK_KEEPER_FALLBACK.flame(days);
+    floatWhyCard(text, streakAnchorRect());
+    const el = $(".badge.streak");
+    if (el && !prefersReducedMotion()) {
+      animateSafe(
+        el,
+        [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
+        { duration: 300, easing: "steps(4, end)" },
+      );
+    }
+  });
 }
 
 setupCareInteractions();
@@ -1076,14 +1426,17 @@ function renderHp(moodState) {
 }
 
 /** Home quest slot (#current-quest): first ACTIVE quest, else first
- *  VERIFYING. Maintain quests show live elapsed/target minutes; recovery
- *  quests in VERIFYING show a "verifying…" hint. Display-only. */
+ *  VERIFYING. Maintain quests show live elapsed/target minutes; VERIFYING
+ *  renders the amber shimmer state (Task 12): 🔍 + "Sensor is checking…" +
+ *  three blinking dots. Display-only. */
 function renderQuestSlot(rows) {
   const nameEl = $("#cq-name");
   const progressEl = $("#cq-progress");
   if (!nameEl || !progressEl) return;
+  const slotEl = $("#current-quest");
   const list = Array.isArray(rows) ? rows : [];
   const quest = list.find((row) => row?.status === "ACTIVE") ?? list.find((row) => row?.status === "VERIFYING");
+  slotEl?.classList.toggle("verifying", quest?.status === "VERIFYING");
   if (!quest) {
     nameEl.textContent = t("quest.none");
     progressEl.textContent = "";
@@ -1092,7 +1445,11 @@ function renderQuestSlot(rows) {
   const meta = QUEST_META[quest.quest_key];
   nameEl.textContent = meta ? `${meta.emoji} ${meta.title}` : prettifyKey(quest.quest_key);
   if (quest.status === "VERIFYING") {
-    progressEl.textContent = t("quest.verifying");
+    // Static structure via innerHTML, dynamic copy via textContent (safe).
+    progressEl.innerHTML =
+      '🔍 <span class="cq-verifying-text"></span><span class="cq-dots" aria-hidden="true"><span>.</span><span>.</span><span>.</span></span>';
+    const textEl = progressEl.querySelector(".cq-verifying-text");
+    if (textEl) textEl.textContent = PM().verifying?.checking ?? "Sensor is checking…";
   } else if (meta?.targetMin && quest.started_at) {
     const elapsedMin = Math.max(0, Math.floor((Date.now() - Date.parse(quest.started_at)) / 60_000));
     progressEl.textContent = `${Math.min(elapsedMin, meta.targetMin)}/${meta.targetMin} min`;
@@ -1186,17 +1543,186 @@ function renderBond(bond, plantName) {
   }
   const streak = $(".badge.streak");
   if (streak) {
-    streak.innerHTML = `<i class="icon">🔥</i> ${streakDays} ${t("days")}`;
+    // Flame tier grows at 7/14/30 days (Task 15) — text-level, no sprites.
+    streak.innerHTML = `<i class="icon">${flameFor(streakDays)}</i> ${streakDays} ${t("days")}`;
     streak.style.display = streakDays > 0 ? "" : "none";
   }
 
-  if (xpDelta > 0) fxXpGain(xpDelta);
+  if (xpDelta > 0) {
+    // Chip only what no pod/orb presentation owns (Task 13 double-chip
+    // fix). Deferred one beat: the quest-completion event that registers
+    // its presentation (and the bond_event naming a reason, Task 14)
+    // arrives moments after this bond update on the same realtime stream.
+    setTimeout(() => {
+      const remainder = consumePresented(xpDelta);
+      if (remainder > 0) fxXpGain(remainder);
+    }, XP_CHIP_GRACE_MS);
+  }
   if (leveledUp) fxLevelUp(level);
   if (streakDelta > 0) fxStreakUp(streakDelta);
+  // Streak keeper (Task 15): kind restart line on a real reset diff, and
+  // the once-per-WIB-day daytime nudge (self-gated by its localStorage
+  // day-flag, so poll repeats can never re-fire it).
+  if (!firstRender && prevStreak > 1 && streakDays <= 1) fxStreakBroken();
+  maybeStreakNudge(bond, streakDays);
 
   prevXp = totalXp;
   prevLevel = level;
   prevStreak = streakDays;
+}
+
+// ── Streak keeper + flame press (Task 15) ───────────────────────────────
+// Warm, honest streak presence (spec §4.3): one gentle daytime nudge per
+// WIB day while today is still uncared-for, a kind restart line when a
+// streak resets, and a tappable flame that celebrates what is already real.
+// No countdowns, no guilt copy, zero XP from taps.
+
+const STREAK_NUDGE_KEY = "pm_streak_nudge";
+const STREAK_NUDGE_HOUR_START = 7; // 07:00 WIB inclusive
+const STREAK_NUDGE_HOUR_END = 20; // 20:00 WIB exclusive
+const FLAME_PRESS_COOLDOWN_MS = 2000;
+const STREAK_KEEPER_FALLBACK = {
+  active: (d) => `🔥 ${d} days going — Jamkachu would love a visit today.`,
+  broken: "Every streak starts at day one. Welcome back!",
+  flame: (d) => `${d} days in a row! Care today makes ${d + 1}.`,
+};
+let flamePressCooldownUntil = 0;
+
+/** Current WIB (Asia/Jakarta) calendar date + hour — the same calendar the
+ *  server's streak engine counts in. Null when Intl/timezone data is
+ *  unavailable (the keeper then simply stays silent). */
+function wibNow() {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Jakarta",
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+    }).formatToParts(new Date());
+    const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
+    const date = `${get("year")}-${get("month")}-${get("day")}`;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    return { date, hour: Number(get("hour")) % 24 }; // some engines say "24" at midnight
+  } catch {
+    return null;
+  }
+}
+
+/** Anchor for streak copy: the flame badge, else the bond panel. */
+function streakAnchorRect() {
+  const el = $(".badge.streak") ?? $(".user-gamification");
+  return el ? el.getBoundingClientRect() : mascotRect();
+}
+
+/** Once per WIB day (localStorage day-flag), 07:00–20:00 only, streak
+ *  alive, and today still uncared-for — bond_state.last_qualified_date is
+ *  the server streak engine's own WIB care marker, so this never invents a
+ *  signal. Storage failure ⇒ stay silent (better than risking a nag). */
+function maybeStreakNudge(bond, streakDays) {
+  if (!(streakDays > 0)) return;
+  const now = wibNow();
+  if (!now) return;
+  if (now.hour < STREAK_NUDGE_HOUR_START || now.hour >= STREAK_NUDGE_HOUR_END) return;
+  if (bond.last_qualified_date === now.date) return; // already cared for today
+  let seen = null;
+  try {
+    seen = window.localStorage.getItem(STREAK_NUDGE_KEY);
+  } catch {
+    return;
+  }
+  if (seen === now.date) return;
+  try {
+    window.localStorage.setItem(STREAK_NUDGE_KEY, now.date);
+  } catch {
+    return; // can't guarantee once-per-day → skip
+  }
+  const text = PM().streakKeeper?.active?.(streakDays) ?? STREAK_KEEPER_FALLBACK.active(streakDays);
+  fxEnqueue(2, () => floatWhyCard(text, streakAnchorRect()), 1200);
+}
+
+/** Kind restart line when a streak resets (prev > 1 → 0/1). Warm copy
+ *  only — never a countdown, never guilt. */
+function fxStreakBroken() {
+  const text = PM().streakKeeper?.broken ?? STREAK_KEEPER_FALLBACK.broken;
+  fxEnqueue(2, () => floatWhyCard(text, streakAnchorRect()), 1200);
+}
+
+/** Flame grows with the streak: 🔥 → 🔥🔥 (7+) → 🔥🔥🔥 (14+) → 💛🔥 (30+). */
+function flameFor(days) {
+  return days >= 30 ? "💛🔥" : days >= 14 ? "🔥🔥🔥" : days >= 7 ? "🔥🔥" : "🔥";
+}
+
+// ── Causal Echo (Task 11) ───────────────────────────────────────────────
+// Real sensor diffs → a chip anchored to the environment strip, binding the
+// student's physical care to on-screen feedback. Diff-driven like every
+// other effect: prevSensors starts null, so the first reading only records
+// (no echo for merely opening the page). Throttled to one echo per sensor
+// per five minutes; while any quest is VERIFYING the chip honestly says the
+// sensor noticed and is checking instead of celebrating early.
+
+const ECHO_THROTTLE_MS = 5 * 60_000;
+const ECHO_HUMIDITY_STEP = 8; // +8 percentage points between readings
+const ECHO_TEMP_MIN = 18;
+const ECHO_TEMP_MAX = 28;
+const ECHO_FALLBACK = {
+  humidityUp: (d) => `Air +${d}% — Jamkachu breathes easy!`,
+  tempComfy: "Nice and cool again",
+  lightOn: "Sunshine!",
+  verifying: "Sensor saw your care — verifying…",
+};
+let prevSensors = null; // { temperature, humidity, light } — null until first reading
+const echoLastAt = { hum: 0, temp: 0, light: 0 };
+
+function anyQuestVerifying() {
+  return lastQuestRows.some((row) => row?.status === "VERIFYING");
+}
+
+/** T2 echo chip over an env-strip span (throttled per sensor). */
+function echoChip(sensor, selector, text) {
+  const now = Date.now();
+  if (now - echoLastAt[sensor] < ECHO_THROTTLE_MS) return;
+  echoLastAt[sensor] = now;
+  // Resolve the copy at DATA time: if the sensor change is feeding a quest
+  // that is still being verified, say so instead of celebrating early.
+  const line = anyQuestVerifying() ? (PM().echo?.verifying ?? ECHO_FALLBACK.verifying) : text;
+  fxEnqueue(2, () => {
+    const anchor = $(selector) ?? $("#env-strip");
+    if (anchor) floatChip(line, anchor.getBoundingClientRect());
+  }, 1200);
+}
+
+/** Diff the latest reading against the previous one and fire echo chips.
+ *  Per-field null-safety: a field missing from one reading neither echoes
+ *  nor forgets the last known value. */
+function causalEcho(next) {
+  if (prevSensors === null) {
+    prevSensors = { ...next };
+    return;
+  }
+  if (next.humidity != null && prevSensors.humidity != null) {
+    const delta = next.humidity - prevSensors.humidity;
+    if (delta >= ECHO_HUMIDITY_STEP) {
+      const d = Math.round(delta);
+      echoChip("hum", "#env-hum", PM().echo?.humidityUp?.(d) ?? ECHO_FALLBACK.humidityUp(d));
+    }
+  }
+  if (
+    next.temperature != null &&
+    prevSensors.temperature != null &&
+    next.temperature >= ECHO_TEMP_MIN &&
+    next.temperature <= ECHO_TEMP_MAX &&
+    (prevSensors.temperature < ECHO_TEMP_MIN || prevSensors.temperature > ECHO_TEMP_MAX)
+  ) {
+    echoChip("temp", "#env-temp", PM().echo?.tempComfy ?? ECHO_FALLBACK.tempComfy);
+  }
+  if (next.light === 1 && prevSensors.light === 0) {
+    echoChip("light", "#env-light", PM().echo?.lightOn ?? ECHO_FALLBACK.lightOn);
+  }
+  if (next.temperature != null) prevSensors.temperature = next.temperature;
+  if (next.humidity != null) prevSensors.humidity = next.humidity;
+  if (next.light != null) prevSensors.light = next.light;
 }
 
 /** Environment strip (#env-strip): compact one-line reading — the old 5-row
@@ -1226,6 +1752,13 @@ function renderSensors(reading) {
   if (reading?.temperature != null && Number.isFinite(temperature)) indoorParts.push(`${temperature.toFixed(1)}°C`);
   if (reading?.humidity != null && Number.isFinite(humidity)) indoorParts.push(`${Math.round(humidity)}% RH`);
   if (indoorParts.length > 0) setText(".indoor-reading", `${t("weather.indoor")}: ${indoorParts.join(" · ")}`);
+
+  // Causal echo (Task 11): diff-driven chips for real sensor improvements.
+  causalEcho({
+    temperature: reading?.temperature != null && Number.isFinite(temperature) ? temperature : null,
+    humidity: reading?.humidity != null && Number.isFinite(humidity) ? humidity : null,
+    light: reading?.light != null && (light === 0 || light === 1) ? light : null,
+  });
 }
 
 function weatherIcon(description) {
@@ -1354,6 +1887,26 @@ async function main() {
       },
     )
     .subscribe();
+
+  // Reason chips (Task 14): bond_events INSERTs carry {amount, reason} for
+  // every XP award. Deliberately its OWN channel (same socket): until the
+  // milestone8 migration runs, the table is missing from the
+  // supabase_realtime publication and that join errors — isolating it means
+  // the failure can never take down the plant/bond/quest subscriptions
+  // above. Error or silence ⇒ XP chips simply stay unlabeled; nothing
+  // blocks and no retry storm touches the main channel.
+  try {
+    supabase
+      .channel(`farm-events-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bond_events", filter: `plant_id=eq.${PLANT_ID}` },
+        (payload) => onBondEventInsert(payload.new),
+      )
+      .subscribe();
+  } catch {
+    // Chips stay unlabeled — never block the page over a nice-to-have.
+  }
 
   // Polling fallback + sensor refresh (sensor_readings has no realtime).
   setInterval(refresh, 15_000);
