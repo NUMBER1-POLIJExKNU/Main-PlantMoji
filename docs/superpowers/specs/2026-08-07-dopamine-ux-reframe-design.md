@@ -136,7 +136,36 @@ Tier system (celebration hierarchy): T1 micro (button press) < T2 chip (XP gain)
 - `node --check` on all public/farm JS; ESLint + `next build`; 195+ tests stay green.
 - Manual QA checklist (pre-filming): sound unlock on target devices, mute persistence, pod auto-burst, offline reload, reduced-motion pass, contrast check on projector.
 
-## 6. Out of scope
+## 6. Addendum (2026-08-08): Tamagotchi continuity features
+
+Product owner priority: "the feeling that the relationship with Jamkachu continues even after you step away," ranked above raw feature count. Approved additions, in order:
+
+### 6.1 Contextual care button (replaces WATER/FERTILIZE) — priority 1
+The two care buttons are REMOVED: there is no soil-moisture or nutrient sensor, so WATER/FERTILIZE can teach children the wrong action (low AIR humidity must never prompt watering the soil). One large mood-driven button (reusing the Day-1 ritual juice: press feedback, particles, why-card, SFX, zero XP) shows the single safe action for the current state:
+| Mood | Button label (EN; ID via locale) |
+|---|---|
+| Overheating | Move me to shade 🌳 |
+| DryAir | Move me away from drafts 🌬️ |
+| Sleepy (light-hungry) | Show me some light ☀️ |
+| SoilAcidic / SoilAlkaline | Check my soil with a teacher 🧑‍🏫 |
+| Happy | Pet me — or write my growth diary 📖 |
+Tapping = guidance + mascot reaction + why-card tying the action to the sensor that will verify it. Petting stays as-is.
+
+### 6.2 Night sleep mode — priority 2
+18:00–06:00 WIB: when mood is Happy, Jamkachu sleeps — closed-eyes face variant, slow breath, bubble "Aku sedang tidur. Sampai besok!" (locale-aware). Problem moods always override sleep (safety visibility wins). At night, light=0 is presented as "Night 🌙", never as a problem; vitals commentary and causal echo skip dark-light warnings in the window; no streak loss, no guilt copy — the streak keeper already never fires after 20:00.
+
+### 6.3 Hatching intro — priority 3 (after 6.1/6.2)
+One-time first visit (localStorage flag): ~20–30s — pot trembles → Jamkachu pops out (confetti + fanfare) → name/personality confirm (links to Settings values) → the four sensors introduced in plain words → first real care mission pointer. Skippable (tap-through), reduced-motion = static sequence.
+
+### 6.4 Level decorations — priority 4
+Levels leave visible traces (pure presentation from bond_level): Lv.2 pot sticker, Lv.3 small flag, Lv.5 room background tint, Lv.7 ribbon/hat, Lv.10 special pot + best-friend token. Rendered as SVG/CSS overlays on the mascot stage; collection help lists them honestly.
+
+### 6.5 Jamkachu remembers — priority 5
+No AI call: template sentences from recent bond_events/growth records rotated into the idle speech bubble ("Yesterday you helped me cool down!", "Remember our first light quest?"). Diff-driven, locale-aware, max one memory line per visit-hour.
+
+Demo must show three beats: problem face + needed action → real sensor improvement → verify countdown → XP → level-up → new decoration unlocked.
+
+## 7. Out of scope
 
 - Bahasa Indonesia UI toggle (string table prepares it; not in the 3 days)
 - Node-RED / hardware changes; crop-profile DB plan (separate doc)
