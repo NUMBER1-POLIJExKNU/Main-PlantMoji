@@ -52,7 +52,7 @@ begin
   update public.daily_quiz_attempts set
     attempts=v_row.attempts,
     selected_answers=array_append(selected_answers,p_answer_index),
-    completed_at=case when p_correct then now() else null end,
+    completed_at=case when p_correct or v_row.attempts >= 2 then now() else null end,
     xp_awarded=case when p_correct then v_actual else xp_awarded end,
     updated_at=now()
   where plant_id=p_plant_id and quiz_date=p_quiz_date and round_no=p_round_no and question_key=p_question_key;
@@ -64,7 +64,7 @@ begin
       v_actual, case when p_correct then 'DAILY_QUIZ' else 'DAILY_QUIZ_MISS' end) into v_award;
   end if;
 
-  return jsonb_build_object('correct',p_correct,'completed',p_correct,'duplicate',false,
+  return jsonb_build_object('correct',p_correct,'completed',p_correct or v_row.attempts >= 2,'duplicate',false,
     'attempts',v_row.attempts,'xp_awarded',v_actual,
     'total_xp',case when v_award is null then null else v_award->'total_xp' end,
     'bond_level',case when v_award is null then null else v_award->'bond_level' end,

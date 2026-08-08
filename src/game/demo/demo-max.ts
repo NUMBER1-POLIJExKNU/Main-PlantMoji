@@ -2,11 +2,7 @@ import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { BADGE_DEFINITIONS } from "@/game/badges/badge-definitions";
 import {
-  BADGE_BONUS_XP,
-  CHAPTER_BONUS_XP,
-  MOOD_DISCOVERY_XP,
   STREAK_MILESTONES,
-  STREAK_MILESTONE_XP,
   badgeRewardKey,
   chapterRewardKey,
   moodRewardKey,
@@ -26,7 +22,7 @@ import { COMPANION_STAGES } from "@/types/game";
 /** Level 10 unlocks every currently shipped badge and story chapter. */
 export const DEMO_MAX_LEVEL = 10;
 /** Keep the bar visibly full while remaining inside Bond Level 10. */
-export const DEMO_MAX_XP = 999;
+export const DEMO_MAX_XP = 299;
 export const DEMO_MAX_STREAK = 30;
 
 function deterministicUuid(input: string): string {
@@ -147,27 +143,27 @@ export function buildDemoMaxSeed(plantId: string, now: Date = new Date()) {
     ...BADGE_KEYS.map((badgeKey) => ({
       reward_key: badgeRewardKey(plantId, badgeKey),
       plant_id: plantId,
-      amount: BADGE_BONUS_XP,
+      amount: 0,
     })),
     ...CHAPTER_DEFINITIONS.map((chapter) => ({
       reward_key: chapterRewardKey(plantId, chapter.chapter),
       plant_id: plantId,
-      amount: CHAPTER_BONUS_XP,
+      amount: 0,
     })),
     ...PLANT_MOODS.map((mood) => ({
       reward_key: moodRewardKey(plantId, mood),
       plant_id: plantId,
-      amount: MOOD_DISCOVERY_XP,
+      amount: 0,
     })),
     ...STREAK_MILESTONES.map((days) => ({
       reward_key: streakMilestoneRewardKey(plantId, days),
       plant_id: plantId,
-      amount: STREAK_MILESTONE_XP,
+      amount: 0,
     })),
     ...questRows.map((quest) => ({
       reward_key: `quest:${quest.id}:completion`,
       plant_id: plantId,
-      amount: quest.xp_reward,
+      amount: 0,
     })),
   ];
 
@@ -176,7 +172,7 @@ export function buildDemoMaxSeed(plantId: string, now: Date = new Date()) {
     xpRewardRows.push({
       reward_key: dailyChallengeRewardKey(plantId, dayString(now), todayEvent.id),
       plant_id: plantId,
-      amount: todayEvent.challengeXp,
+      amount: 0,
     });
   }
 

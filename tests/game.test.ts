@@ -2,18 +2,18 @@ import { describe, expect, it } from "vitest";
 import { levelForXp, normalizePersonality } from "@/types/game";
 
 describe("levelForXp", () => {
-  it("maps 0-99 total XP to level 1", () => {
+  it("maps 0-29 total XP to level 1", () => {
     expect(levelForXp(0)).toBe(1);
-    expect(levelForXp(99)).toBe(1);
+    expect(levelForXp(29)).toBe(1);
   });
 
-  it("maps 100-199 total XP to level 2", () => {
-    expect(levelForXp(100)).toBe(2);
-    expect(levelForXp(199)).toBe(2);
+  it("maps 30-59 total XP to level 2", () => {
+    expect(levelForXp(30)).toBe(2);
+    expect(levelForXp(59)).toBe(2);
   });
 
-  it("maps 200 total XP to level 3", () => {
-    expect(levelForXp(200)).toBe(3);
+  it("maps 60 total XP to level 3", () => {
+    expect(levelForXp(60)).toBe(3);
   });
 });
 

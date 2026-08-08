@@ -127,7 +127,7 @@ begin
 
   update public.bond_state
   set total_xp = total_xp + p_amount,
-      bond_level = floor((total_xp + p_amount) / 100.0)::int + 1,
+      bond_level = floor((total_xp + p_amount) / 30.0)::int + 1,
       updated_at = now()
   where plant_id = p_plant_id
   returning total_xp, bond_level into v_total, v_level_after;

@@ -12,9 +12,9 @@ describe("daily quiz", () => {
 
   it("keeps the answer invariant while rotating choices", () => {
     for (const suffix of ["v1", "v2", "v3"]) {
-      const question = quizByKey(`hot-action-${suffix}`, "en");
+      const question = quizByKey(`photosynthesis-${suffix}`, "en");
       expect(question).not.toBeNull();
-      expect(question?.choices[question.correctIndex]).toBe("Move it to a cooler, shaded place");
+      expect(question?.choices[question.correctIndex]).toBe("To make sugars through photosynthesis");
     }
   });
 

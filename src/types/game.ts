@@ -66,9 +66,9 @@ export interface QuestEngineResult {
 
 // ── Bond progression (handoff §14–§15, §37) ─────────────────────────────
 
-export const XP_PER_LEVEL = 100;
+export const XP_PER_LEVEL = 30;
 
-/** 0–99 → Lv.1, 100–199 → Lv.2, ... Must match award_xp() in SQL. */
+/** 0–29 → Lv.1, 30–59 → Lv.2, ... Must match award_xp() in SQL. */
 export function levelForXp(totalXp: number): number {
   return Math.floor(totalXp / XP_PER_LEVEL) + 1;
 }

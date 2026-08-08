@@ -14,7 +14,7 @@ const NOW = new Date("2026-08-07T12:00:00+07:00");
 describe("demo max seed", () => {
   it("targets the highest currently shipped content level", () => {
     expect(DEMO_MAX_LEVEL).toBe(10);
-    expect(DEMO_MAX_XP).toBe(999);
+    expect(DEMO_MAX_XP).toBe(299);
     expect(DEMO_MAX_STREAK).toBe(30);
   });
 

@@ -7,6 +7,7 @@
 // never decides XP or truth (handoff rules) — it only displays.
 
 const PLANT_ID = "plant-01";
+const XP_PER_LEVEL = 30;
 const LOCALE_KEY = "plantmoji_locale";
 const BADGE_EFFECT_STORAGE_KEY = "plantmoji_badge_effect_v1";
 const BADGE_TAP_EFFECTS = {
@@ -886,7 +887,7 @@ function orbCascade(amount, opts = {}) {
   cancelXpLandings();
   cancelXpCount(); // the landings own the counter for the next ~2.5s
   if (numEl) numEl.textContent = String(start);
-  setXpBar(start % 100, false);
+  setXpBar((start % XP_PER_LEVEL) / XP_PER_LEVEL * 100, false);
   let lastShown = start;
   for (let i = 0; i < n; i++) {
     const orb = document.createElement("div");
@@ -922,7 +923,7 @@ function orbCascade(amount, opts = {}) {
         if (numEl) numEl.textContent = String(value);
         // The bar advances its share; crossing a 100-XP boundary reuses the
         // wrap-around snap juice already built into setXpBar.
-        setXpBar(value % 100, Math.floor(lastShown / 100) < Math.floor(value / 100));
+        setXpBar((value % XP_PER_LEVEL) / XP_PER_LEVEL * 100, Math.floor(lastShown / XP_PER_LEVEL) < Math.floor(value / XP_PER_LEVEL));
         lastShown = value;
         window.PMSfx?.play("coin");
       }, i * stagger + ORB_FLIGHT_MS),
@@ -2904,7 +2905,7 @@ function renderBond(bond, plantName) {
     nameEl.dataset.level = String(bond.bond_level);
     if (plantName) nameEl.textContent = `${plantName} · ${t("bond")} Lv.${bond.bond_level}`;
   }
-  setXpBar(totalXp % 100, leveledUp);
+  setXpBar((totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
   const numEl = ensureCoinNumber();
   if (numEl) {
     if (xpDelta > 0 && !prefersReducedMotion()) {

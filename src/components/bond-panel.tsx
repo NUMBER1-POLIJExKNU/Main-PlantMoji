@@ -9,7 +9,7 @@ export interface BondPanelProps {
   totalXp: number;
   /** XP earned inside the current level (0..xpRequired). */
   xpInLevel: number;
-  /** XP needed to finish the current level (XP_PER_LEVEL = 100). */
+  /** XP needed to finish the current level (XP_PER_LEVEL = 30). */
   xpRequired: number;
   /** Current streak in days; the streak row is hidden when 0. */
   streakDays: number;
