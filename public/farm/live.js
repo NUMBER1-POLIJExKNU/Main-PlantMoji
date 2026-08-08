@@ -21,6 +21,7 @@ const COPY = {
     "nav.diary": "Buku Harian",
     "nav.status": "Status Tanaman",
     "nav.collection": "Koleksi",
+    "nav.reports": "Laporan Mingguan",
     "nav.settings": "Pengaturan",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
@@ -51,6 +52,7 @@ const COPY = {
     "nav.diary": "Growth Diary",
     "nav.status": "Plant Status",
     "nav.collection": "Collection",
+    "nav.reports": "Weekly Report",
     "nav.settings": "Settings",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
@@ -157,8 +159,16 @@ function setMascotMood(state) {
   careMood = state ?? "Happy";
   updateCareUi();
 }
-// DevTools/demo handle (display-only; grants nothing).
-window.setMascotMood = setMascotMood;
+// DevTools/demo handle (display-only; grants nothing). The wrapper also
+// resets the real-mood diff tracker: renderPlant only repaints when
+// `current_state !== lastMoodFetched`, so without the reset a demo-cycled
+// face would stick forever (poll/realtime see "no change"). Nulling it
+// makes the next real render re-apply truth wholesale — face, HP, bubble,
+// care button, and the sleep evaluation all come back from real data.
+window.setMascotMood = (state) => {
+  setMascotMood(state);
+  lastMoodFetched = null;
+};
 
 /** Petting cleanup hook (defined ahead of the petting task so mood renders
  *  can always call it): cancels a pending speech-bubble restore. */
@@ -198,6 +208,11 @@ function applyLocale() {
 document.querySelectorAll("[data-locale]").forEach((button) => {
   button.addEventListener("click", () => {
     const next = button.dataset.locale === "en" ? "en" : "id";
+    // Tapping the already-active locale is a no-op: a reload here would
+    // silently discard queued/pending celebrations (an unclaimed pod, a
+    // deferred lucky stamp) for zero benefit. aria-pressed is already
+    // correct from applyLocale(), and nothing needs re-writing.
+    if (next === appLocale) return;
     document.cookie = `${LOCALE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
     try { window.localStorage.setItem(LOCALE_KEY, next); } catch {}
     window.location.reload();
@@ -298,6 +313,10 @@ function fxEnqueue(tier, runFn, durationMs, meta) {
     const mergeable = fxQueue.find((queued) => queued.meta?.kind === "xp");
     if (mergeable) {
       mergeable.meta.amount += item.meta.amount;
+      // The summed amount matches no single pending reason — mark it so the
+      // chip renders plain ("+45 XP") instead of stealing a label that only
+      // explains part of the total.
+      mergeable.meta.merged = true;
       return;
     }
   }
@@ -579,14 +598,16 @@ function fxXpChipNow(amount, opts = {}) {
   if (!wrap) return;
   if (!opts.silent) window.PMSfx?.play("coin");
   const base = PM().fx?.xpGain?.(amount) ?? `+${amount} XP`;
-  const label = takeReasonLabel(amount);
+  // Backlog-merged chips sum several awards, so no single reason label is
+  // honest for the total — they stay plain (and consume no pending label).
+  const label = opts.merged ? null : takeReasonLabel(amount);
   floatChip(label ? `${base} · ${label}` : base, wrap.getBoundingClientRect());
 }
 
 /** T2: XP gain chip — routed through the celebration queue; carries its
  *  amount as meta so backlogged chips can merge into one. */
 function fxXpGain(delta) {
-  fxEnqueue(2, (done, meta) => fxXpChipNow(meta.amount), 1200, { kind: "xp", amount: delta });
+  fxEnqueue(2, (done, meta) => fxXpChipNow(meta.amount, { merged: meta.merged === true }), 1200, { kind: "xp", amount: delta });
 }
 
 function fxStreakUpNow(days) {
@@ -718,6 +739,21 @@ const ORB_CAP_GOLD = 16;
 const PRESENTED_TTL_MS = 30_000;
 const XP_CHIP_GRACE_MS = 900;
 
+// Single-owner XP counter (rewind-race fix): a monotonically increasing
+// generation names who owns the on-screen number. Each orbCascade takes a
+// generation and its landing timers bail once it has advanced; renderBond
+// bumps it (and clears pending landing timers) before writing an
+// authoritative total, so a stale landing can never rewind the counter
+// below truth. The timers here hold ONLY counter/bar/sfx writes — orb DOM
+// removal rides removeLater and is never cancelled (particle budget).
+let xpRenderGeneration = 0;
+let xpLandingTimers = [];
+
+function cancelXpLandings() {
+  for (const id of xpLandingTimers) clearTimeout(id);
+  xpLandingTimers = [];
+}
+
 let pendingPresentedXp = []; // [{ amount, at }] — awaiting renderBond's diff
 
 function notePresented(amount) {
@@ -774,6 +810,10 @@ function orbCascade(amount, opts = {}) {
   const shownRaw = Number.parseInt(numEl?.textContent ?? "", 10);
   const end = Number.isFinite(shownRaw) ? shownRaw : Math.max(prevXp ?? 0, xp);
   const start = Math.max(0, end - xp);
+  // This cascade becomes the counter's owner: bump the generation (stale
+  // landings from an older cascade bail on it) and clear their timers.
+  const gen = ++xpRenderGeneration;
+  cancelXpLandings();
   cancelXpCount(); // the landings own the counter for the next ~2.5s
   if (numEl) numEl.textContent = String(start);
   setXpBar(start % 100, false);
@@ -800,22 +840,36 @@ function orbCascade(amount, opts = {}) {
       ],
       { duration: ORB_FLIGHT_MS, delay: i * stagger, easing: "steps(8, end)", fill: "both" },
     );
-    setTimeout(() => {
-      orb.remove();
-      liveParticles = Math.max(0, liveParticles - 1);
-      const value = Math.round(start + (xp * (i + 1)) / n);
-      if (numEl) numEl.textContent = String(value);
-      // The bar advances its share; crossing a 100-XP boundary reuses the
-      // wrap-around snap juice already built into setXpBar.
-      setXpBar(value % 100, Math.floor(lastShown / 100) < Math.floor(value / 100));
-      lastShown = value;
-      window.PMSfx?.play("coin");
-    }, i * stagger + ORB_FLIGHT_MS);
+    // Orb visual cleanup is unconditional (never cancelled) so the particle
+    // budget always comes back, even when the counter changes owner.
+    removeLater(orb, i * stagger + ORB_FLIGHT_MS, true);
+    xpLandingTimers.push(
+      setTimeout(() => {
+        // A newer authoritative render (or cascade) took the counter —
+        // this landing's snapshot math would rewind it below truth. Bail.
+        if (gen !== xpRenderGeneration) return;
+        const value = Math.round(start + (xp * (i + 1)) / n);
+        if (numEl) numEl.textContent = String(value);
+        // The bar advances its share; crossing a 100-XP boundary reuses the
+        // wrap-around snap juice already built into setXpBar.
+        setXpBar(value % 100, Math.floor(lastShown / 100) < Math.floor(value / 100));
+        lastShown = value;
+        window.PMSfx?.play("coin");
+      }, i * stagger + ORB_FLIGHT_MS),
+    );
   }
   const totalMs = (n - 1) * stagger + ORB_FLIGHT_MS + 150;
   // Landing receipt: the "+N XP" chip floats once the last orb has landed
-  // (Task 14 attaches the reason label when a bond_event named one).
+  // (Task 14 attaches the reason label when a bond_event named one). The
+  // chip stays even if the counter changed owner — the award is still real.
   setTimeout(() => fxXpChipNow(xp, { silent: true }), totalMs - 100);
+  // All landings have fired by totalMs — drop the spent timer ids so
+  // renderBond's "cascade still pending" check stays accurate.
+  xpLandingTimers.push(
+    setTimeout(() => {
+      if (gen === xpRenderGeneration) xpLandingTimers = [];
+    }, totalMs),
+  );
   return totalMs;
 }
 
@@ -1421,6 +1475,15 @@ function showTransientBubble(line, ms) {
 }
 
 function petMascot() {
+  // Night sleep (spec §6.2): a sleeping Jamkachu is never squash-animated,
+  // hearted, or chatted awake — mirror the care button's quiet good-night
+  // path (soft tick + the shh card on its shared 30s cooldown) and leave
+  // the sleep bubble untouched.
+  if (sleepShown) {
+    window.PMSfx?.play("tick");
+    maybeWhyCard(PM().sleep?.why ?? SLEEP_FALLBACK.why, mascotRect());
+    return;
+  }
   const now = Date.now();
   if (now < petCooldownUntil || now < petSatiatedUntil) return;
   petCooldownUntil = now + PET_COOLDOWN_MS;
@@ -1898,6 +1961,13 @@ function renderPlant(plant) {
         if (!data || typeof data.message !== "string") return;
         if (lastMoodFetched !== state) return; // mood moved on mid-flight
         if (sleepShown) return; // Jamkachu is asleep — keep the sleep bubble
+        // Transient-bubble guard (same chain as petting/vitals/memories):
+        // renderPlant cancelled any stale restore when this fetch started,
+        // so a pending restore here means a NEW transient line took the
+        // bubble mid-flight — writing over it would flash, then the restore
+        // timer would stomp us right back. Drop the fetched line; the
+        // template painted at fetch start remains the saved content.
+        if (petRestoreTimer !== null || petSavedBubble !== null) return;
         const el = $(".speech-bubble");
         if (el) el.textContent = `"${data.message}"`;
       })
@@ -1942,12 +2012,22 @@ function renderBond(bond, plantName) {
   const numEl = ensureCoinNumber();
   if (numEl) {
     if (xpDelta > 0 && !prefersReducedMotion()) {
+      // Authoritative count-up takes the counter back from any in-flight
+      // orb cascade: bump the generation so late landings bail, and clear
+      // their timers so none can rewind the number after we settle.
+      xpRenderGeneration++;
+      cancelXpLandings();
       const shown = Number.parseInt(numEl.textContent, 10);
       animateXpCount(numEl, Number.isFinite(shown) ? shown : prevXp, totalXp);
-    } else {
+    } else if (firstRender || xpDelta !== 0 || xpLandingTimers.length === 0) {
+      xpRenderGeneration++;
+      cancelXpLandings();
       cancelXpCount();
       numEl.textContent = String(totalXp);
     }
+    // Remaining case — a poll repeat (delta 0) while a cascade's landings
+    // are mid-flight: the cascade already settles at this exact total, so
+    // it keeps the counter (no mid-animation stomp).
   }
   const streak = $(".badge.streak");
   if (streak) {
@@ -1979,7 +2059,10 @@ function renderBond(bond, plantName) {
   // the once-per-WIB-day daytime nudge (self-gated by its localStorage
   // day-flag, so poll repeats can never re-fire it).
   if (!firstRender && prevStreak > 1 && streakDays <= 1) fxStreakBroken();
-  maybeStreakNudge(bond, streakDays);
+  // First-render suppression applies to the nudge too: the first paint of a
+  // session never floats it (celebration policy — and retake continuity:
+  // the localStorage day-flag alone would make take 1 differ from retakes).
+  if (!firstRender) maybeStreakNudge(bond, streakDays);
 
   // Decorations are STATE, not celebration: re-derive them from the current
   // level on every render, first render included (idempotent toggles).
