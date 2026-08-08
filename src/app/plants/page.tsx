@@ -1,4 +1,5 @@
 import Notice from "@/components/notice";
+import PageHeader from "@/components/page-header";
 import {
   CROP_PROFILES,
   evaluateCropEnvironment,
@@ -94,13 +95,18 @@ export default async function PlantsPage() {
   const copy = PAGE_COPY[locale];
   const supabase = getServerSupabase();
   if (!supabase) return <Notice title="Connecting..." lines={["Check your Supabase environment variables."]} />;
-  const result = await getPlant(supabase, PLANT_ID);
+  // Independent queries in parallel. Neither ever rejects (both map failures
+  // to status objects / null), so the error Notice below still depends only
+  // on getPlant — identical behavior, one round-trip instead of two.
+  const [result, snapshot] = await Promise.all([
+    getPlant(supabase, PLANT_ID),
+    getLatestSensorSnapshot(supabase, PLANT_ID),
+  ]);
   if (result.status !== "ok") {
     return <Notice title="Couldn't load crop info" lines={[result.status === "error" ? result.message : "Check the migrations and the plant-01 seed."]} />;
   }
 
   const profile = getCropProfile(result.plant.crop_profile_key);
-  const snapshot = await getLatestSensorSnapshot(supabase, PLANT_ID);
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: profile.timezone }).format(new Date()));
   const isLightingHours = hour >= profile.light.lightingHours.start && hour < profile.light.lightingHours.end;
   const states = evaluateCropEnvironment(snapshot, profile, isLightingHours);
@@ -108,11 +114,7 @@ export default async function PlantsPage() {
 
   return (
     <main>
-      <header className="mb-7">
-        <p className="mb-2 [font-family:var(--pm-font-pixel)] text-[10px] uppercase tracking-[0.2em] text-[#397A2B]">{copy.eyebrow}</p>
-        <h1 className="pm-heading text-lg">🍓 {copy.title}</h1>
-        <p className="mt-3 text-[#3A4A34]">{copy.intro}</p>
-      </header>
+      <PageHeader icon="🍓" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
 
       <form action={updateCropProfile} className="pm-panel mb-6">
         <input type="hidden" name="plantId" value={result.plant.id} />

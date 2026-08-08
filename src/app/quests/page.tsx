@@ -5,16 +5,17 @@
 
 import type { CSSProperties } from "react";
 import Notice from "@/components/notice";
+import PageHeader from "@/components/page-header";
 import QuestCelebration from "@/components/quest-celebration";
 import QuestProgress from "@/components/quest-progress";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
-import { runGameTick } from "@/game/events/event-router";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
 import { getDailyEvent, type DailyEvent } from "@/game/random/daily-events";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, type AppLocale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
+import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS } from "@/types/events";
 import { STREAK_TIMEZONE, type QuestRow, type QuestStatus } from "@/types/game";
 
@@ -237,14 +238,11 @@ export default async function QuestsPage() {
     );
   }
 
-  // Lazy timestamp sweep FIRST (handoff Correction 4): time-based quest
-  // completions land on page load, not on a server timer. Never let a sweep
-  // failure break rendering.
-  try {
-    await runGameTick(PLANT_ID);
-  } catch {
-    // Ignored — the page still renders current quest state.
-  }
+  // Lazy timestamp sweep (handoff Correction 4), deferred: awaiting it here
+  // blocked every render on the engine's Supabase sweep. It now runs after
+  // the response (lib/tick-gate.ts); QuestCelebration's realtime channel and
+  // the next navigation surface its completions.
+  maybeScheduleGameTick(PLANT_ID);
 
   let active: QuestRow[];
   let history: QuestRow[];
@@ -277,15 +275,14 @@ export default async function QuestsPage() {
           status: quest.status,
         }))}
       />
-      <header className="mb-6 flex flex-col gap-2">
-        <span className="text-4xl" role="img" aria-hidden="true">
-          🎯
-        </span>
-        <h1 className="pm-heading text-lg">{locale === "id" ? "Misi" : "Quests"}</h1>
-        <p className="text-sm" style={{ color: "var(--color-text)", opacity: 0.75 }}>
-          {locale === "id" ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol." : "Real care, verified by sensors — no tap-to-win."}
-        </p>
-      </header>
+      <PageHeader
+        icon="🎯"
+        eyebrow={locale === "id" ? "Perawatan hari ini" : "Today's care"}
+        title={locale === "id" ? "Misi" : "Quests"}
+        description={locale === "id"
+          ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol."
+          : "Real care, verified by sensors — no tap-to-win."}
+      />
 
       <DailyEventBanner event={getDailyEvent(PLANT_ID)} locale={locale} />
 

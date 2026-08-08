@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import MonitoringLive from "@/components/monitoring-live";
+import PageHeader from "@/components/page-header";
 import { getRequestLocale } from "@/lib/i18n-server";
 
 // Live data screen — never prerender a stale snapshot.
@@ -22,16 +23,14 @@ export default async function MonitoringPage() {
   // so only this page's chrome copy is localized here.
   return (
     <main className="mx-auto w-full">
-      <header className="mb-6">
-        <h1 className="pm-heading text-lg">
-          {locale === "id" ? "📈 Pemantauan Tanaman" : "📈 Plant Monitoring"}
-        </h1>
-        <p className="mt-1 text-sm text-[#57684F]">
-          {locale === "id"
-            ? "Pembacaan langsung dari sensor tanaman, diperbarui setiap 10 detik."
-            : "Live readings from the plant's sensors, refreshed every 10 seconds."}
-        </p>
-      </header>
+      <PageHeader
+        icon="📈"
+        eyebrow={locale === "id" ? "Sensor langsung" : "Live sensors"}
+        title={locale === "id" ? "Dashboard Tanaman" : "Plant Dashboard"}
+        description={locale === "id"
+          ? "Pembacaan langsung dari sensor tanaman, diperbarui setiap 10 detik."
+          : "Live readings from the plant's sensors, refreshed every 10 seconds."}
+      />
 
       <MonitoringLive />
 

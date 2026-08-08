@@ -10,10 +10,10 @@ import CollectionTabs, {
   type WisdomCollectionItem,
 } from "@/components/collection-tabs";
 import Notice from "@/components/notice";
+import PageHeader from "@/components/page-header";
 import { BADGE_DEFINITIONS } from "@/game/badges/badge-definitions";
 import { FARMER_WISDOM } from "@/game/education/farmer-wisdom";
 import { WHY_CARDS } from "@/game/education/why-cards";
-import { runGameTick } from "@/game/events/event-router";
 import { getBondState } from "@/game/progression/xp-engine";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { getChapterScene } from "@/game/story/story-dialogue";
@@ -21,6 +21,7 @@ import { getSeenMoods, getUnlockedBadges } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { BADGE_COPY_ID, MOOD_COPY, MOOD_EDUCATION_ID } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
+import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS, PLANT_MOODS, type PlantMood } from "@/types/events";
 import { STREAK_TIMEZONE, normalizePersonality } from "@/types/game";
 
@@ -61,14 +62,11 @@ export default async function CollectionPage() {
     );
   }
 
-  // Lazy timestamp sweep FIRST (handoff Correction 4): pending badge and
-  // chapter unlocks land on page load, not on a server timer. Never let a
-  // sweep failure break rendering.
-  try {
-    await runGameTick(PLANT_ID);
-  } catch (cause) {
-    console.error(`CollectionPage runGameTick(${PLANT_ID}) failed:`, cause);
-  }
+  // Lazy timestamp sweep (handoff Correction 4), deferred: awaiting it here
+  // blocked every render on the engine's Supabase sweep. It now runs after
+  // the response (lib/tick-gate.ts); pending badge/chapter unlocks surface
+  // via realtime and on the next navigation.
+  maybeScheduleGameTick(PLANT_ID);
 
   let seenMoods: PlantMood[];
   let badgeRows: Awaited<ReturnType<typeof getUnlockedBadges>>;
@@ -154,17 +152,14 @@ export default async function CollectionPage() {
   // inside supply the surfaces.
   return (
     <main className="w-full">
-      <header className="mb-6">
-        <h1 className="pm-heading flex items-center gap-3 text-lg">
-          <span className="text-3xl leading-none" role="img" aria-hidden="true">
-            📖
-          </span>
-          {locale === "id" ? "Koleksi" : "Collection"}
-        </h1>
-        <p className="mt-2 text-sm" style={{ color: "#5B6B57" }}>
-          {locale === "id" ? "Semua yang sudah kita temukan bersama." : "Everything we've discovered together."}
-        </p>
-      </header>
+      <PageHeader
+        icon="🏆"
+        eyebrow={locale === "id" ? "Buku penemuan" : "Discovery book"}
+        title={locale === "id" ? "Koleksi" : "Collection"}
+        description={locale === "id"
+          ? "Semua yang sudah kita temukan bersama."
+          : "Everything we've discovered together."}
+      />
 
       <CollectionTabs locale={locale} moods={moods} badges={badges} chapters={chapters} wisdom={wisdom} />
     </main>

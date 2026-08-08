@@ -1,35 +1,20 @@
 import PlantHome from "@/components/plant-home";
+import Notice from "@/components/notice";
 import { fetchBondState, fetchPlant, fetchTopActiveQuest } from "@/lib/plants";
 import { getHomeMoodMessage } from "@/lib/plant-messages";
-import { runGameTick } from "@/game/events/event-router";
+import { maybeScheduleGameTick } from "@/lib/tick-gate";
 
 // The plant's live state must always be read fresh from Supabase.
 export const dynamic = "force-dynamic";
 
 const PLANT_ID = "plant-01";
 
-function Notice({ title, lines }: { title: string; lines: string[] }) {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <span className="text-6xl">🌱</span>
-      <h1 className="text-2xl font-bold">LeafTalk</h1>
-      <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">{title}</p>
-      <div className="max-w-md text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-        {lines.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
-    </main>
-  );
-}
-
 export default async function Home() {
-  // Lazy sweep first so time-based quest completions are visible on load.
-  try {
-    await runGameTick(PLANT_ID);
-  } catch (error) {
-    console.error("home: game tick failed:", error);
-  }
+  // Lazy sweep, deferred: awaiting it here blocked every render on the
+  // engine's Supabase sweep. It now runs after the response
+  // (lib/tick-gate.ts); PlantHome's realtime subscriptions and the next
+  // navigation surface any completions it lands.
+  maybeScheduleGameTick(PLANT_ID);
 
   const result = await fetchPlant(PLANT_ID);
 

@@ -374,11 +374,12 @@ Live screens:
 ```
 
 Every React page shares the farm page's pixel design system (`pm-*` utility
-classes) and a matching sidebar — Home · Quests · Growth Diary · Plant
-Status · Collection · Weekly Report · Settings — so the whole app reads as
-one game, not a dashboard with a mascot page attached. Navigation labels are
-de-technicalized (`/monitoring` appears as "Plant Status", the growth-record
-diary as "Growth Diary"); dead links stay hidden until the features exist.
+classes), framed content stage, and the same seven destinations — Home ·
+Quests · Plants · Dashboard · Collection · Report · Settings — so the whole
+app reads as one game, not a dashboard with a mascot page attached. On phones
+the same destinations stay visible in a compact bottom dock; the brand and
+ID/EN switch remain in the shared top bar. Growth records continue to live in
+Settings without creating a duplicate navigation item.
 
 The UI is **bilingual: Bahasa Indonesia by default, English via the ID / EN
 switch** (persisted across pages). The farm page reads a two-locale string

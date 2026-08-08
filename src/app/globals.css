@@ -164,6 +164,60 @@ body {
   transition: width 0.8s ease-in-out;
 }
 
+/* Shared route header. Keeping icon, title, supporting copy and optional
+   metadata in one component prevents each tab from inventing a new visual
+   hierarchy whenever its feature code changes. */
+.pm-page-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
+  text-align: left;
+}
+
+.pm-page-header-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: 0 3px 0 rgba(36, 52, 33, 0.12);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.pm-page-header-copy { min-width: 0; }
+
+.pm-page-eyebrow {
+  margin-bottom: 5px;
+  color: var(--color-forest);
+  font-family: var(--pm-font-pixel);
+  font-size: 8px;
+  line-height: 1.6;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pm-page-title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.pm-page-subtitle {
+  max-width: 680px;
+  margin-top: 6px;
+  color: #57684f;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pm-page-meta { margin-top: 10px; }
+
 /* ------------------------------------------------------------------ */
 /* Cozy Pixel Farm — home scene (palette ported from the mockup)      */
 /* ------------------------------------------------------------------ */
@@ -426,7 +480,7 @@ body {
   gap: 32px;
   width: 100%;
   max-width: 1800px;
-  height: 100vh;
+  height: 100dvh;
   margin: 0 auto;
   padding: 24px;
 }
@@ -496,6 +550,8 @@ body {
   font-style: normal;
 }
 
+.reno-nav-label { min-width: 0; }
+
 .reno-nav-item:hover {
   transform: translateX(6px);
   background: var(--color-bg);
@@ -544,14 +600,25 @@ body {
   scrollbar-color: rgba(57, 122, 43, 0.35) transparent;
 }
 
+/* Every non-home tab lives inside the same framed field journal. The home
+   keeps its mood-reactive sky/grass scene, while the frame preserves the
+   exact border, radius and pixel shadow when users change tabs. */
+.reno-route-page {
+  border: 3px solid var(--color-border);
+  border-radius: var(--reno-ui-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 241, 0.96));
+  box-shadow: var(--pm-shadow);
+}
+
 /* Reading routes sit straight on the sky at a comfortable measure —
    individual cards inside use .pm-panel for surfaces. */
 .reno-route-content > main:not(.pm-scene) {
   width: 100%;
-  max-width: 720px;
+  max-width: 960px;
   min-height: 100%;
   margin: 0 auto;
-  padding: 28px 16px 72px;
+  padding: 32px 36px 72px;
   color: var(--color-text);
 }
 
@@ -567,14 +634,6 @@ body {
 
 /* Bridge styling for routes not yet rebuilt on the pm-* utilities: farm
    headings, and existing bordered Tailwind cards read as farm surfaces. */
-.reno-route-content > main:not(.pm-scene) > header {
-  align-items: flex-start;
-  margin-bottom: 24px;
-  padding-bottom: 18px;
-  border-bottom: 2px dashed rgba(43, 58, 39, 0.18);
-  text-align: left;
-}
-
 .reno-route-content > main:not(.pm-scene) h1,
 .reno-route-content > main:not(.pm-scene) h2 {
   color: var(--color-text) !important;
@@ -625,6 +684,43 @@ body {
   box-shadow: none;
 }
 
+.reno-notice-page {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+}
+
+.reno-notice-card {
+  width: min(100%, 560px);
+  padding: 32px;
+  text-align: center;
+}
+
+.reno-notice-card .pm-page-eyebrow { margin-top: 14px; }
+
+.reno-notice-lines {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  color: #57684f;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.pm-skel {
+  border-radius: 10px;
+  background: #dcead5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pm-skel { animation: pm-skel-pulse 1.6s ease-in-out infinite; }
+}
+
+@keyframes pm-skel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .reno-env-sun { animation: pm-sun-pulse 6s ease-in-out infinite alternate; }
   .reno-env-cloud-1 { animation: pm-cloud-drift 70s linear -35s infinite; }
@@ -638,65 +734,149 @@ body {
   to { transform: translate(-60px, -120px); }
 }
 
-/* Small screens keep the shell's existing pattern: the sidebar collapses
-   into a top bar with a horizontally scrolling pixel nav. */
+/* On phones the oversized horizontal sidebar used to consume a quarter of
+   the viewport and force the whole app wider than the screen. Brand/language
+   now form a compact sticky top bar; all seven destinations stay visible in
+   a fixed Tamagotchi-style bottom dock. */
 @media (max-width: 800px) {
-  .reno-app-shell { overflow-y: auto; }
+  .reno-app-shell {
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 
   .reno-app-layout {
     flex-direction: column;
-    gap: 18px;
+    gap: 0;
     height: auto;
     min-height: 100vh;
-    padding: 14px;
+    padding: 0;
   }
 
   .reno-sidebar {
-    position: static;
+    position: sticky;
+    top: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     flex: none;
+    min-width: 0;
     width: 100%;
-    height: auto;
-    gap: 14px;
-    padding: 16px;
+    height: 70px;
+    gap: 10px;
+    padding: 10px 14px;
+    border-width: 0 0 3px;
+    border-radius: 0;
+    box-shadow: 0 4px 0 rgba(36, 52, 33, 0.12);
   }
 
   .reno-brand {
-    padding-bottom: 12px;
-    font-size: 12px;
+    min-width: 0;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    font-size: 10px;
   }
 
   .reno-logo {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
   }
 
   .reno-nav-links {
-    flex-direction: row;
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    position: fixed;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    z-index: 80;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 2px;
+    width: auto;
+    padding: 6px;
+    overflow: visible;
+    border: 3px solid var(--color-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.97);
+    box-shadow: 0 5px 0 rgba(36, 52, 33, 0.16);
+    backdrop-filter: blur(10px);
   }
 
   .reno-nav-item {
-    flex: 0 0 auto;
-    padding: 12px;
-    font-size: 9px;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 2px 6px;
+    font-size: 7px;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .reno-nav-item i { font-size: 17px; }
+
+  .reno-nav-label {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .reno-nav-item:hover { transform: translateY(-2px); }
+  .reno-nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, 0.35); }
 
   .reno-locale-switch {
-    align-self: flex-end;
-    width: 116px;
-    margin-top: 0;
+    width: 94px;
+    margin: 0;
+    padding: 3px;
   }
 
-  .reno-route-content { overflow: visible; }
+  .reno-locale-switch button {
+    min-height: 36px;
+    padding: 6px 4px;
+    font-size: 8px;
+  }
+
+  .reno-route-content {
+    flex: none;
+    min-width: 0;
+    width: calc(100% - 20px);
+    min-height: calc(100dvh - 90px);
+    margin: 10px;
+    overflow: visible;
+  }
 
   .reno-route-content > main:not(.pm-scene) {
     min-height: 0;
-    padding: 20px 4px 48px;
+    padding: 20px 14px 104px;
   }
 
-  .reno-route-content > .pm-scene { min-height: 760px; }
+  .reno-route-content > .pm-scene {
+    min-height: calc(100dvh - 90px);
+    border-radius: 18px;
+  }
+
+  .pm-page-header {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .pm-page-header-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 22px;
+  }
+
+  .pm-page-title { font-size: 14px; }
+  .pm-page-subtitle { font-size: 12px; }
+
+  .reno-notice-card { padding: 24px 18px; }
+}
+
+@media (max-width: 360px) {
+  .reno-nav-item { font-size: 6px; }
+  .reno-brand span { display: none; }
 }

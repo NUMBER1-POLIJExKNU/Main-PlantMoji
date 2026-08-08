@@ -5,18 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
 
-// Farm-home nav (public/farm/index.html is the source of truth): six items,
-// pixel labels localized with inline id/en ternary copy. Growth Diary and
-// Settings both live on /settings (mirroring the farm page); only the
-// Settings entry claims the active highlight there so a single nav item
-// lights up per route.
+// The static farm home and every React route use this same seven-destination
+// information architecture. Keep public/farm/index.html in sync until the
+// static home has been fully retired.
 const NAV_ITEMS = [
   { key: "home", href: "/", icon: "🏠", id: "Beranda", en: "Home" },
   { key: "quests", href: "/quests", icon: "📜", id: "Misi", en: "Quests" },
-  { key: "diary", href: "/settings", icon: "🌱", id: "Buku Harian", en: "Growth Diary", skipActive: true },
-  { key: "status", href: "/monitoring", icon: "📈", id: "Status Tanaman", en: "Plant Status" },
+  { key: "plants", href: "/plants", icon: "🌾", id: "Tanaman", en: "Plants" },
+  { key: "status", href: "/monitoring", icon: "📈", id: "Dashboard", en: "Dashboard" },
   { key: "collection", href: "/collection", icon: "🏆", id: "Koleksi", en: "Collection" },
-  { key: "reports", href: "/reports", icon: "📊", id: "Laporan Mingguan", en: "Weekly Report" },
+  { key: "reports", href: "/reports", icon: "📊", id: "Laporan", en: "Report" },
   { key: "settings", href: "/settings", icon: "⚙️", id: "Pengaturan", en: "Settings" },
 ] as const;
 
@@ -28,6 +26,7 @@ function changeAppLocale(nextLocale: AppLocale) {
 
 export default function RenoAppShell({ children, locale }: { children: React.ReactNode; locale: AppLocale }) {
   const pathname = usePathname();
+  const isHome = pathname === "/";
 
   return (
     <div className="reno-app-shell">
@@ -56,15 +55,17 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
           <nav className="reno-nav-links" aria-label="Main navigation">
             {NAV_ITEMS.map((item) => {
               const label = locale === "id" ? item.id : item.en;
-              const active = pathname === item.href && !("skipActive" in item && item.skipActive);
+              const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.key}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={`reno-nav-item${active ? " active" : ""}`}
+                  onClick={() => window.PMSfx?.play("tick")}
                 >
-                  <i>{item.icon}</i> {label}
+                  <i>{item.icon}</i>
+                  <span className="reno-nav-label">{label}</span>
                 </Link>
               );
             })}
@@ -85,7 +86,9 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
           </div>
         </aside>
 
-        <div className="reno-route-content">{children}</div>
+        <div className={`reno-route-content ${isHome ? "reno-route-home" : "reno-route-page"}`}>
+          {children}
+        </div>
       </div>
     </div>
   );

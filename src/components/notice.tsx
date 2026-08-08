@@ -1,6 +1,6 @@
-// Shared full-screen notice (setup hints, missing data, connection errors).
-// Server-compatible: purely presentational, mirrors the local Notice used by
-// src/app/page.tsx so every screen fails in the same friendly voice.
+// Shared setup/error state. It deliberately uses the same farm panel and page
+// measure as healthy routes so a transient backend problem never appears to
+// switch the user into a different application.
 
 export interface NoticeProps {
   title: string;
@@ -9,17 +9,19 @@ export interface NoticeProps {
 
 export default function Notice({ title, lines }: NoticeProps) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 pb-24 text-center">
-      <span className="text-6xl" role="img" aria-hidden="true">
-        🌱
-      </span>
-      <h1 className="text-2xl font-bold">LeafTalk</h1>
-      <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-300">{title}</p>
-      <div className="max-w-md text-sm leading-6 text-zinc-500 dark:text-zinc-400">
-        {lines.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
+    <main className="reno-notice-page">
+      <section className="pm-panel reno-notice-card" role="status">
+        <span className="text-5xl" role="img" aria-hidden="true">
+          🌱
+        </span>
+        <p className="pm-page-eyebrow">PLANT MOJI</p>
+        <h1 className="pm-heading">{title}</h1>
+        <div className="reno-notice-lines">
+          {lines.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
