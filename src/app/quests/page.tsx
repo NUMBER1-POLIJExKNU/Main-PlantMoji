@@ -3,6 +3,7 @@
 // dashboard.
 
 import Notice from "@/components/notice";
+import QuestCelebration from "@/components/quest-celebration";
 import QuestProgress from "@/components/quest-progress";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { runGameTick } from "@/game/events/event-router";
@@ -236,6 +237,17 @@ export default async function QuestsPage() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-5 pb-24 pt-10">
+      {/* Realtime completion banner (dopamine spec §3) — presentation-only
+          island; the server snapshot below primes it so old history never
+          celebrates on load. */}
+      <QuestCelebration
+        plantId={PLANT_ID}
+        locale={locale}
+        initialStatuses={[...active, ...history].map((quest) => ({
+          id: quest.id,
+          status: quest.status,
+        }))}
+      />
       <header className="mb-6 flex flex-col items-center gap-1 text-center">
         <span className="text-4xl" role="img" aria-hidden="true">
           🎯
