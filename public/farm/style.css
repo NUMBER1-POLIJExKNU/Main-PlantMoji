@@ -23,7 +23,7 @@
     /* Two-tier typography: compact arcade display + readable pixel body. */
     --font-display: 'Press Start 2P', monospace;
     --font-heading: var(--font-display);
-    --font-body: 'Pixelify Sans', sans-serif;
+    --font-body: 'Geist', Arial, sans-serif;
 
     /* Modern Glass UI mixed with Game aesthetics */
     --ui-bg: rgba(255, 255, 255, 0.7);
@@ -271,7 +271,11 @@ body {
     gap: 6px;
     flex: 1;
 }
-.username { font-family: var(--font-heading); font-size: 12px; }
+/* max-width is a hard px cap (not %) so a 40-char unbroken plant name can
+   never push .user-details/.user-gamification wider than the HUD row —
+   overflow:hidden + text-overflow:ellipsis then truncates it cleanly.
+   Per-breakpoint overrides below tighten it to match the narrower rail. */
+.username { font-family: var(--font-heading); font-size: 12px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .xp-row { display: flex; align-items: center; gap: 10px; }
 #hp-inline { font-family: var(--font-heading); font-size: 10px; white-space: nowrap; }
 #hp-inline.hp-good { color: var(--color-forest); }
@@ -1175,8 +1179,8 @@ body.env-hot .env-haze { opacity: 1; }
    Reduced motion: he stands still. Night: he is gone (body.night fade). */
 .npc-farmer {
     position: fixed;
-    left: 5vw;
-    bottom: 84px;
+    left: 300px;
+    top: calc(100vh - 190px);
     width: 48px;
     height: 56px;
     padding: 0;
@@ -1188,8 +1192,12 @@ body.env-hot .env-haze { opacity: 1; }
     image-rendering: pixelated;
     transform-origin: 50% 100%;
     transition: opacity 2s ease;
+    will-change: left, top, transform;
+    opacity: 0;
 }
+.npc-farmer.npc-ready { opacity: 1; }
 body.night .npc-farmer { opacity: 0; pointer-events: none; }
+.npc-farmer.npc-falling { pointer-events: none; }
 .npc-farmer::before,
 .npc-farmer::after {
     content: "";
@@ -1270,9 +1278,8 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         28px 48px 0 var(--color-outline), 32px 48px 0 var(--color-outline);
 }
 @media (prefers-reduced-motion: no-preference) {
-    .npc-farmer { animation: pm-npc-wander 84s linear infinite; }
-    .npc-farmer::before { animation: pm-npc-step-a 0.7s steps(1, end) infinite; }
-    .npc-farmer::after { animation: pm-npc-step-b 0.7s steps(1, end) infinite; }
+    .npc-farmer.npc-walking::before { animation: pm-npc-step-a 0.7s steps(1, end) infinite; }
+    .npc-farmer.npc-walking::after { animation: pm-npc-step-b 0.7s steps(1, end) infinite; }
     /* He stops mid-stride while a speech bubble is up (live.js). */
     .npc-farmer.npc-talking,
     .npc-farmer.npc-talking::before,
@@ -1286,20 +1293,24 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     0%, 100% { opacity: 0; }
     50% { opacity: 1; }
 }
-@keyframes pm-npc-wander {
-    0% { transform: translateX(0) scaleX(1); }
-    16% { transform: translateX(26vw) scaleX(1); }
-    21% { transform: translateX(26vw) scaleX(1); } /* pause */
-    22% { transform: translateX(26vw) scaleX(-1); } /* flip */
-    40% { transform: translateX(6vw) scaleX(-1); }
-    46% { transform: translateX(6vw) scaleX(-1); } /* pause */
-    47% { transform: translateX(6vw) scaleX(1); } /* flip */
-    68% { transform: translateX(34vw) scaleX(1); }
-    74% { transform: translateX(34vw) scaleX(1); } /* pause */
-    75% { transform: translateX(34vw) scaleX(-1); } /* flip */
-    99% { transform: translateX(0.5vw) scaleX(-1); }
-    100% { transform: translateX(0) scaleX(1); }
+
+.npc-farmer-vine {
+    position: fixed;
+    z-index: 2;
+    display: none;
+    width: 7px;
+    height: 118px;
+    border: 2px solid #2f6728;
+    background: repeating-linear-gradient(180deg,#69c455 0 8px,#397a2b 8px 14px);
+    transform-origin: 50% 0;
+    image-rendering: pixelated;
+    pointer-events: none;
 }
+.npc-farmer-vine.is-visible { display: block; }
+@media (prefers-reduced-motion: no-preference) {
+    .npc-farmer-vine.is-visible { animation: pm-vine-drop .38s steps(4,end) both; }
+}
+@keyframes pm-vine-drop { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 
 /* Grandpa's small speech bubble (live.js positions it above his hat and
    removes it after ~6s). Body copy face, guidance tone — no celebration. */
@@ -1319,6 +1330,45 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     padding: 8px 12px;
     text-align: center;
     pointer-events: none;
+}
+
+/* Grandpa Tani chat: game chrome outside, highly readable body copy inside. */
+.farmer-chat {
+    width: min(440px, calc(100vw - 28px));
+    max-height: min(650px, calc(100dvh - 28px));
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 4px solid var(--color-outline);
+    border-radius: 18px;
+    box-shadow: 0 8px 0 var(--color-outline), 0 18px 55px rgba(20,35,20,.3);
+    font-family: var(--font-body);
+}
+.farmer-chat::backdrop { background: rgba(22,32,20,.48); backdrop-filter: blur(2px); }
+.farmer-chat-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 14px; background: var(--color-bg); border-bottom: 3px solid var(--color-border); }
+.farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; font: 28px/1 sans-serif; }
+.farmer-chat-top span { color: var(--color-forest); font: 7px/1.4 var(--font-heading); }
+.farmer-chat-top h2 { margin-top: 4px; font: 12px/1.5 var(--font-heading); }
+.farmer-chat-close { width: 38px; height: 38px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 22px/1 var(--font-body); cursor: pointer; }
+.farmer-chat-log { display: flex; flex-direction: column; gap: 9px; min-height: 190px; max-height: 310px; padding: 16px; overflow-y: auto; }
+.farmer-chat-message { max-width: 88%; padding: 10px 12px; border: 2px solid var(--color-border); border-radius: 14px; line-height: 1.5; }
+.farmer-chat-message.is-farmer { align-self: flex-start; border-bottom-left-radius: 4px; background: var(--color-bg); }
+.farmer-chat-message.is-user { align-self: flex-end; border-color: var(--color-water); border-bottom-right-radius: 4px; background: color-mix(in srgb,var(--color-water) 13%,var(--color-surface)); }
+.farmer-chat-message.is-thinking { opacity: .65; }
+.farmer-chat-message.is-system { align-self: center; padding: 5px 8px; border-color: #e8c46b; border-radius: 999px; color: #7a5b12; background: #fff7df; font: 7px/1.4 var(--font-heading); text-align: center; }
+.farmer-chat-prompts { display: flex; gap: 7px; padding: 0 16px 12px; overflow-x: auto; }
+.farmer-chat-prompts button { flex: none; padding: 7px 9px; border: 2px solid var(--color-border); border-radius: 999px; color: var(--color-forest); background: var(--color-bg); font: 12px/1.3 var(--font-body); cursor: pointer; }
+.farmer-chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 14px; border-top: 2px dashed var(--color-border); }
+.farmer-chat-form input { min-width: 0; padding: 10px 11px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 15px/1.4 var(--font-body); }
+.farmer-chat-form button { padding: 9px 12px; border: 3px solid var(--color-forest); border-radius: 10px; color: #fff; background: var(--color-grass); box-shadow: 0 3px 0 var(--color-forest); font: 8px/1.3 var(--font-heading); cursor: pointer; }
+.farmer-chat-form button:disabled { opacity: .55; cursor: wait; }
+.farmer-chat-note { padding: 0 14px 12px; opacity: .65; font-size: 11px; line-height: 1.4; }
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
+@media (max-width: 600px) {
+    .farmer-chat { width: 100%; max-width: none; max-height: 82dvh; margin: auto 0 0; border-radius: 20px 20px 0 0; border-width: 4px 0 0; }
+    .farmer-chat-log { max-height: 36dvh; }
 }
 @media (prefers-reduced-motion: no-preference) {
     .npc-bubble { animation: pm-npc-bubble-in 0.25s steps(3, end); }
@@ -1435,6 +1485,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     .user-gamification { flex-wrap: wrap; gap: 10px; }
     .avatar-img { width: 48px; height: 48px; }
     .xp-bar-wrap { width: 110px; }
+    .username { max-width: 150px; }
     .badges { flex-basis: 100%; justify-content: center; }
 
     /* Weather widget had only ~10px of slack at exactly 360px wide
@@ -1542,7 +1593,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .quiz-chip { min-height: 52px; padding: 7px 12px; }
     .avatar-img { width: 48px; height: 48px; }
-    .username { font-size: 10px; }
+    .username { font-size: 10px; max-width: 140px; }
     .xp-bar-wrap { width: min(150px, 12vw); }
     .badges { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
     .badge { padding: 5px 9px; font-size: 8px; }

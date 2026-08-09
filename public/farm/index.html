@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PlantMoji - Cozy Pixel Farm</title>
     <!-- Readable pixel body + compact arcade display font. -->
-    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Pixelify+Sans:wght@400..700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/farm/style.css">
 </head>
 <body>
@@ -108,7 +108,27 @@
                      pure-CSS wander BEHIND the mascot, hidden while body.night.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Farmer grandpa"></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"></button>
+                <div id="npc-farmer-vine" class="npc-farmer-vine" aria-hidden="true"></div>
+
+                <dialog id="farmer-chat" class="farmer-chat" aria-labelledby="farmer-chat-title">
+                    <form method="dialog" class="farmer-chat-top">
+                        <div class="farmer-chat-portrait" aria-hidden="true">👨‍🌾</div>
+                        <div>
+                            <span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span>
+                            <h2 id="farmer-chat-title">Grandpa Tani</h2>
+                        </div>
+                        <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
+                    </form>
+                    <div id="farmer-chat-log" class="farmer-chat-log" role="log" aria-live="polite"></div>
+                    <div id="farmer-chat-prompts" class="farmer-chat-prompts"></div>
+                    <form id="farmer-chat-form" class="farmer-chat-form">
+                        <label class="sr-only" for="farmer-chat-input">Ask Grandpa Tani</label>
+                        <input id="farmer-chat-input" maxlength="280" autocomplete="off" />
+                        <button id="farmer-chat-send" type="submit">ASK</button>
+                    </form>
+                    <p id="farmer-chat-note" class="farmer-chat-note"></p>
+                </dialog>
 
                 <!-- Mascot -->
                 <div class="mascot-container">
@@ -405,6 +425,11 @@
     <script src="/farm/sfx.js"></script>
     <script src="/farm/demo.js"></script>
     <script src="/farm/quiz.js"></script>
+    <!-- Vendored @supabase/supabase-js UMD build (matches package.json's
+         pinned version) — loads window.supabase.createClient synchronously
+         so live.js never depends on a CDN at runtime. Must load before the
+         live.js module tag below. -->
+    <script src="/farm/vendor/supabase.js"></script>
     <script type="module" src="/farm/live.js"></script>
 </body>
 </html>

@@ -863,17 +863,24 @@ function orbCascade(amount, opts = {}) {
   const target = wrap.getBoundingClientRect();
   const targetX = target.left + target.width / 2;
   const targetY = target.top + target.height / 2;
-  // Counter re-roll: by claim time renderBond has usually applied the
-  // authoritative total already, so replay the awarded segment ENDING at
-  // the number on screen — the cascade never counts beyond truth.
-  const shownRaw = Number.parseInt(numEl?.textContent ?? "", 10);
-  const end = Number.isFinite(shownRaw) ? shownRaw : Math.max(prevXp ?? 0, xp);
-  const start = Math.max(0, end - xp);
   // This cascade becomes the counter's owner: bump the generation (stale
-  // landings from an older cascade bail on it) and clear their timers.
+  // landings from an older cascade bail on it), clear their timers, and
+  // cancel any in-flight count-up FIRST — before we compute anything, so a
+  // tap mid animateXpCount can never leave a stale, still-climbing number
+  // for the next line to read.
   const gen = ++xpRenderGeneration;
   cancelXpLandings();
   cancelXpCount(); // the landings own the counter for the next ~2.5s
+  // Counter re-roll: prevXp is renderBond's own authoritative bookkeeping —
+  // it is updated the instant a fresh total lands, independent of how long
+  // any on-screen count-up animation takes to visually catch up. The DOM
+  // text can be mid-animation (animateXpCount ticks it via rAF over 800ms)
+  // and read a stale, still-climbing number, so prevXp — never the DOM —
+  // is the only trustworthy "total right now". Replay the awarded segment
+  // ENDING there so the cascade can never rewind or overshoot past the
+  // server's truth, and the final landing always settles on the real total.
+  const end = Math.max(0, Number.isFinite(prevXp) ? prevXp : xp);
+  const start = Math.max(0, end - xp);
   if (numEl) numEl.textContent = String(start);
   setXpBar((start % XP_PER_LEVEL) / XP_PER_LEVEL * 100, false);
   let lastShown = start;
@@ -2143,6 +2150,12 @@ function setupCareInteractions() {
   );
 
   $("#care-action")?.addEventListener("pointerdown", onCareAction);
+  // Keyboard activation (it's a real <button>): click with detail 0 means
+  // Enter/Space — pointer taps already went through pointerdown above.
+  // Same pattern as #npc-farmer.
+  $("#care-action")?.addEventListener("click", (event) => {
+    if (event.detail === 0) onCareAction();
+  });
 
   // Tactile mascot pipeline (items 2/3/5/6): taps resolve on release so a
   // ≥600ms head hold can become the lean-in and a slow night drag the
@@ -2473,6 +2486,168 @@ let farmerCooldownUntil = 0;
 const farmerLineIndex = {}; // per-family rotation so he never repeats verbatim
 let farmerBubbleEl = null;
 let farmerBubbleTimer = null;
+let farmerChatController = null;
+let farmerMotionAnimation = null;
+let farmerMotionPaused = false;
+let farmerMotionEpoch = 0;
+let farmerRestartTimer = null;
+
+const FARMER_CHAT_COPY = {
+  id: {
+    kicker: "TEMAN KEBUNMU", title: "Kakek Tani", close: "Tutup percakapan",
+    hello: "Hoho… datanglah, Nak. Apa yang ingin kamu ketahui tentang tanaman kecil kita?",
+    placeholder: "Tanya tentang tanaman atau sensor…", send: "TANYA",
+    note: "Kakek menjelaskan data sensor. Untuk perubahan tanah, tanyakan juga kepada guru atau petani setempat.",
+    thinking: "Hmm… Kakek lihat dulu, ya…", network: "Hoho… jalur pesannya sedang sepi. Coba sebentar lagi, Nak.",
+    demo: "DATA SENSOR VIRTUAL · MODE DEMO",
+    prompts: ["Bagaimana keadaan tanaman sekarang?", "Apakah cahayanya cukup?", "Apa arti pH tanah?"],
+  },
+  en: {
+    kicker: "YOUR GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
+    hello: "Hoho… come sit with me, my young friend. What would you like to know about our little plant?",
+    placeholder: "Ask about the plant or sensors…", send: "ASK",
+    note: "Grandpa explains sensor data. Ask a teacher or local farmer before changing the soil.",
+    thinking: "Hmm… let Grandpa take a look…", network: "Hoho… the message path is quiet. Try me again in a little while, my young friend.",
+    demo: "VIRTUAL SENSOR DATA · DEMO MODE",
+    prompts: ["How is the plant doing?", "Is the light sufficient?", "What does soil pH mean?"],
+  },
+};
+
+function farmerCopy() { return FARMER_CHAT_COPY[appLocale] ?? FARMER_CHAT_COPY.id; }
+
+function setFarmerMotionPaused(paused) {
+  farmerMotionPaused = paused;
+  const farmer = $("#npc-farmer");
+  farmer?.classList.toggle("npc-talking", paused);
+  if (!farmerMotionAnimation) return;
+  try { paused ? farmerMotionAnimation.pause() : farmerMotionAnimation.play(); } catch {}
+}
+
+function farmerDelay(ms, epoch) {
+  return new Promise((resolve) => setTimeout(() => resolve(epoch === farmerMotionEpoch), ms));
+}
+
+async function farmerAnimate(keyframes, options, epoch) {
+  const farmer = $("#npc-farmer");
+  if (!farmer || epoch !== farmerMotionEpoch) return false;
+  try {
+    farmerMotionAnimation = farmer.animate(keyframes, { fill: "forwards", ...options });
+    if (farmerMotionPaused) farmerMotionAnimation.pause();
+    await farmerMotionAnimation.finished;
+    farmerMotionAnimation = null;
+    return epoch === farmerMotionEpoch;
+  } catch {
+    farmerMotionAnimation = null;
+    return false;
+  }
+}
+
+function farmerGround() {
+  const farmer = $("#npc-farmer");
+  const grass = $(".grass-floor");
+  if (!farmer || !grass) return null;
+  const rect = grass.getBoundingClientRect();
+  const width = farmer.offsetWidth || 48;
+  const height = farmer.offsetHeight || 56;
+  return {
+    left: Math.round(rect.left + 12),
+    right: Math.round(Math.max(rect.left + 12, rect.right - width - 12)),
+    top: Math.round(rect.top - height + 8),
+  };
+}
+
+async function farmerWalkTo(x, facing, epoch, duration = 10_000) {
+  const farmer = $("#npc-farmer");
+  if (!farmer) return false;
+  farmer.classList.add("npc-walking");
+  const from = Number.parseFloat(farmer.style.left) || x;
+  const ok = await farmerAnimate(
+    [{ left: `${from}px`, transform: `scaleX(${facing})` }, { left: `${x}px`, transform: `scaleX(${facing})` }],
+    { duration, easing: "linear" }, epoch,
+  );
+  farmer.classList.remove("npc-walking");
+  if (ok) { farmer.style.left = `${x}px`; farmer.style.transform = `scaleX(${facing})`; }
+  return ok;
+}
+
+async function farmerFallAndClimb(ground, epoch) {
+  const farmer = $("#npc-farmer");
+  const vine = $("#npc-farmer-vine");
+  if (!farmer || !vine || epoch !== farmerMotionEpoch) return;
+  farmer.classList.add("npc-falling");
+  await farmerAnimate([
+    { transform: "translateX(0) rotate(0deg) scaleX(-1)" },
+    { transform: "translateX(-5px) rotate(-9deg) scaleX(-1)" },
+    { transform: "translateX(3px) rotate(8deg) scaleX(-1)" },
+    { transform: "translateX(-9px) rotate(-16deg) scaleX(-1)" },
+  ], { duration: 520, easing: "steps(4,end)" }, epoch);
+  if (epoch !== farmerMotionEpoch) return;
+  showFarmerBubble(appLocale === "id" ? "Hoho… jalannya habis! Tunggu sebentar, Nak." : "Hoho… the path ended! Hold on, my young friend.", 2600, false);
+  await farmerAnimate([
+    { left: `${ground.left}px`, top: `${ground.top}px`, transform: "rotate(-16deg)" },
+    { left: `${ground.left - 18}px`, top: `${ground.top + 92}px`, transform: "rotate(-4deg)" },
+  ], { duration: 720, easing: "steps(5,end)" }, epoch);
+  if (!(await farmerDelay(850, epoch))) return;
+  vine.style.left = `${ground.left + 12}px`;
+  vine.style.top = `${ground.top + 18}px`;
+  vine.classList.add("is-visible");
+  if (!(await farmerDelay(380, epoch))) return;
+  await farmerAnimate([
+    { left: `${ground.left - 18}px`, top: `${ground.top + 92}px`, transform: "rotate(0deg)" },
+    { left: `${ground.left + 8}px`, top: `${ground.top + 48}px`, transform: "rotate(2deg)" },
+    { left: `${ground.left + 24}px`, top: `${ground.top}px`, transform: "rotate(0deg)" },
+  ], { duration: 1500, easing: "steps(8,end)" }, epoch);
+  vine.classList.remove("is-visible");
+  farmer.style.left = `${ground.left + 24}px`;
+  farmer.style.top = `${ground.top}px`;
+  farmer.style.transform = "scaleX(1)";
+  farmer.classList.remove("npc-falling");
+  showFarmerBubble(appLocale === "id" ? "Nah, sudah kembali! Sedikit memanjat membuat lutut tua tetap kuat, hoho." : "There we are! A little climbing keeps these old knees strong, hoho.", 3000, false);
+}
+
+async function runFarmerMotion() {
+  const farmer = $("#npc-farmer");
+  if (!farmer) return;
+  const epoch = ++farmerMotionEpoch;
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  let ground = farmerGround();
+  if (!ground) return;
+  farmer.style.left = `${Math.min(ground.right, ground.left + Math.max(30, (ground.right - ground.left) * .35))}px`;
+  farmer.style.top = `${ground.top}px`;
+  farmer.classList.add("npc-ready");
+  if (reduced) return;
+  while (epoch === farmerMotionEpoch) {
+    if (isNightWIB()) {
+      if (!(await farmerDelay(30_000, epoch))) return;
+      continue;
+    }
+    ground = farmerGround();
+    if (!ground) return;
+    farmer.style.top = `${ground.top}px`;
+    if (!(await farmerWalkTo(ground.right, 1, epoch, 12_000))) return;
+    if (!(await farmerDelay(1800, epoch))) return;
+    if (!(await farmerWalkTo(ground.left, -1, epoch, 14_000))) return;
+    if (!(await farmerDelay(600, epoch))) return;
+    await farmerFallAndClimb(ground, epoch);
+    if (!(await farmerDelay(4200, epoch))) return;
+  }
+}
+
+function restartFarmerMotion() {
+  farmerMotionEpoch += 1;
+  try { farmerMotionAnimation?.cancel(); } catch {}
+  farmerMotionAnimation = null;
+  $("#npc-farmer-vine")?.classList.remove("is-visible");
+  window.setTimeout(() => void runFarmerMotion(), 80);
+}
+
+function scheduleFarmerMotionRestart() {
+  if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
+  farmerRestartTimer = window.setTimeout(() => {
+    farmerRestartTimer = null;
+    restartFarmerMotion();
+  }, 180);
+}
 
 /** Next grandpa line for the CURRENT mood (Sleepy is inherently daytime-only
  *  here: at night farmerSpeak bails before ever picking a line). */
@@ -2492,7 +2667,25 @@ function clearFarmerBubble() {
   }
   farmerBubbleEl?.remove();
   farmerBubbleEl = null;
-  $("#npc-farmer")?.classList.remove("npc-talking");
+  if (!$("#farmer-chat")?.open) setFarmerMotionPaused(false);
+}
+
+function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true) {
+  const farmer = $("#npc-farmer");
+  if (!farmer) return false;
+  clearFarmerBubble();
+  if (pauseMotion) setFarmerMotionPaused(true);
+  const rect = farmer.getBoundingClientRect();
+  const bubble = document.createElement("div");
+  bubble.className = "npc-bubble";
+  bubble.setAttribute("role", "status");
+  bubble.textContent = text;
+  bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
+  bubble.style.top = `${Math.round(rect.top - 8)}px`;
+  document.body.appendChild(bubble);
+  farmerBubbleEl = bubble;
+  farmerBubbleTimer = setTimeout(clearFarmerBubble, duration);
+  return true;
 }
 
 /** Show one guidance bubble above grandpa's hat (he pauses mid-stride while
@@ -2500,32 +2693,114 @@ function clearFarmerBubble() {
  *  60s cooldown, the night, or the hatching intro swallowed it. */
 function farmerSpeak() {
   const farmer = $("#npc-farmer");
-  if (!farmer || isNightWIB() || hatchActive) return false;
+  if (!farmer || isNightWIB() || hatchActive || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return false;
   const now = Date.now();
   if (now < farmerCooldownUntil) return false;
   farmerCooldownUntil = now + FARMER_COOLDOWN_MS;
-  clearFarmerBubble();
-  farmer.classList.add("npc-talking");
-  const rect = farmer.getBoundingClientRect();
-  const bubble = document.createElement("div");
-  bubble.className = "npc-bubble";
-  bubble.setAttribute("role", "status");
-  bubble.textContent = farmerLine();
-  bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
-  bubble.style.top = `${Math.round(rect.top - 8)}px`;
-  document.body.appendChild(bubble);
-  farmerBubbleEl = bubble;
-  farmerBubbleTimer = setTimeout(clearFarmerBubble, FARMER_BUBBLE_MS);
-  return true;
+  return showFarmerBubble(farmerLine());
 }
 
-$("#npc-farmer")?.addEventListener("pointerdown", () => {
-  if (farmerSpeak()) window.PMSfx?.play("tick");
+function addFarmerChatMessage(kind, text, marker) {
+  const log = $("#farmer-chat-log");
+  if (!log) return null;
+  const message = document.createElement("p");
+  message.className = `farmer-chat-message is-${kind}${marker ? ` ${marker}` : ""}`;
+  message.textContent = text;
+  log.appendChild(message);
+  while (log.children.length > 8) log.firstElementChild?.remove();
+  log.scrollTop = log.scrollHeight;
+  return message;
+}
+
+function prepareFarmerChat() {
+  const copy = farmerCopy();
+  setText("#farmer-chat-kicker", copy.kicker);
+  setText("#farmer-chat-title", copy.title);
+  setText("#farmer-chat-send", copy.send);
+  setText("#farmer-chat-note", copy.note);
+  const close = $(".farmer-chat-close");
+  if (close) close.setAttribute("aria-label", copy.close);
+  const input = $("#farmer-chat-input");
+  if (input) input.placeholder = copy.placeholder;
+  const prompts = $("#farmer-chat-prompts");
+  if (prompts) {
+    prompts.replaceChildren(...copy.prompts.map((label) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => { if (input) input.value = label; $("#farmer-chat-form")?.requestSubmit(); });
+      return button;
+    }));
+  }
+  const log = $("#farmer-chat-log");
+  if (log && log.children.length === 0) addFarmerChatMessage("farmer", copy.hello);
+}
+
+function openFarmerChat() {
+  const dialog = $("#farmer-chat");
+  if (!(dialog instanceof HTMLDialogElement) || dialog.open || $("#npc-farmer")?.classList.contains("npc-falling")) return;
+  clearFarmerBubble();
+  prepareFarmerChat();
+  setFarmerMotionPaused(true);
+  dialog.showModal();
+  $("#farmer-chat-input")?.focus();
+  window.PMSfx?.play("tick");
+}
+
+$("#farmer-chat")?.addEventListener("close", () => {
+  farmerChatController?.abort();
+  farmerChatController = null;
+  setFarmerMotionPaused(false);
 });
+$("#farmer-chat")?.addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) event.currentTarget.close();
+});
+$("#farmer-chat-form")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const input = $("#farmer-chat-input");
+  const send = $("#farmer-chat-send");
+  const question = input?.value.trim();
+  if (!question || !send) return;
+  input.value = "";
+  input.disabled = true;
+  send.disabled = true;
+  addFarmerChatMessage("user", question);
+  const thinking = addFarmerChatMessage("farmer", farmerCopy().thinking, "is-thinking");
+  farmerChatController?.abort();
+  farmerChatController = new AbortController();
+  const timeout = window.setTimeout(() => farmerChatController?.abort(), 6500);
+  try {
+    const response = await fetch("/api/farmer-chat", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question, locale: appLocale, demo: window.__pmSupabaseConfigured !== true }),
+      signal: farmerChatController.signal,
+    });
+    const result = response.ok ? await response.json() : null;
+    thinking?.remove();
+    const dialog = $("#farmer-chat");
+    if (result?.dataSource === "demo" && dialog?.dataset.demoShown !== "true") {
+      addFarmerChatMessage("system", farmerCopy().demo);
+      dialog.dataset.demoShown = "true";
+    }
+    addFarmerChatMessage("farmer", typeof result?.reply === "string" ? result.reply : farmerCopy().network);
+  } catch {
+    thinking?.remove();
+    if ($("#farmer-chat")?.open) addFarmerChatMessage("farmer", farmerCopy().network);
+  } finally {
+    window.clearTimeout(timeout);
+    farmerChatController = null;
+    input.disabled = false;
+    send.disabled = false;
+    if ($("#farmer-chat")?.open) input.focus();
+  }
+});
+
+$("#npc-farmer")?.addEventListener("pointerdown", openFarmerChat);
 // Keyboard activation (he is a real <button>): click with detail 0 means
 // Enter/Space — pointer taps already went through pointerdown above.
 $("#npc-farmer")?.addEventListener("click", (event) => {
-  if (event.detail === 0 && farmerSpeak()) window.PMSfx?.play("tick");
+  if (event.detail === 0) openFarmerChat();
 });
 
 (function scheduleFarmerTalk() {
@@ -2534,6 +2809,18 @@ $("#npc-farmer")?.addEventListener("click", (event) => {
     scheduleFarmerTalk();
   }, FARMER_AUTO_MIN_MS + Math.random() * (FARMER_AUTO_MAX_MS - FARMER_AUTO_MIN_MS));
 })();
+
+window.addEventListener("resize", scheduleFarmerMotionRestart, { passive: true });
+if (typeof ResizeObserver === "function" && $(".grass-floor")) {
+  new ResizeObserver(scheduleFarmerMotionRestart).observe($(".grass-floor"));
+}
+void runFarmerMotion();
+window.setInterval(() => {
+  if (!isNightWIB()) return;
+  const dialog = $("#farmer-chat");
+  if (dialog?.open) dialog.close();
+  clearFarmerBubble();
+}, 60_000);
 
 // ── End living world ────────────────────────────────────────────────────
 
@@ -3530,6 +3817,30 @@ function runHatchIntro(plantName) {
   advance();
 }
 
+/** Build the Supabase client. Prefers the vendored UMD bundle (loaded via a
+ *  <script> tag in index.html before this module, exposing
+ *  window.supabase.createClient synchronously) so the page never depends on
+ *  a CDN at runtime. Only falls back to the esm.sh dynamic import if that
+ *  script tag is somehow missing, and even that is wrapped in try/catch so
+ *  a CDN/network failure can never throw out of main() unhandled — it just
+ *  returns null and the caller takes the same offline path as a failed
+ *  config fetch. */
+async function loadSupabaseClient(url, key) {
+  try {
+    if (typeof window.supabase?.createClient === "function") {
+      return window.supabase.createClient(url, key);
+    }
+  } catch {
+    // Fall through to the CDN fallback below.
+  }
+  try {
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    return createClient(url, key);
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   refreshWeather();
   setInterval(refreshWeather, 30 * 60_000);
@@ -3547,10 +3858,18 @@ async function main() {
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
-  window.__pmSupabaseConfigured = true;
 
-  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-  const supabase = createClient(config.url, config.key);
+  const supabase = await loadSupabaseClient(config.url, config.key);
+  if (!supabase) {
+    // Vendored bundle missing AND the CDN fallback failed: same graceful
+    // offline path as an unreachable/misconfigured backend — the page still
+    // renders its defaults and the hatching intro still runs.
+    window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+    setText(".indoor-reading", t("sensor.unavailable"));
+    scheduleHatch(null); // hatching still runs offline (default character)
+    return;
+  }
+  window.__pmSupabaseConfigured = true;
 
   let plantName = null;
 
@@ -3667,4 +3986,13 @@ async function main() {
   }, 60_000);
 }
 
-main();
+// Defense in depth: even with the layered fallbacks inside main() itself,
+// no unhandled rejection here can ever strand the page mid-load — any
+// escaped error still falls back to the same offline path (defaults render,
+// hatching still runs) and gets logged instead of silently hanging.
+main().catch((error) => {
+  console.error("PlantMoji farm page failed to initialize", error);
+  window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+  setText(".indoor-reading", t("sensor.unavailable"));
+  scheduleHatch(null); // hatching still runs offline (default character)
+});
