@@ -13,7 +13,7 @@ export interface EnvironmentCropProfile {
   temperature: EnvironmentRange;
   airHumidity: EnvironmentRange;
   soilPh: EnvironmentRange;
-  light: { required: 0 | 1 | null; evaluateNow: boolean };
+  light: { minimumPercent: number | null; evaluateNow: boolean };
 }
 
 export interface EnvironmentCondition {
@@ -64,9 +64,9 @@ export function analyzeEnvironment(snapshot: SensorSnapshot | null, profile: Env
     temperature: rangeCondition(snapshot?.temperature, profile.temperature),
     airHumidity: rangeCondition(snapshot?.humidity, profile.airHumidity),
     soilPh: rangeCondition(snapshot?.soilPh, profile.soilPh),
-    light: !profile.light.evaluateNow || profile.light.required === null
+    light: !profile.light.evaluateNow || profile.light.minimumPercent === null
       ? { status: "not_evaluated", current: finite(snapshot?.light), preferredMin: null, preferredMax: null, direction: null }
-      : rangeCondition(snapshot?.light, { min: profile.light.required, max: profile.light.required }),
+      : rangeCondition(snapshot?.light, { min: profile.light.minimumPercent, max: 100 }),
   };
   const entries = Object.entries(conditions) as Array<[EnvironmentParameter, EnvironmentCondition]>;
   const evaluatedConditions = entries.filter(([, item]) => item.status !== "not_evaluated").length;

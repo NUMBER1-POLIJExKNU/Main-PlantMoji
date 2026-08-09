@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { getCropProfile } from "@/lib/crop-profiles";
 import {
   determinePlantMood,
@@ -9,9 +11,14 @@ import {
 
 const NOW = new Date("2026-08-08T05:00:00Z"); // 12:00 WIB
 const profile = getCropProfile("strawberry");
-const normal = { temperature: 23, humidity: 55, soilPH: 6, light: 1 as const };
+const normal = { temperature: 23, humidity: 55, soilPH: 6, light: 60 };
 
 describe("raw sensor API contract", () => {
+  it("ships the percentage-light database migration", () => {
+    const migration = readFileSync(resolve(process.cwd(), "supabase/milestone15-light-percentage.sql"), "utf8");
+    expect(migration).toContain("alter column light type numeric");
+    expect(migration).toContain("light >= 0 and light <= 100");
+  });
   it("parses the new flat Node-RED payload", () => {
     const parsed = parseRawSensorReading(
       {
@@ -20,7 +27,7 @@ describe("raw sensor API contract", () => {
         temperature: 23.5,
         humidity: 55,
         soilPH: 6.1,
-        light: 1,
+        light: 60,
         timestamp: NOW.getTime(),
       },
       NOW,
@@ -33,7 +40,7 @@ describe("raw sensor API contract", () => {
         temperature: 23.5,
         humidity: 55,
         soilPH: 6.1,
-        light: 1,
+        light: 60,
         recordedAt: NOW.toISOString(),
       },
     });
@@ -47,7 +54,8 @@ describe("raw sensor API contract", () => {
     [{ plantId: "plant-01", temperature: "23", humidity: 55, soilPH: 6, light: 1 }, /finite numbers/],
     [{ plantId: "plant-01", temperature: 23, humidity: 101, soilPH: 6, light: 1 }, /humidity/],
     [{ plantId: "plant-01", temperature: 23, humidity: 55, soilPH: 15, light: 1 }, /soilPH/],
-    [{ plantId: "plant-01", temperature: 23, humidity: 55, soilPH: 6, light: 2 }, /light/],
+    [{ plantId: "plant-01", temperature: 23, humidity: 55, soilPH: 6, light: -0.1 }, /light/],
+    [{ plantId: "plant-01", temperature: 23, humidity: 55, soilPH: 6, light: 101 }, /light/],
   ])("rejects invalid payload %#", (input, expected) => {
     const parsed = parseRawSensorReading(input, NOW);
     expect(parsed.ok).toBe(false);
@@ -70,8 +78,9 @@ describe("server-side strawberry mood judgment", () => {
     expect(determinePlantMood({ ...normal, humidity: 45 }, "DryAir", profile, true)).toBe("Happy");
   });
 
-  it("checks binary light only during lighting hours", () => {
-    expect(determinePlantMood({ ...normal, light: 0 }, "Happy", profile, true)).toBe("Sleepy");
+  it("uses the 30% light boundary only during lighting hours", () => {
+    expect(determinePlantMood({ ...normal, light: 29.9 }, "Happy", profile, true)).toBe("Sleepy");
+    expect(determinePlantMood({ ...normal, light: 30 }, "Happy", profile, true)).toBe("Happy");
     expect(determinePlantMood({ ...normal, light: 0 }, "Happy", profile, false)).toBe("Happy");
     expect(isCropLightingHours(new Date("2026-08-08T05:00:00Z"), profile)).toBe(true);
     expect(isCropLightingHours(new Date("2026-08-08T13:00:00Z"), profile)).toBe(false);

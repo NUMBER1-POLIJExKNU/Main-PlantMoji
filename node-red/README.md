@@ -56,7 +56,7 @@ The body it sends follows the game side's `src/types/events.ts` `parseDeviceEven
     "currentState": "<current state>",
     "temperature": 26.5,
     "humidity": 32,
-    "light": 1,
+    "light": 65,
     "soilPH": 6.5
   }
 }
@@ -72,7 +72,7 @@ The body it sends follows the game side's `src/types/events.ts` `parseDeviceEven
 | `status.primaryState` | `data.currentState` | See the mood code notes below |
 | `readings.temperature` | `data.temperature` | |
 | `readings.humidity` | `data.humidity` | |
-| `readings.light` | `data.light` | 0 or 1 |
+| `readings.light` | `data.light` | Relative 0–100%; below 30 is Low during daytime |
 | `readings.soilPH` | `data.soilPH` | |
 
 #### Mood Code Verification
@@ -228,7 +228,7 @@ Body yang dikirim mengikuti kontrak `parseDeviceEvent` dari `src/types/events.ts
     "currentState": "<status saat ini>",
     "temperature": 26.5,
     "humidity": 32,
-    "light": 1,
+    "light": 65,
     "soilPH": 6.5
   }
 }
@@ -244,7 +244,7 @@ Body yang dikirim mengikuti kontrak `parseDeviceEvent` dari `src/types/events.ts
 | `status.primaryState` | `data.currentState` | Lihat catatan kode mood di bawah |
 | `readings.temperature` | `data.temperature` | |
 | `readings.humidity` | `data.humidity` | |
-| `readings.light` | `data.light` | 0 atau 1 |
+| `readings.light` | `data.light` | Relatif 0–100%; di bawah 30 berarti Rendah pada siang hari |
 | `readings.soilPH` | `data.soilPH` | |
 
 #### Verifikasi Kode Mood
@@ -400,7 +400,7 @@ v5의 통합 디바이스 커맨드(`msg.payload`)를 그대로 받아서:
     "currentState": "<현재 상태>",
     "temperature": 26.5,
     "humidity": 32,
-    "light": 1,
+    "light": 65,
     "soilPH": 6.5
   }
 }
@@ -416,7 +416,7 @@ v5의 통합 디바이스 커맨드(`msg.payload`)를 그대로 받아서:
 | `status.primaryState` | `data.currentState` | 아래 무드 코드 참고 |
 | `readings.temperature` | `data.temperature` | |
 | `readings.humidity` | `data.humidity` | |
-| `readings.light` | `data.light` | 0 또는 1 |
+| `readings.light` | `data.light` | 상대값 0–100%; 주간에는 30 미만이 Low |
 | `readings.soilPH` | `data.soilPH` | |
 
 #### 무드 코드 확인 결과

@@ -329,7 +329,7 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 ### Sensors
 
 - DHT11 — temperature + air humidity
-- LDR — light detection
+- LDR — calibrated relative light level (0–100%; operational Low boundary at 30%)
 - Soil pH sensor
 
 ### Outputs / Actuators
@@ -345,7 +345,7 @@ AI may assist with dialogue and explanation, but it does **not** decide:
 {
   "temperature": 27.4,
   "humidity": 61,
-  "light": 1,
+  "light": 65,
   "soilPH": 6.5
 }
 ```
@@ -517,6 +517,7 @@ supabase/milestone11-tamagotchi.sql           companion state/evolution + realti
 supabase/milestone12-selectable-crops.sql     selectable crop catalog/profile contract
 supabase/milestone13-daily-quiz.sql           replay-safe quiz attempts + atomic quiz XP
 supabase/milestone14-fast-levels.sql           flat 30-XP Bond Level progression
+supabase/milestone15-light-percentage.sql      relative LDR 0–100% + 30% Low boundary
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every

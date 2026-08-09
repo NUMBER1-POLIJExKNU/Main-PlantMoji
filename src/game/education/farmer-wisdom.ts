@@ -104,7 +104,7 @@ export const FARMER_WISDOM: WisdomEntry[] = [
       "Di lereng-lereng kopi sekitar Jember, naungan itu diatur, bukan kebetulan: dengan cahaya yang terlalu sedikit, tanaman tak bisa berfotosintesis cukup, jadi ia menghabiskan cadangan energinya untuk meregangkan batang panjang dan pucat mencari cahaya terdekat. Tanaman di ambang jendela pun perlu jam terangnya sendiri, sama sengajanya.",
     sensorLink: {
       mood: "Sleepy",
-      metric: "light level (LDR bright/dark)",
+      metric: "relative light level (LDR 0–100%)",
       example:
         "“too much shade over the rows” ↔ light sensor reading dark for most of the afternoon",
       exampleId:

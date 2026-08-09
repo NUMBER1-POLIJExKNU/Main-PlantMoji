@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
+import type { AppTheme, FarmSkin } from "@/lib/appearance";
+import AppearanceControls from "@/components/appearance-controls";
 
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. Keep
@@ -12,8 +14,10 @@ const NAV_ITEMS = [
   { key: "home", href: "/", icon: "🌱", id: "Kebunku", en: "My Garden" },
   { key: "quests", href: "/quests", icon: "💚", id: "Rawat", en: "Care" },
   { key: "plants", href: "/plants", icon: "🗺️", id: "Jelajah", en: "Explore" },
+  { key: "camera", href: null, icon: "📷", id: "Kamera AI", en: "Camera AI" },
   { key: "diary", href: "/diary", icon: "📖", id: "Kenangan", en: "Memories" },
   { key: "collection", href: "/collection", icon: "💎", id: "Harta", en: "Treasures" },
+  { key: "shop", href: null, icon: "🛒", id: "Toko", en: "Shop" },
 ] as const;
 const TOOL_ITEMS = [
   { key: "status", href: "/monitoring", icon: "📡", id: "Sensor", en: "Sensors" },
@@ -27,7 +31,7 @@ function changeAppLocale(nextLocale: AppLocale) {
   window.location.reload();
 }
 
-export default function RenoAppShell({ children, locale }: { children: React.ReactNode; locale: AppLocale }) {
+export default function RenoAppShell({ children, locale, initialTheme, initialSkin }: { children: React.ReactNode; locale: AppLocale; initialTheme: AppTheme; initialSkin: FarmSkin }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
 
@@ -59,6 +63,19 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
             <span className="reno-nav-section-title">{locale === "id" ? "DUNIAKU" : "MY WORLD"}</span>
             {NAV_ITEMS.map((item) => {
               const label = locale === "id" ? item.id : item.en;
+              if (item.href === null) {
+                return (
+                  <span
+                    key={item.key}
+                    className="reno-nav-item reno-nav-disabled"
+                    aria-disabled="true"
+                    title={`${label} · ${locale === "id" ? "Segera hadir" : "Coming soon"}`}
+                  >
+                    <i>{item.icon}</i>
+                    <span className="reno-nav-label">{label}</span>
+                  </span>
+                );
+              }
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
                 <Link
@@ -97,6 +114,7 @@ export default function RenoAppShell({ children, locale }: { children: React.Rea
               </button>
             ))}
           </div>
+          <AppearanceControls locale={locale} initialTheme={initialTheme} initialSkin={initialSkin} />
         </aside>
 
         <div className={`reno-route-content ${isHome ? "reno-route-home" : "reno-route-page"}`}>

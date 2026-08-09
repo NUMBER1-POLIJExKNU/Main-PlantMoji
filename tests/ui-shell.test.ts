@@ -21,12 +21,15 @@ const TAB_HREFS = [
 ] as const;
 
 describe("shared PlantMoji application shell", () => {
-  it("exposes the five game destinations and three utility destinations", () => {
+  it("exposes the game destinations, two visible coming-soon tabs, and three utility destinations", () => {
     for (const href of TAB_HREFS) {
       expect(reactShell).toContain(`href: "${href}"`);
     }
 
     expect(reactShell.match(/href: "\/settings"/g)).toHaveLength(1);
+    expect(reactShell).toContain('key: "camera", href: null');
+    expect(reactShell).toContain('key: "shop", href: null');
+    expect(reactShell).toContain('className="reno-nav-item reno-nav-disabled"');
   });
 
   it("keeps crop exploration and care memories as distinct game destinations", () => {
@@ -35,8 +38,8 @@ describe("shared PlantMoji application shell", () => {
     expect(reactShell).toContain("const TOOL_ITEMS");
   });
 
-  it("uses a five-action mobile game dock without widening the viewport", () => {
-    expect(reactCss).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
+  it("uses a seven-action mobile game dock without widening the viewport", () => {
+    expect(reactCss).toContain("grid-template-columns: repeat(7, minmax(0, 1fr))");
     expect(reactCss).toMatch(/\.reno-nav-links\s*\{[\s\S]*?position:\s*fixed/);
     expect(reactCss).toContain("env(safe-area-inset-bottom)");
     expect(reactCss).toContain("overflow-x: hidden");

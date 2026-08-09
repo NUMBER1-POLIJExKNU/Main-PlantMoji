@@ -22,7 +22,7 @@ const explorerCrop: ExplorerCrop = {
   temperature: { min: 20, max: 30 },
   airHumidity: { min: 60, max: 80 },
   soilPh: { min: 5.5, max: 7 },
-  light: { required: 1, evaluateNow: true },
+  light: { minimumPercent: 30, evaluateNow: true },
 };
 
 describe("environment explanation fallback", () => {
@@ -38,8 +38,16 @@ describe("environment explanation fallback", () => {
   });
 
   it("keeps the deterministic mismatch and safe action in both locales", async () => {
-    const analysis = analyzeEnvironment({ temperature: 35, humidity: 70, soilPh: 6, light: 1 }, explorerCrop as EnvironmentCropProfile);
+    const analysis = analyzeEnvironment({ temperature: 35, humidity: 70, soilPh: 6, light: 60 }, explorerCrop as EnvironmentCropProfile);
     await expect(explainCropMismatch(explorerCrop, analysis, "en")).resolves.toContain("35 is above");
     await expect(explainCropMismatch(explorerCrop, analysis, "id")).resolves.toContain("tempat yang lebih teduh");
+  });
+
+  it("uses a warm personality template and skips AI when every condition matches", async () => {
+    const analysis = analyzeEnvironment({ temperature: 25, humidity: 70, soilPh: 6, light: 60 }, explorerCrop);
+    const text = await explainCropMismatch(explorerCrop, analysis, "en", "funny");
+    expect(text).toContain("cozy for now");
+    expect(text).toContain("4 of 4");
+    expect(mocks.generateAiMessage).not.toHaveBeenCalled();
   });
 });

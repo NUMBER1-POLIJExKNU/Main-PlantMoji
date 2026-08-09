@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Press_Start_2P, VT323 } from "next/font/google";
 import Script from "next/script";
 import RenoAppShell from "@/components/reno-app-shell";
-import { getRequestLocale } from "@/lib/i18n-server";
+import { getRequestAppearance, getRequestLocale } from "@/lib/i18n-server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,16 +33,19 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const locale = await getRequestLocale();
+  const [locale, appearance] = await Promise.all([getRequestLocale(), getRequestAppearance()]);
   return (
     <html
       lang={locale}
+      data-theme-preference={appearance.theme}
+      data-theme={appearance.resolvedTheme}
+      data-farm-skin={appearance.skin}
       className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${vt323.variable} h-full antialiased`}
     >
       {/* pm-page paints the farm sky on the body itself so overscroll and
           short routes never flash a plain white background. */}
       <body className="pm-page min-h-full">
-        <RenoAppShell locale={locale}>{children}</RenoAppShell>
+        <RenoAppShell locale={locale} initialTheme={appearance.theme} initialSkin={appearance.skin}>{children}</RenoAppShell>
         {/* Shared farm globals (dopamine plan Task 5): window.PM_STRINGS +
             window.PMSfx for React pages too. Plain sync tags trip the
             no-sync-scripts lint rule, so next/script with beforeInteractive

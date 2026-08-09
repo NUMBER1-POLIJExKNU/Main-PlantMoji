@@ -125,7 +125,8 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
   const latest = payload?.latest ?? null;
   const history = useMemo(() => payload?.history ?? [], [payload]);
 
-  // Prefer real lux history; fall back to the old flow's binary light column.
+  // Prefer real lux history when supplied; otherwise plot Node-RED's relative
+  // 0–100% light value without relabeling it as lux.
   const hasLux = useMemo(
     () => history.some((row) => typeof row.light_lux === "number"),
     [history],
@@ -138,12 +139,12 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
       if (hasLux) {
         if (typeof row.light_lux === "number") out.push({ t, value: row.light_lux });
       } else if (typeof row.light === "number") {
-        out.push({ t, value: row.light > 0 ? 1 : 0 });
+        out.push({ t, value: row.light });
       }
     }
     return out;
   }, [history, hasLux]);
-  const mode: LightMode = hasLux ? "lux" : "binary";
+  const mode: LightMode = hasLux ? "lux" : "percent";
 
   return (
     <div>
@@ -195,7 +196,7 @@ export default function MonitoringLive({ plantId = "plant-01" }: { plantId?: str
 
       <section className="pm-panel mt-4">
         <h2 className="pm-heading mb-2 text-center text-xs">
-          {mode === "lux" ? "Light Intensity (Lux)" : "Light (on/off)"}
+          {mode === "lux" ? "Light Intensity (Lux)" : "Relative Light (%)"}
         </h2>
         {points.length > 0 ? (
           <LightChart points={points} mode={mode} />

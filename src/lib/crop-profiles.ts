@@ -21,8 +21,8 @@ export interface CropProfile {
   };
   soilPh: { recommended: { min: number; max: number } };
   light: {
-    sensorType: "binary-ldr";
-    requiredDuringLightingHours: 1;
+    sensorType: "percentage-ldr";
+    minimumPercentDuringLightingHours: number;
     lightingHours: { start: number; end: number };
   };
 }
@@ -47,8 +47,8 @@ const strawberry: CropProfile = {
   },
   soilPh: { recommended: { min: 5.5, max: 6.5 } },
   light: {
-    sensorType: "binary-ldr",
-    requiredDuringLightingHours: 1,
+    sensorType: "percentage-ldr",
+    minimumPercentDuringLightingHours: LIGHT_SUFFICIENT_PERCENT,
     lightingHours: { start: 6, end: 18 },
   },
 };
@@ -61,7 +61,7 @@ const soybean: CropProfile = {
   temperature: { recommended: { min: 23, max: 25 }, tolerated: { min: 18, max: 32 }, overheating: { enterAtOrAbove: 33, recoverAtOrBelow: 30 } },
   airHumidity: { recommended: { min: 24, max: 80 }, dryAir: { enterBelow: 24, recoverAtOrAbove: 29 } },
   soilPh: { recommended: { min: 5.5, max: 7.5 } },
-  light: { sensorType: "binary-ldr", requiredDuringLightingHours: 1, lightingHours: { start: 6, end: 18 } },
+  light: { sensorType: "percentage-ldr", minimumPercentDuringLightingHours: LIGHT_SUFFICIENT_PERCENT, lightingHours: { start: 6, end: 18 } },
 };
 
 const cayennePepper: CropProfile = {
@@ -72,7 +72,7 @@ const cayennePepper: CropProfile = {
   temperature: { recommended: { min: 18, max: 30 }, tolerated: { min: 18, max: 30 }, overheating: { enterAtOrAbove: 31, recoverAtOrBelow: 29 } },
   airHumidity: { recommended: { min: 60, max: 80 }, dryAir: { enterBelow: 60, recoverAtOrAbove: 65 } },
   soilPh: { recommended: { min: 6, max: 7 } },
-  light: { sensorType: "binary-ldr", requiredDuringLightingHours: 1, lightingHours: { start: 6, end: 18 } },
+  light: { sensorType: "percentage-ldr", minimumPercentDuringLightingHours: LIGHT_SUFFICIENT_PERCENT, lightingHours: { start: 6, end: 18 } },
 };
 
 /** Only profiles with complete readings for every sensor in this kit are
@@ -118,7 +118,7 @@ export function evaluateCropEnvironment(
     light:
       snapshot?.light == null || !Number.isFinite(snapshot.light)
         ? "Waiting"
-        : !duringLightingHours || snapshot.light === profile.light.requiredDuringLightingHours
+        : !duringLightingHours || hasSufficientLight(snapshot.light)
           ? "Optimal"
           : "Low",
   } satisfies Record<string, AdvisoryStatus>;
@@ -136,3 +136,4 @@ export function toDeviceCropProfile(profile: CropProfile) {
     light: profile.light,
   };
 }
+import { hasSufficientLight, LIGHT_SUFFICIENT_PERCENT } from "@/lib/light-sensor";

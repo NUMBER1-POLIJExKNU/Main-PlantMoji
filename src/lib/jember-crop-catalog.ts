@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { EnvironmentCropProfile } from "@/lib/environment-analyzer";
 import type { AppLocale } from "@/lib/i18n";
+import { LIGHT_SUFFICIENT_PERCENT } from "@/lib/light-sensor";
 
 export interface ExplorerCrop extends EnvironmentCropProfile {
   scientificName: string;
@@ -39,7 +40,7 @@ export async function getJemberCropCatalog(supabase: SupabaseClient, locale: App
       temperature: { min: version.temperature_tolerated_min, max: version.temperature_tolerated_max },
       airHumidity: { min: version.air_humidity_recommended_min, max: version.air_humidity_recommended_max },
       soilPh: { min: version.soil_ph_recommended_min, max: version.soil_ph_recommended_max },
-      light: { required: version.binary_ldr_required_during_window, evaluateNow: inLightingWindow(now, version.lighting_window_start, version.lighting_window_end) },
+      light: { minimumPercent: version.binary_ldr_required_during_window === 1 ? LIGHT_SUFFICIENT_PERCENT : null, evaluateNow: inLightingWindow(now, version.lighting_window_start, version.lighting_window_end) },
     }];
   });
 }

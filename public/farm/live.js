@@ -47,7 +47,7 @@ function spawnBadgeTapEffect(rect) {
 // "JAMKACHU" and "PLANT MOJI" are proper nouns and are never translated.
 const COPY = {
   id: {
-    "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebunku", "nav.quests": "Rawat", "nav.plants": "Jelajah", "nav.memories": "Kenangan", "nav.status": "Sensor", "nav.collection": "Harta", "nav.reports": "Rekap", "nav.settings": "Alat",
+    "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebunku", "nav.quests": "Rawat", "nav.plants": "Jelajah", "nav.camera": "Kamera AI", "nav.memories": "Kenangan", "nav.status": "Sensor", "nav.collection": "Harta", "nav.shop": "Toko", "nav.reports": "Rekap", "nav.settings": "Alat",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
     "weather.loading": "Memuat prakiraan...",
@@ -72,7 +72,7 @@ const COPY = {
     questComplete: "Misi selesai!",
   },
   en: {
-    "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Care", "nav.plants": "Explore", "nav.memories": "Memories", "nav.status": "Sensors", "nav.collection": "Treasures", "nav.reports": "Recap", "nav.settings": "Tools",
+    "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Care", "nav.plants": "Explore", "nav.camera": "Camera AI", "nav.memories": "Memories", "nav.status": "Sensors", "nav.collection": "Treasures", "nav.shop": "Shop", "nav.reports": "Recap", "nav.settings": "Tools",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
     "weather.loading": "Loading forecast...",
@@ -3222,7 +3222,7 @@ function causalEcho(next) {
   }
   // Night guard (spec §6.2): inside the sleep window light diffs are normal
   // day/night physics — never celebrate light (nor treat 0 as a problem).
-  if (next.light === 1 && prevSensors.light === 0 && !isNightWIB()) {
+  if (next.light >= 30 && prevSensors.light < 30 && !isNightWIB()) {
     echoChip("light", "#env-light", PM().echo?.lightOn ?? ECHO_FALLBACK.lightOn);
   }
   if (next.temperature != null) prevSensors.temperature = next.temperature;
@@ -3256,13 +3256,13 @@ function renderSensors(reading) {
   }
 
   const light = Number(reading?.light);
-  if (reading?.light != null && (light === 0 || light === 1)) {
+  if (reading?.light != null && Number.isFinite(light) && light >= 0 && light <= 100) {
     lastVitals.light = light;
     // Night (spec §6.2): light=0 inside the 18:00–06:00 WIB window is
     // normal, not a problem — present it as "Night 🌙", never as "Dark".
     setText(
       "#env-light",
-      light === 1 ? t("bright") : isNightWIB() ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : t("dark"),
+      isNightWIB() && light < 30 ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : `${light}%`,
     );
   }
 
@@ -3275,7 +3275,7 @@ function renderSensors(reading) {
   causalEcho({
     temperature: reading?.temperature != null && Number.isFinite(temperature) ? temperature : null,
     humidity: reading?.humidity != null && Number.isFinite(humidity) ? humidity : null,
-    light: reading?.light != null && (light === 0 || light === 1) ? light : null,
+    light: reading?.light != null && Number.isFinite(light) && light >= 0 && light <= 100 ? light : null,
   });
 }
 

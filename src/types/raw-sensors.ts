@@ -1,4 +1,5 @@
 import type { CropProfile } from "@/lib/crop-profiles";
+import { hasSufficientLight, LIGHT_PERCENT_MAX, LIGHT_PERCENT_MIN } from "@/lib/light-sensor";
 import { normalizeMood, type PlantMood } from "@/types/events";
 
 export interface RawSensorReading {
@@ -6,7 +7,7 @@ export interface RawSensorReading {
   temperature: number;
   humidity: number;
   soilPH: number;
-  light: 0 | 1;
+  light: number;
   recordedAt: string;
   readingId: string;
 }
@@ -79,8 +80,8 @@ export function parseRawSensorReading(
   if (soilPH < 0 || soilPH > 14) {
     return { ok: false, error: "soilPH must be between 0 and 14" };
   }
-  if (light !== 0 && light !== 1) {
-    return { ok: false, error: "light must be 0 (dark) or 1 (bright)" };
+  if (light < LIGHT_PERCENT_MIN || light > LIGHT_PERCENT_MAX) {
+    return { ok: false, error: "light must be between 0 and 100%" };
   }
 
   const recordedAt = parseRecordedAt(body.recordedAt ?? body.timestamp, now);
@@ -114,7 +115,7 @@ export function parseRawSensorReading(
       temperature,
       humidity,
       soilPH,
-      light: light as 0 | 1,
+      light,
       recordedAt: recordedAtIso,
       readingId,
     },
@@ -156,7 +157,7 @@ export function determinePlantMood(
       ? reading.humidity < profile.airHumidity.dryAir.recoverAtOrAbove
       : reading.humidity < profile.airHumidity.dryAir.enterBelow;
   if (dryAir) return "DryAir";
-  if (duringLightingHours && reading.light !== profile.light.requiredDuringLightingHours) {
+  if (duringLightingHours && !hasSufficientLight(reading.light)) {
     return "Sleepy";
   }
   if (reading.soilPH < profile.soilPh.recommended.min) return "SoilAcidic";

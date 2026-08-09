@@ -16,13 +16,13 @@ import {
 export interface LightPoint {
   /** Unix timestamp (ms). */
   t: number;
-  /** Lux in "lux" mode; 0 | 1 in "binary" mode. */
+  /** Lux in "lux" mode; relative 0–100 in "percent" mode. */
   value: number;
 }
 
-/** "lux" plots real lux; "binary" is the fallback for old flows that only
- *  log the on/off `light` column. */
-export type LightMode = "lux" | "binary";
+/** `light` is Node-RED's calibrated relative percentage; `light_lux` remains
+ * available for installations that have a real lux conversion. */
+export type LightMode = "lux" | "percent";
 
 // Farm --color-water — the palette's blue, legible on the white .pm-panel
 // surface and close to the Node-RED original's line color.
@@ -53,11 +53,7 @@ function ChartTooltip({ mode, active, payload }: ChartTooltipProps) {
   return (
     <div className="rounded-lg border-2 border-[#BCD3B4] bg-white px-2.5 py-1.5 text-xs shadow-[0_3px_0_rgba(36,52,33,0.15)]">
       <p className="font-semibold tabular-nums text-[#243421]">
-        {mode === "lux"
-          ? `${point.value.toLocaleString("en-US")} lx`
-          : point.value >= 1
-            ? "Light on"
-            : "Light off"}
+        {mode === "lux" ? `${point.value.toLocaleString("en-US")} lx` : `${point.value}%`}
       </p>
       <p className="tabular-nums text-[#57684F]">{formatTime(point.t)}</p>
     </div>
@@ -80,12 +76,15 @@ export default function LightChart({
     for (const p of points) dataMax = Math.max(dataMax, p.value);
     yMax = Math.max(2000, Math.ceil(dataMax / 2000) * 2000);
     yTicks = [0, yMax / 4, yMax / 2, (3 * yMax) / 4, yMax];
+  } else {
+    yMax = 100;
+    yTicks = [0, 25, 50, 75, 100];
   }
 
   return (
     <div
       className="h-[260px] w-full text-[#57684F] tabular-nums"
-      aria-label={mode === "lux" ? "Light intensity history in lux" : "Light on/off history"}
+      aria-label={mode === "lux" ? "Light intensity history in lux" : "Relative light history in percent"}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={points} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
@@ -105,15 +104,14 @@ export default function LightChart({
             domain={[0, yMax]}
             ticks={yTicks}
             tickFormatter={
-              mode === "binary"
-                ? (v: number) => (v >= 1 ? "On" : "Off")
+              mode === "percent"
+                ? (v: number) => `${v}%`
                 : (v: number) => v.toLocaleString("en-US")
             }
             tick={{ fill: "currentColor", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            width={mode === "binary" ? 34 : 46}
-            padding={mode === "binary" ? { top: 12 } : undefined}
+            width={46}
           />
           <Tooltip
             content={<ChartTooltip mode={mode} />}

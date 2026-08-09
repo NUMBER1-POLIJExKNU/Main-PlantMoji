@@ -25,13 +25,16 @@ semantic-event envelope remains supported.
   "temperature": 23.5,
   "humidity": 55,
   "soilPH": 6.1,
-  "light": 1,
+  "light": 65,
   "timestamp": 1723075200000
 }
 ```
 
 - All four sensor fields are required JSON numbers.
-- `light` is binary: `1 = bright`, `0 = dark`.
+- `light` is Node-RED's calibrated relative value from `0` to `100` percent.
+  During configured lighting hours, values below `30` are Low and values at
+  or above `30` are sufficient for PlantMoji's operational rule. This is not
+  a lux, PPFD, DLI, yield, or complete crop-light suitability measurement.
 - `timestamp` is optional and may be epoch milliseconds or ISO 8601 with a
   timezone. When omitted, Vercel receipt time is used.
 - `readingId` is optional but strongly recommended. Reusing it makes a
@@ -61,8 +64,8 @@ return msg;
 ```
 
 The HTTP Request node method is `POST`, return type is parsed JSON, and its URL
-is the endpoint above. Deploy `supabase/milestone9-raw-sensor-ingest.sql`
-before switching the flow.
+is the endpoint above. Deploy `supabase/milestone9-raw-sensor-ingest.sql` and
+`supabase/milestone15-light-percentage.sql` before switching the flow.
 
 ## Response
 

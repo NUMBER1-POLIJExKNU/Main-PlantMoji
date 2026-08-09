@@ -4,12 +4,12 @@ import { analyzeEnvironment, compareEnvironmentToCrops, type EnvironmentCropProf
 const crop = (key: string, order = 1): EnvironmentCropProfile => ({
   key, displayName: key, status: "draft", catalogOrder: order,
   temperature: { min: 20, max: 30 }, airHumidity: { min: 60, max: 80 }, soilPh: { min: 5.5, max: 7 },
-  light: { required: 1, evaluateNow: true },
+  light: { minimumPercent: 30, evaluateNow: true },
 });
 
 describe("Environment Analyzer", () => {
   it("reports transparent matches and boundary values", () => {
-    const result = analyzeEnvironment({ temperature: 20, humidity: 80, soilPh: 5.5, light: 1 }, crop("chili"));
+    const result = analyzeEnvironment({ temperature: 20, humidity: 80, soilPh: 5.5, light: 30 }, crop("chili"));
     expect(result.matchedConditions).toBe(4); expect(result.evaluatedConditions).toBe(4); expect(result.label).toBe("excellent");
   });
   it("distinguishes low, high, missing, and unavailable values", () => {
@@ -19,17 +19,21 @@ describe("Environment Analyzer", () => {
     expect(result.conditions.airHumidity.status).toBe("not_evaluated"); expect(result.conditions.light.status).toBe("not_evaluated");
     expect(result.evaluatedConditions).toBe(2);
   });
-  it("does not evaluate binary light outside its window", () => {
+  it("does not evaluate relative light outside its window", () => {
     const profile = crop("rice"); profile.light.evaluateNow = false;
     expect(analyzeEnvironment({ temperature: 25, humidity: 70, soilPh: 6, light: 0 }, profile).conditions.light.status).toBe("not_evaluated");
   });
+  it("uses 30% as the inclusive relative-light boundary", () => {
+    expect(analyzeEnvironment({ temperature: 25, humidity: 70, soilPh: 6, light: 29.9 }, crop("rice")).conditions.light).toMatchObject({ status: "mismatch", direction: "low" });
+    expect(analyzeEnvironment({ temperature: 25, humidity: 70, soilPh: 6, light: 30 }, crop("rice")).conditions.light.status).toBe("match");
+  });
   it("ranks deterministically by matches, evaluated count, then catalog order", () => {
-    const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 1 };
+    const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 60 };
     const results = compareEnvironmentToCrops(snapshot, [crop("second", 2), crop("first", 1)]);
     expect(results.map((item) => item.cropKey)).toEqual(["first", "second"]);
   });
   it("uses the crop key as a stable final tie-break when catalog order is unavailable", () => {
-    const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 1 };
+    const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 60 };
     const beta = crop("beta"); beta.catalogOrder = null;
     const alpha = crop("alpha"); alpha.catalogOrder = null;
     expect(compareEnvironmentToCrops(snapshot, [beta, alpha]).map((item) => item.cropKey)).toEqual(["alpha", "beta"]);

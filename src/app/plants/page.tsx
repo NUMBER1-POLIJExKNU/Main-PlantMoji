@@ -51,8 +51,8 @@ const PAGE_COPY = {
     waiting: "Menunggu sensor",
     tolerated: "ditoleransi",
     recommended: "disarankan",
-    lightGuide: "LDR harus 1 saat jam pencahayaan",
-    ldrNote: "LDR hanya membaca terang (1) atau gelap (0). Nilai ini tidak mengukur intensitas cahaya atau kecukupan DLI.",
+    lightGuide: "LDR minimal 30% saat jam pencahayaan",
+    ldrNote: "LDR menampilkan tingkat cahaya relatif 0–100%. Nilai ini bukan lux dan tidak mengukur PPFD, DLI, atau kecukupan cahaya agronomis.",
     latest: "Pembacaan terakhir",
     sources: "Sumber panduan",
   },
@@ -72,8 +72,8 @@ const PAGE_COPY = {
     waiting: "Waiting for sensors",
     tolerated: "tolerated",
     recommended: "recommended",
-    lightGuide: "LDR 1 during lighting hours",
-    ldrNote: "The LDR only detects bright (1) or dark (0). It does not indicate light intensity or DLI sufficiency.",
+    lightGuide: "LDR at least 30% during lighting hours",
+    ldrNote: "The LDR reports a relative 0–100% light level. It is not lux and does not measure PPFD, DLI, or agronomic light sufficiency.",
     latest: "Latest reading",
     sources: "Guide sources",
   },
@@ -143,7 +143,7 @@ export default async function PlantsPage() {
         <Metric locale={locale} guideLabel={copy.guide} icon="🌡️" label={copy.temperature} guide={`${profile.temperature.tolerated.min}–${profile.temperature.tolerated.max}°C ${copy.tolerated} · ${profile.temperature.recommended.min}–${profile.temperature.recommended.max}°C ${copy.recommended}`} value={shown(snapshot?.temperature, "°C")} status={states.temperature} />
         <Metric locale={locale} guideLabel={copy.guide} icon="💧" label={copy.humidity} guide={`${profile.airHumidity.recommended.min}–${profile.airHumidity.recommended.max}% RH`} value={shown(snapshot?.humidity, "%")} status={states.airHumidity} />
         <Metric locale={locale} guideLabel={copy.guide} icon="🧪" label={copy.soilPh} guide={`${profile.soilPh.recommended.min}–${profile.soilPh.recommended.max}`} value={shown(snapshot?.soilPh, "")} status={states.soilPh} />
-        <Metric locale={locale} guideLabel={copy.guide} icon="☀️" label={copy.light} guide={`${copy.lightGuide} ${profile.light.lightingHours.start}:00–${profile.light.lightingHours.end}:00`} value={shown(snapshot?.light, "")} status={states.light} />
+        <Metric locale={locale} guideLabel={copy.guide} icon="☀️" label={copy.light} guide={`${copy.lightGuide} ${profile.light.lightingHours.start}:00–${profile.light.lightingHours.end}:00`} value={shown(snapshot?.light, "%")} status={states.light} />
       </section>
       <section className="pm-panel mt-5" aria-labelledby="environment-explanation-title">
         <h2 id="environment-explanation-title" className="pm-heading text-xs">✨ {locale === "id" ? "Penjelasan lingkungan" : "Environment explanation"}</h2>

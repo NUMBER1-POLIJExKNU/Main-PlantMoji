@@ -5,7 +5,7 @@ import type { SensorSnapshot } from "@/lib/crop-profiles";
 export const ENVIRONMENT_DEMO_SNAPSHOT: SensorSnapshot = {
   temperature: 31.2,
   humidity: 70,
-  light: 1,
+  light: 65,
   soilPh: 5.2,
   recordedAt: null,
 };

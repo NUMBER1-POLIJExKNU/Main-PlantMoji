@@ -20,7 +20,7 @@ describe("GET /api/environment-scan demo mode", () => {
     mocks.getJemberCropCatalog.mockResolvedValue([{
       key: "demo-crop", displayName: "Demo crop", status: "draft", catalogOrder: 1,
       temperature: { min: 20, max: 30 }, airHumidity: { min: 60, max: 80 },
-      soilPh: { min: 5.5, max: 7 }, light: { required: 1, evaluateNow: true },
+      soilPh: { min: 5.5, max: 7 }, light: { minimumPercent: 30, evaluateNow: true },
     }]);
   });
 
@@ -28,7 +28,7 @@ describe("GET /api/environment-scan demo mode", () => {
     const response = await GET(new Request("http://localhost/api/environment-scan?demo=1&locale=en"));
     const body = await response.json();
     expect(response.status).toBe(200);
-    expect(body).toMatchObject({ ok: true, source: "demo", snapshot: { temperature: 31.2, humidity: 70, light: 1, soilPh: 5.2 } });
+    expect(body).toMatchObject({ ok: true, source: "demo", snapshot: { temperature: 31.2, humidity: 70, light: 65, soilPh: 5.2 } });
     expect(body.results[0]).toMatchObject({ cropKey: "demo-crop", matchedConditions: 2, evaluatedConditions: 4 });
     expect(mocks.getLatestSensorSnapshot).not.toHaveBeenCalled();
   });

@@ -92,7 +92,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-vt323), "VT323", monospace;
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-press-start-2p), "Press Start 2P", monospace;
   --font-pixel-body: var(--font-vt323), "VT323", monospace;
@@ -101,8 +101,11 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), "Segoe UI", system-ui, Arial, Helvetica, sans-serif;
+  font-family: var(--font-vt323), "VT323", monospace;
+  font-size: 19px;
 }
+
+button, input, select, textarea { font: inherit; }
 
 /* ------------------------------------------------------------------ */
 /* Cozy Pixel Farm — design tokens (ported from public/farm/style.css) */
@@ -134,8 +137,33 @@ body {
   --pm-radius: 16px;
   --pm-shadow: 0 4px 0 rgba(36, 52, 33, 0.15);
   --pm-font-pixel: var(--font-press-start-2p), "Press Start 2P", monospace;
-  --pm-font-body: var(--font-geist-sans), "Segoe UI", system-ui, sans-serif;
+  --pm-font-body: var(--font-vt323), "VT323", monospace;
 }
+
+html[data-theme="night"] {
+  --background: #151d25;
+  --foreground: #eef5e9;
+  --color-sky: #202b4c;
+  --color-sky-glow: #34416c;
+  --color-bg: #1d2925;
+  --color-surface: #26352f;
+  --color-border: #55705d;
+  --color-text: #eef5e9;
+  --color-outline: #101712;
+  --color-forest: #8fd37d;
+  --color-primary: #78c965;
+  --pm-shadow: 0 4px 0 rgba(5, 10, 7, 0.45);
+  color-scheme: dark;
+}
+
+html[data-theme="night"] .text-\[\#243421\] { color: var(--color-text); }
+html[data-theme="night"] .text-\[\#57684F\] { color: #b8c9bb; }
+html[data-theme="night"] .bg-white { background-color: var(--color-surface); }
+html[data-theme="night"] .bg-\[\#F4FAF1\] { background-color: #203029; }
+html[data-theme="night"] .bg-\[\#E8F6E0\] { background-color: #29452e; }
+html[data-theme="night"] .bg-\[\#FFF7DF\] { background-color: #403a25; }
+html[data-theme="night"] .text-\[\#397A2B\] { color: #9cdb89; }
+html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
 
 /* ------------------------------------------------------------------ */
 /* Farm utility classes — the shared contract for every React page.   */
@@ -565,10 +593,55 @@ body {
   min-height: 100vh;
   overflow: hidden;
   color: var(--color-text);
-  color-scheme: light;
+  color-scheme: inherit;
   background: radial-gradient(circle at 50% 30%, var(--color-sky-glow) 0%, var(--color-sky) 100%);
   font-family: var(--pm-font-body);
 }
+
+html[data-theme="night"] .reno-env-sun {
+  width: 86px;
+  height: 86px;
+  background: #eef1cf;
+  box-shadow: 0 0 46px rgba(238, 241, 207, 0.45);
+}
+html[data-theme="night"] .reno-env-sun::after {
+  content: "";
+  position: absolute;
+  inset: -8px -2px 8px 24px;
+  border-radius: 50%;
+  background: var(--color-sky-glow);
+}
+html[data-theme="night"] .reno-env-cloud { opacity: .32; filter: brightness(.7); }
+
+html[data-farm-skin="coffee-hills"] .reno-app-shell {
+  background:
+    radial-gradient(ellipse at 15% 88%, #315b38 0 17%, transparent 18%),
+    radial-gradient(ellipse at 55% 92%, #477348 0 25%, transparent 26%),
+    radial-gradient(circle at 50% 25%, var(--color-sky-glow), var(--color-sky));
+}
+html[data-farm-skin="coffee-hills"] .reno-env-particles {
+  background-image: radial-gradient(rgba(239,247,230,.55) 2px, transparent 2px);
+  background-size: 54px 38px;
+  opacity: .7;
+}
+html[data-farm-skin="greenhouse"] .reno-app-shell {
+  background:
+    linear-gradient(90deg, transparent 48%, rgba(255,255,255,.22) 49% 51%, transparent 52%) 0 0/130px 100%,
+    linear-gradient(180deg, transparent 48%, rgba(255,255,255,.16) 49% 51%, transparent 52%) 0 0/100% 100px,
+    radial-gradient(circle at 50% 30%, var(--color-sky-glow), var(--color-sky));
+}
+html[data-farm-skin="greenhouse"] .reno-env-cloud { display: none; }
+
+.reno-appearance-controls {
+  display: grid;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 2px dashed color-mix(in srgb, var(--color-text) 18%, transparent);
+}
+.reno-appearance-controls label { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 6px; }
+.reno-appearance-controls label > span { font: 7px/1.3 var(--pm-font-pixel); color: var(--color-text); opacity: .65; }
+.reno-appearance-controls select { min-width: 0; border: 2px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); padding: 5px; font-family: var(--pm-font-body); font-size: 15px; }
 
 .reno-env-background {
   position: fixed;
@@ -697,6 +770,17 @@ body {
   transform: translateX(6px);
   background: var(--color-bg);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.reno-nav-disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.reno-nav-disabled:hover {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .reno-nav-item.active {
@@ -957,14 +1041,14 @@ body {
     left: 8px;
     z-index: 80;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 2px;
     width: auto;
     padding: 6px;
     overflow: visible;
     border: 3px solid var(--color-border);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.97);
+    background: color-mix(in srgb, var(--color-surface) 97%, transparent);
     box-shadow: 0 5px 0 rgba(36, 52, 33, 0.16);
     backdrop-filter: blur(10px);
   }
@@ -1005,6 +1089,22 @@ body {
     padding: 6px 4px;
     font-size: 8px;
   }
+
+  .reno-appearance-controls {
+    position: fixed;
+    top: 78px;
+    right: 8px;
+    z-index: 75;
+    grid-template-columns: 1fr 1fr;
+    width: min(250px, calc(100vw - 16px));
+    margin: 0;
+    padding: 6px;
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    box-shadow: var(--pm-shadow);
+  }
+  .reno-appearance-controls label { grid-template-columns: 34px 1fr; }
 
   .reno-route-content {
     flex: none;

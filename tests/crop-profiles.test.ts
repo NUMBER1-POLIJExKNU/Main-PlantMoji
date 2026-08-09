@@ -32,7 +32,7 @@ describe("strawberry crop profile", () => {
 
   it("classifies the requested temperature and humidity advisory boundaries", () => {
     const reading = (temperature: number, humidity: number) =>
-      evaluateCropEnvironment({ temperature, humidity, soilPh: 6, light: 1 }, profile);
+      evaluateCropEnvironment({ temperature, humidity, soilPh: 6, light: 60 }, profile);
     expect(reading(27, 40).temperature).toBe("Optimal");
     expect(reading(28, 40).temperature).toBe("High");
     expect(reading(26, 40).temperature).toBe("Optimal");
@@ -44,12 +44,12 @@ describe("strawberry crop profile", () => {
   it.each([
     [5.49, "Low"], [5.5, "Optimal"], [6.5, "Optimal"], [6.51, "High"],
   ] as const)("classifies pH %s as %s", (soilPh, expected) => {
-    expect(evaluateCropEnvironment({ temperature: 20, humidity: 40, soilPh, light: 1 }, profile).soilPh).toBe(expected);
+    expect(evaluateCropEnvironment({ temperature: 20, humidity: 40, soilPh, light: 60 }, profile).soilPh).toBe(expected);
   });
 
   it("classifies waiting, low and high sensor states", () => {
     expect(evaluateCropEnvironment(null, profile)).toEqual({ temperature: "Waiting", airHumidity: "Waiting", soilPh: "Waiting", light: "Waiting" });
     expect(evaluateCropEnvironment({ temperature: 14, humidity: 39, soilPh: 5.49, light: 0 }, profile)).toEqual({ temperature: "Low", airHumidity: "Low", soilPh: "Low", light: "Low" });
-    expect(evaluateCropEnvironment({ temperature: 28, humidity: 61, soilPh: 6.51, light: 1 }, profile)).toEqual({ temperature: "High", airHumidity: "High", soilPh: "High", light: "Optimal" });
+    expect(evaluateCropEnvironment({ temperature: 28, humidity: 61, soilPh: 6.51, light: 30 }, profile)).toEqual({ temperature: "High", airHumidity: "High", soilPh: "High", light: "Optimal" });
   });
 });

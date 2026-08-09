@@ -24,7 +24,7 @@
        readable system sans for body copy. VT323 retires from body. */
     --font-display: 'Press Start 2P', monospace;
     --font-heading: var(--font-display);
-    --font-body: "Segoe UI", system-ui, sans-serif;
+    --font-body: 'VT323', monospace;
 
     /* Modern Glass UI mixed with Game aesthetics */
     --ui-bg: rgba(255, 255, 255, 0.7);
@@ -41,7 +41,7 @@
 
 body {
     font-family: var(--font-body);
-    font-size: 16px;
+    font-size: 19px;
     background-color: var(--color-sky);
     color: var(--color-text);
     overflow: hidden;
@@ -1375,7 +1375,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         left: 8px;
         z-index: 100;
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         gap: 2px;
         width: auto;
         padding: 6px;

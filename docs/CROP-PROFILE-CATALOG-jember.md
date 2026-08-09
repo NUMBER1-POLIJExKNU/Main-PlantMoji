@@ -34,7 +34,7 @@ The values below are research baselines, not yet automatic quest thresholds. Exc
 | Kopi robusta | 20–24°C | 18–32°C | 45–80% | 5.3–6.0 | Clear/cloudy; growth-stage shade matters |
 | Tebu | 24–30°C | 21–34°C | ≤70% | 5.5–7.5 | Very bright; official guide also uses annual sunshine hours |
 | Kedelai | 23–25°C | 18–32°C | 24–80% | 5.5–7.5 | Very bright |
-| Cabai rawit | 18–30°C | 18–30°C¹ | 60–80% | 6.0–7.0 | Bright during daylight; binary LDR only |
+| Cabai rawit | 18–30°C | 18–30°C¹ | 60–80% | 6.0–7.0 | Bright during daylight; relative LDR only |
 | Semangka | 22–30°C | 18–35°C | 24–80% | 5.8–7.6 | Clear skies / very bright |
 | Cabai merah besar | 21–27°C | 14–30°C | Not supplied in the official S1 table | 6.0–7.6 | Very bright |
 
@@ -42,7 +42,13 @@ Open-ended values such as `≥42%` are represented with one nullable bound in th
 
 ¹ The official cabai rawit guide gives a cultivation range but no separate tolerance band, so the draft repeats 18–30°C until local review.
 
-The hardware LDR is binary. Every profile therefore stores only whether a bright reading (`1`) is expected in the configured daytime window. `quantitative_light_claim` is constrained to `false`, so the database does not claim to measure lux, PPFD, or DLI.
+Node-RED publishes the calibrated LDR output as a relative 0–100% value. The
+runtime uses an operational classroom boundary of 30% during the configured
+daytime window. This percentage is not a crop-specific light requirement and
+does not measure lux, PPFD, DLI, or photosynthetic sufficiency. The catalog's
+legacy `binary_ldr_required_during_window` field only records whether a crop
+expects a daytime light check; it does not convert the percentage into an
+agronomic claim. `quantitative_light_claim` therefore remains `false`.
 
 ## Activation rule
 
