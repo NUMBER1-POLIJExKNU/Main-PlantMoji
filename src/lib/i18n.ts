@@ -1,4 +1,4 @@
-import type { BadgeKey, QuestKey } from "@/types/game";
+import type { BadgeKey, CareAffinity, CompanionStage, QuestKey } from "@/types/game";
 import type { PlantMood } from "@/types/events";
 
 export const APP_LOCALE_COOKIE = "plantmoji_locale";
@@ -188,4 +188,42 @@ export const DAILY_EVENT_COPY_ID: Record<string, { name: string; description: st
 
 export function questCopy(locale: AppLocale, key: QuestKey, fallback: LocalizedQuestCopy) {
   return locale === "id" ? QUEST_COPY_ID[key] : fallback;
+}
+
+// ── Companion evolution ladder labels ────────────────────────────────────
+// Localized names for the 10 companion stages (COMPANION_STAGES order) and
+// the care-affinity forms. Word-for-word mirror of the farm layer's
+// public/farm/strings.js `companionStage`/`companionForm` tables so React
+// pages and the farm home never use two different words for one stage.
+export const companionStageNames: Record<CompanionStage, { en: string; id: string }> = {
+  Seed: { en: "Seed", id: "Benih" },
+  Sprout: { en: "Sprout", id: "Kecambah" },
+  Seedling: { en: "Seedling", id: "Semai" },
+  Bud: { en: "Bud", id: "Kuncup" },
+  Bloom: { en: "Bloom", id: "Mekar" },
+  Fruit: { en: "Fruit", id: "Berbuah" },
+  Guardian: { en: "Guardian", id: "Penjaga" },
+  Elder: { en: "Elder", id: "Tetua" },
+  Radiant: { en: "Radiant", id: "Bercahaya" },
+  Legend: { en: "Legend", id: "Legenda" },
+};
+
+export const companionFormNames: Record<CareAffinity, { en: string; id: string }> = {
+  cool: { en: "Cool-headed", id: "Kepala dingin" },
+  air: { en: "Fresh-air", id: "Udara segar" },
+  light: { en: "Sun-chaser", id: "Pengejar cahaya" },
+  soil: { en: "Soil-wise", id: "Paham tanah" },
+  steady: { en: "Steady", id: "Tekun" },
+  balanced: { en: "Balanced", id: "Seimbang" },
+};
+
+/** Localized companion stage label. Unknown stage strings (old client / new
+ *  DB or vice versa) fall back to the raw value — never a crash. */
+export function companionStageLabel(locale: AppLocale, stage: string): string {
+  return (companionStageNames as Record<string, { en: string; id: string }>)[stage]?.[locale] ?? stage;
+}
+
+/** Localized care-affinity form label; unknown forms fall back to the raw value. */
+export function companionFormLabel(locale: AppLocale, form: string): string {
+  return (companionFormNames as Record<string, { en: string; id: string }>)[form]?.[locale] ?? form;
 }

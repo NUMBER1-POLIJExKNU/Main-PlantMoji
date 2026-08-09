@@ -242,20 +242,33 @@ let currentCompanionStage = "Seed";
 const DIALOGUE_RECENT_KEY = "pm_dialogue_recent_v1";
 const DIALOGUE_RECENT_LIMIT = 20;
 
-// Stage ladder — today's five companion stages. Hardcoded here until the
-// (not yet shipped) evolution-ladder plan's window.PM_LADDER / PM_NEXT_STAGE
-// replace it; every stage-order lookup in this file (rank comparisons, the
-// evolution ceremony's silhouette swap) derives from this ONE array so the
-// eventual swap-over only touches this one constant.
-const STAGE_ORDER = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"];
+// Stage ladder — derived from window.PM_LADDER (companion-ladder.js, loaded
+// before this module; parity-tested against src/types/game.ts
+// COMPANION_LADDER). Every stage-order lookup in this file (rank
+// comparisons, the evolution ceremony's silhouette swap) derives from this
+// ONE array. The literal fallback exists only for stub environments where
+// the ladder script tag is missing — same 10 names, same order.
+const STAGE_ORDER =
+  Array.isArray(window.PM_LADDER) && window.PM_LADDER.length > 0
+    ? window.PM_LADDER.map((row) => row.stage)
+    : ["Seed", "Sprout", "Seedling", "Bud", "Bloom", "Fruit", "Guardian", "Elder", "Radiant", "Legend"];
 
 // One-time-per-stage guard for the evolution ceremony (Pokémon-Style
 // Transformation FX plan, Task 4): a single localStorage flag naming the
-// last stage the ceremony has already played for, so a duplicate/replayed
-// companion_state row (a flaky realtime reconnect, a poll repeat) can never
-// replay the ~7s sequence twice for the same real evolution.
+// last "<cycle>:<stage>" the ceremony has already played for (cycle-aware
+// per the evolution-ladder plan, Task 7 — a future rebirth cycle reaching
+// the same stage celebrates again), so a duplicate/replayed companion_state
+// row (a flaky realtime reconnect, a poll repeat) can never replay the ~7s
+// sequence twice for the same real evolution.
 const EVO_SEEN_KEY = "pm_evo_seen";
 let prevCompanionStage = null; // null = not yet rendered (first render never celebrates)
+
+// Demo-preview ladder cursor for PMFx.evolve(): repeated presses of the E
+// hotkey walk consecutive ceremonies up ALL ten stages instead of replaying
+// the same pair (the real currentCompanionStage only moves on data renders).
+// null = no preview active; any real renderCompanion() resets it, because
+// real companion_state always wins over a presentation preview.
+let evoDemoStage = null;
 
 // Captured from renderBond's `plantName` arg — the evolution ceremony's
 // dialog (below) needs a display name outside main()'s closure-local
@@ -283,31 +296,78 @@ function chooseFreshDialogue(candidates) {
   return line;
 }
 
+/** Honest next-stage progress line under the identity label (evolution-
+ *  ladder plan, Task 5). Reads ONLY companion_state counters written by the
+ *  backend sweep + the display-only ladder mirror — when the ladder script
+ *  or the milestone16 counter columns are missing, the line hides entirely
+ *  rather than inventing numbers. Presentation only, zero writes. */
+function renderCompanionNext(stage, state) {
+  const next = $("#companion-next");
+  if (!next) return;
+  if (typeof window.PM_NEXT_STAGE !== "function") {
+    next.textContent = ""; // ladder mirror not loaded: hide, never guess
+    return;
+  }
+  const req = window.PM_NEXT_STAGE(stage);
+  if (!req) {
+    // Top of the ladder (Legend) — a quiet "fully grown" line instead.
+    next.textContent = PM().companionMax ?? "";
+    return;
+  }
+  const haveCounts = Number.isFinite(state.care_count) && Number.isFinite(state.day_count);
+  if (!haveCounts) {
+    next.textContent = ""; // pre-milestone16 DB: counters absent — hide
+    return;
+  }
+  // Only axes the next stage actually requires render (ladder req > 0) — a
+  // Seedling must never see "days 2/0" for Bud's zero-day requirement. The
+  // affinity axis additionally needs its own counter (older DBs / the legacy
+  // three-column fallback select omit affinity_count — skip, never guess).
+  const t = PM().companionNext;
+  const segments = [];
+  if (req.care > 0) segments.push(t?.care?.(state.care_count, req.care));
+  if (req.affinities > 0 && Number.isFinite(state.affinity_count)) {
+    segments.push(t?.affinity?.(state.affinity_count, req.affinities));
+  }
+  if (req.days > 0) segments.push(t?.days?.(state.day_count, req.days));
+  const parts = segments.filter((part) => typeof part === "string" && part);
+  const stageName = PM().companionStage?.[req.stage] ?? req.stage;
+  // No renderable segment (defensive: strings table missing) — hide, as ever.
+  next.textContent = parts.length ? (t?.line?.(stageName, parts.join(" · ")) ?? "") : "";
+}
+
 function renderCompanion(state) {
-  if (!state) return; // migration absent: preserve the original mascot
+  if (!state || typeof state.stage !== "string") return; // migration absent: preserve the original mascot
   const stage = STAGE_ORDER.includes(state.stage) ? state.stage : "Seed";
   currentCompanionStage = stage;
-  const form = state.form_key || "balanced";
+  const form = typeof state.form_key === "string" && state.form_key ? state.form_key : "balanced";
   const label = $("#companion-stage");
-  if (label) label.textContent = `COMPANION · ${stage.toUpperCase()} · ${String(form).toUpperCase()}`;
+  if (label) {
+    const stageName = PM().companionStage?.[stage] ?? stage;
+    const formName = PM().companionForm?.[form] ?? form;
+    label.textContent = `${PM().companionWord ?? "COMPANION"} · ${stageName} · ${formName}`;
+  }
   const svg = $(".mascot-svg");
   if (svg) {
     for (const value of STAGE_ORDER) svg.classList.remove(`companion-${value}`);
     svg.classList.add(`companion-${stage}`);
     svg.dataset.companionForm = form;
   }
-  // Evolution ceremony trigger (evolution-ladder plan's wiring, implemented
-  // early per the transformation-FX plan's deviation notes): a real RANK
-  // INCREASE past the first render fires the T5 ceremony once per stage.
-  // Never fires on the first render, a same-stage repeat, or backward (no
-  // de-evolution exists).
+  renderCompanionNext(stage, state);
+  evoDemoStage = null; // real data render: the E-hotkey preview cursor resets
+  // Evolution ceremony trigger (evolution-ladder plan, Task 7): a real RANK
+  // INCREASE past the first render fires the T5 ceremony once per
+  // cycle+stage. Never fires on the first render (prevCompanionStage starts
+  // null), a same-stage repeat, or backward (the engine never demotes).
   const priorStage = prevCompanionStage;
   prevCompanionStage = stage;
   if (priorStage !== null && STAGE_ORDER.indexOf(stage) > STAGE_ORDER.indexOf(priorStage)) {
+    const seenKey = `${state.cycle ?? 1}:${stage}`;
     let seen = null;
     try { seen = localStorage.getItem(EVO_SEEN_KEY); } catch {}
-    if (seen !== stage) {
-      try { localStorage.setItem(EVO_SEEN_KEY, stage); } catch {}
+    if (seen !== seenKey) {
+      // Marked BEFORE the ceremony plays — crash-safe, no double ceremony.
+      try { localStorage.setItem(EVO_SEEN_KEY, seenKey); } catch {}
       fxEvolve(priorStage, stage);
     }
   }
@@ -3627,9 +3687,13 @@ async function runEvolutionSequence(oldStage, newStage) {
       window.PMSfx?.evoFanfare();
       spawnEvoStars(28);
     }
+    // Announcement precedence: full evo line → strings.js companionEvolved
+    // (still localized, stage-only) → hard-coded English EVO_FALLBACK.
+    const evoStageName = localizedStage(newStage);
     const evolvedLine =
-      PM().evo?.evolved?.(currentPlantName(), localizedStage(newStage)) ??
-      EVO_FALLBACK.evolved(currentPlantName(), localizedStage(newStage));
+      PM().evo?.evolved?.(currentPlantName(), evoStageName) ??
+      PM().companionEvolved?.(evoStageName) ??
+      EVO_FALLBACK.evolved(currentPlantName(), evoStageName);
     const tapHint = PM().evo?.tapToContinue;
     speechBubble(tapHint ? `${evolvedLine} · ${tapHint}` : evolvedLine);
     await dismissOrTimeout(6000); // tap-to-continue, kiosk-safe
@@ -3688,18 +3752,24 @@ window.PMFx = {
   pod() {
     fxEnqueue(3, (done) => podDrop({ quest_key: "KEEP_ME_HAPPY", xp_reward: PMFX_DEMO_XP }, done), POD_AUTO_BURST_MS + 700);
   },
-  /** T5 evolution ceremony preview: current rendered stage → the next one
-   *  in STAGE_ORDER. Already at the last stage (Guardian)? Wrap the DEMO
-   *  PAIR to Seed→Sprout (not Guardian→Seed, which would read as
-   *  de-evolution) so presenters can always show the full ceremony.
-   *  Presentation only — real stage classes re-assert from the next
-   *  renderCompanion(), same contract as PMFx.levelUp(); this bypasses the
-   *  pm_evo_seen guard on purpose (nothing real is being presented). */
+  /** T5 evolution ceremony preview, walking the ladder: the first press
+   *  starts from the real rendered stage, and every following press
+   *  continues from the last previewed stage (evoDemoStage advances at
+   *  enqueue time, so two quick presses queue two CONSECUTIVE ceremonies)
+   *  — repeated E presses demonstrate all ten stages. At the top (Legend)
+   *  the DEMO PAIR wraps to Seed→Sprout (not Legend→Seed, which would read
+   *  as de-evolution) so presenters can always show the full ceremony.
+   *  Presentation only — real stage classes re-assert (and the cursor
+   *  resets) on the next renderCompanion(), same contract as
+   *  PMFx.levelUp(); this bypasses the pm_evo_seen guard on purpose
+   *  (nothing real is being presented). */
   evolve() {
-    const idx = STAGE_ORDER.indexOf(currentCompanionStage);
+    const base = STAGE_ORDER.includes(evoDemoStage) ? evoDemoStage : currentCompanionStage;
+    const idx = STAGE_ORDER.indexOf(base);
     const hasNext = idx >= 0 && idx < STAGE_ORDER.length - 1;
-    const oldStage = hasNext ? currentCompanionStage : STAGE_ORDER[0];
+    const oldStage = hasNext ? base : STAGE_ORDER[0];
     const newStage = hasNext ? STAGE_ORDER[idx + 1] : STAGE_ORDER[1];
+    evoDemoStage = newStage;
     fxEvolve(oldStage, newStage);
   },
 };
@@ -4903,7 +4973,27 @@ async function main() {
         .limit(6)
         .then((res) => res)
         .catch(() => ({ data: null })),
-      supabase.from("companion_state").select("stage, form_key, updated_at").eq("plant_id", PLANT_ID).maybeSingle().then((res) => res).catch(() => ({ data: null })),
+      // Companion state incl. milestone16 progress counters (+ cycle for the
+      // ceremony's once-per-stage key). Pre-milestone16 DBs reject the
+      // unknown columns via PostgREST — retry the legacy three-column select
+      // so old databases keep rendering (the progress line just hides).
+      supabase
+        .from("companion_state")
+        .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")
+        .eq("plant_id", PLANT_ID)
+        .maybeSingle()
+        .then((res) =>
+          res?.error
+            ? supabase
+                .from("companion_state")
+                .select("stage, form_key, updated_at")
+                .eq("plant_id", PLANT_ID)
+                .maybeSingle()
+                .then((legacy) => (legacy?.error ? { data: null } : legacy))
+                .catch(() => ({ data: null }))
+            : res,
+        )
+        .catch(() => ({ data: null })),
       // Shop purchases (milestone18): failure-tolerant like companionRes —
       // a missing milestone18 migration must never break the page.
       supabase.from("shop_purchases").select("item_key, category, equipped").eq("plant_id", PLANT_ID).then((res) => res).catch(() => ({ data: null })),

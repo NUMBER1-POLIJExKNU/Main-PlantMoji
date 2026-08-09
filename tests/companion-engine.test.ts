@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { affinityForQuest, careForm, eligibleCompanionStage, evaluateCompanion, type VerifiedCare } from "@/game/companion/companion-engine";
+import { beforeEach, describe, expect, it } from "vitest";
+import { affinityForQuest, careForm, eligibleCompanionStage, evaluateCompanion, resetCompanionCountersForTests, type VerifiedCare } from "@/game/companion/companion-engine";
 import type { QuestKey } from "@/types/game";
+
+// The engine memoizes "milestone16 counters unsupported" per process.
+beforeEach(() => resetCompanionCountersForTests());
 
 const care = (keys: QuestKey[], days = 1): VerifiedCare[] => keys.map((questKey, index) => ({
   questKey,
@@ -70,18 +73,22 @@ describe("10-stage ladder", () => {
   });
 });
 
-type StateUpsertError = { code?: string; message: string };
+type DbError = { code?: string; message: string };
+type UpdateCall = { payload: Record<string, unknown>; filters: Record<string, unknown> };
 
 /** Fake Supabase client for evaluateCompanion sweeps: seeded companion_state row,
- *  completed-quest rows, and an optional queue of companion_state upsert errors
- *  (each shifted once, in order) to simulate missing milestone16 columns. */
+ *  completed-quest rows, an optional per-upsert error hook (to simulate legacy
+ *  CHECK constraints / missing milestone16 columns), and an optional queue of
+ *  companion_state update errors (each shifted once, in order). */
 function sweepClient(options: {
   state: Record<string, unknown> | null;
   care?: { quest_key: string; completed_at: string }[];
-  stateUpsertErrors?: StateUpsertError[];
+  onUpsert?: (table: string, payload: Record<string, unknown>) => DbError | null;
+  stateUpdateErrors?: DbError[];
 }) {
-  const upserts: Record<string, unknown[]> = {};
-  const pendingStateErrors = [...(options.stateUpsertErrors ?? [])];
+  const upserts: Record<string, Record<string, unknown>[]> = {};
+  const updates: Record<string, UpdateCall[]> = {};
+  const pendingUpdateErrors = [...(options.stateUpdateErrors ?? [])];
   const client = {
     from(table: string) {
       return {
@@ -93,56 +100,80 @@ function sweepClient(options: {
             maybeSingle: async () => ({ data: options.state, error: null }),
           }),
         }),
-        upsert: async (payload: unknown) => {
+        upsert: async (payload: Record<string, unknown>) => {
           (upserts[table] ??= []).push(payload);
-          return { error: table === "companion_state" ? pendingStateErrors.shift() ?? null : null };
+          return { error: options.onUpsert?.(table, payload) ?? null };
         },
+        update: (payload: Record<string, unknown>) => ({
+          eq: (column1: string, value1: unknown) => ({
+            eq: async (column2: string, value2: unknown) => {
+              (updates[table] ??= []).push({ payload, filters: { [column1]: value1, [column2]: value2 } });
+              return { error: pendingUpdateErrors.shift() ?? null };
+            },
+          }),
+        }),
       };
     },
   };
-  return { client: client as never, upserts };
+  return { client: client as never, upserts, updates };
 }
 
 const questRows = (items: { questKey: string; completedAt: string }[]) =>
   items.map((item) => ({ quest_key: item.questKey, completed_at: item.completedAt }));
 
 describe("progress counters (display-only)", () => {
-  it("writes progress counters on a non-evolving sweep", async () => {
-    const { client, upserts } = sweepClient({
+  it("refreshes counters via a stage-guarded update that never sends stage", async () => {
+    const { client, upserts, updates } = sweepClient({
       state: { plant_id: "p1", cycle: 1, stage: "Sprout", form_key: "steady" },
       care: questRows(ladderCare(1, 1, 1)),
     });
     const result = await evaluateCompanion(client, "p1");
-    expect(upserts.companion_state.at(-1)).toMatchObject({
-      care_count: 1, affinity_count: 1, day_count: 1, stage: "Sprout",
-    });
+    // Counters travel by UPDATE guarded on the snapshot stage — a stale sweep
+    // can never rewrite the stage column over a concurrent evolution.
+    expect(upserts.companion_state).toBeUndefined();
+    expect(updates.companion_state).toHaveLength(1);
+    const call = updates.companion_state[0];
+    expect(call.payload).toMatchObject({ care_count: 1, affinity_count: 1, day_count: 1 });
+    expect(call.payload).not.toHaveProperty("stage");
+    expect(call.payload).not.toHaveProperty("form_key");
+    expect(call.filters).toEqual({ plant_id: "p1", stage: "Sprout" });
     expect(upserts.companion_evolutions).toBeUndefined();
     expect(result).toMatchObject({ stage: "Sprout", care_count: 1, affinity_count: 1, day_count: 1 });
   });
 
   it("skips the write when stored counters already match (no churn)", async () => {
-    const { client, upserts } = sweepClient({
+    const { client, upserts, updates } = sweepClient({
       state: { plant_id: "p1", cycle: 1, stage: "Sprout", form_key: "steady", care_count: 1, affinity_count: 1, day_count: 1 },
       care: questRows(ladderCare(1, 1, 1)),
     });
     const result = await evaluateCompanion(client, "p1");
     expect(upserts.companion_state).toBeUndefined();
+    expect(updates.companion_state).toBeUndefined();
     expect(result).toMatchObject({ stage: "Sprout" });
   });
 
-  it("skips counters when milestone16 is missing", async () => {
-    const { client, upserts } = sweepClient({
+  it("stops writing counters once milestone16 is known to be missing", async () => {
+    const missing = { code: "PGRST204", message: "Could not find the 'care_count' column of 'companion_state' in the schema cache" };
+    const first = sweepClient({
       state: { plant_id: "p1", cycle: 1, stage: "Sprout", form_key: "steady" },
       care: questRows(ladderCare(1, 1, 1)),
-      stateUpsertErrors: [{ code: "PGRST204", message: "Could not find the 'care_count' column of 'companion_state' in the schema cache" }],
+      stateUpdateErrors: [missing],
     });
-    const result = await evaluateCompanion(client, "p1");
-    expect(upserts.companion_state).toHaveLength(2);
-    expect(upserts.companion_state.at(-1)).not.toHaveProperty("care_count");
-    expect(upserts.companion_state.at(-1)).not.toHaveProperty("affinity_count");
-    expect(upserts.companion_state.at(-1)).not.toHaveProperty("day_count");
-    expect(upserts.companion_state.at(-1)).toMatchObject({ stage: "Sprout" });
+    const result = await evaluateCompanion(first.client, "p1");
+    // One probing update, no legacy retry, no upsert churn — and no throw.
+    expect(first.updates.companion_state).toHaveLength(1);
+    expect(first.upserts.companion_state).toBeUndefined();
     expect(result).toMatchObject({ stage: "Sprout" });
+
+    // Second sweep on the same process: zero counter writes of any kind.
+    const second = sweepClient({
+      state: { plant_id: "p1", cycle: 1, stage: "Sprout", form_key: "steady" },
+      care: questRows(ladderCare(1, 1, 1)),
+    });
+    const again = await evaluateCompanion(second.client, "p1");
+    expect(second.updates.companion_state).toBeUndefined();
+    expect(second.upserts.companion_state).toBeUndefined();
+    expect(again).toMatchObject({ stage: "Sprout" });
   });
 
   it("writes one history row per skipped stage on a multi-stage jump", async () => {
@@ -161,6 +192,79 @@ describe("progress counters (display-only)", () => {
   });
 });
 
+// milestone11-only DBs: companion_evolutions CHECK allows Sprout/Bud/Bloom/Guardian,
+// companion_state CHECK allows Seed/Sprout/Bud/Bloom/Guardian — new milestone16
+// names are rejected with Postgres 23514.
+const NEW_STAGE_NAMES = ["Seedling", "Fruit", "Elder", "Radiant", "Legend"];
+const checkErr = (constraint: string): DbError => ({
+  code: "23514",
+  message: `new row violates check constraint "${constraint}"`,
+});
+
+describe("pre-milestone16 CHECK degradation", () => {
+  it("skips rejected rungs mid-walk and lands on the highest legacy-accepted stage", async () => {
+    const { client, upserts } = sweepClient({
+      state: { plant_id: "p1", cycle: 1, stage: "Seed", form_key: "balanced" },
+      care: questRows(ladderCare(15, 4, 5)), // eligible for Guardian
+      onUpsert: (table, payload) => {
+        if (table === "companion_evolutions" && NEW_STAGE_NAMES.includes(payload.stage as string)) {
+          return checkErr("companion_evolutions_stage_check");
+        }
+        if (table === "companion_state" && "care_count" in payload) {
+          return { code: "PGRST204", message: "Could not find the 'care_count' column of 'companion_state' in the schema cache" };
+        }
+        return null;
+      },
+    });
+    // (a) no throw, even though Seedling and Fruit are rejected mid-walk.
+    const result = await evaluateCompanion(client, "p1");
+    const attempts = (upserts.companion_evolutions ?? []) as { stage: string; from_stage: string }[];
+    expect(attempts.map((row) => row.stage)).toEqual(["Sprout", "Seedling", "Bud", "Bloom", "Fruit", "Guardian"]);
+    // Rejected rungs are skipped, not fatal: the from_stage chain only links accepted stages.
+    const events = (upserts.bond_events ?? []) as { data: { stage: string; fromStage: string } }[];
+    expect(events.map((row) => row.data.stage)).toEqual(["Sprout", "Bud", "Bloom", "Guardian"]);
+    expect(events.map((row) => row.data.fromStage)).toEqual(["Seed", "Sprout", "Bud", "Bloom"]);
+    // (b) final persisted stage is the highest stage the DB accepted (counters
+    // dropped after the missing-column probe on this legacy DB).
+    expect(upserts.companion_state.at(-1)).toMatchObject({ stage: "Guardian" });
+    expect(upserts.companion_state.at(-1)).not.toHaveProperty("care_count");
+    // (c) the sweep result reflects it.
+    expect(result).toMatchObject({ stage: "Guardian" });
+  });
+
+  it("holds at the legacy stage when only new-name rungs are eligible", async () => {
+    const { client, upserts } = sweepClient({
+      state: { plant_id: "p1", cycle: 1, stage: "Bloom", form_key: "cool" },
+      care: questRows(ladderCare(11, 3, 4)), // eligible for Fruit only
+      onUpsert: (table, payload) =>
+        table === "companion_evolutions" && NEW_STAGE_NAMES.includes(payload.stage as string)
+          ? checkErr("companion_evolutions_stage_check")
+          : null,
+    });
+    const result = await evaluateCompanion(client, "p1");
+    expect(result).toMatchObject({ stage: "Bloom" });
+    expect(upserts.bond_events).toBeUndefined();
+    expect(upserts.companion_state).toBeUndefined();
+  });
+
+  it("falls back rung by rung when companion_state's own CHECK rejects a new name", async () => {
+    // Partial migration: companion_evolutions accepts the 10-stage ladder but
+    // companion_state still carries the milestone11 five-name CHECK.
+    const { client, upserts } = sweepClient({
+      state: { plant_id: "p1", cycle: 1, stage: "Seed", form_key: "balanced" },
+      care: questRows(ladderCare(11, 3, 4)), // eligible for Fruit
+      onUpsert: (table, payload) =>
+        table === "companion_state" && NEW_STAGE_NAMES.includes(payload.stage as string)
+          ? checkErr("companion_state_stage_check")
+          : null,
+    });
+    const result = await evaluateCompanion(client, "p1");
+    const stateWrites = (upserts.companion_state ?? []) as { stage: string }[];
+    expect(stateWrites.map((row) => row.stage)).toEqual(["Fruit", "Bloom"]);
+    expect(result).toMatchObject({ stage: "Bloom" });
+  });
+});
+
 describe("no-demotion invariant", () => {
   it("keeps a persisted stage that sits above current eligibility", async () => {
     const upserts: Record<string, unknown[]> = {};
@@ -168,7 +272,7 @@ describe("no-demotion invariant", () => {
       from(table: string) {
         return {
           select: () => ({
-            eq: (_col: string, _val: string) => ({
+            eq: () => ({
               eq: () => ({
                 order: async () => ({ data: [], error: null }),
               }),

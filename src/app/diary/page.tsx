@@ -14,6 +14,7 @@ import PageHeader from "@/components/page-header";
 import JamkachuMemoryReflection from "@/components/jamkachu-memory-reflection";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
+import { companionFormLabel, companionStageLabel } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
@@ -144,7 +145,7 @@ export default async function DiaryPage() {
         <JamkachuMemoryReflection memories={memories} locale={locale} snapshot={featuredSnapshot} />
         <p className={`${fieldHelpClass} -mt-3 mb-5 px-2`}>
           {companion
-            ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companion.stage} · ${companion.form_key}. ${locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}`
+            ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companionStageLabel(locale, String(companion.stage))} · ${companionFormLabel(locale, String(companion.form_key))}. ${locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}`
             : locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}
         </p>
         <section className="pm-panel flex flex-col gap-5">

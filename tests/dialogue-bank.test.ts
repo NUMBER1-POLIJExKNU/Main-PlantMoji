@@ -10,11 +10,19 @@ describe("Jamkachu dialogue bank", () => {
     for (const mood of PLANT_MOODS) expect(JAMKACHU_DIALOGUE[mood]).toHaveLength(50);
   });
 
-  it("provides the recommended 1,200-line composition", () => {
-    expect(JAMKACHU_CONTEXT_DIALOGUE).toHaveLength(600);
+  it("provides the 1,800-line composition across the 10-stage ladder", () => {
+    // 6 moods × 10 companion stages × 2 time contexts × 10 observations.
+    expect(JAMKACHU_CONTEXT_DIALOGUE).toHaveLength(1200);
     expect(Object.values(JAMKACHU_EVENT_DIALOGUE).flat()).toHaveLength(300);
-    expect(JAMKACHU_TOTAL_DIALOGUE_COUNT).toBe(1200);
-    expect(new Set([...Object.values(JAMKACHU_DIALOGUE).flat(), ...JAMKACHU_CONTEXT_DIALOGUE, ...Object.values(JAMKACHU_EVENT_DIALOGUE).flat()]).size).toBe(1200);
+    expect(JAMKACHU_TOTAL_DIALOGUE_COUNT).toBe(1800);
+    expect(new Set([...Object.values(JAMKACHU_DIALOGUE).flat(), ...JAMKACHU_CONTEXT_DIALOGUE, ...Object.values(JAMKACHU_EVENT_DIALOGUE).flat()]).size).toBe(1800);
+  });
+
+  it("speaks contextual lines for the new ladder stages", () => {
+    for (const stage of ["Seedling", "Fruit", "Elder", "Radiant", "Legend"]) {
+      expect(JAMKACHU_CONTEXT_DIALOGUE.some((line) => line.includes(`as a ${stage} companion`))).toBe(true);
+    }
+    expect(new Set(dialogueCandidates("Happy", "Legend", "later", "entry", 24)).size).toBeGreaterThan(20);
   });
 
   it("offers enough alternatives to avoid a recent-20 history", () => {

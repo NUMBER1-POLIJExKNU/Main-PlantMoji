@@ -6,7 +6,7 @@ import {
   buildDemoMaxSeed,
 } from "@/game/demo/demo-max";
 import { PLANT_MOODS } from "@/types/events";
-import { BADGE_KEYS, QUEST_KEYS } from "@/types/game";
+import { BADGE_KEYS, COMPANION_STAGES, QUEST_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 
 const NOW = new Date("2026-08-07T12:00:00+07:00");
@@ -26,6 +26,8 @@ describe("demo max seed", () => {
     expect(seed.questRows.map((row) => row.quest_key)).toEqual([...QUEST_KEYS]);
     expect(seed.questRows.every((row) => row.status === "COMPLETED")).toBe(true);
     expect(seed.companionEvolutionRows.map((row) => row.stage)).toEqual(["Sprout", "Seedling", "Bud", "Bloom", "Fruit", "Guardian", "Elder", "Radiant", "Legend"]);
+    // Demo-max lands on the TOP of the ladder, derived — never hardcoded.
+    expect(seed.companionEvolutionRows.at(-1)?.stage).toBe(COMPANION_STAGES[COMPANION_STAGES.length - 1]);
     expect(
       seed.bondEventRows.filter((row) => row.type === "CHAPTER_UNLOCKED"),
     ).toHaveLength(CHAPTER_DEFINITIONS.length);

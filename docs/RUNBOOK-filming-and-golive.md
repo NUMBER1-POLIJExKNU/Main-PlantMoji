@@ -49,7 +49,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 19 | `milestone19-photo-diary.sql` | `plant-photos` Storage bucket + `growth_records.photo_url`/`ai_comment` — **required before the Camera photo diary can save photos**; without it `/camera` shows an operator "coming soon" note and the diary renders without thumbnails **(superseded — `/camera` is now the Live Guardian; this migration remains only for old diary thumbnails / the future growth album)** |
 | 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` table (kind `touch`/`pest_advice`, jsonb note) + realtime — **required before a real-leaf touch can make Jamkachu giggle on the farm screen**; without it `/camera` still watches and reacts locally with an operator note. Creates NO storage bucket: the guardian never stores what it sees |
 
-- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone18 are newer** — verify milestone9 through milestone18 before go-live, including milestone16.
+- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone19 are newer** — verify milestone9 through milestone19 before go-live, including milestone16.
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all migration files again in order.
 - [ ] Milestone 10 seeds Jember profiles as `draft` / `reference_only` with strawberry pre-approved; **milestone12 then adds soybean + cayenne pepper to the approved set for automatic mood/quest decisions** (tobacco and under-sensored crops stay unavailable). Read `docs/CROP-PROFILE-CATALOG-jember.md` before activating any other crop.
 - [ ] Milestone 13 is required for the Farm Case Quiz chip to award XP. Without it the quiz still renders and can be answered, but the app returns `quiz_migration_required` instead of granting XP.
@@ -130,7 +130,7 @@ Open **Treasures** (`/collection`).
 
 **Beat 3 — Level-up → decoration.** XP crosses the threshold → level-up overlay → a new level decoration appears on the mascot stage (pot sticker, flag, …). Optional finale: chapter-gate peak.
 
-**Beat 4 — Explore & Treasures (optional close).** Switch to **Explore** (`/plants`), scan the same real snapshot, and open a grounded explanation of the largest measured mismatch against a Jember crop reference. Switch to **Treasures** (`/collection`) and tap a freshly discovered Mood or the day's Badge to show that a reward is playable, not just a checkbox. If asked, mention **Companion Evolution** (Seed → Sprout → Bud → Bloom → Guardian) — a visual track separate from the Bond Level decorations on the mascot stage, driven only by completed sensor-verified care.
+**Beat 4 — Explore & Treasures (optional close).** Switch to **Explore** (`/plants`), scan the same real snapshot, and open a grounded explanation of the largest measured mismatch against a Jember crop reference. Switch to **Treasures** (`/collection`) and tap a freshly discovered Mood or the day's Badge to show that a reward is playable, not just a checkbox. If asked, mention **Companion Evolution** (a 10-stage ladder: Seed → Sprout → Seedling → Bud → Bloom → Fruit → Guardian → Elder → Radiant → Legend, with an honest next-stage progress line) — a visual track separate from the Bond Level decorations on the mascot stage, driven only by completed sensor-verified care.
 
 **Honest-demo rule (spec §4.5)**
 - [ ] Prefer the **seeded-DB real-sensor path**: seed a replay-safe showcase via Settings → Demo Control Center (needs `DEMO_CHEAT_CODE`), then let the real sensor loop drive the three beats.
@@ -184,7 +184,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 19 | `milestone19-photo-diary.sql` | bucket Storage `plant-photos` + kolom `growth_records.photo_url`/`ai_comment` — **wajib sebelum Camera photo diary bisa menyimpan foto**; tanpanya `/camera` menampilkan catatan operator "hampir siap" dan diary tampil tanpa thumbnail **(digantikan — `/camera` kini Live Guardian; migrasi ini tinggal untuk thumbnail diary lama / growth album di masa depan)** |
 | 19 | `milestone19-camera-guardian.sql` | tabel `camera_events` Live Guardian (kind `touch`/`pest_advice`, note jsonb) + realtime — **wajib sebelum sentuhan daun asli bisa membuat Jamkachu terkikik di layar kebun**; tanpanya `/camera` tetap mengawasi dan bereaksi lokal dengan catatan operator. TANPA bucket Storage: penjaga tidak pernah menyimpan yang dilihatnya |
 
-- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone18 yang lebih baru** — pastikan milestone9 sampai milestone18 sebelum go-live, termasuk milestone16.
+- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone19 yang lebih baru** — pastikan milestone9 sampai milestone19 sebelum go-live, termasuk milestone16.
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi semua file migrasi sesuai urutan.
 - [ ] Milestone 10 mengisi profil Jember sebagai `draft` / `reference_only` dengan stroberi sudah disetujui; **milestone12 kemudian menambahkan kedelai + cabai rawit ke daftar yang disetujui untuk keputusan mood/quest otomatis** (tembakau dan tanaman tanpa sensor lengkap tetap tidak tersedia). Baca `docs/CROP-PROFILE-CATALOG-jember.md` sebelum mengaktifkan tanaman lain.
 - [ ] Milestone 13 wajib agar chip Farm Case Quiz bisa memberi XP — tanpanya, quiz tetap tampil dan bisa dijawab, tapi aplikasi mengembalikan `quiz_migration_required`, bukan memberi XP.
@@ -265,7 +265,7 @@ Buka **Harta** (`/collection`).
 
 **Adegan 3 — Naik level → dekorasi.** XP melewati ambang → overlay naik level → dekorasi level baru muncul di panggung maskot (stiker pot, bendera, …). Penutup opsional: puncak gerbang bab.
 
-**Adegan 4 — Jelajah & Harta (penutup opsional).** Pindah ke **Jelajah** (`/plants`), pindai potret sensor nyata yang sama, dan buka penjelasan yang berdasar untuk ketidakcocokan terukur terbesar dibanding referensi tanaman Jember. Pindah ke **Harta** (`/collection`) dan ketuk Mood yang baru ditemukan atau Lencana hari itu untuk menunjukkan hadiahnya bisa dimainkan, bukan sekadar kotak centang. Jika ditanya, sebutkan **Evolusi Companion** (Seed → Sprout → Bud → Bloom → Guardian) — jalur visual terpisah dari dekorasi Bond Level di panggung maskot, digerakkan hanya oleh perawatan yang telah diverifikasi sensor.
+**Adegan 4 — Jelajah & Harta (penutup opsional).** Pindah ke **Jelajah** (`/plants`), pindai potret sensor nyata yang sama, dan buka penjelasan yang berdasar untuk ketidakcocokan terukur terbesar dibanding referensi tanaman Jember. Pindah ke **Harta** (`/collection`) dan ketuk Mood yang baru ditemukan atau Lencana hari itu untuk menunjukkan hadiahnya bisa dimainkan, bukan sekadar kotak centang. Jika ditanya, sebutkan **Evolusi Companion** (tangga 10 tahap: Seed → Sprout → Seedling → Bud → Bloom → Fruit → Guardian → Elder → Radiant → Legend, dengan baris progres tahap-berikutnya yang jujur) — jalur visual terpisah dari dekorasi Bond Level di panggung maskot, digerakkan hanya oleh perawatan yang telah diverifikasi sensor.
 
 **Aturan demo jujur (spec §4.5)**
 - [ ] Utamakan **jalur sensor-nyata dengan DB ter-seed**: siapkan kondisi pameran yang aman diulang lewat Settings → Demo Control Center (butuh `DEMO_CHEAT_CODE`), lalu biarkan loop sensor nyata menggerakkan ketiga adegan.
@@ -318,7 +318,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 18 | `milestone18-seed-shop.sql` | Seed Shop 경제 — `bond_state.seeds` + `seed_rewards` 원장 + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPC, `shop_purchases` realtime. Seeds는 줄어들 수 있음(소비 가능한 화폐); XP/Bond Level은 여전히 절대 감소하지 않음 |
 | 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` 테이블 (kind `touch`/`pest_advice`, note jsonb) + realtime — **진짜 잎을 만졌을 때 농장 화면의 Jamkachu가 웃으려면 필수**; 없어도 `/camera`는 로컬로 계속 감시·반응하며 운영자 안내를 표시합니다. Storage 버킷 없음: 가디언은 본 것을 절대 저장하지 않습니다 |
 
-- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone18이 더 최신** — milestone16을 포함해 milestone9부터 milestone18까지 고라이브 전에 확인하세요.
+- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone19가 더 최신** — milestone16을 포함해 milestone9부터 milestone19까지 고라이브 전에 확인하세요.
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 모든 마이그레이션 파일을 순서대로 다시 실행하세요.
 - [ ] Milestone 10은 Jember 프로필을 `draft` / `reference_only`로 시드하며 딸기는 처음부터 승인되어 있습니다; **milestone12가 콩(soybean)+카옌 고추를 자동 무드/퀘스트 판단 승인 목록에 추가**합니다 (담배와 센서가 부족한 작물은 계속 사용 불가). 다른 작물을 활성화하기 전에 `docs/CROP-PROFILE-CATALOG-jember.md`를 읽으세요.
 - [ ] Milestone 13은 Farm Case Quiz 칩이 XP를 지급하는 데 필수입니다 — 없으면 퀴즈는 표시되고 답할 수 있지만, 앱은 XP 대신 `quiz_migration_required`를 반환합니다.
@@ -398,7 +398,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 
 **장면 3 — 레벨업 → 장식.** XP가 임계값을 넘음 → 레벨업 오버레이 → 마스코트 무대에 새 레벨 장식 등장 (화분 스티커, 깃발, …). 선택적 피날레: 챕터 게이트 피크.
 
-**장면 4 — Explore & Treasures (선택적 마무리).** **Explore**(`/plants`)로 이동해 같은 실제 스냅샷을 스캔하고, 측정값 차이가 가장 큰 항목에 대해 Jember 작물 기준과 비교한 근거 있는 설명을 엽니다. **Treasures**(`/collection`)로 이동해 방금 발견한 Mood나 오늘의 Badge를 탭해 보상이 단순 체크리스트가 아니라 플레이 가능하다는 것을 보여주세요. 질문을 받으면 **Companion Evolution**(Seed → Sprout → Bud → Bloom → Guardian)을 언급할 수 있습니다 — 마스코트 무대의 Bond Level 장식과는 별개의 시각적 트랙이며, 오직 완료된 센서 검증 케어로만 진행됩니다.
+**장면 4 — Explore & Treasures (선택적 마무리).** **Explore**(`/plants`)로 이동해 같은 실제 스냅샷을 스캔하고, 측정값 차이가 가장 큰 항목에 대해 Jember 작물 기준과 비교한 근거 있는 설명을 엽니다. **Treasures**(`/collection`)로 이동해 방금 발견한 Mood나 오늘의 Badge를 탭해 보상이 단순 체크리스트가 아니라 플레이 가능하다는 것을 보여주세요. 질문을 받으면 **Companion Evolution**(10단계 사다리: Seed → Sprout → Seedling → Bud → Bloom → Fruit → Guardian → Elder → Radiant → Legend, 정직한 다음 단계 진행 표시 포함)을 언급할 수 있습니다 — 마스코트 무대의 Bond Level 장식과는 별개의 시각적 트랙이며, 오직 완료된 센서 검증 케어로만 진행됩니다.
 
 **정직한 데모 원칙 (스펙 §4.5)**
 - [ ] **시드된 DB + 실제 센서 경로를 우선**: Settings → Demo Control Center (`DEMO_CHEAT_CODE` 필요)로 재실행 안전한 쇼케이스 상태를 시드한 뒤, 실제 센서 루프가 세 장면을 이끌게 하세요.

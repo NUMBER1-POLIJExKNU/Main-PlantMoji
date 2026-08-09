@@ -11,7 +11,8 @@
 //   3  → window.PMFx.chapter()    (chapter-gate peak FX)
 //   4  → window.PMFx.pod()        (reward-pod drop FX)
 //   5  → cycle window.setMascotMood through the six moods
-//   E  → window.PMFx.evolve()     (evolution ceremony, ~7s, tap = fast-forward)
+//   E  → window.PMFx.evolve()     (evolution ceremony, ~7s, tap = fast-forward;
+//                                  repeat presses walk ALL 10 ladder stages)
 //   G  → tap the farmer NPC (#npc-farmer) for a grandpa guidance line
 //   0  → QA self-test overlay (Esc closes), now with a hotkey legend
 // plus a small fixed "DEMO" tag bottom-left while the mode is active.
@@ -65,7 +66,7 @@
     ["3", "chapter gate"],
     ["4", "reward pod"],
     ["5", "cycle mood"],
-    ["E", "evolution ceremony (~7s, tap = fast-forward)"],
+    ["E", "evolution ceremony (repeat → next of 10 stages · tap = fast-forward)"],
     ["G", "grandpa guidance line"],
     ["0 / Esc", "this panel"],
   ];

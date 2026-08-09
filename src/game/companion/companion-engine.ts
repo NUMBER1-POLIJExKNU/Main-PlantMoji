@@ -64,26 +64,49 @@ function missingColumn(error: { code?: string; message: string }) {
   return error.code === "PGRST204" || error.code === "42703" || /could not find the '.+' column/i.test(error.message) || /column .+ does not exist/i.test(error.message);
 }
 
+/** milestone16 stage names rejected by a pre-milestone16 CHECK constraint —
+ *  raw Postgres 23514 or the PostgREST-surfaced message. */
+function checkViolation(error: { code?: string; message: string }) {
+  return error.code === "23514" || /violates check constraint/i.test(error.message);
+}
+
 /** Display-only progress counters (milestone16). They never gate or grant anything. */
 const COUNTER_COLUMNS = ["care_count", "affinity_count", "day_count"] as const;
+
+/** Sticky per-process memo: once a counters write hits missingColumn() we know
+ *  milestone16 isn't applied, so later sweeps skip the doomed counters writes
+ *  entirely instead of paying a failing round trip + retry on every tick. */
+let countersUnsupported = false;
+
+export function resetCompanionCountersForTests() {
+  countersUnsupported = false;
+}
 
 function storedCounter(state: Record<string, unknown>, column: string): number {
   const value = state[column];
   return typeof value === "number" ? value : 0;
 }
 
-async function upsertCompanionState(supabase: SupabaseClient, payload: Record<string, unknown>) {
-  const { error } = await supabase.from("companion_state").upsert(payload, { onConflict: "plant_id" });
-  if (!error) return;
-  if (missingColumn(error)) {
+/** Upserts companion_state, dropping milestone16 counter columns when the DB
+ *  lacks them. Returns the final error (never throws) so callers can degrade
+ *  gracefully — e.g. fall back a stage on a pre-milestone16 CHECK violation. */
+async function writeCompanionState(supabase: SupabaseClient, payload: Record<string, unknown>): Promise<{ code?: string; message: string } | null> {
+  let attempt = payload;
+  if (countersUnsupported) {
+    attempt = { ...payload };
+    for (const column of COUNTER_COLUMNS) delete attempt[column];
+  }
+  const { error } = await supabase.from("companion_state").upsert(attempt, { onConflict: "plant_id" });
+  if (!error) return null;
+  if (attempt === payload && missingColumn(error)) {
     // milestone16 not applied yet — retry without the display-only counter columns.
+    countersUnsupported = true;
     const legacy = { ...payload };
     for (const column of COUNTER_COLUMNS) delete legacy[column];
     const retry = await supabase.from("companion_state").upsert(legacy, { onConflict: "plant_id" });
-    if (retry.error) throw new Error(`companion: state update failed: ${retry.error.message}`);
-    return;
+    return retry.error ?? null;
   }
-  throw new Error(`companion: state update failed: ${error.message}`);
+  return error;
 }
 
 /** Monotonic, replay-safe evolution sweep. Missing milestone 11 is a safe no-op. */
@@ -106,8 +129,24 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
   const counters = { care_count: axes.careCount, affinity_count: axes.affinityCount, day_count: axes.dayCount };
   if (STAGE_RANK[target] <= STAGE_RANK[state.stage as CompanionStage]) {
     const fresh = COUNTER_COLUMNS.every((column) => storedCounter(state as Record<string, unknown>, column) === counters[column]);
-    if (fresh) return state; // no write churn on every tick
-    await upsertCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage: state.stage, form_key: state.form_key, ...counters, updated_at: now.toISOString() });
+    if (countersUnsupported || fresh) return state; // no write churn on every tick
+    if (!stateResult.data) {
+      // Row creation only — with no persisted row there is no stage to demote.
+      const createError = await writeCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage: state.stage, form_key: state.form_key, ...counters, updated_at: now.toISOString() });
+      if (createError) throw new Error(`companion: state update failed: ${createError.message}`);
+      return { ...state, ...counters };
+    }
+    // Counters-only refresh: never send stage/form_key from our (possibly stale)
+    // snapshot. The .eq("stage") guard turns this into a no-op if a concurrent
+    // sweep evolved the row after we read it — a demotion is impossible.
+    const { error: counterError } = await supabase.from("companion_state").update({ ...counters, updated_at: now.toISOString() }).eq("plant_id", plantId).eq("stage", state.stage);
+    if (counterError) {
+      if (missingColumn(counterError)) {
+        countersUnsupported = true; // pre-milestone16 — stop retrying every tick
+        return state;
+      }
+      throw new Error(`companion: state update failed: ${counterError.message}`);
+    }
     return { ...state, ...counters };
   }
 
@@ -116,13 +155,31 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
   const snapshot = Object.fromEntries(["cool", "air", "light", "soil", "steady"].map((key) => [key, care.filter((item) => affinityForQuest(item.questKey) === key).length]));
   const stages = ([...COMPANION_STAGES] as CompanionStage[]).slice(STAGE_RANK[state.stage as CompanionStage] + 1, STAGE_RANK[target] + 1);
   let fromStage = state.stage as CompanionStage;
+  const accepted: CompanionStage[] = []; // rungs the DB actually recorded, ascending
   for (const stage of stages) {
     const { error: evolutionError } = await supabase.from("companion_evolutions").upsert({ plant_id: plantId, cycle: state.cycle, stage, from_stage: fromStage, form_key: formKey, care_snapshot: snapshot, evolved_at: evolvedAt }, { onConflict: "plant_id,cycle,stage", ignoreDuplicates: true });
-    if (evolutionError) throw new Error(`companion: evolution insert failed: ${evolutionError.message}`);
+    if (evolutionError) {
+      // Pre-milestone16 CHECK (milestone11) only allows the legacy five names.
+      // Skip the rejected rung and keep walking so legacy DBs still climb
+      // Seed→Sprout→Bud→Bloom→Guardian instead of freezing mid-ladder.
+      if (checkViolation(evolutionError)) continue;
+      throw new Error(`companion: evolution insert failed: ${evolutionError.message}`);
+    }
     const { error: eventError } = await supabase.from("bond_events").upsert({ event_id: `companion:${plantId}:${state.cycle}:${stage}`, plant_id: plantId, type: "COMPANION_EVOLVED", occurred_at: evolvedAt, data: { fromStage, stage, formKey, reason: `${care.length} verified care quests` } }, { onConflict: "event_id", ignoreDuplicates: true });
     if (eventError) throw new Error(`companion: event insert failed: ${eventError.message}`);
+    accepted.push(stage);
     fromStage = stage;
   }
-  await upsertCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters });
-  return { ...state, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters };
+  // Persist the highest stage the DB accepted. companion_state's own
+  // pre-milestone16 CHECK can reject new names too — fall back rung by rung,
+  // and on any other write failure keep the previous state rather than
+  // throwing, so one bad write never aborts the whole settle sweep.
+  for (let i = accepted.length - 1; i >= 0; i--) {
+    const stage = accepted[i];
+    const stateError = await writeCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters });
+    if (!stateError) return { ...state, stage, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters };
+    if (!checkViolation(stateError)) return state;
+  }
+  // Every rung was rejected (legacy DB at its ceiling) — nothing evolved.
+  return state;
 }

@@ -1,4 +1,4 @@
-import type { AppLocale } from "@/lib/i18n";
+import { companionStageLabel, type AppLocale } from "@/lib/i18n";
 
 export const MEMORY_EVENT_TYPES = ["QUEST_COMPLETED", "COMPANION_EVOLVED", "LEVEL_UP", "BADGE_UNLOCKED", "CHAPTER_UNLOCKED"] as const;
 export type MemoryEventType = (typeof MEMORY_EVENT_TYPES)[number];
@@ -36,7 +36,9 @@ export function toJamkachuMemory(row: MemoryEventRow, locale: AppLocale): Jamkac
     return { id, type, occurredAt: row.occurred_at, title: locale === "id" ? `Perawatan terverifikasi: ${name}` : `Verified care: ${name}`, verifiedSummary: `My caretaker completed the verified care quest “${name}”.`, fallback: locale === "id" ? `Aku masih ingat saat kamu menyelesaikan ${name}. Rasanya menyenangkan karena kita merawat kebun ini bersama.` : `I still remember when you completed ${name}. It felt wonderful to care for this garden together.` };
   }
   if (type === "COMPANION_EVOLVED") {
-    const stage = safeText(data.stage, locale === "id" ? "tahap baru" : "a new stage");
+    // Localized ladder name when the stored stage is a known enum value;
+    // unknown strings pass through raw (companionStageLabel falls back).
+    const stage = companionStageLabel(locale, safeText(data.stage, locale === "id" ? "tahap baru" : "a new stage"));
     return { id, type, occurredAt: row.occurred_at, title: locale === "id" ? `Jamkachu tumbuh menjadi ${stage}` : `Jamkachu grew into ${stage}`, verifiedSummary: `I grew into the companion stage “${stage}”.`, fallback: locale === "id" ? `Waktu itu aku tumbuh menjadi ${stage}. Aku masih ingat betapa bangganya kita saat melihat perubahan itu.` : `That was when I grew into ${stage}. I still remember how proud we were to see that change.` };
   }
   if (type === "LEVEL_UP") {

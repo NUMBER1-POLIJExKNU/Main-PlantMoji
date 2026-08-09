@@ -44,18 +44,61 @@
       },
 
       // Companion stage display names, keyed by the backend stage name used
-      // in live.js's `companion-<Stage>` classes. Today's 5 stages mirror
-      // live.js's STAGE_ORDER constant (see the "will be replaced by
-      // PM_LADDER" comment there); the evolution-ladder plan will extend
-      // this table to 10 without changing its shape. Consumed by the
-      // transformation-FX ceremony (evo.evolved below) to localize {stage}.
+      // in live.js's `companion-<Stage>` classes. All 10 stages of the
+      // evolution ladder (companion-ladder.js window.PM_LADDER, mirrored
+      // from src/types/game.ts COMPANION_LADDER), in ladder order. Consumed
+      // by renderCompanion's label and the transformation-FX ceremony
+      // (evo.evolved below) to localize {stage}.
       companionStage: {
         Seed: "Seed",
         Sprout: "Sprout",
+        Seedling: "Seedling",
         Bud: "Bud",
         Bloom: "Bloom",
+        Fruit: "Fruit",
         Guardian: "Guardian",
+        Elder: "Elder",
+        Radiant: "Radiant",
+        Legend: "Legend",
       },
+
+      // Companion care-affinity form names (companion_state.form_key) for
+      // the identity label under the mascot.
+      companionForm: {
+        cool: "Cool-headed",
+        air: "Fresh-air",
+        light: "Sun-chaser",
+        soil: "Soil-wise",
+        steady: "Steady",
+        balanced: "Balanced",
+      },
+
+      // Leading word of the identity label: "COMPANION · Sprout · Steady".
+      companionWord: "COMPANION",
+
+      // Honest next-stage progress line under the label. Numbers come ONLY
+      // from companion_state counters written by the backend sweep — live.js
+      // hides the line entirely when the counters are missing (pre-
+      // milestone16 DB) rather than guessing. Split into a `line` template
+      // plus per-axis segment templates: renderCompanionNext only renders
+      // the axes the next stage actually requires (ladder req > 0), so a
+      // zero-requirement axis like Bud's days never shows as "days 2/0".
+      // `affinity` counts distinct care types exercised (affinity_count).
+      companionNext: {
+        line: (stage, reqs) => `Next: ${stage} — ${reqs}`,
+        care: (have, need) => `care ${have}/${need}`,
+        affinity: (have, need) => `care types ${have}/${need}`,
+        days: (have, need) => `days ${have}/${need}`,
+      },
+
+      // Shown instead of the progress line at the top stage (Legend).
+      companionMax: "Fully grown — a legend of Jember!",
+
+      // Short evolution announcement ({stage} is already localized via the
+      // companionStage table above). Consumed by runEvolutionSequence as the
+      // localized middle fallback for the ceremony line — it outranks the
+      // hard-coded English EVO_FALLBACK when the evo table is missing.
+      companionEvolved: (stage) => `Evolved into ${stage}!`,
 
       // Reason-chip labels (Task 14): bond_events reason prefix → friendly label.
       reasons: {
@@ -393,14 +436,57 @@
       },
 
       // Nama tahap pertumbuhan companion — lihat catatan companionStage di
-      // pohon en di atas (kunci mengikuti STAGE_ORDER di live.js).
+      // pohon en di atas (10 tahap tangga evolusi, urutan mengikuti
+      // window.PM_LADDER di companion-ladder.js).
       companionStage: {
         Seed: "Benih",
         Sprout: "Kecambah",
+        Seedling: "Semai",
         Bud: "Kuncup",
         Bloom: "Mekar",
+        Fruit: "Berbuah",
         Guardian: "Penjaga",
+        Elder: "Tetua",
+        Radiant: "Bercahaya",
+        Legend: "Legenda",
       },
+
+      // Nama bentuk kepribadian perawatan (companion_state.form_key).
+      companionForm: {
+        cool: "Kepala dingin",
+        air: "Udara segar",
+        light: "Pengejar cahaya",
+        soil: "Paham tanah",
+        steady: "Tekun",
+        balanced: "Seimbang",
+      },
+
+      // Kata pembuka label identitas: "SAHABAT · Kecambah · Tekun".
+      companionWord: "SAHABAT",
+
+      // Baris progres tahap berikutnya — angkanya HANYA dari penghitung
+      // companion_state tulisan backend; live.js menyembunyikan barisnya
+      // kalau penghitungnya belum ada (DB pra-milestone16), tidak menebak.
+      // Dipecah menjadi templat `line` + segmen per sumbu: renderCompanionNext
+      // hanya menampilkan sumbu yang benar-benar disyaratkan tahap berikutnya
+      // (req tangga > 0), jadi sumbu bersyarat nol seperti hari untuk Kuncup
+      // tidak pernah tampil sebagai "hari 2/0". `affinity` menghitung jenis
+      // rawatan berbeda yang sudah dilakukan (affinity_count).
+      companionNext: {
+        line: (stage, reqs) => `Berikutnya: ${stage} — ${reqs}`,
+        care: (have, need) => `rawatan ${have}/${need}`,
+        affinity: (have, need) => `jenis rawatan ${have}/${need}`,
+        days: (have, need) => `hari ${have}/${need}`,
+      },
+
+      // Pengganti baris progres di tahap puncak (Legenda).
+      companionMax: "Tumbuh penuh — legenda Jember!",
+
+      // Pengumuman evolusi singkat ({stage} sudah dilokalkan lewat tabel
+      // companionStage di atas). Dipakai runEvolutionSequence sebagai
+      // cadangan terlokalkan untuk baris upacara — diutamakan di atas
+      // EVO_FALLBACK bahasa Inggris saat tabel evo tidak ada.
+      companionEvolved: (stage) => `Berevolusi menjadi ${stage}!`,
 
       reasons: {
         quest: "Misi selesai",

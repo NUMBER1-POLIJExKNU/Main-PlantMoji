@@ -669,10 +669,51 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
   .quiz-xp-pod { opacity:1; }
 }
 .companion-stage { margin-top: 5px; font: 8px/1.4 var(--font-pixel); color: #57684f; letter-spacing: .06em; }
+/* Honest next-stage progress line (evolution-ladder plan, Task 5): same
+   voice as .companion-stage, one size smaller; :empty keeps the row from
+   reserving space when live.js hides it (pre-milestone16, missing ladder). */
+.companion-next { margin-top: 3px; font: 7px/1.5 var(--font-pixel); color: #6b7a61; letter-spacing: .05em; }
+.companion-next:empty { display: none; }
 .mascot-svg.companion-Sprout .animated-leaves { transform: scale(1.03); transform-origin: 150px 140px; }
 .mascot-svg.companion-Bud .animated-leaves { transform: scale(1.08); transform-origin: 150px 140px; }
 .mascot-svg.companion-Bloom .animated-leaves { transform: scale(1.13); transform-origin: 150px 140px; filter: saturate(1.15); }
 .mascot-svg.companion-Guardian .animated-leaves { transform: scale(1.18); transform-origin: 150px 140px; filter: saturate(1.3) drop-shadow(0 0 5px #f5c94a); }
+/* Evolution-ladder scale rungs for the five NEW stages (evolution-ladder
+   plan, Task 6) — same mechanism as the four originals above, which are
+   kept verbatim. Static transforms/filters only: reduced-motion safe. */
+.mascot-svg.companion-Seedling .animated-leaves { transform: scale(1.05); transform-origin: 150px 140px; }
+.mascot-svg.companion-Fruit .animated-leaves { transform: scale(1.15); transform-origin: 150px 140px; filter: saturate(1.2); }
+.mascot-svg.companion-Elder .animated-leaves { transform: scale(1.2); transform-origin: 150px 140px; filter: saturate(1.3); }
+.mascot-svg.companion-Radiant .animated-leaves { transform: scale(1.22); transform-origin: 150px 140px; filter: saturate(1.35) drop-shadow(0 0 6px #f5c94a); }
+.mascot-svg.companion-Legend .animated-leaves { transform: scale(1.25); transform-origin: 150px 140px; filter: saturate(1.4) drop-shadow(0 0 8px #f5c94a); }
+
+/* Stage accent groups (index.html .stage-extra, inside .animated-leaves):
+   hidden by default, shown CUMULATIVELY per companion-<Stage> class — a
+   stage keeps every mark it earned, so all ten stages read distinct:
+   Seed = bare · Sprout = scale · Seedling = +sproutlets · Bud = +bud ·
+   Bloom = bud opens into petals · Fruit = +berries · Guardian = +gold glow
+   (scale rung above) · Elder = +woody branches · Radiant = +halo ring ·
+   Legend = +crown. Purely class-driven presentation; no animation. */
+.mascot-svg .stage-extra { display: none; }
+.mascot-svg.companion-Seedling .stage-seedling { display: block; }
+.mascot-svg.companion-Bud .stage-seedling, .mascot-svg.companion-Bud .stage-bud { display: block; }
+.mascot-svg.companion-Bloom .stage-seedling, .mascot-svg.companion-Bloom .stage-bloom { display: block; }
+.mascot-svg.companion-Fruit .stage-seedling, .mascot-svg.companion-Fruit .stage-bloom, .mascot-svg.companion-Fruit .stage-fruit { display: block; }
+.mascot-svg.companion-Guardian .stage-seedling, .mascot-svg.companion-Guardian .stage-bloom, .mascot-svg.companion-Guardian .stage-fruit { display: block; }
+.mascot-svg.companion-Elder .stage-seedling, .mascot-svg.companion-Elder .stage-bloom, .mascot-svg.companion-Elder .stage-fruit, .mascot-svg.companion-Elder .stage-elder { display: block; }
+.mascot-svg.companion-Radiant .stage-seedling, .mascot-svg.companion-Radiant .stage-bloom, .mascot-svg.companion-Radiant .stage-fruit, .mascot-svg.companion-Radiant .stage-elder, .mascot-svg.companion-Radiant .stage-radiant { display: block; }
+.mascot-svg.companion-Legend .stage-seedling, .mascot-svg.companion-Legend .stage-bloom, .mascot-svg.companion-Legend .stage-fruit, .mascot-svg.companion-Legend .stage-elder, .mascot-svg.companion-Legend .stage-radiant, .mascot-svg.companion-Legend .stage-legend { display: block; }
+
+/* Care-affinity form tint (audit fix: form_key finally shows on the
+   character). Sets the SAME --companion-accent custom property the accent
+   shapes above consume as fill/stroke; unknown forms fall back to each
+   shape's inline default. data-companion-form is set by renderCompanion. */
+.mascot-svg[data-companion-form="cool"] { --companion-accent: #7FD0E8; }
+.mascot-svg[data-companion-form="air"] { --companion-accent: #B7E3CC; }
+.mascot-svg[data-companion-form="light"] { --companion-accent: #FFDE6A; }
+.mascot-svg[data-companion-form="soil"] { --companion-accent: #C79A6B; }
+.mascot-svg[data-companion-form="steady"] { --companion-accent: #9BB871; }
+.mascot-svg[data-companion-form="balanced"] { --companion-accent: #F7A6C1; }
 
 /* ── Pokémon-style transformation FX (level-up + evolution ceremony) ──────
    Discrete-state classes toggled by live.js's phase sequencer (never CSS

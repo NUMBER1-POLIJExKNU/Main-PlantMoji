@@ -201,6 +201,44 @@
                                 <!-- Head/Flower Base -->
                                 <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke="var(--color-outline)" stroke-width="8"/>
 
+                                <!-- Evolution-ladder stage accents (evolution-ladder plan,
+                                     Task 6): cumulative pixel growth marks, one hidden
+                                     .stage-extra group per accent; style.css shows them from
+                                     the companion-<Stage> class renderCompanion sets — a
+                                     stage keeps every mark it earned. Inside .animated-leaves
+                                     so they breathe/scale with the head, and painted BEFORE
+                                     the accessory + face groups so faces always stay on top.
+                                     --companion-accent (set per data-companion-form) tints
+                                     the bud, petals, halo, and crown to the care-affinity
+                                     form. Static shapes only — reduced-motion safe. -->
+                                <g class="stage-extra stage-seedling" aria-hidden="true">
+                                    <rect x="112" y="150" width="26" height="12" rx="6" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="5"/>
+                                    <rect x="162" y="150" width="26" height="12" rx="6" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="5"/>
+                                </g>
+                                <g class="stage-extra stage-bud" aria-hidden="true">
+                                    <circle cx="112" cy="12" r="10" fill="var(--companion-accent, #FFDE6A)" stroke="var(--color-outline)" stroke-width="5"/>
+                                </g>
+                                <g class="stage-extra stage-bloom" aria-hidden="true">
+                                    <circle cx="112" cy="8" r="8" fill="#FFFFFF" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <circle cx="100" cy="14" r="7" fill="var(--companion-accent, #F7A6C1)" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <circle cx="124" cy="14" r="7" fill="var(--companion-accent, #F7A6C1)" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <circle cx="112" cy="22" r="7" fill="var(--companion-accent, #F7A6C1)" stroke="var(--color-outline)" stroke-width="4"/>
+                                </g>
+                                <g class="stage-extra stage-fruit" aria-hidden="true">
+                                    <circle cx="128" cy="128" r="8" fill="#E4572E" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <circle cx="172" cy="132" r="8" fill="#E4572E" stroke="var(--color-outline)" stroke-width="4"/>
+                                </g>
+                                <g class="stage-extra stage-elder" aria-hidden="true">
+                                    <rect x="134" y="96" width="32" height="10" rx="4" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <rect x="120" y="118" width="14" height="42" rx="6" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="4"/>
+                                </g>
+                                <g class="stage-extra stage-radiant" aria-hidden="true">
+                                    <circle cx="150" cy="70" r="26" fill="none" stroke="var(--companion-accent, #FFDE6A)" stroke-width="4" opacity="0.7"/>
+                                </g>
+                                <g class="stage-extra stage-legend" aria-hidden="true">
+                                    <polygon points="132,14 141,0 150,14 159,0 168,14 168,24 132,24" fill="var(--companion-accent, #FFDE6A)" stroke="var(--color-outline)" stroke-width="4"/>
+                                </g>
+
                                 <!-- Face (Happy — default, shows when no face-* class is set) -->
                                 <!-- Shop head accessories (milestone18): at most ONE
                                      shows (equip_item exclusivity). Painted BEFORE every
@@ -416,6 +454,11 @@
                         <span id="bff-token" class="bff-token" hidden>Best Friend 💛</span>
                         <div id="char-mood">--</div>
                         <div id="companion-stage" class="companion-stage">COMPANION · SEED</div>
+                        <!-- Honest next-stage progress line (evolution-ladder
+                             plan, Task 5). live.js fills it from companion_state
+                             counters; stays empty (and :empty-hidden) when the
+                             milestone16 counters are missing. -->
+                        <div id="companion-next" class="companion-next"></div>
                     </div>
                 </div>
             </div>

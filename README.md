@@ -147,9 +147,9 @@ Bond Level represents care and progression. It is intentionally separate from th
 - 🎉 **Seasonal Events** — date-window XP multipliers: Musim Kemarau Heat Challenge (×1.2), Weekend Growth (×1.1), Musim Hujan Growing Season (×1.15, Nov–Apr); highest multiplier wins, never stacked
 - 🎲 **Daily Events** — one deterministic event per WIB day per plant (hash-picked, replay-safe): Jember-flavored XP boosts (*Golden Hour over the Sawah* ×1.5), care challenges (+10–15 XP, ledger-guarded), and flavor days (*Carnaval Day*, *Market Morning*, *Volcano-Soil Pride Day*…)
 - 🤖 **AI-personalized dialogue** — optional Gemini-powered grounded explanations; always falls back to deterministic templates
-- 🐣 **Companion Evolution** — Seed → Sprout → Bud → Bloom → Guardian, calculated only from completed sensor-verified care; care affinity changes the virtual form while the real plant's manually logged Growth Stage remains separate
+- 🐣 **Companion Evolution** — a 10-stage ladder (Seed → Sprout → Seedling → Bud → Bloom → Fruit → Guardian → Elder → Radiant → Legend, milestone16), calculated only from completed sensor-verified care with an honest next-stage progress line; care affinity changes the virtual form while the real plant's manually logged Growth Stage remains separate
 - 🧠 **Farm Case Quiz** — endless three-step agriculture cases (*Observe → Understand → Act*) with a 15-second timer, a first-miss hint, answer/explanation after another miss, +1–3 XP for a correct answer, and −1 XP for a miss/timeout
-- 🌾 **1,200+ dialogue variants** — short ID/EN lines grounded in mood, time, companion stage, event, and the selected Jamkachu personality, with repetition control and deterministic fallback
+- 🌾 **1,800+ dialogue variants** — short ID/EN lines grounded in mood, time, companion stage (all ten), event, and the selected Jamkachu personality, with repetition control and deterministic fallback
 - 💎 **Playable collection rewards** — discovered Moods perform character reactions, Stories replay as pixel scenes, Badges can preview and change home tap effects, and Wisdom cards open sensor-prediction practice
 
 ### Tamagotchi Continuity
@@ -518,6 +518,12 @@ supabase/milestone12-selectable-crops.sql     selectable crop catalog/profile co
 supabase/milestone13-daily-quiz.sql           replay-safe quiz attempts + atomic quiz XP
 supabase/milestone14-fast-levels.sql           flat 30-XP Bond Level progression
 supabase/milestone15-light-percentage.sql      relative LDR 0–100% + 30% Low boundary
+supabase/milestone16-evolution-ladder.sql      10-stage companion ladder + display-only progress counters
+supabase/milestone17-quiz-kind-scoring.sql     quiz kind scoring — a miss awards 0 XP, never −1
+supabase/milestone18-seed-shop.sql             Seed economy: seeds balance, ledger, shop + RPCs
+supabase/milestone18-growth-snapshots.sql      private growth-snapshots Storage bucket (diary postcards)
+supabase/milestone19-photo-diary.sql           legacy photo-diary columns (superseded by Live Guardian)
+supabase/milestone19-camera-guardian.sql       Live Guardian camera_events + realtime (stores no images)
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every

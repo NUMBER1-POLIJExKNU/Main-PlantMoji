@@ -15,7 +15,7 @@ import { applyDemoMaxState } from "@/game/demo/demo-max";
 import { resetDemoProgress } from "@/game/demo/demo-reset";
 import { advanceDemoCompanion, awardDemoLevelUp, prepareNextLevelDemo } from "@/game/demo/presenter";
 import { parseGrowthInput } from "@/lib/growth";
-import { normalizeLocale, type AppLocale } from "@/lib/i18n";
+import { companionStageLabel, normalizeLocale, type AppLocale } from "@/lib/i18n";
 import { normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import {
@@ -24,7 +24,7 @@ import {
   isoWeekString,
 } from "@/game/progression/bonus-xp";
 import { awardXp } from "@/game/progression/xp-engine";
-import { normalizePersonality } from "@/types/game";
+import { COMPANION_STAGES, normalizePersonality } from "@/types/game";
 
 export interface DemoActionState {
   status: "idle" | "success" | "error";
@@ -77,7 +77,9 @@ async function runPresenterAction(formData: FormData, operation: "prepare" | "le
     }
     const result = await advanceDemoCompanion(supabase, "plant-01");
     revalidateDemoRoutes();
-    return { status: "success", message: result.evolved ? (locale === "id" ? `${result.fromStage} berevolusi menjadi ${result.stage}!` : `${result.fromStage} evolved into ${result.stage}!`) : (locale === "id" ? "Jamkachu sudah mencapai Guardian." : "Jamkachu is already a Guardian.") };
+    // Top of the 10-stage ladder, localized — never a hardcoded stage name.
+    const topStage = companionStageLabel(locale, COMPANION_STAGES[COMPANION_STAGES.length - 1]);
+    return { status: "success", message: result.evolved ? (locale === "id" ? `${companionStageLabel(locale, result.fromStage)} berevolusi menjadi ${companionStageLabel(locale, result.stage)}!` : `${companionStageLabel(locale, result.fromStage)} evolved into ${companionStageLabel(locale, result.stage)}!`) : (locale === "id" ? `Jamkachu sudah mencapai ${topStage}.` : `Jamkachu is already at ${topStage}.`) };
   } catch (cause) {
     console.error(`demo presenter ${operation} failed:`, cause);
     return { status: "error", message: locale === "id" ? "Aksi demo gagal. Periksa migrasi Supabase." : "Demo action failed. Check the Supabase migrations." };

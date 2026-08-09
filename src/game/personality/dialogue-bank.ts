@@ -1,4 +1,5 @@
 import type { PlantMood } from "@/types/events";
+import { COMPANION_STAGES } from "@/types/game";
 import type { CompanionStage, PersonalityId } from "@/types/game";
 import type { AppLocale } from "@/lib/i18n";
 
@@ -54,10 +55,11 @@ export const JAMKACHU_DIALOGUE: Record<PlantMood, string[]> = Object.fromEntries
 export const JAMKACHU_DIALOGUE_COUNT = Object.values(JAMKACHU_DIALOGUE).reduce((sum, lines) => sum + lines.length, 0);
 
 export type DialogueTime = "morning" | "later";
-const STAGES: CompanionStage[] = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"];
+// Derived from the 10-stage ladder source of truth — never a second literal.
+const STAGES: readonly CompanionStage[] = COMPANION_STAGES;
 const TIMES: DialogueTime[] = ["morning", "later"];
 
-/** 6 moods × 5 companion stages × 2 time contexts × 10 observations = 600. */
+/** 6 moods × 10 companion stages × 2 time contexts × 10 observations = 1,200. */
 export const JAMKACHU_CONTEXT_DIALOGUE: string[] = Object.entries(PARTS).flatMap(([mood, parts]) =>
   STAGES.flatMap((stage) => TIMES.flatMap((time) => parts.observations.map((observation, index) =>
     `${time === "morning" ? "Good morning" : "Here we are again"} — as a ${stage} companion, ${observation.toLowerCase()} (${mood} care ${index + 1}).`,

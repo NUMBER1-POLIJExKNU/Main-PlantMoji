@@ -19,6 +19,10 @@ import { PLANT_MOODS } from "@/types/events";
 import { BADGE_KEYS, QUEST_KEYS } from "@/types/game";
 import { COMPANION_STAGES } from "@/types/game";
 
+/** Demo-max shows the TOP of the evolution ladder — never a hardcoded
+ *  stage name, so a longer ladder can never leave this stale. */
+const MAX_COMPANION_STAGE = COMPANION_STAGES[COMPANION_STAGES.length - 1];
+
 /** Level 10 unlocks every currently shipped badge and story chapter. */
 export const DEMO_MAX_LEVEL = 10;
 /** Keep the bar visibly full while remaining inside Bond Level 10. */
@@ -242,7 +246,7 @@ export async function applyDemoMaxState(
     }),
   );
   await throwOnError("companion evolutions", supabase.from("companion_evolutions").upsert(seed.companionEvolutionRows, { onConflict: "plant_id,cycle,stage", ignoreDuplicates: true }));
-  await throwOnError("companion state", supabase.from("companion_state").upsert({ plant_id: plantId, cycle: 1, stage: "Guardian", form_key: "balanced", last_evolved_at: seed.occurredAt, updated_at: seed.occurredAt }, { onConflict: "plant_id" }));
+  await throwOnError("companion state", supabase.from("companion_state").upsert({ plant_id: plantId, cycle: 1, stage: MAX_COMPANION_STAGE, form_key: "balanced", last_evolved_at: seed.occurredAt, updated_at: seed.occurredAt }, { onConflict: "plant_id" }));
   await throwOnError(
     "rewards",
     supabase.from("xp_rewards").upsert(seed.xpRewardRows, {
@@ -289,7 +293,7 @@ export async function applyDemoMaxState(
     badges: BADGE_KEYS.length,
     chapters: CHAPTER_DEFINITIONS.length,
     quests: QUEST_KEYS.length,
-    companionStage: "Guardian",
+    companionStage: MAX_COMPANION_STAGE,
     companionForm: "balanced",
   };
 }
