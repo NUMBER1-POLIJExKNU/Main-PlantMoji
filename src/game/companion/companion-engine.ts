@@ -101,7 +101,15 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
   if (questsResult.error) throw new Error(`companion: care lookup failed: ${questsResult.error.message}`);
   const care = (questsResult.data ?? []).filter((row) => typeof row.completed_at === "string").map((row) => ({ questKey: row.quest_key as QuestKey, completedAt: row.completed_at as string }));
   const target = eligibleCompanionStage(care);
-  if (STAGE_RANK[target] <= STAGE_RANK[state.stage as CompanionStage]) return state;
+  const axes = careAxes(care);
+  // Display-only progress counters persisted for the farm layer. Never gate or grant anything.
+  const counters = { care_count: axes.careCount, affinity_count: axes.affinityCount, day_count: axes.dayCount };
+  if (STAGE_RANK[target] <= STAGE_RANK[state.stage as CompanionStage]) {
+    const fresh = COUNTER_COLUMNS.every((column) => storedCounter(state as Record<string, unknown>, column) === counters[column]);
+    if (fresh) return state; // no write churn on every tick
+    await upsertCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage: state.stage, form_key: state.form_key, ...counters, updated_at: now.toISOString() });
+    return { ...state, ...counters };
+  }
 
   const evolvedAt = now.toISOString();
   const formKey = careForm(care);
@@ -115,7 +123,6 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
     if (eventError) throw new Error(`companion: event insert failed: ${eventError.message}`);
     fromStage = stage;
   }
-  const { error: updateError } = await supabase.from("companion_state").upsert({ plant_id: plantId, cycle: state.cycle, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt }, { onConflict: "plant_id" });
-  if (updateError) throw new Error(`companion: state update failed: ${updateError.message}`);
-  return { ...state, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt };
+  await upsertCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters });
+  return { ...state, stage: target, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters };
 }
