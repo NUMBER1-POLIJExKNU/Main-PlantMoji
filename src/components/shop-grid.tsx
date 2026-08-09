@@ -28,6 +28,8 @@ export interface ShopPurchaseRow {
 }
 
 const CATEGORY_ORDER: ShopCategory[] = ["pot", "decor", "accessory"];
+type OwnershipFilter = "all" | "affordable" | "owned";
+const FILTER_ORDER: OwnershipFilter[] = ["all", "affordable", "owned"];
 
 function popConfetti(anchor: HTMLElement) {
   const rect = anchor.getBoundingClientRect();
@@ -62,6 +64,9 @@ export default function ShopGrid({
   const [purchases, setPurchases] = useState<ShopPurchaseRow[]>(initialPurchases);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [category, setCategory] = useState<ShopCategory>("pot");
+  const [filter, setFilter] = useState<OwnershipFilter>("all");
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
 
   // Seeds balance stays live: bond_state is already realtime (milestone3),
   // so earned Seeds appear here without a reload. Display only.
@@ -135,6 +140,14 @@ export default function ShopGrid({
   };
 
   const ownedRow = (key: string) => purchases.find((p) => p.item_key === key) ?? null;
+  const previewItem = items.find((item) => item.key === previewKey) ?? null;
+  const shownItems = items.filter((item) => {
+    if (item.category !== category) return false;
+    const owned = Boolean(ownedRow(item.key));
+    if (filter === "owned") return owned;
+    if (filter === "affordable") return !owned && seeds >= item.price;
+    return true;
+  });
 
   return (
     <div>
@@ -149,14 +162,15 @@ export default function ShopGrid({
         </p>
       )}
 
+      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}`} aria-live="polite"><button type="button" onClick={() => setPreviewKey(null)} aria-label={copy.closePreview}>×</button><div className="pm-shop-preview-scene"><span aria-hidden="true">{previewItem.category === "decor" ? "🌱" : "🪴"}</span><b aria-hidden="true">{previewItem.emoji}</b></div><div><small>{copy.previewing}</small><h2>{previewItem.name}</h2><p>{previewItem.blurb}</p></div></section>}
+
+      <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
+      <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => setFilter(entry)}>{copy.filters[entry]}</button>)}</div>
+
       <div className="pm-shop-sections">
-        {CATEGORY_ORDER.map((category) => (
-          <section key={category} aria-label={copy.categories[category]}>
-            <h2 className="pm-heading text-sm">{copy.categories[category]}</h2>
-            <div className="pm-shop-grid mt-2">
-              {items
-                .filter((item) => item.category === category)
-                .map((item) => {
+          <section aria-label={copy.categories[category]}>
+            <div className="pm-shop-grid">
+              {shownItems.map((item) => {
                   const owned = ownedRow(item.key);
                   const affordable = seeds >= item.price;
                   return (
@@ -164,6 +178,8 @@ export default function ShopGrid({
                       <span className="pm-shop-emoji" aria-hidden="true">{item.emoji}</span>
                       <h3>{item.name}</h3>
                       <p>{item.blurb}</p>
+                      {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
+                      <button type="button" className={`pm-shop-preview-btn${previewKey === item.key ? " is-active" : ""}`} onClick={() => setPreviewKey(previewKey === item.key ? null : item.key)}>{previewKey === item.key ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
                       {owned ? (
                         <>
                           <span className="pm-shop-owned">
@@ -185,6 +201,7 @@ export default function ShopGrid({
                           <span className={`pm-shop-price${affordable ? "" : " is-short"}`}>
                             🌰 {item.price}
                           </span>
+                          {!affordable && <small className="pm-shop-short">{item.price - seeds} {copy.needMore}</small>}
                           <button
                             type="button"
                             className="pm-btn pm-btn-primary"
@@ -198,9 +215,9 @@ export default function ShopGrid({
                     </article>
                   );
                 })}
+              {shownItems.length === 0 && <p className="pm-shop-empty">{locale === "id" ? "Belum ada barang dalam filter ini." : "No items in this filter yet."}</p>}
             </div>
           </section>
-        ))}
       </div>
     </div>
   );

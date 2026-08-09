@@ -12,10 +12,11 @@ describe("presenter demo scenarios", () => {
 
   it("advances companion stages monotonically", () => {
     expect(nextCompanionStage("Seed")).toBe("Sprout");
-    expect(nextCompanionStage("Sprout")).toBe("Bud");
+    expect(nextCompanionStage("Sprout")).toBe("Seedling");
     expect(nextCompanionStage("Bud")).toBe("Bloom");
-    expect(nextCompanionStage("Bloom")).toBe("Guardian");
-    expect(nextCompanionStage("Guardian")).toBeNull();
+    expect(nextCompanionStage("Bloom")).toBe("Fruit");
+    expect(nextCompanionStage("Guardian")).toBe("Elder");
+    expect(nextCompanionStage("Legend")).toBeNull();
   });
 
   it("uses explicit virtual snapshots without persisting sensor truth", () => {

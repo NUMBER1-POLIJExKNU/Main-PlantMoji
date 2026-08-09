@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { COMPANION_LADDER, COMPANION_STAGES } from "@/types/game";
 import type { CareAffinity, CompanionStage, QuestKey } from "@/types/game";
 
 export interface VerifiedCare {
@@ -6,7 +7,9 @@ export interface VerifiedCare {
   completedAt: string;
 }
 
-const STAGE_RANK: Record<CompanionStage, number> = { Seed: 0, Sprout: 1, Bud: 2, Bloom: 3, Guardian: 4 };
+const STAGE_RANK = Object.fromEntries(
+  COMPANION_STAGES.map((stage, rank) => [stage, rank]),
+) as Record<CompanionStage, number>;
 
 export function affinityForQuest(key: QuestKey): Exclude<CareAffinity, "balanced"> {
   if (key === "COOL_ME_DOWN") return "cool";
@@ -31,18 +34,56 @@ export function careForm(care: VerifiedCare[]): CareAffinity {
   return leaders.length === 1 ? leaders[0] : "balanced";
 }
 
+/** The three eligibility axes, shared by the ladder walk and the display-only
+ *  progress counters persisted in `companion_state`. */
+export function careAxes(care: VerifiedCare[]) {
+  return {
+    careCount: care.length,
+    affinityCount: new Set(care.map((item) => affinityForQuest(item.questKey))).size,
+    dayCount: new Set(care.map((item) => wibDay(item.completedAt))).size,
+  };
+}
+
 export function eligibleCompanionStage(care: VerifiedCare[]): CompanionStage {
-  const affinities = new Set(care.map((item) => affinityForQuest(item.questKey))).size;
-  const days = new Set(care.map((item) => wibDay(item.completedAt))).size;
-  if (care.length >= 15 && affinities >= 4 && days >= 3) return "Guardian";
-  if (care.length >= 7 && affinities >= 3 && days >= 2) return "Bloom";
-  if (care.length >= 3 && affinities >= 2) return "Bud";
-  if (care.length >= 1) return "Sprout";
+  const { careCount, affinityCount, dayCount } = careAxes(care);
+  for (let i = COMPANION_LADDER.length - 1; i >= 0; i--) {
+    const req = COMPANION_LADDER[i];
+    if (careCount >= req.care && affinityCount >= req.affinities && dayCount >= req.days) {
+      return req.stage;
+    }
+  }
   return "Seed";
 }
 
 function missingTable(error: { code?: string; message: string }) {
   return error.code === "PGRST205" || /could not find the table/i.test(error.message);
+}
+
+/** milestone16 columns absent — PostgREST schema-cache miss (PGRST204) or raw Postgres 42703. */
+function missingColumn(error: { code?: string; message: string }) {
+  return error.code === "PGRST204" || error.code === "42703" || /could not find the '.+' column/i.test(error.message) || /column .+ does not exist/i.test(error.message);
+}
+
+/** Display-only progress counters (milestone16). They never gate or grant anything. */
+const COUNTER_COLUMNS = ["care_count", "affinity_count", "day_count"] as const;
+
+function storedCounter(state: Record<string, unknown>, column: string): number {
+  const value = state[column];
+  return typeof value === "number" ? value : 0;
+}
+
+async function upsertCompanionState(supabase: SupabaseClient, payload: Record<string, unknown>) {
+  const { error } = await supabase.from("companion_state").upsert(payload, { onConflict: "plant_id" });
+  if (!error) return;
+  if (missingColumn(error)) {
+    // milestone16 not applied yet — retry without the display-only counter columns.
+    const legacy = { ...payload };
+    for (const column of COUNTER_COLUMNS) delete legacy[column];
+    const retry = await supabase.from("companion_state").upsert(legacy, { onConflict: "plant_id" });
+    if (retry.error) throw new Error(`companion: state update failed: ${retry.error.message}`);
+    return;
+  }
+  throw new Error(`companion: state update failed: ${error.message}`);
 }
 
 /** Monotonic, replay-safe evolution sweep. Missing milestone 11 is a safe no-op. */
@@ -65,7 +106,7 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
   const evolvedAt = now.toISOString();
   const formKey = careForm(care);
   const snapshot = Object.fromEntries(["cool", "air", "light", "soil", "steady"].map((key) => [key, care.filter((item) => affinityForQuest(item.questKey) === key).length]));
-  const stages = (["Seed", "Sprout", "Bud", "Bloom", "Guardian"] as CompanionStage[]).slice(STAGE_RANK[state.stage as CompanionStage] + 1, STAGE_RANK[target] + 1);
+  const stages = ([...COMPANION_STAGES] as CompanionStage[]).slice(STAGE_RANK[state.stage as CompanionStage] + 1, STAGE_RANK[target] + 1);
   let fromStage = state.stage as CompanionStage;
   for (const stage of stages) {
     const { error: evolutionError } = await supabase.from("companion_evolutions").upsert({ plant_id: plantId, cycle: state.cycle, stage, from_stage: fromStage, form_key: formKey, care_snapshot: snapshot, evolved_at: evolvedAt }, { onConflict: "plant_id,cycle,stage", ignoreDuplicates: true });

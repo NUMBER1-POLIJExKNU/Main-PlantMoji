@@ -3784,9 +3784,9 @@ function fxDecorReveal(level) {
 // every owned decor item becomes .own-<item_key> on .shop-decor-layer.
 // Applied idempotently on every render, exactly like applyDecorations.
 
-const SHOP_POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan"];
-const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses"];
-const SHOP_DECOR_KEYS = ["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond"];
+const SHOP_POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"];
+const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles"];
+const SHOP_DECOR_KEYS = ["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond", "decor_coffee_sign", "decor_greenhouse", "decor_rain_barrel", "decor_compost", "decor_tobacco_barn", "decor_puger_pinwheel"];
 
 function renderShopPurchases(rows) {
   const svg = $(".mascot-svg");

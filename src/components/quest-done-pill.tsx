@@ -28,13 +28,18 @@ export default function QuestDonePill({ questId, label, style }: QuestDonePillPr
 
   useEffect(() => {
     const key = `pm-just-completed:${questId}`;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     try {
       if (sessionStorage.getItem(key) == null) return;
       sessionStorage.removeItem(key);
-      setStamp(true);
+      // Schedule the presentation update after the effect finishes. This
+      // avoids a cascading synchronous render while preserving the one-shot
+      // sessionStorage handshake and next-frame stamp animation.
+      timer = setTimeout(() => setStamp(true), 0);
     } catch {
       /* sessionStorage unavailable — no stamp, pill still renders normally */
     }
+    return () => { if (timer !== null) clearTimeout(timer); };
   }, [questId]);
 
   return (

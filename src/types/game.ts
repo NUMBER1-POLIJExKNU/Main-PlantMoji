@@ -97,8 +97,29 @@ export interface AwardXpResult {
 
 // Companion evolution is deliberately separate from the real plant's
 // manually recorded growth_stage.
-export const COMPANION_STAGES = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"] as const;
+export const COMPANION_STAGES = [
+  "Seed", "Sprout", "Seedling", "Bud", "Bloom",
+  "Fruit", "Guardian", "Elder", "Radiant", "Legend",
+] as const;
 export type CompanionStage = (typeof COMPANION_STAGES)[number];
+
+/** Evolution requirements — care count / distinct affinities / distinct WIB days.
+ *  Mirrored (display-only) in public/farm/companion-ladder.js; a parity vitest
+ *  keeps the two identical. */
+export const COMPANION_LADDER: readonly {
+  stage: CompanionStage; care: number; affinities: number; days: number;
+}[] = [
+  { stage: "Seed", care: 0, affinities: 0, days: 0 },
+  { stage: "Sprout", care: 1, affinities: 0, days: 0 },
+  { stage: "Seedling", care: 2, affinities: 0, days: 2 },
+  { stage: "Bud", care: 3, affinities: 2, days: 0 },
+  { stage: "Bloom", care: 7, affinities: 3, days: 2 },
+  { stage: "Fruit", care: 11, affinities: 3, days: 4 },
+  { stage: "Guardian", care: 15, affinities: 4, days: 5 },
+  { stage: "Elder", care: 25, affinities: 4, days: 8 },
+  { stage: "Radiant", care: 40, affinities: 4, days: 12 },
+  { stage: "Legend", care: 60, affinities: 4, days: 20 },
+];
 export const CARE_AFFINITIES = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
 export type CareAffinity = (typeof CARE_AFFINITIES)[number];
 

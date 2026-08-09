@@ -1843,9 +1843,15 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .mascot-svg.shop-pot_terracotta .shop-g-pot_terracotta { display: block; }
 .mascot-svg.shop-pot_batik .shop-g-pot_batik { display: block; }
 .mascot-svg.shop-pot_tincan .shop-g-pot_tincan { display: block; }
+.mascot-svg.shop-pot_coffee_sack .shop-g-pot_coffee_sack { display: block; }
+.mascot-svg.shop-pot_bamboo .shop-g-pot_bamboo { display: block; }
+.mascot-svg.shop-pot_jember_mosaic .shop-g-pot_jember_mosaic { display: block; }
 .mascot-svg.shop-acc_strawhat .shop-g-acc_strawhat { display: block; }
 .mascot-svg.shop-acc_ribbon .shop-g-acc_ribbon { display: block; }
 .mascot-svg.shop-acc_glasses .shop-g-acc_glasses { display: block; }
+.mascot-svg.shop-acc_coffee_crown .shop-g-acc_coffee_crown { display: block; }
+.mascot-svg.shop-acc_bandana .shop-g-acc_bandana { display: block; }
+.mascot-svg.shop-acc_goggles .shop-g-acc_goggles { display: block; }
 
 .shop-decor-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
 .shop-decor-layer .shop-decor { display: none; }
@@ -1853,6 +1859,12 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .shop-decor-layer.own-decor_fence .shop-decor-fence { display: block; }
 .shop-decor-layer.own-decor_lantern .shop-decor-lantern { display: block; }
 .shop-decor-layer.own-decor_pond .shop-decor-pond { display: block; }
+.shop-decor-layer.own-decor_coffee_sign .shop-decor-coffee-sign { display: block; }
+.shop-decor-layer.own-decor_greenhouse .shop-decor-greenhouse { display: block; }
+.shop-decor-layer.own-decor_rain_barrel .shop-decor-rain-barrel { display: block; }
+.shop-decor-layer.own-decor_compost .shop-decor-compost { display: block; }
+.shop-decor-layer.own-decor_tobacco_barn .shop-decor-tobacco-barn { display: block; }
+.shop-decor-layer.own-decor_puger_pinwheel .shop-decor-puger-pinwheel { display: block; }
 
 /* Scarecrow: post + head + arms (box-shadow sprite, .grass-tuft technique) */
 .shop-decor-scarecrow { position: absolute; left: 6%; bottom: 60px; width: 12px; height: 74px; background: #8a6b48; border: 3px solid #243421; }
@@ -1870,3 +1882,9 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 /* Mini pond: water oval + lily pad */
 .shop-decor-pond { position: absolute; right: 12%; bottom: 34px; width: 84px; height: 26px; background: #4da1ed; border: 3px solid #243421; border-radius: 50%; }
 .shop-decor-pond i { position: absolute; left: 14px; top: 4px; width: 22px; height: 10px; background: #69b957; border: 2px solid #243421; border-radius: 50%; }
+.shop-decor-coffee-sign { position:absolute; left:27%; bottom:62px; width:58px; height:34px; border:3px solid #243421; background:#8a6b48; color:#fff; text-align:center; }.shop-decor-coffee-sign::after { content:""; position:absolute; left:24px; top:32px; width:7px; height:35px; background:#6d4e32; }.shop-decor-coffee-sign i { font-style:normal; font-size:20px; }
+.shop-decor-greenhouse { position:absolute; right:28%; bottom:57px; width:92px; height:64px; border:4px solid #243421; background:rgba(166,225,220,.72); clip-path:polygon(12% 28%,50% 0,88% 28%,100% 28%,100% 100%,0 100%,0 28%); }.shop-decor-greenhouse i { position:absolute; left:43px; top:18px; width:4px; height:46px; background:#397a2b; }
+.shop-decor-rain-barrel { position:absolute; right:6%; bottom:58px; width:38px; height:48px; border:3px solid #243421; border-radius:5px; background:#4389b8; box-shadow:inset 0 8px #69add5; }.shop-decor-rain-barrel i { position:absolute; right:-11px; bottom:8px; width:12px; height:7px; border:3px solid #243421; background:#b9c2c9; }
+.shop-decor-compost { position:absolute; left:38%; bottom:54px; width:48px; height:35px; border:3px solid #243421; background:#7c593c; color:#d8efad; text-align:center; }.shop-decor-compost i { font-style:normal; font-size:22px; }
+.shop-decor-tobacco-barn { position:absolute; left:2%; bottom:58px; width:72px; height:55px; border:3px solid #243421; background:#9a6845; clip-path:polygon(50% 0,100% 28%,100% 100%,0 100%,0 28%); }.shop-decor-tobacco-barn i { position:absolute; left:29px; bottom:0; width:18px; height:31px; background:#493426; }
+.shop-decor-puger-pinwheel { position:absolute; right:20%; bottom:61px; width:8px; height:58px; background:#e7ddd0; border:2px solid #243421; }.shop-decor-puger-pinwheel i { position:absolute; left:-17px; top:-20px; width:38px; height:38px; background:conic-gradient(#ffca55 0 25%,#58b9d1 0 50%,#ef7a74 0 75%,#8fd36f 0); clip-path:polygon(50% 50%,0 15%,40% 38%,50% 0,62% 40%,100% 50%,62% 62%,50% 100%,40% 62%,0 85%); }

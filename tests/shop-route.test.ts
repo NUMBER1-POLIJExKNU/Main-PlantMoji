@@ -32,4 +32,11 @@ describe("/shop route", () => {
     expect(grid).toContain("result.seeds");
     expect(grid).not.toContain("seeds - item.price");
   });
+
+  it("supports category, ownership, and non-persistent previews", () => {
+    expect(grid).toContain("pm-shop-category-tabs");
+    expect(grid).toContain('type OwnershipFilter = "all" | "affordable" | "owned"');
+    expect(grid).toContain("setPreviewKey");
+    expect(grid).not.toMatch(/purchaseShopItem\([^)]*price/);
+  });
 });

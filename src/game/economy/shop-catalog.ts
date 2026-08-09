@@ -56,6 +56,9 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
       id: "Kaleng daur ulang — hemat dan berkilau.",
     },
   },
+  { key: "pot_coffee_sack", category: "pot", price: 30, emoji: "☕", name: { en: "Coffee Sack Pot", id: "Pot Karung Kopi" }, blurb: { en: "A reused coffee sack inspired by Jember farms.", id: "Karung kopi guna ulang yang terinspirasi kebun Jember." } },
+  { key: "pot_bamboo", category: "pot", price: 40, emoji: "🎋", name: { en: "Bamboo Planter", id: "Pot Bambu" }, blurb: { en: "A warm bamboo-style home for Jamkachu.", id: "Rumah bergaya bambu yang hangat untuk Jamkachu." } },
+  { key: "pot_jember_mosaic", category: "pot", price: 45, emoji: "🟩", name: { en: "Jember Mosaic Pot", id: "Pot Mosaik Jember" }, blurb: { en: "Highland green and coastal blue in one pattern.", id: "Hijau pegunungan dan biru pesisir dalam satu motif." } },
   // ── Farm decorations (display once owned, no equip) ───────────────────
   {
     key: "decor_scarecrow",
@@ -101,6 +104,12 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
       id: "Kolam mungil dengan daun teratai.",
     },
   },
+  { key: "decor_coffee_sign", category: "decor", price: 30, emoji: "☕", name: { en: "Coffee Farm Sign", id: "Papan Kebun Kopi" }, blurb: { en: "A small sign celebrating Jember coffee country.", id: "Papan kecil yang merayakan kawasan kopi Jember." } },
+  { key: "decor_greenhouse", category: "decor", price: 55, emoji: "🏡", name: { en: "Mini Greenhouse", id: "Rumah Kaca Mini" }, blurb: { en: "A tiny classroom greenhouse for the farm.", id: "Rumah kaca kelas berukuran mini untuk kebun." } },
+  { key: "decor_rain_barrel", category: "decor", price: 45, emoji: "🛢️", name: { en: "Rain Barrel", id: "Tong Air Hujan" }, blurb: { en: "A reminder to collect and use water wisely.", id: "Pengingat untuk menampung dan memakai air dengan bijak." } },
+  { key: "decor_compost", category: "decor", price: 40, emoji: "♻️", name: { en: "Compost Corner", id: "Sudut Kompos" }, blurb: { en: "Garden leftovers return to the growing cycle.", id: "Sisa kebun kembali ke dalam siklus pertumbuhan." } },
+  { key: "decor_tobacco_barn", category: "decor", price: 50, emoji: "🏚️", name: { en: "Jember Drying Barn", id: "Gudang Pengering Jember" }, blurb: { en: "A miniature landmark from Jember's farming landscape.", id: "Miniatur penanda dari lanskap pertanian Jember." } },
+  { key: "decor_puger_pinwheel", category: "decor", price: 35, emoji: "🌬️", name: { en: "Puger Sea Pinwheel", id: "Kincir Angin Puger" }, blurb: { en: "A bright spinner inspired by the Puger coast.", id: "Kincir cerah yang terinspirasi pesisir Puger." } },
   // ── Jamkachu accessories (equippable, at most one) ────────────────────
   {
     key: "acc_strawhat",
@@ -135,6 +144,9 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
       id: "Bertengger gaya di atas dahi.",
     },
   },
+  { key: "acc_coffee_crown", category: "accessory", price: 35, emoji: "🌼", name: { en: "Coffee Flower Crown", id: "Mahkota Bunga Kopi" }, blurb: { en: "Little white blossoms for a Jember look.", id: "Bunga putih kecil untuk gaya khas Jember." } },
+  { key: "acc_bandana", category: "accessory", price: 25, emoji: "🧣", name: { en: "Farmer Bandana", id: "Bandana Petani" }, blurb: { en: "A practical scarf for a cheerful farm day.", id: "Kain praktis untuk hari ceria di kebun." } },
+  { key: "acc_goggles", category: "accessory", price: 40, emoji: "🥽", name: { en: "Explorer Goggles", id: "Kacamata Penjelajah" }, blurb: { en: "Ready to inspect every sensor clue.", id: "Siap memeriksa setiap petunjuk dari sensor." } },
 ] as const;
 
 export function shopItemByKey(key: string): ShopItem | null {
@@ -206,6 +218,12 @@ export const SHOP_UI_COPY = {
     purchased: "Yay! It's yours!",
     equippedToast: "Looking good!",
     earnHint: "Earn Seeds: quest +3 · badge +5 · story +10 · quiz +1 · streak day +1",
+    filters: { all: "All", affordable: "Can buy", owned: "Owned" },
+    preview: "Preview",
+    previewing: "Previewing",
+    closePreview: "Close preview",
+    decorAuto: "Appears automatically on My Garden",
+    needMore: "more Seeds needed",
     categories: { pot: "Pots", decor: "Farm decorations", accessory: "Accessories" },
     comingSoonTitle: "Coming soon at this school",
     comingSoonLines: [
@@ -232,6 +250,12 @@ export const SHOP_UI_COPY = {
     purchased: "Hore! Jadi milikmu!",
     equippedToast: "Keren!",
     earnHint: "Dapatkan Benih: misi +3 · lencana +5 · cerita +10 · quiz +1 · hari rawatan +1",
+    filters: { all: "Semua", affordable: "Bisa dibeli", owned: "Dimiliki" },
+    preview: "Pratinjau",
+    previewing: "Sedang dicoba",
+    closePreview: "Tutup pratinjau",
+    decorAuto: "Otomatis tampil di Kebun Saya",
+    needMore: "Benih lagi dibutuhkan",
     categories: { pot: "Pot", decor: "Dekorasi kebun", accessory: "Aksesori" },
     comingSoonTitle: "Segera hadir di sekolah ini",
     comingSoonLines: [
