@@ -877,7 +877,11 @@ body.room-warm {
 .hatch-card-line + .hatch-card-line { margin-top: 8px; }
 .hatch-skip {
     position: absolute;
-    top: 20px;
+    /* #sound-toggle (sfx.js) is a fixed 44px button pinned at top:12px;
+       right:12px on every viewport (no media query touches it). Clear its
+       box with an 8px gap instead of sharing the same corner, so Skip and
+       the mute toggle never overlap or fight for the same tap. */
+    top: 64px;
     right: 20px;
     font-size: 10px;
     padding: 10px 16px;
