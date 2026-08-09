@@ -179,6 +179,44 @@ const FACES: Record<PlantMood, () => ReactElement> = {
   SoilAlkaline: SoilAlkalineFace,
 };
 
+/** Short-lived face layers add personality inside a deterministic mood.
+ * They only cover facial pixels; mood truth, props and game logic stay put. */
+function MicroExpressions({ mood }: { mood: PlantMood }) {
+  const head = "var(--color-grass-light)";
+  return (
+    <g className={`pm-micro-expressions pm-expression-${mood.toLowerCase()}`}>
+      {mood !== "Sleepy" && (
+        <g className="pm-expression-frame pm-expression-blink">
+          <rect x="102" y="39" width="76" height="25" fill={head} />
+          <rect x="108" y="51" width="18" height="5" fill={OUTLINE} />
+          <rect x="154" y="51" width="18" height="5" fill={OUTLINE} />
+        </g>
+      )}
+      <g className="pm-expression-frame pm-expression-look">
+        <rect x="102" y="39" width="76" height="25" fill={head} />
+        {mood === "Sleepy" ? (
+          <><rect x="108" y="51" width="18" height="5" fill={OUTLINE} /><rect x="154" y="49" width="18" height="5" fill={OUTLINE} /></>
+        ) : (
+          <><rect x="108" y="44" width="17" height="17" fill={OUTLINE} /><rect x="116" y="47" width="5" height="5" fill="#FFF" /><rect x="155" y="44" width="17" height="17" fill={OUTLINE} /><rect x="163" y="47" width="5" height="5" fill="#FFF" /></>
+        )}
+      </g>
+      <g className="pm-expression-frame pm-expression-mouth">
+        <rect x="114" y="61" width="52" height="24" fill={head} />
+        {mood === "Happy" && <><rect x="131" y="67" width="18" height="16" fill={OUTLINE} /><rect x="136" y="72" width="8" height="6" fill="#FFF" /></>}
+        {mood === "Overheating" && <><rect x="124" y="69" width="32" height="12" fill={OUTLINE} /><rect x="130" y="76" width="20" height="8" fill={CHEEK} /></>}
+        {mood === "DryAir" && <><rect x="126" y="71" width="28" height="6" fill={OUTLINE} /><rect x="134" y="77" width="12" height="4" fill={OUTLINE} /></>}
+        {mood === "Sleepy" && <><rect x="130" y="68" width="20" height="14" fill={OUTLINE} /><rect x="135" y="72" width="10" height="7" fill={head} /></>}
+        {(mood === "SoilAcidic" || mood === "SoilAlkaline") && <><rect x="127" y="70" width="10" height="6" fill={OUTLINE} /><rect x="143" y="70" width="10" height="6" fill={OUTLINE} /></>}
+      </g>
+      <g className="pm-expression-frame pm-expression-accent" fill="#FFF7A8">
+        {mood === "Happy" ? <><rect x="74" y="33" width="7" height="20" /><rect x="67" y="39" width="21" height="7" /><rect x="219" y="44" width="6" height="17" /><rect x="214" y="49" width="17" height="6" /></> :
+         mood === "Sleepy" ? <><rect x="214" y="26" width="18" height="5" /><rect x="223" y="31" width="5" height="5" /><rect x="214" y="36" width="18" height="5" /></> :
+         <><rect x="218" y="34" width="6" height="18" fill={mood === "Overheating" ? WATER : "#FFF7A8"} /><rect x="212" y="53" width="18" height="5" fill={mood === "Overheating" ? WATER : "#FFF7A8"} /></>}
+      </g>
+    </g>
+  );
+}
+
 export default function Mascot({ mood }: { mood: PlantMood }) {
   const Face = FACES[mood] ?? HappyFace;
   return (
@@ -203,6 +241,7 @@ export default function Mascot({ mood }: { mood: PlantMood }) {
 
         {/* Per-mood pixel face */}
         <Face />
+        <MicroExpressions mood={mood} />
 
         {/* Soil-pH trouble: a potion bottle appears beside the pot */}
         {mood === "SoilAcidic" && <Potion side="left" color={ACID_POTION} />}

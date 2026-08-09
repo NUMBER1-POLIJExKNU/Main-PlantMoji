@@ -293,6 +293,9 @@ html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
 .pm-btn-primary:hover { box-shadow: 0 5px 0 var(--color-forest); filter: brightness(1.06); }
 .pm-btn-primary:active { box-shadow: 0 0 0 var(--color-forest); }
 .pm-btn-primary:disabled { box-shadow: 0 4px 0 var(--color-forest); }
+.pm-btn-danger { background: #d95858; color: #fff; border-color: #8f2f2f; box-shadow: 0 4px 0 #8f2f2f; }
+.pm-btn-danger:hover { box-shadow: 0 5px 0 #8f2f2f; filter: brightness(1.05); }
+.pm-btn-danger:active { box-shadow: 0 0 0 #8f2f2f; }
 
 /* Pixel squash-and-stretch: the squash itself lives in the plain :active
    rule above. Only the RELEASE — a ~180ms, 3-frame pixel snap back to rest
@@ -530,6 +533,7 @@ html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
 .pm-mascot {
   filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15));
 }
+.pm-expression-frame { opacity: 0; pointer-events: none; }
 
 /* Motion — every scene animation is opt-in behind reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
@@ -542,6 +546,12 @@ html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
     transform-box: fill-box;
     transform-origin: 50% 100%;
   }
+  /* Four small expressions rotate every ~10s. Their windows never overlap,
+     so the face remains crisp and mood-appropriate between changes. */
+  .pm-expression-blink { animation: pm-face-blink 9.6s steps(1,end) infinite; }
+  .pm-expression-look { animation: pm-face-look 9.6s steps(1,end) infinite; }
+  .pm-expression-mouth { animation: pm-face-mouth 9.6s steps(1,end) infinite; }
+  .pm-expression-accent { animation: pm-face-accent 9.6s steps(1,end) infinite; }
   .pm-bounce {
     animation: pm-float 3s ease-in-out infinite alternate;
   }
@@ -555,6 +565,11 @@ html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
   .pm-cloud-2 { animation: pm-cloud-drift 95s linear -38s infinite; }
   .pm-cloud-3 { animation: pm-cloud-drift 55s linear -22s infinite; }
 }
+
+@keyframes pm-face-blink { 0%,12%,100%{opacity:0} 13%,18%{opacity:1} }
+@keyframes pm-face-look { 0%,31%,47%,100%{opacity:0} 32%,46%{opacity:1} }
+@keyframes pm-face-mouth { 0%,57%,73%,100%{opacity:0} 58%,72%{opacity:1} }
+@keyframes pm-face-accent { 0%,81%,95%,100%{opacity:0} 82%,94%{opacity:1} }
 
 @keyframes pm-breath {
   from { transform: scaleY(1) scaleX(1); }
@@ -656,6 +671,103 @@ html[data-farm-skin="greenhouse"] { --route-skin-art: linear-gradient(90deg, tra
 html[data-farm-skin="greenhouse"] .pm-scene { background-image: linear-gradient(90deg, transparent 48%, rgba(255,255,255,.2) 49% 51%, transparent 52%), linear-gradient(180deg, transparent 48%, rgba(255,255,255,.12) 49% 51%, transparent 52%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); background-size: 130px 100%, 100% 100px, 100% 100%; }
 html[data-farm-skin="greenhouse"] .reno-env-cloud { display: none; }
 
+/* Jember world skins share the same shell and scene physics. Each skin adds
+   one readable landmark instead of replacing UI/status colors. */
+html[data-farm-skin="tobacco-fields"] .reno-app-shell {
+  background:
+    linear-gradient(164deg, transparent 0 68%, #96ad4d 69% 75%, #a66e42 76% 100%),
+    repeating-linear-gradient(104deg, transparent 0 40px, rgba(79,101,42,.2) 42px 47px, transparent 49px 82px),
+    radial-gradient(circle at 50% 25%, #fff0bd, #d9c58d 72%);
+}
+html[data-farm-skin="tobacco-fields"] { --route-skin-art: repeating-linear-gradient(105deg, transparent 0 58px, rgba(118,139,61,.10) 60px 66px, transparent 68px 116px); }
+html[data-farm-skin="tobacco-fields"] .pm-scene { background-image: linear-gradient(164deg, transparent 0 70%, rgba(150,173,77,.68) 71% 82%, rgba(166,110,66,.5) 83%), radial-gradient(circle at 50% 28%, var(--scene-glow), var(--scene-sky)); }
+html[data-farm-skin="tobacco-fields"] .reno-env-particles { background-image: radial-gradient(ellipse, rgba(79,101,42,.38) 0 3px, transparent 4px); background-size: 72px 54px; }
+
+html[data-farm-skin="kakao-garden"] .reno-app-shell {
+  background:
+    radial-gradient(ellipse at 8% 78%, #d27635 0 2%, transparent 2.5%),
+    radial-gradient(ellipse at 88% 68%, #b95b2f 0 2.2%, transparent 2.8%),
+    radial-gradient(ellipse at 10% 100%, #326447 0 35%, transparent 36%),
+    radial-gradient(ellipse at 92% 104%, #487c53 0 36%, transparent 37%),
+    linear-gradient(#b7ddc0, #79ad82);
+}
+html[data-farm-skin="kakao-garden"] { --route-skin-art: radial-gradient(ellipse at 5% 90%, rgba(50,100,71,.18) 0 22%, transparent 23%), radial-gradient(ellipse at 94% 96%, rgba(210,118,53,.16) 0 8%, transparent 9%); }
+html[data-farm-skin="kakao-garden"] .pm-scene { background-image: radial-gradient(ellipse at 8% 75%, rgba(210,118,53,.72) 0 2.5%, transparent 3%), radial-gradient(ellipse at 92% 78%, rgba(50,100,71,.65) 0 23%, transparent 24%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); }
+html[data-farm-skin="kakao-garden"] .reno-env-particles { background-image: radial-gradient(#e49a55 0 2px, transparent 3px); background-size: 88px 68px; opacity: .42; }
+
+html[data-farm-skin="paddy-morning"] .reno-app-shell {
+  background:
+    repeating-linear-gradient(170deg, transparent 0 66px, rgba(255,255,255,.28) 68px 71px, transparent 73px 120px),
+    linear-gradient(168deg, transparent 0 61%, #72bd79 62% 68%, #64b8bd 69% 100%),
+    linear-gradient(#d6f4ff, #8bd6e4);
+}
+html[data-farm-skin="paddy-morning"] { --route-skin-art: repeating-linear-gradient(170deg, transparent 0 72px, rgba(100,184,189,.13) 74px 77px, transparent 79px 140px); }
+html[data-farm-skin="paddy-morning"] .pm-scene { background-image: linear-gradient(168deg, transparent 0 72%, rgba(114,189,121,.62) 73% 79%, rgba(100,184,189,.55) 80%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); }
+html[data-farm-skin="paddy-morning"] .reno-env-particles { background-image: linear-gradient(90deg, transparent 0 35%, rgba(255,255,255,.42) 36% 52%, transparent 53%); background-size: 150px 42px; opacity: .55; }
+
+html[data-farm-skin="puger-coast"] .reno-app-shell {
+  background:
+    repeating-radial-gradient(ellipse at 50% 112%, transparent 0 44px, rgba(255,255,255,.42) 46px 50px, transparent 52px 78px),
+    linear-gradient(172deg, transparent 0 61%, #3d9fc2 62% 84%, #e7c988 85%),
+    linear-gradient(#ccefff, #78c9e5);
+}
+html[data-farm-skin="puger-coast"] { --route-skin-art: repeating-radial-gradient(ellipse at 50% 118%, transparent 0 58px, rgba(61,159,194,.13) 60px 64px, transparent 66px 96px); }
+html[data-farm-skin="puger-coast"] .pm-scene { background-image: repeating-radial-gradient(ellipse at 50% 118%, transparent 0 48px, rgba(255,255,255,.34) 50px 53px, transparent 55px 82px), linear-gradient(172deg, transparent 0 72%, rgba(61,159,194,.72) 73% 90%, rgba(231,201,136,.58) 91%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); }
+html[data-farm-skin="puger-coast"] .reno-env-particles { opacity: .2; }
+
+html[data-farm-skin="argopuro-highlands"] .reno-app-shell {
+  background:
+    linear-gradient(145deg, transparent 0 64%, #405e57 65% 75%, transparent 76%),
+    linear-gradient(215deg, transparent 0 58%, #648b73 59% 74%, transparent 75%),
+    radial-gradient(ellipse at 50% 72%, rgba(255,255,255,.48) 0 18%, transparent 46%),
+    linear-gradient(#dce7e2, #9ebcaf);
+}
+html[data-farm-skin="argopuro-highlands"] { --route-skin-art: linear-gradient(145deg, transparent 0 76%, rgba(64,94,87,.16) 77% 86%, transparent 87%), linear-gradient(215deg, transparent 0 72%, rgba(100,139,115,.14) 73% 86%, transparent 87%); }
+html[data-farm-skin="argopuro-highlands"] .pm-scene { background-image: linear-gradient(145deg, transparent 0 76%, rgba(64,94,87,.58) 77% 87%, transparent 88%), linear-gradient(215deg, transparent 0 70%, rgba(100,139,115,.5) 71% 86%, transparent 87%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); }
+html[data-farm-skin="argopuro-highlands"] .reno-env-particles { background-image: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent); background-size: 340px 90px; opacity: .48; }
+
+/* Night keeps each landmark legible instead of flattening every skin into the
+   same dark overlay. Time remains controlled solely by data-theme. */
+html[data-theme="night"][data-farm-skin="paddy-morning"] .reno-env-background,
+html[data-theme="night"][data-farm-skin="puger-coast"] .reno-env-background { filter: saturate(.72) brightness(.72); }
+html[data-theme="night"][data-farm-skin="kakao-garden"] .reno-env-particles { opacity: .72; filter: drop-shadow(0 0 4px #ffe98a); }
+html[data-theme="night"][data-farm-skin="argopuro-highlands"] .reno-env-particles { opacity: .58; }
+html[data-theme="night"] .reno-app-shell::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: rgba(11,20,34,.46); }
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-farm-skin="paddy-morning"] .reno-env-particles,
+  html[data-farm-skin="puger-coast"] .reno-env-particles { animation: pm-skin-water 5s steps(5,end) infinite alternate; }
+  html[data-farm-skin="argopuro-highlands"] .reno-env-particles { animation: pm-skin-mist 12s ease-in-out infinite alternate; }
+  html[data-theme="night"][data-farm-skin="kakao-garden"] .reno-env-particles { animation: pm-skin-fireflies 3.4s steps(3,end) infinite alternate; }
+}
+@keyframes pm-skin-water { to { transform: translateX(18px); opacity: .72; } }
+@keyframes pm-skin-mist { to { transform: translateX(55px); opacity: .28; } }
+@keyframes pm-skin-fireflies { to { opacity: .35; } }
+
+/* My Garden owns a mood-reactive scene, so it needs a final night pass after
+   every skin rule. Background blending preserves each landscape while the
+   explicit tokens darken the lawn and all home-only surfaces. */
+html[data-theme="night"] .pm-scene {
+  --grass-top: #315f3b;
+  --grass-bottom: #183724;
+  --grass-edge: #477b4d;
+  background-color: #111c31;
+  background-blend-mode: multiply;
+  color: var(--color-text);
+}
+html[data-theme="night"] .pm-scene .pm-cloud { opacity: .24; filter: brightness(.72) saturate(.7); }
+html[data-theme="night"] .pm-scene .pm-grass { box-shadow: inset 0 10px 22px rgba(255,255,255,.07); }
+html[data-theme="night"] .pm-scene .pm-bubble { border: 2px solid var(--color-border); background: var(--color-surface); color: var(--color-text); box-shadow: 0 10px 30px rgba(0,0,0,.32); }
+html[data-theme="night"] .pm-scene .pm-bubble::after { border-top-color: var(--color-surface); }
+html[data-theme="night"] .pm-home-mood-badge { border: 1px solid rgba(255,255,255,.28); filter: brightness(.78) saturate(.82); }
+html[data-theme="night"] .pm-home-environment { border-color: var(--color-border); background: color-mix(in srgb,var(--color-surface) 94%,transparent); box-shadow: 0 5px 0 rgba(5,10,7,.5); }
+html[data-theme="night"] .pm-home-sensor { background: color-mix(in srgb,var(--color-bg) 90%,#101812); box-shadow: inset 0 -3px color-mix(in srgb,var(--vital-accent) 14%,transparent); }
+html[data-theme="night"] .pm-home-environment-head a { background: var(--color-bg); }
+html[data-theme="night"] .pm-home-bond,
+html[data-theme="night"] .pm-home-quest { border: 2px solid var(--color-border); background: color-mix(in srgb,var(--color-surface) 88%,transparent) !important; color: var(--color-text); box-shadow: 0 4px 0 rgba(5,10,7,.42); }
+html[data-theme="night"] .pm-home-bond h2,
+html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
+
 .reno-appearance-controls {
   display: grid;
   gap: 7px;
@@ -666,6 +778,38 @@ html[data-farm-skin="greenhouse"] .reno-env-cloud { display: none; }
 .reno-appearance-controls label { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 6px; }
 .reno-appearance-controls label > span { font: 7px/1.3 var(--pm-font-pixel); color: var(--color-text); opacity: .65; }
 .reno-appearance-controls select { min-width: 0; border: 2px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); padding: 5px; font-family: var(--pm-font-body); font-size: 13px; }
+.reno-skin-control { display: grid; grid-template-columns: 48px minmax(0,1fr); align-items: center; gap: 6px; }
+.reno-skin-control > span { font: 7px/1.3 var(--pm-font-pixel); color: var(--color-text); opacity: .65; }
+.reno-skin-open { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 5px 7px; border: 2px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: 13px/1.2 var(--pm-font-body); cursor: pointer; }
+.reno-skin-open span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reno-skin-open:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
+.reno-skin-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 20px; background: rgba(18,31,25,.62); backdrop-filter: blur(5px); }
+.reno-skin-picker { width: min(860px, 100%); max-height: min(760px, calc(100dvh - 32px)); overflow: auto; padding: 22px; }
+.reno-skin-picker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.reno-skin-picker-head p { margin: 0 0 5px; color: var(--color-forest); font: 8px/1.5 var(--pm-font-pixel); letter-spacing: .12em; }
+.reno-skin-picker-head h2 { margin: 0; font: 17px/1.55 var(--pm-font-game); }
+.reno-skin-picker-head button { width: 36px; height: 36px; border: 2px solid var(--color-border); border-radius: 9px; background: var(--color-surface); color: var(--color-text); font-size: 24px; line-height: 1; cursor: pointer; }
+.reno-skin-picker-help { margin: 8px 0 18px; color: color-mix(in srgb, var(--color-text) 72%, transparent); font-size: 13px; }
+.reno-skin-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.reno-skin-card { position: relative; display: grid; grid-template-columns: 92px minmax(0,1fr) 24px; align-items: center; gap: 12px; min-height: 92px; padding: 9px; border: 3px solid var(--color-border); border-radius: 13px; background: var(--color-surface); color: var(--color-text); text-align: left; cursor: pointer; box-shadow: 0 3px 0 rgba(36,52,33,.12); }
+.reno-skin-card:hover { transform: translateY(-1px); }
+.reno-skin-card.active { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface)); box-shadow: 0 4px 0 color-mix(in srgb, var(--color-primary) 55%, transparent); }
+.reno-skin-preview { position: relative; display: grid; place-items: center; width: 92px; height: 70px; overflow: hidden; border: 2px solid rgba(43,58,39,.24); border-radius: 9px; background: linear-gradient(165deg, var(--preview-sky) 0 57%, var(--preview-land) 58% 76%, var(--preview-accent) 77%); }
+.reno-skin-preview::before { content: ""; position: absolute; top: 9px; right: 10px; width: 16px; height: 16px; border-radius: 50%; background: #ffe78a; box-shadow: 0 0 10px rgba(255,231,138,.65); }
+.reno-skin-preview i { z-index: 1; margin-top: 22px; font-style: normal; font-size: 25px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.12)); }
+.reno-skin-card-copy { display: grid; gap: 5px; min-width: 0; }
+.reno-skin-card-copy strong { font: 15px/1.3 var(--pm-font-game); }
+.reno-skin-card-copy small { color: color-mix(in srgb, var(--color-text) 70%, transparent); font: 12px/1.35 var(--pm-font-body); }
+.reno-skin-card > b { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: var(--color-primary); color: #fff; font-size: 13px; }
+.reno-skin-actions { position: sticky; bottom: -22px; display: flex; justify-content: flex-end; gap: 10px; margin: 18px -22px -22px; padding: 14px 22px 18px; border-top: 2px dashed var(--color-border); background: var(--color-surface); }
+@media (max-width: 620px) {
+  .reno-skin-backdrop { place-items: end center; padding: 0; }
+  .reno-skin-picker { width: 100%; max-height: 88dvh; border-width: 3px 0 0; border-radius: 22px 22px 0 0; padding: 16px; }
+  .reno-skin-grid { grid-template-columns: 1fr; }
+  .reno-skin-card { grid-template-columns: 78px minmax(0,1fr) 24px; min-height: 80px; }
+  .reno-skin-preview { width: 78px; height: 60px; }
+  .reno-skin-actions { bottom: -16px; margin: 14px -16px -16px; padding: 12px 16px max(14px,env(safe-area-inset-bottom)); }
+}
 
 .reno-env-background {
   position: fixed;
@@ -886,22 +1030,28 @@ html[data-farm-skin="greenhouse"] .reno-env-cloud { display: none; }
   box-shadow: var(--pm-shadow);
 }
 
-.pm-home-environment { width: 100%; padding: 14px; border: 3px solid rgba(255,255,255,.72); border-radius: 18px; background: color-mix(in srgb, var(--color-surface) 92%, transparent); color: var(--color-text); box-shadow: 0 5px 0 rgba(36,52,33,.2); }
+.pm-home-environment { width: 100%; overflow: hidden; padding: 16px; border: 3px solid rgba(255,255,255,.82); border-radius: 18px; background: color-mix(in srgb, var(--color-surface) 94%, transparent); color: var(--color-text); box-shadow: 0 5px 0 rgba(36,52,33,.2); }
 .pm-home-environment-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pm-home-environment-kicker { color: var(--color-forest); font: 7px/1.4 var(--pm-font-pixel); }
-.pm-home-environment h2 { margin-top: 5px; font: 11px/1.5 var(--pm-font-pixel); }
-.pm-home-environment-head a { flex: none; color: var(--color-forest); font-weight: 700; text-decoration: none; }
+.pm-home-environment h2 { margin-top: 5px; overflow-wrap: anywhere; font: 16px/1.25 var(--pm-font-game); }
+.pm-home-environment-head a { flex: none; padding: 6px 9px; border: 2px solid var(--color-border); border-radius: 9px; color: var(--color-forest); background: var(--color-bg); font-size: 12px; font-weight: 700; text-decoration: none; }
 .pm-home-environment-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
-.pm-home-sensor { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 10px; border: 2px solid var(--color-border); border-radius: 12px; background: var(--color-bg); }
-.pm-home-sensor-icon { font: 20px/1 sans-serif; }
-.pm-home-sensor div { display: grid; min-width: 0; }
-.pm-home-sensor div span { overflow: hidden; opacity: .7; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.pm-home-sensor strong { font: 15px/1.35 var(--pm-font-pixel); }
-.pm-home-sensor-heat { border-left-color: #ef8b6c; }
-.pm-home-sensor-water { border-left-color: #4da1ed; }
-.pm-home-sensor-soil { border-left-color: #aa7e55; }
-.pm-home-sensor-light { border-left-color: #f2c84b; }
+.pm-home-sensor { --vital-accent: var(--color-primary); position: relative; display: grid; gap: 10px; min-width: 0; min-height: 96px; overflow: hidden; padding: 11px 12px 13px; border: 2px solid var(--color-border); border-top: 4px solid var(--vital-accent); border-radius: 12px; background: var(--color-bg); box-shadow: inset 0 -3px color-mix(in srgb, var(--vital-accent) 12%, transparent); }
+.pm-home-sensor-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.pm-home-sensor-icon { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: color-mix(in srgb, var(--vital-accent) 18%, var(--color-surface)); font: 17px/1 sans-serif; }
+.pm-home-sensor-head > span:last-child { min-width: 0; overflow: hidden; opacity: .72; font-size: 12px; font-weight: 700; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.pm-home-sensor-reading { display: flex; align-items: baseline; min-width: 0; }
+.pm-home-sensor-reading strong { min-width: 0; overflow: hidden; font: 22px/1.1 var(--pm-font-game); font-weight: 700; letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
+.pm-home-sensor-reading small { margin-left: 3px; opacity: .68; font: 12px/1 var(--pm-font-body); }
+.pm-home-sensor-heat { --vital-accent: #ef8b6c; }
+.pm-home-sensor-water { --vital-accent: #4da1ed; }
+.pm-home-sensor-soil { --vital-accent: #aa7e55; }
+.pm-home-sensor-light { --vital-accent: #e2b62f; }
 .pm-home-environment > p { margin-top: 9px; opacity: .62; font-size: 12px; }
+.pm-home-clock { align-self:flex-start; display:flex; align-items:center; gap:8px; margin-bottom:16px; padding:7px 10px; border:2px solid rgba(255,255,255,.75); border-radius:12px; background:color-mix(in srgb,var(--color-surface) 88%,transparent); color:var(--color-text); box-shadow:0 3px 0 rgba(36,52,33,.18); backdrop-filter:blur(5px); }
+.pm-home-clock > span { font-size:20px; }.pm-home-clock div { display:grid; gap:2px; }.pm-home-clock small { color:var(--color-forest); font:6px/1.2 var(--pm-font-pixel); }.pm-home-clock strong { font:17px/1 var(--pm-font-game); font-variant-numeric:tabular-nums; }
+html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); background:color-mix(in srgb,var(--color-surface) 92%,transparent); box-shadow:0 3px 0 rgba(5,10,7,.45); }
+@media (max-width: 390px) { .pm-home-environment { padding: 12px; }.pm-home-environment-grid { gap: 6px; }.pm-home-sensor { padding-inline: 9px; }.pm-home-sensor-reading strong { font-size: 19px; }.pm-home-sensor-head > span:last-child { font-size: 11px; } }
 
 /* Collection packs many labels, stories and badge details into one journal.
    Keep its reading scale compact without shrinking icons or shared controls. */
@@ -1223,6 +1373,69 @@ html[data-farm-skin="greenhouse"] .reno-env-cloud { display: none; }
   .reno-nav-item { font-size: 6px; }
   .reno-brand span { display: none; }
 }
+
+/* Mood Dex — one selectable game collection with the science lesson attached
+   to the discovered expression, not a second disconnected card list. */
+.pm-mood-dex-head { display:grid; grid-template-columns:44px minmax(0,1fr) auto; align-items:center; gap:11px; margin:15px 0 11px; padding:12px; border:3px solid var(--color-outline); border-radius:14px; background:linear-gradient(135deg,#fff7cf,#e8f6e0); box-shadow:0 4px 0 var(--color-outline); }
+.pm-mood-dex-head > span { display:grid; place-items:center; width:42px; height:42px; border:2px solid var(--color-outline); border-radius:10px; background:#fff; font-size:22px; }.pm-mood-dex-head p { color:#397a2b; font:7px/1.4 var(--pm-font-pixel); }.pm-mood-dex-head h3 { margin-top:3px; color:#243421; font:13px/1.3 var(--pm-font-game); }.pm-mood-dex-head > b { padding:6px 8px; border:2px solid #397a2b; border-radius:10px; background:#fff; color:#397a2b; font:9px/1 var(--pm-font-pixel); }
+.pm-mood-dex-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; margin-bottom:12px; list-style:none; }
+.pm-mood-dex-slot { position:relative; display:grid; justify-items:center; gap:5px; width:100%; min-height:86px; padding:8px 3px; border:3px solid var(--color-border); border-radius:12px; background:var(--color-surface); color:var(--color-text); cursor:pointer; box-shadow:0 3px 0 rgba(36,52,33,.14); }.pm-mood-dex-slot > span { display:grid; place-items:center; width:42px; height:42px; border:2px solid var(--color-outline); border-radius:50%; background:var(--color-bg); font-size:24px; }.pm-mood-dex-slot small { overflow:hidden; width:100%; font-size:9px; font-weight:700; text-align:center; text-overflow:ellipsis; white-space:nowrap; }.pm-mood-dex-slot > b { position:absolute; top:3px; right:4px; color:var(--color-forest); font-size:9px; }.pm-mood-dex-slot.active { transform:translateY(-2px); border-color:var(--color-primary); background:color-mix(in srgb,var(--color-primary) 10%,var(--color-surface)); box-shadow:0 5px 0 var(--color-forest); }.pm-mood-dex-slot.locked { opacity:.55; border-style:dashed; box-shadow:none; }.is-silhouette { filter:grayscale(1) brightness(.25); opacity:.42; }
+.pm-mood-stage { overflow:hidden; border:4px solid var(--color-outline); border-radius:18px; background:var(--color-surface); box-shadow:0 7px 0 rgba(36,52,33,.2); }.pm-mood-stage-scene { position:relative; display:grid; grid-template-columns:120px minmax(0,1fr); align-items:center; gap:14px; min-height:180px; overflow:hidden; padding:22px; border-bottom:4px solid var(--color-outline); background:linear-gradient(160deg,#c9f0ff 0 62%,#69b957 63%); }.pm-mood-stage-scene::after { content:""; position:absolute; right:-8%; bottom:-42px; left:-8%; height:90px; border-radius:50%; background:#397a2b; opacity:.34; }.pm-mood-stage-scene > span { position:relative; z-index:2; display:grid; place-items:center; width:112px; height:112px; border:5px solid var(--color-outline); border-radius:46% 46% 42% 42%; background:#8fd36f; font-size:66px; box-shadow:0 7px 0 var(--color-outline); }.pm-mood-stage-scene > i { position:absolute; right:18px; bottom:10px; z-index:3; font-style:normal; font-size:28px; }.pm-mood-stage-scene > div { position:relative; z-index:2; }.pm-mood-stage-scene small { display:inline-block; margin-bottom:7px; padding:5px 7px; border:2px solid var(--color-outline); border-radius:8px; background:#fff7cf; color:#6d5514; font:7px/1.2 var(--pm-font-pixel); }.pm-mood-stage-scene h3 { color:#fff; font:25px/1.2 var(--pm-font-game); text-shadow:2px 2px 0 var(--color-outline); }
+.pm-mood-stage.mood-overheating .pm-mood-stage-scene { background:linear-gradient(160deg,#ffd0ad 0 62%,#879d4e 63%); }.pm-mood-stage.mood-dryair .pm-mood-stage-scene { background:linear-gradient(160deg,#f5dda4 0 62%,#829d51 63%); }.pm-mood-stage.mood-sleepy .pm-mood-stage-scene { background:linear-gradient(160deg,#384674 0 62%,#315b3b 63%); }.pm-mood-stage.mood-soilacidic .pm-mood-stage-scene { background:linear-gradient(160deg,#ffd7a5 0 62%,#a87543 63%); }.pm-mood-stage.mood-soilalkaline .pm-mood-stage-scene { background:linear-gradient(160deg,#d8c1f3 0 62%,#6f8453 63%); }
+.pm-mood-stage-info { display:grid; gap:11px; padding:15px; }.pm-mood-lesson,.pm-mood-action { display:grid; grid-template-columns:36px minmax(0,1fr); gap:10px; padding:11px; border:2px solid var(--color-border); border-radius:12px; background:var(--color-bg); }.pm-mood-lesson > span,.pm-mood-action > span { display:grid; place-items:center; width:34px; height:34px; border-radius:9px; background:var(--color-surface); font-size:19px; }.pm-mood-stage-info small { color:var(--color-forest); font:7px/1.35 var(--pm-font-pixel); }.pm-mood-stage-info h4 { margin-top:3px; font-size:14px; }.pm-mood-stage-info p { margin-top:3px; color:color-mix(in srgb,var(--color-text) 76%,transparent); font-size:12px; line-height:1.5; }.pm-mood-action { border-color:#e8c46b; background:color-mix(in srgb,#fff7df 72%,var(--color-surface)); }.pm-mood-locked-copy { display:flex; align-items:center; gap:12px; padding:18px; color:color-mix(in srgb,var(--color-text) 70%,transparent); }.pm-mood-locked-copy b { font-size:28px; }.pm-mood-locked-copy p { font-size:13px; line-height:1.5; }
+html[data-theme="night"] .pm-mood-dex-head { background:linear-gradient(135deg,#403a25,#29452e); }.pm-mood-dex-head h3 { color:var(--color-text); }html[data-theme="night"] .pm-mood-dex-head > span,html[data-theme="night"] .pm-mood-dex-head > b { background:var(--color-surface); }html[data-theme="night"] .pm-mood-action { background:#403a25; }
+@media(max-width:580px){.pm-mood-dex-grid{grid-template-columns:repeat(3,1fr)}.pm-mood-stage-scene{grid-template-columns:88px minmax(0,1fr);min-height:145px;padding:16px}.pm-mood-stage-scene>span{width:82px;height:82px;font-size:47px}.pm-mood-stage-scene h3{font-size:20px}.pm-mood-dex-head{grid-template-columns:38px minmax(0,1fr) auto}.pm-mood-dex-head>span{width:36px;height:36px}}
+
+/* Collection storybook: a compact world-map selector opens one polished
+   game scene at a time. Story/unlock truth still comes from the engine. */
+.pm-story-book-head { display:flex; align-items:center; gap:12px; margin:16px 0 12px; padding:12px 14px; border:3px solid var(--color-border); border-radius:14px; background:color-mix(in srgb,var(--color-bg) 88%,transparent); box-shadow:0 4px 0 rgba(36,52,33,.12); }
+.pm-story-book-head > span { display:grid; place-items:center; width:42px; height:42px; border:2px solid var(--color-outline); border-radius:10px; background:#fff3c7; font-size:23px; }
+.pm-story-book-head p { color:var(--color-forest); font:7px/1.4 var(--pm-font-pixel); letter-spacing:.08em; }
+.pm-story-book-head h3 { margin-top:3px; font:14px/1.3 var(--pm-font-game); }
+.pm-story-path { position:relative; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin:0 0 16px; padding:12px; list-style:none; border:3px solid var(--color-border); border-radius:16px; background:color-mix(in srgb,var(--color-surface) 92%,transparent); box-shadow:var(--pm-shadow); }
+.pm-story-path::before { content:""; position:absolute; top:35px; right:8%; left:8%; height:4px; border:1px solid var(--color-outline); background:repeating-linear-gradient(90deg,#b7c9b2 0 8px,#e3eadf 8px 14px); }
+.pm-story-path li { position:relative; z-index:1; min-width:0; }
+.pm-story-node { display:grid; justify-items:center; gap:5px; width:100%; border:0; padding:0; color:var(--color-text); background:transparent; cursor:pointer; }
+.pm-story-node > span { display:grid; place-items:center; width:46px; height:46px; border:3px solid var(--color-outline); border-radius:50%; background:#dfe8dc; box-shadow:0 4px 0 var(--color-outline); font:15px/1 var(--pm-font-pixel); }
+.pm-story-node.unlocked > span { background:var(--color-yellow); }
+.pm-story-node.active > span { transform:translateY(-3px) scale(1.07); outline:4px solid color-mix(in srgb,var(--color-primary) 32%,transparent); background:var(--color-grass-light); }
+.pm-story-node.locked { opacity:.58; }
+.pm-story-node small { overflow:hidden; width:100%; font:7px/1.25 var(--pm-font-pixel); text-overflow:ellipsis; white-space:nowrap; }
+.pm-story-selected { overflow:hidden; border-radius:18px; box-shadow:0 7px 0 rgba(36,52,33,.18); }
+.pm-story-stage { overflow:hidden; width:100%; border:4px solid var(--color-outline); border-radius:18px 18px 0 0; background:var(--color-surface); color:var(--color-text); }
+.pm-story-stage-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:3px solid var(--color-outline); background:#fff3c7; }
+.pm-story-stage-head span { font:8px/1.4 var(--pm-font-pixel); }
+.pm-story-stage-head b { padding:5px 8px; border:2px solid var(--color-outline); border-radius:999px; background:#e6f5df; color:#397a2b; font-size:10px; }
+.pm-story-stage.is-locked .pm-story-stage-head { background:#e2e7df; }
+.pm-story-stage.is-locked .pm-story-stage-head b { background:#d2d8cf; color:#657061; }
+.pm-story-scene-art { position:relative; display:grid; place-items:center; min-height:170px; overflow:hidden; border-bottom:4px solid var(--color-outline); background:linear-gradient(165deg,#bce9ff 0 63%,#69b957 64% 78%,#956b43 79%); }
+.pm-story-scene-art::before,.pm-story-scene-art::after { content:""; position:absolute; pointer-events:none; }
+.pm-story-scene-art::before { top:18px; right:28px; width:42px; height:42px; border:3px solid var(--color-outline); border-radius:50%; background:#ffde6a; box-shadow:0 0 25px rgba(255,222,106,.6); }
+.pm-story-scene-art::after { right:-8%; bottom:0; left:-8%; height:55%; background:radial-gradient(ellipse at 20% 100%,#397a2b 0 27%,transparent 28%),radial-gradient(ellipse at 66% 110%,#4e8950 0 38%,transparent 39%); }
+.pm-story-scene-art > span { position:relative; z-index:2; margin-top:22px; font-size:66px; filter:drop-shadow(0 5px 0 rgba(36,52,33,.22)); }
+.pm-story-scene-art > i { position:absolute; right:14%; bottom:10px; z-index:3; display:grid; place-items:center; width:56px; height:56px; border:3px solid var(--color-outline); border-radius:50% 50% 42% 42%; background:#8fd36f; font-style:normal; font-size:27px; box-shadow:0 4px 0 var(--color-outline); }
+.pm-story-stage.is-locked .pm-story-scene-art { filter:grayscale(.8) brightness(.72); }
+.pm-story-stage.is-locked .pm-story-scene-art > span { filter:blur(3px); opacity:.35; }
+.pm-story-scene-art.chapter-2 { background:linear-gradient(165deg,#d8d1c2 0 58%,#6d7661 59% 76%,#6f4a35 77%); }
+.pm-story-scene-art.chapter-3 { background:linear-gradient(165deg,#a9cee2 0 62%,#5c9b5d 63% 80%,#826446 81%); }
+.pm-story-scene-art.chapter-4 { background:linear-gradient(165deg,#efb27a 0 62%,#7d9451 63% 80%,#80563d 81%); }
+.pm-story-scene-art.chapter-5 { background:linear-gradient(165deg,#bfa5ea 0 60%,#61a45d 61% 78%,#e8a33b 79%); }
+.pm-story-scene-art.chapter-6 { background:linear-gradient(165deg,#efd59a 0 61%,#7fac5f 62% 79%,#9c7245 80%); }
+.pm-story-stage-copy { padding:16px; }
+.pm-story-stage-copy > h3 { margin:0 0 13px; color:var(--color-forest); font:18px/1.35 var(--pm-font-game); }
+.pm-story-dialogue { display:grid; gap:9px; max-height:310px; overflow:auto; padding:2px 4px 4px 2px; }
+.pm-story-narrator { padding:8px 10px; border-left:4px solid var(--color-border); color:color-mix(in srgb,var(--color-text) 72%,transparent); background:var(--color-bg); font-size:12px; font-style:italic; line-height:1.5; }
+.pm-story-plant-line { display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:8px; }
+.pm-story-plant-line > span { display:grid; place-items:center; width:34px; height:34px; border:2px solid var(--color-outline); border-radius:9px; background:#e8f6e0; }
+.pm-story-plant-line p { position:relative; padding:9px 11px; border:2px solid var(--color-border); border-radius:4px 12px 12px; background:color-mix(in srgb,var(--color-primary) 10%,var(--color-surface)); font-size:13px; line-height:1.5; }
+.pm-story-unlock-label { margin-bottom:5px; color:#a26f12; font:7px/1.4 var(--pm-font-pixel); }
+.pm-story-stage.is-locked .pm-story-stage-copy > p:last-child { color:color-mix(in srgb,var(--color-text) 72%,transparent); font-size:13px; line-height:1.5; }
+.pm-story-replay { border-radius:0 0 14px 14px; box-shadow:0 5px 0 var(--color-forest); }
+html[data-theme="night"] .pm-story-book-head > span,html[data-theme="night"] .pm-story-stage-head { background:#403a25; }
+html[data-theme="night"] .pm-story-path,html[data-theme="night"] .pm-story-stage { background:var(--color-surface); }
+html[data-theme="night"] .pm-story-plant-line > span { background:#29452e; }
+html[data-theme="night"] .pm-story-stage-head b { background:#29452e; color:#9cdb89; }
+@media (max-width:520px) { .pm-story-path { grid-template-columns:repeat(3,1fr); row-gap:14px; }.pm-story-path::before { display:none; }.pm-story-node > span { width:42px; height:42px; }.pm-story-scene-art { min-height:145px; }.pm-story-scene-art > span { font-size:54px; }.pm-story-stage-copy { padding:13px; }.pm-story-dialogue { max-height:280px; } }
 
 /* Memories: one saved event is always featured before the history is tapped. */
 .pm-memory-stage { overflow: hidden; background: linear-gradient(180deg,#fffdf4,#f4faef); }

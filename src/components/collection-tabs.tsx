@@ -191,6 +191,7 @@ function OneMorePill({ label }: { label: string }) {
 export default function CollectionTabs({ locale, moods, badges, chapters, wisdom }: CollectionTabsProps) {
   const [tab, setTab] = useState<TabId>("moods");
   const [selectedBadgeKey, setSelectedBadgeKey] = useState(() => badges.find((badge) => badge.unlockedLabel !== null)?.key ?? badges[0]?.key ?? "");
+  const [selectedMoodKey, setSelectedMoodKey] = useState(() => moods.find((mood) => mood.discovered)?.mood ?? moods[0]?.mood ?? "");
   // Badges unlocked by a live plant_badges INSERT after the server render,
   // and the subset currently playing their flip celebration.
   const [liveUnlocked, setLiveUnlocked] = useState<ReadonlySet<string>>(() => new Set());
@@ -208,6 +209,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const [previewPulse, setPreviewPulse] = useState(0);
   const [wisdomTrial, setWisdomTrial] = useState<string | null>(null);
   const [wisdomAnswer, setWisdomAnswer] = useState<number | null>(null);
+  const [selectedChapterNumber, setSelectedChapterNumber] = useState(() => [...chapters].reverse().find((chapter) => chapter.unlocked)?.chapter ?? chapters[0]?.chapter ?? 1);
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
@@ -263,8 +265,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   // luckyOdds duplicates public/farm/strings.js → PM_STRINGS.luckyOdds
   // knowingly: React can't read the farm string table at build time.
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!", gemIntro: "Pilih lencana, coba efeknya, lalu gunakan saat Jamkachu diketuk.", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", practice: "Mode latihan · tidak mengubah sensor atau XP" }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!", gemIntro: "Choose a badge, try its effect, then use it when tapping Jamkachu.", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", practice: "Practice mode · does not change sensors or XP" };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!", gemIntro: "Pilih satu lencana untuk mengaktifkan efek ketuk Jamkachu.", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", practice: "Mode latihan · tidak mengubah sensor atau XP" }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!", gemIntro: "Choose one badge to activate its effect when tapping Jamkachu.", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", practice: "Practice mode · does not change sensors or XP" };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
   const unlockedBadges = badges.filter(
@@ -275,6 +277,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const selectedBadgeUnlocked = selectedBadge != null && (selectedBadge.unlockedLabel !== null || liveUnlocked.has(selectedBadge.key));
   const selectedEffect = selectedBadge ? BADGE_EFFECTS[selectedBadge.key as BadgeKey] : null;
   const selectedEffectActive = selectedEffect != null && activeEffect === selectedEffect.badgeKey;
+  const selectedChapter = chapters.find((chapter) => chapter.chapter === selectedChapterNumber) ?? chapters[0];
+  const selectedMood = moods.find((mood) => mood.mood === selectedMoodKey) ?? moods[0];
 
   const toggleBadgeEffect = () => {
     if (!selectedEffect || !selectedBadgeUnlocked) return;
@@ -403,82 +407,23 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
           <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <ul className="grid grid-cols-3 gap-3">
+          <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div><b>{discoveredMoods}/{moods.length}</b></div>
+          <ul className="pm-mood-dex-grid" aria-label={locale === "id" ? "Daftar suasana Jamkachu" : "Jamkachu mood list"}>
             {moods.map((mood, index) => (
-              <li
-                key={mood.mood}
-                className="pm-card-cascade"
-                style={
-                  cascadeStyle(index)
-                }
-              >
-                <button type="button" disabled={!mood.discovered} onClick={() => { const reaction = MOOD_REACTIONS[mood.mood]; if (reaction) playReward({ kind: "moods", emoji: mood.emoji, title: mood.label, line: reaction[locale], particles: reaction.particles }); }} className="pm-panel flex w-full cursor-pointer flex-col items-center gap-1.5 text-center disabled:cursor-not-allowed" style={mood.discovered ? { padding: "14px 10px", borderColor: "var(--color-grass-light)" } : { padding: "14px 10px", ...LOCKED_PANEL }}>
-                <span
-                  className={`text-3xl leading-none ${mood.discovered ? "" : "brightness-0 opacity-30"}`}
-                  role="img"
-                  aria-label={mood.label}
-                >
-                  {mood.emoji}
-                </span>
-                <span
-                  className="text-[11px] font-semibold leading-tight"
-                  style={{ color: mood.discovered ? "var(--color-text)" : INK_FAINT }}
-                >
-                  {mood.label}
-                </span>
-                <span
-                  className="pm-heading text-[10px]"
-                  style={{ color: mood.discovered ? "var(--color-forest)" : "#B7C2B3" }}
-                  aria-label={mood.discovered ? copy.unlocked : copy.locked}
-                >
-                  {mood.discovered ? "✓" : "?"}
-                </span>
-                {mood.discovered && <span className="pm-heading mt-1 text-[7px] text-[#397A2B]">▶ {copy.tryIt}</span>}
+              <li key={mood.mood} className="pm-card-cascade" style={cascadeStyle(index)}>
+                <button type="button" className={`pm-mood-dex-slot${selectedMood?.mood === mood.mood ? " active" : ""}${mood.discovered ? " discovered" : " locked"}`} aria-pressed={selectedMood?.mood === mood.mood} onClick={() => { setSelectedMoodKey(mood.mood); setPreview(null); window.PMSfx?.play(mood.discovered ? "tick" : "error"); }}>
+                  <span className={mood.discovered ? "" : "is-silhouette"} role="img" aria-hidden="true">{mood.discovered ? mood.emoji : "❔"}</span><small>{mood.discovered ? mood.label : copy.locked}</small><b>{mood.discovered ? "✓" : "🔒"}</b>
                 </button>
               </li>
             ))}
           </ul>
-
-          {/* Educational layer (handoff §2, §51): once a mood is discovered,
-              its plant-science why-card unlocks. Undiscovered moods stay
-              hidden until the sensors have actually seen them. */}
-          {moods.some((mood) => mood.discovered && mood.whyCard) && (
-            <>
-              <p className="pm-heading mb-3 mt-6 text-center text-[10px]" style={{ color: INK_MUTED }}>
-                {copy.learned}
-              </p>
-              <ul className="flex flex-col gap-3">
-                {moods
-                  .filter((mood) => mood.discovered && mood.whyCard != null)
-                  .map((mood) => (
-                    <li
-                      key={mood.mood}
-                      className="pm-panel"
-                      style={{ borderColor: "var(--color-grass-light)" }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl leading-none" role="img" aria-hidden="true">
-                          {mood.emoji}
-                        </span>
-                        <p className="text-sm font-bold" style={{ color: "var(--color-text)" }}>
-                          {mood.label}
-                          <span className="font-medium" style={{ color: INK_MUTED }}>
-                            {" "}
-                            · {mood.whyCard?.title}
-                          </span>
-                        </p>
-                      </div>
-                      <p className="mt-1.5 text-xs leading-5" style={{ color: INK_MUTED }}>
-                        {mood.whyCard?.why}
-                      </p>
-                      <p className="mt-1.5 text-xs font-semibold leading-5" style={{ color: "var(--color-forest)" }}>
-                        {mood.whyCard?.action}
-                      </p>
-                    </li>
-                  ))}
-              </ul>
-            </>
-          )}
+          {selectedMood && <article className={`pm-mood-stage mood-${selectedMood.mood.toLowerCase()}${selectedMood.discovered ? "" : " is-locked"}`}>
+            <div className="pm-mood-stage-scene"><span className={selectedMood.discovered ? "" : "is-silhouette"} role="img" aria-label={selectedMood.discovered ? selectedMood.label : copy.locked}>{selectedMood.discovered ? selectedMood.emoji : "❔"}</span><i aria-hidden="true">🌱</i><div><small>{selectedMood.discovered ? (locale === "id" ? "SUASANA DITEMUKAN" : "MOOD DISCOVERED") : copy.locked}</small><h3>{selectedMood.discovered ? selectedMood.label : "???"}</h3></div></div>
+            {selectedMood.discovered ? <div className="pm-mood-stage-info">
+              {selectedMood.whyCard ? <><div className="pm-mood-lesson"><span>💡</span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div><div className="pm-mood-action"><span>🎯</span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div></> : <p>{locale === "id" ? "Pelajaran sensor akan muncul setelah tersedia." : "Its sensor lesson will appear when available."}</p>}
+              <button type="button" className="pm-btn pm-btn-primary w-full" onClick={() => { const reaction = MOOD_REACTIONS[selectedMood.mood]; if (reaction) playReward({ kind: "moods", emoji: selectedMood.emoji, title: selectedMood.label, line: reaction[locale], particles: reaction.particles }); }}>▶ {copy.tryIt}</button>
+            </div> : <div className="pm-mood-locked-copy"><b>🔒</b><p>{locale === "id" ? "Mood ini akan terbuka saat sensor benar-benar melihat kondisi tersebut." : "This mood unlocks when the sensors truly observe that condition."}</p></div>}
+          </article>}
         </section>
       )}
 
@@ -533,15 +478,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                     <p className="mt-1 text-sm font-bold">{selectedEffect.name[locale]}</p>
                     <p className="text-[11px]" style={{ color: INK_MUTED }}>{selectedEffect.particles.join(" · ")}</p>
                   </div>
-                  <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className="pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45" aria-pressed={selectedEffectActive}>
+                  <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
                     {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
                   </button>
                 </div>
-              )}
-              {selectedEffect && selectedBadgeUnlocked && (
-                <button type="button" className="pm-btn pm-btn-primary mt-3 cursor-pointer px-4 py-2 text-[9px]" onClick={() => playReward({ kind: "badges", emoji: "🌱", title: selectedEffect.name[locale], line: locale === "id" ? "Ketuk! Efek lencana ini siap dipakai bersama Jamkachu." : "Tap! This badge effect is ready to use with Jamkachu.", particles: selectedEffect.particles })}>
-                  ✨ {copy.tryIt}
-                </button>
               )}
             </article>
           )}
@@ -558,27 +498,30 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         <section id="collection-panel-story" role="tabpanel" className="mt-5">
           <ProgressCounter value={unlockedChapters} total={chapters.length} label={copy.chapters} />
           {unlockedChapters === chapters.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <ol className="flex flex-col gap-3">
+          <div className="pm-story-book-head">
+            <span aria-hidden="true">🗺️</span>
+            <div><p>{locale === "id" ? "PERJALANAN JAMKACHU" : "JAMKACHU'S JOURNEY"}</p><h3>{locale === "id" ? "Pilih bab untuk membuka kenangan" : "Choose a chapter to revisit a memory"}</h3></div>
+          </div>
+          <ol className="pm-story-path" aria-label={locale === "id" ? "Peta bab cerita" : "Story chapter map"}>
             {chapters.map((chapter, index) => (
               <li key={chapter.chapter} className="pm-card-cascade" style={cascadeStyle(index)}>
-                <StoryChapterCard
-                  chapter={{
-                    chapter: chapter.chapter,
-                    title: chapter.title,
-                    description: chapter.description,
-                  }}
-                  unlocked={chapter.unlocked}
-                  scene={chapter.scene}
-                  locale={locale}
-                />
-                {chapter.unlocked && chapter.scene && (
-                  <button type="button" className="pm-btn mt-2 w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: chapter.chapter >= 5 ? "🎆" : "🌱", title: chapter.title, line: chapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? chapter.description, particles: ["✨", "📖", "💚"] })}>
-                    🎬 {copy.replay}
-                  </button>
-                )}
+                <button type="button" className={`pm-story-node${selectedChapter?.chapter === chapter.chapter ? " active" : ""}${chapter.unlocked ? " unlocked" : " locked"}`} aria-pressed={selectedChapter?.chapter === chapter.chapter} onClick={() => { setSelectedChapterNumber(chapter.chapter); setPreview(null); window.PMSfx?.play(chapter.unlocked ? "tick" : "error"); }}>
+                  <span>{chapter.unlocked ? chapter.chapter : "🔒"}</span>
+                  <small>{locale === "id" ? "BAB" : "CH"} {chapter.chapter}</small>
+                </button>
               </li>
             ))}
           </ol>
+          {selectedChapter && (
+            <div className="pm-story-selected">
+              <StoryChapterCard chapter={{ chapter: selectedChapter.chapter, title: selectedChapter.title, description: selectedChapter.description }} unlocked={selectedChapter.unlocked} scene={selectedChapter.scene} locale={locale} />
+              {selectedChapter.unlocked && selectedChapter.scene && (
+                <button type="button" className="pm-btn pm-btn-primary pm-story-replay w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: selectedChapter.chapter >= 5 ? "🎆" : "🌱", title: selectedChapter.title, line: selectedChapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? selectedChapter.description, particles: ["✨", "📖", "💚"] })}>
+                  🎬 {copy.replay}
+                </button>
+              )}
+            </div>
+          )}
         </section>
       )}
 

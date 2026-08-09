@@ -5,6 +5,7 @@ import type { EnvironmentAnalysis } from "@/lib/environment-analyzer";
 import type { AppLocale } from "@/lib/i18n";
 import type { ExplorerCrop } from "@/lib/jember-crop-catalog";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
+import type { EnvironmentDemoPreset } from "@/lib/environment-demo";
 
 interface ScanPayload { ok: true; source: "sensor" | "demo"; snapshot: SensorSnapshot; crops: ExplorerCrop[]; results: EnvironmentAnalysis[] }
 
@@ -22,10 +23,10 @@ function valueWithUnit(parameter: keyof typeof PARAMS, value: number | null) {
   return String(value);
 }
 
-export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[] }) {
+export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {
   const c = COPY[locale];
-  const [data, setData] = useState<ScanPayload | null>(initialSnapshot && initialCrops.length ? { ok: true, source: "sensor", snapshot: initialSnapshot, crops: initialCrops, results: initialResults } : null);
-  const [demoMode, setDemoMode] = useState(false);
+  const [data, setData] = useState<ScanPayload | null>(initialSnapshot && initialCrops.length ? { ok: true, source: initialDemoPreset ? "demo" : "sensor", snapshot: initialSnapshot, crops: initialCrops, results: initialResults } : null);
+  const [demoMode, setDemoMode] = useState(initialDemoPreset !== null);
   const [selectedKey, setSelectedKey] = useState(initialResults[0]?.cropKey ?? "");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState(false);
@@ -35,7 +36,7 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
   const scan = async () => {
     setScanning(true); setError(false); setExplanation("");
     try {
-      const response = await fetch(`/api/environment-scan?locale=${locale}${demoMode ? "&demo=1" : ""}`, { cache: "no-store" });
+      const response = await fetch(`/api/environment-scan?locale=${locale}${demoMode ? `&demo=${initialDemoPreset ?? "1"}` : ""}`, { cache: "no-store" });
       if (!response.ok) throw new Error();
       const next = await response.json() as ScanPayload;
       setData(next); setSelectedKey(next.results[0]?.cropKey ?? "");
@@ -48,7 +49,7 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
     if (!selected) return;
     setExplaining(true);
     try {
-      const response = await fetch("/api/environment-explanation", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cropKey: selected.cropKey, locale, demo: data?.source === "demo" }) });
+      const response = await fetch("/api/environment-explanation", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cropKey: selected.cropKey, locale, demo: data?.source === "demo", demoPreset: initialDemoPreset }) });
       const result = await response.json() as { explanation?: string };
       setExplanation(result.explanation ?? c.noData);
     } catch { setExplanation(c.noData); }

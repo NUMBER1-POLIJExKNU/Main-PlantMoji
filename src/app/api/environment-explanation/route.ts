@@ -1,6 +1,6 @@
 import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { analyzeEnvironment } from "@/lib/environment-analyzer";
-import { ENVIRONMENT_DEMO_SNAPSHOT } from "@/lib/environment-demo";
+import { getEnvironmentDemoPreset } from "@/lib/environment-demo";
 import { explainCropMismatch } from "@/lib/environment-explanation";
 import { normalizeLocale } from "@/lib/i18n";
 import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
@@ -13,10 +13,11 @@ export async function POST(request: Request) {
   const cropKey = typeof input.cropKey === "string" ? input.cropKey : "";
   const locale = normalizeLocale(input.locale);
   const demo = input.demo === true;
+  const demoPreset = typeof input.demoPreset === "string" ? input.demoPreset : undefined;
   const supabase = getServerSupabase();
   if (!supabase) return Response.json({ ok: false, error: "no_env" }, { status: 503 });
   const [snapshot, crops, plantResult] = await Promise.all([
-    demo ? Promise.resolve(ENVIRONMENT_DEMO_SNAPSHOT) : getLatestSensorSnapshot(supabase, "plant-01"),
+    demo ? Promise.resolve(getEnvironmentDemoPreset(demoPreset)) : getLatestSensorSnapshot(supabase, "plant-01"),
     getJemberCropCatalog(supabase, locale),
     supabase.from("plants").select("personality").eq("id", "plant-01").maybeSingle(),
   ]);

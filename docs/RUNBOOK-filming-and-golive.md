@@ -46,6 +46,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 16 | *(reserved — no file yet)* | companion evolution ladder (Seed → Sprout → Bud → Bloom → Guardian) — in flight, skip until it ships |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz never deducts XP — kind scoring: a wrong/timed-out Daily Quiz answer now awards 0 XP instead of −1, so a miss can never demote Bond Level |
 | 18 | `milestone18-seed-shop.sql` | Seed Shop economy — `bond_state.seeds` + `seed_rewards` ledger + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPCs, realtime on `shop_purchases`. Seeds MAY decrease (spendable currency); XP/Bond Level still never decrease |
+| 19 | `milestone19-photo-diary.sql` | `plant-photos` Storage bucket + `growth_records.photo_url`/`ai_comment` — **required before the Camera photo diary can save photos**; without it `/camera` shows an operator "coming soon" note and the diary renders without thumbnails |
 
 - [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone18 are newer** — verify all nine before go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 has no file yet, see below).
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all sixteen again in order (skip milestone16 — reserved, no file yet).
@@ -54,6 +55,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] Milestone 16 has no file yet — reserved for the in-flight companion evolution ladder plan. Skip it in the migration order until it ships.
 - [ ] Milestone 17 replaces Milestone 13's `answer_daily_quiz` RPC in place (`create or replace`, same signature/return shape): a wrong or timed-out Daily Quiz answer now awards exactly 0 XP instead of −1, so Bond Level can never be demoted right after a "LEVEL UP!". Correct-answer XP is unchanged.
 - [ ] Milestone 18 is required for the Seed Shop. Without it the /shop route shows a friendly "coming soon" state, the farm HUD hides the Seeds chip, and every seed grant is a silent no-op — nothing breaks.
+- [ ] Milestone 19 is required for the Camera photo diary. Without it `/camera` renders a "coming soon" operator note with the camera input disabled — nothing crashes. The +1 Seed first-photo-of-the-day grant additionally needs milestone18; without milestone18 the photo still saves and the grant is skipped silently. AI comments need `GEMINI_API_KEY` in Vercel — without it every photo gets the deterministic sensor-template comment (fully functional).
 
 #### 1.3 Hardware teammate — where to point them
 
@@ -174,6 +176,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 16 | *(dicadangkan — belum ada file)* | tangga evolusi companion (Seed → Sprout → Bud → Bloom → Guardian) — masih dikerjakan, lewati sampai rilis |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz tidak lagi mengurangi XP — kind scoring: jawaban salah/timeout pada Daily Quiz kini memberi 0 XP, bukan −1, sehingga jawaban salah tidak akan pernah menurunkan Bond Level |
 | 18 | `milestone18-seed-shop.sql` | ekonomi Toko Benih — `bond_state.seeds` + ledger `seed_rewards` + `shop_purchases` + RPC `award_seeds`/`purchase_item`/`equip_item`, realtime pada `shop_purchases`. Benih BOLEH berkurang (mata uang yang bisa dibelanjakan); XP/Bond Level tetap tidak pernah turun |
+| 19 | `milestone19-photo-diary.sql` | bucket Storage `plant-photos` + kolom `growth_records.photo_url`/`ai_comment` — **wajib sebelum Camera photo diary bisa menyimpan foto**; tanpanya `/camera` menampilkan catatan operator "hampir siap" dan diary tampil tanpa thumbnail |
 
 - [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone18 yang lebih baru** — pastikan kesembilannya sebelum go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 belum punya file, lihat di bawah).
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi keenam belas file sesuai urutan (lewati milestone16 — dicadangkan, belum ada file).
@@ -182,6 +185,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] Milestone 16 belum punya file — dicadangkan untuk rencana tangga evolusi companion yang masih dikerjakan. Lewati dalam urutan migrasi sampai rilis.
 - [ ] Milestone 17 menggantikan RPC `answer_daily_quiz` milik Milestone 13 di tempat yang sama (`create or replace`, signature/bentuk return tetap sama): jawaban Daily Quiz yang salah atau timeout kini memberi tepat 0 XP, bukan −1, sehingga Bond Level tidak akan pernah turun tepat setelah "LEVEL UP!". XP untuk jawaban benar tidak berubah.
 - [ ] Milestone 18 diperlukan untuk Toko Benih. Tanpanya, rute /shop menampilkan status "segera hadir" yang ramah, chip Benih di HUD kebun disembunyikan, dan semua hadiah Benih menjadi no-op senyap — tidak ada yang rusak.
+- [ ] Milestone 19 wajib untuk Camera photo diary. Tanpanya `/camera` menampilkan catatan operator dengan input kamera dinonaktifkan — tidak ada yang crash. Hadiah +1 Benih foto-pertama-hari-ini juga membutuhkan milestone18; tanpa milestone18 foto tetap tersimpan dan hadiahnya dilewati diam-diam. Komentar AI membutuhkan `GEMINI_API_KEY` di Vercel — tanpanya setiap foto mendapat komentar template sensor deterministik (tetap berfungsi penuh).
 
 #### 1.3 Rekan hardware — arahkan ke sini
 

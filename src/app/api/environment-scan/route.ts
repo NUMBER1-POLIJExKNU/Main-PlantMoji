@@ -1,6 +1,6 @@
 import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { compareEnvironmentToCrops } from "@/lib/environment-analyzer";
-import { ENVIRONMENT_DEMO_SNAPSHOT } from "@/lib/environment-demo";
+import { getEnvironmentDemoPreset } from "@/lib/environment-demo";
 import { normalizeLocale } from "@/lib/i18n";
 import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -14,9 +14,10 @@ export async function GET(request: Request) {
   const supabase = getServerSupabase();
   if (!supabase) return Response.json({ ok: false, error: "no_env" }, { status: 503 });
   const locale = normalizeLocale(params.get("locale"));
-  const demo = params.get("demo") === "1";
+  const demoValue = params.get("demo");
+  const demo = demoValue !== null && demoValue !== "0";
   const [snapshot, crops] = await Promise.all([
-    demo ? Promise.resolve(ENVIRONMENT_DEMO_SNAPSHOT) : getLatestSensorSnapshot(supabase, plantId),
+    demo ? Promise.resolve(getEnvironmentDemoPreset(demoValue)) : getLatestSensorSnapshot(supabase, plantId),
     getJemberCropCatalog(supabase, locale),
   ]);
   if (!snapshot) return Response.json({ ok: false, error: "no_sensor_snapshot" }, { status: 404 });

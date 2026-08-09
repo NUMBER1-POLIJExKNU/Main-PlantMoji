@@ -94,6 +94,12 @@ export default function PlantHome({
     moodRef.current = plant.current_state;
   }, [plant.current_state]);
 
+  useEffect(() => {
+    const clockRaf = requestAnimationFrame(() => setNowMs(Date.now()));
+    const clockId = window.setInterval(() => setNowMs(Date.now()), 15_000);
+    return () => { cancelAnimationFrame(clockRaf); window.clearInterval(clockId); };
+  }, []);
+
   // Hydration-safe "am I on the client" flag — local time can only be
   // formatted after hydration, or server/browser locales may disagree.
   const mounted = useSyncExternalStore(
@@ -205,16 +211,9 @@ export default function PlantHome({
       }).catch(() => {});
     }, 60_000);
 
-    // Keeps quest progress labels ticking; the rAF seeds live time right
-    // after hydration (setState only inside callbacks — lint-safe).
-    const labelRaf = requestAnimationFrame(() => setNowMs(Date.now()));
-    const labelId = setInterval(() => setNowMs(Date.now()), 15_000);
-
     return () => {
       clearInterval(pollId);
       clearInterval(tickId);
-      cancelAnimationFrame(labelRaf);
-      clearInterval(labelId);
       supabase.removeChannel(channel);
     };
   }, [initialPlant.id]);
@@ -232,6 +231,8 @@ export default function PlantHome({
     mounted && plant.state_changed_at && Date.parse(plant.state_changed_at) > 0
       ? new Date(plant.state_changed_at).toLocaleTimeString()
       : null;
+  const jemberTime = nowMs === null ? "--:--" : new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date(nowMs));
+  const jemberHour = nowMs === null ? 12 : Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date(nowMs)));
 
   return (
     <main className={`pm-scene relative flex min-h-screen flex-col overflow-x-clip ${mood.scene}`}>
@@ -259,11 +260,12 @@ export default function PlantHome({
 
       {/* Sky stage: name, mood badge, speech bubble, mascot */}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-10">
+        <div className="pm-home-clock" aria-label={`${locale === "id" ? "Waktu Jember" : "Jember time"} ${jemberTime}`}><span aria-hidden="true">{jemberHour >= 18 || jemberHour < 6 ? "🌙" : "☀️"}</span><div><small>{locale === "id" ? "WAKTU JEMBER · WIB" : "JEMBER TIME · WIB"}</small><strong>{jemberTime}</strong></div></div>
         <h1 className="pm-pixel-title font-pixel max-w-full break-words text-center text-xl leading-relaxed">
           {plant.name}
         </h1>
 
-        <span className={`font-pixel mt-3 rounded-full px-4 py-2 text-[10px] leading-none ${mood.badge}`}>
+        <span className={`pm-home-mood-badge font-pixel mt-3 rounded-full px-4 py-2 text-[10px] leading-none ${mood.badge}`}>
           {moodLabel}
         </span>
 

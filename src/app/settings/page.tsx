@@ -121,12 +121,14 @@ export default async function SettingsPage({
     totalBadges: BADGE_KEYS.length,
     chapter: 1,
     totalChapters: CHAPTER_DEFINITIONS.length,
+    companionStage: "Seed",
   };
   if (showDemo) {
     try {
-      const [bond, badges] = await Promise.all([
+      const [bond, badges, companion] = await Promise.all([
         getBondState(supabase, plant.id),
         getUnlockedBadges(supabase, plant.id),
+        supabase.from("companion_state").select("stage").eq("plant_id", plant.id).maybeSingle(),
       ]);
       demoProgress = {
         ...demoProgress,
@@ -135,6 +137,7 @@ export default async function SettingsPage({
         streak: bond?.current_streak ?? 0,
         chapter: bond?.current_chapter ?? 1,
         badges: badges.length,
+        companionStage: typeof companion.data?.stage === "string" ? companion.data.stage : "Seed",
       };
     } catch (cause) {
       console.error("SettingsPage demo progress failed:", cause);

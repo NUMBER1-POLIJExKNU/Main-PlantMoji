@@ -35,6 +35,15 @@ export interface GrowthRecordRow {
   leaf_count: number | null;
   note: string | null;
   photo_path: string | null;
+  /** Public Storage URL of the milestone19 camera photo diary photo (the
+   *  `plant-photos` bucket) — distinct from `photo_path`, which is the
+   *  private growth-snapshots bucket object path. Optional/nullable so
+   *  manual records and databases without milestone19 stay type-valid. */
+  photo_url?: string | null;
+  /** Jamkachu's observation line on the camera photo (Gemini or the
+   *  deterministic sensor template) — display only, never parsed for game
+   *  decisions or rewards. */
+  ai_comment?: string | null;
   created_at: string;
 }
 

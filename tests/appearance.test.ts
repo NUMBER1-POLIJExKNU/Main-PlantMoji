@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeFarmSkin, normalizeTheme, resolveTheme } from "@/lib/appearance";
+import { FARM_SKIN_CATALOG, FARM_SKINS, normalizeFarmSkin, normalizeTheme, resolveTheme } from "@/lib/appearance";
 
 describe("appearance preferences", () => {
   it("normalizes unknown values to safe defaults", () => {
@@ -16,5 +16,18 @@ describe("appearance preferences", () => {
   it("honors explicit modes regardless of time", () => {
     expect(resolveTheme("day", new Date("2026-08-08T15:00:00Z"))).toBe("day");
     expect(resolveTheme("night", new Date("2026-08-08T03:00:00Z"))).toBe("night");
+  });
+
+  it("exposes eight unique, localized farm skins", () => {
+    expect(FARM_SKINS).toHaveLength(8);
+    expect(new Set(FARM_SKINS).size).toBe(8);
+    expect(FARM_SKIN_CATALOG.map((skin) => skin.key)).toEqual([...FARM_SKINS]);
+    for (const skin of FARM_SKIN_CATALOG) {
+      expect(skin.name.id.length).toBeGreaterThan(0);
+      expect(skin.name.en.length).toBeGreaterThan(0);
+      expect(skin.description.id.length).toBeGreaterThan(0);
+      expect(skin.description.en.length).toBeGreaterThan(0);
+      expect(normalizeFarmSkin(skin.key)).toBe(skin.key);
+    }
   });
 });

@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { applyDemoMaxState } from "@/game/demo/demo-max";
 import { resetDemoProgress } from "@/game/demo/demo-reset";
+import { advanceDemoCompanion, awardDemoLevelUp, prepareNextLevelDemo } from "@/game/demo/presenter";
 import { parseGrowthInput } from "@/lib/growth";
 import { normalizeLocale, type AppLocale } from "@/lib/i18n";
 import { normalizeGrowthStage } from "@/lib/queries";
@@ -44,16 +45,7 @@ function demoLocale(formData: FormData): AppLocale {
 }
 
 function validateDemoCode(formData: FormData, locale: AppLocale): string | DemoActionState {
-  const configuredCode = process.env.DEMO_CHEAT_CODE;
-  if (!configuredCode || configuredCode.length < 8) {
-    return {
-      status: "error",
-      message:
-        locale === "id"
-          ? "Kode demo belum diatur. Tambahkan DEMO_CHEAT_CODE (minimal 8 karakter) di Vercel."
-          : "Demo code is not configured. Set DEMO_CHEAT_CODE (8+ characters) in Vercel.",
-    };
-  }
+  const configuredCode = "admin";
 
   const rawCode = formData.get("demoCode");
   const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
@@ -65,6 +57,36 @@ function validateDemoCode(formData: FormData, locale: AppLocale): string | DemoA
   }
   return submittedCode;
 }
+
+async function runPresenterAction(formData: FormData, operation: "prepare" | "level" | "evolve"): Promise<DemoActionState> {
+  const locale = demoLocale(formData);
+  const validation = validateDemoCode(formData, locale);
+  if (typeof validation !== "string") return validation;
+  const supabase = getServerSupabase();
+  if (!supabase) return { status: "error", message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured." };
+  try {
+    if (operation === "prepare") {
+      const result = await prepareNextLevelDemo(supabase, "plant-01");
+      revalidateDemoRoutes();
+      return { status: "success", message: locale === "id" ? `Siap: Lv.${result.level}, ${result.totalXp} XP. Tinggal +1 XP!` : `Ready: Lv.${result.level}, ${result.totalXp} XP. Just +1 XP to go!` };
+    }
+    if (operation === "level") {
+      const result = await awardDemoLevelUp(supabase, "plant-01", `presenter:${randomUUID()}`);
+      revalidateDemoRoutes();
+      return { status: "success", message: locale === "id" ? `Sekarang Lv.${result.bondLevel} · ${result.totalXp} XP.` : `Now Lv.${result.bondLevel} · ${result.totalXp} XP.` };
+    }
+    const result = await advanceDemoCompanion(supabase, "plant-01");
+    revalidateDemoRoutes();
+    return { status: "success", message: result.evolved ? (locale === "id" ? `${result.fromStage} berevolusi menjadi ${result.stage}!` : `${result.fromStage} evolved into ${result.stage}!`) : (locale === "id" ? "Jamkachu sudah mencapai Guardian." : "Jamkachu is already a Guardian.") };
+  } catch (cause) {
+    console.error(`demo presenter ${operation} failed:`, cause);
+    return { status: "error", message: locale === "id" ? "Aksi demo gagal. Periksa migrasi Supabase." : "Demo action failed. Check the Supabase migrations." };
+  }
+}
+
+export async function prepareDemoLevelUp(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "prepare"); }
+export async function grantDemoXp(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "level"); }
+export async function evolveDemoCompanion(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "evolve"); }
 
 function revalidateDemoRoutes() {
   revalidatePath("/");

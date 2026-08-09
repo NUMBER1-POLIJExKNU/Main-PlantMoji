@@ -13,6 +13,7 @@ const TAB_HREFS = [
   "/",
   "/quests",
   "/plants",
+  "/camera",
   "/diary",
   "/collection",
   "/shop",
@@ -22,15 +23,15 @@ const TAB_HREFS = [
 ] as const;
 
 describe("shared PlantMoji application shell", () => {
-  it("exposes the game destinations, one visible coming-soon tab, and three utility destinations", () => {
+  it("exposes the game destinations and three utility destinations", () => {
     for (const href of TAB_HREFS) {
       expect(reactShell).toContain(`href: "${href}"`);
     }
 
     expect(reactShell.match(/href: "\/settings"/g)).toHaveLength(1);
-    expect(reactShell).toContain('key: "camera", href: null');
+    expect(reactShell).toContain('key: "camera", href: "/camera"');
     expect(reactShell).toContain('key: "shop", href: "/shop"');
-    expect(reactShell).toContain('className="reno-nav-item reno-nav-disabled"');
+    expect(reactShell).not.toContain('className="reno-nav-item reno-nav-disabled"');
   });
 
   it("keeps crop exploration and care memories as distinct game destinations", () => {
@@ -74,6 +75,23 @@ describe("shared PlantMoji application shell", () => {
     expect(reactCss).toContain('html[data-theme="night"] .pm-home-bond');
   });
 
+  it("cycles several mood-safe Jamkachu micro expressions", () => {
+    const mascot = source("src/components/mascot.tsx");
+    expect(mascot).toContain("MicroExpressions");
+    for (const frame of ["pm-expression-blink", "pm-expression-look", "pm-expression-mouth", "pm-expression-accent"]) {
+      expect(mascot).toContain(frame);
+      expect(reactCss).toContain(`.${frame}`);
+    }
+    expect(reactCss).toContain("@keyframes pm-face-look");
+  });
+
+  it("shows Jember local time in the My Garden HUD", () => {
+    const home = source("src/components/plant-home.tsx");
+    expect(home).toContain("pm-home-clock");
+    expect(home).toContain('timeZone: "Asia/Jakarta"');
+    expect(reactCss).toContain(".pm-home-clock");
+  });
+
   it("uses a seven-action mobile game dock without widening the viewport", () => {
     expect(reactCss).toContain("grid-template-columns: repeat(7, minmax(0, 1fr))");
     expect(reactCss).toMatch(/\.reno-nav-links\s*\{[\s\S]*?position:\s*fixed/);
@@ -107,5 +125,37 @@ describe("shared PlantMoji application shell", () => {
     expect(collectionTabs).toContain('selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"');
     expect(collectionTabs).not.toContain('kind: "badges"');
     expect(reactCss).toContain(".pm-btn-danger");
+  });
+
+  it("presents story chapters as a selectable game journey", () => {
+    const collectionTabs = source("src/components/collection-tabs.tsx");
+    const storyCard = source("src/components/story-chapter-card.tsx");
+    expect(collectionTabs).toContain("pm-story-path");
+    expect(collectionTabs).toContain("selectedChapterNumber");
+    expect(collectionTabs).toContain("pm-story-node");
+    expect(storyCard).toContain("pm-story-scene-art");
+    expect(storyCard).toContain("pm-story-dialogue");
+    expect(reactCss).toContain(".pm-story-stage");
+  });
+
+  it("presents moods as a selectable game dex with integrated lessons", () => {
+    const collectionTabs = source("src/components/collection-tabs.tsx");
+    expect(collectionTabs).toContain("pm-mood-dex-grid");
+    expect(collectionTabs).toContain("selectedMoodKey");
+    expect(collectionTabs).toContain("pm-mood-stage");
+    expect(collectionTabs).toContain("pm-mood-lesson");
+    expect(reactCss).toContain(".pm-mood-dex-slot");
+  });
+
+  it("keeps presenter controls behind the explicit demo settings route", () => {
+    const settings = source("src/app/settings/page.tsx");
+    const controls = source("src/components/demo-control-center.tsx");
+    const actions = source("src/app/settings/actions.ts");
+    expect(settings).toContain('searchParams).demo === "1"');
+    expect(actions).toContain('const configuredCode = "admin"');
+    expect(controls).toContain("prepareDemoLevelUp");
+    expect(controls).toContain("grantDemoXp");
+    expect(controls).toContain("evolveDemoCompanion");
+    expect(controls).toContain('/plants?demo=hot');
   });
 });

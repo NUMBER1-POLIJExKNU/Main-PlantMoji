@@ -259,6 +259,22 @@ export default async function DiaryPage() {
                     <span>{dateLabel} · <strong>{record.stage}</strong></span>
                     {details.length > 0 && <span>{details}</span>}
                     {record.note && <q>{record.note}</q>}
+                    {record.photo_url && (
+                      // eslint-disable-next-line @next/next/no-img-element -- remote Supabase Storage URL; next/image would need remotePatterns config
+                      <img
+                        src={record.photo_url}
+                        alt={
+                          locale === "id"
+                            ? `Foto pertumbuhan ${dateLabel}`
+                            : `Growth photo ${dateLabel}`
+                        }
+                        loading="lazy"
+                        className="mt-1 w-full max-w-[240px] rounded-lg border-2 border-[#DCEAD5]"
+                      />
+                    )}
+                    {record.ai_comment && (
+                      <span className="italic text-[#57684F]">“{record.ai_comment}”</span>
+                    )}
                   </div>
                 </article>;
               })

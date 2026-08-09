@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { key: "home", href: "/", icon: "🌱", id: "Kebun Saya", en: "My Garden" },
   { key: "quests", href: "/quests", icon: "💚", id: "Misi", en: "Quests" },
   { key: "plants", href: "/plants", icon: "🗺️", id: "Eksplor Tanaman", en: "Crop Explorer" },
-  { key: "camera", href: null, icon: "📷", id: "Kamera AI", en: "AI Camera" },
+  { key: "camera", href: "/camera", icon: "📷", id: "Kamera AI", en: "AI Camera" },
   { key: "diary", href: "/diary", icon: "📖", id: "Diari Tumbuh", en: "Growth Diary" },
   { key: "collection", href: "/collection", icon: "💎", id: "Koleksi", en: "Collection" },
   { key: "shop", href: "/shop", icon: "🛒", id: "Toko", en: "Shop" },
@@ -63,19 +63,6 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
             <span className="reno-nav-section-title">{locale === "id" ? "DUNIAKU" : "MY WORLD"}</span>
             {NAV_ITEMS.map((item) => {
               const label = locale === "id" ? item.id : item.en;
-              if (item.href === null) {
-                return (
-                  <span
-                    key={item.key}
-                    className="reno-nav-item reno-nav-disabled"
-                    aria-disabled="true"
-                    title={`${label} · ${locale === "id" ? "Segera hadir" : "Coming soon"}`}
-                  >
-                    <i>{item.icon}</i>
-                    <span className="reno-nav-label">{label}</span>
-                  </span>
-                );
-              }
               const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
                 <Link

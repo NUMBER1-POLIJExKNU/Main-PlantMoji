@@ -36,8 +36,9 @@ describe("Grandpa Tani living-world UI", () => {
   });
 
   it("schedules varied autonomous speech without interrupting important states", () => {
-    expect(live).toContain("FARMER_FIRST_MIN_MS = 20_000");
-    expect(live).toContain("FARMER_AUTO_MAX_MS = 150_000");
+    expect(live).toContain("FARMER_FIRST_MIN_MS = 8_000");
+    expect(live).toContain("FARMER_AUTO_MAX_MS = 70_000");
+    expect(live).toContain("FARMER_COOLDOWN_MS = 25_000");
     expect(live).toContain("farmerCanSpeakAutonomously");
     expect(live).toContain("fxQueue.length === 0");
     expect(live).toContain('classList.contains("npc-falling")');
@@ -49,6 +50,8 @@ describe("Grandpa Tani living-world UI", () => {
     expect(strings).toContain("Sensor itu petunjuk, bukan perintah");
     expect(live).toContain('bubble.addEventListener("click", openFarmerChat)');
     expect(css).toMatch(/\.npc-bubble[\s\S]*?pointer-events:\s*auto/);
+    expect(html).toContain('class="npc-ai-tag"');
+    expect(live).toContain("TAP FOR AI CHAT");
   });
   it("lets the farmer be grabbed and returns him to the measured grass floor", () => {
     expect(live).toContain('addEventListener("pointerdown", startFarmerDrag)');

@@ -28,7 +28,7 @@ export default function BondPanel({
   return (
     <section
       aria-label={`Bond Level ${bondLevel}`}
-      className="w-full max-w-sm rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60"
+      className="pm-home-bond w-full max-w-sm rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">

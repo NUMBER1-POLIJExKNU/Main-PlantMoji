@@ -24,7 +24,7 @@ export default function HomeQuestCard({ quest }: HomeQuestCardProps) {
     return (
       <Link
         href="/quests"
-        className="block w-full max-w-sm rounded-2xl bg-white/50 px-5 py-4 text-center text-sm text-zinc-500 shadow-sm backdrop-blur transition-colors hover:bg-white/70 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:bg-zinc-900/60"
+        className="pm-home-quest block w-full max-w-sm rounded-2xl bg-white/50 px-5 py-4 text-center text-sm text-zinc-500 shadow-sm backdrop-blur transition-colors hover:bg-white/70 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:bg-zinc-900/60"
       >
         No active quest — keep caring 🌿
       </Link>
@@ -34,7 +34,7 @@ export default function HomeQuestCard({ quest }: HomeQuestCardProps) {
   return (
     <Link
       href="/quests"
-      className="block w-full max-w-sm rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur transition-colors hover:bg-white/90 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/80"
+      className="pm-home-quest block w-full max-w-sm rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur transition-colors hover:bg-white/90 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/80"
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] font-bold tracking-widest text-zinc-400 dark:text-zinc-500">

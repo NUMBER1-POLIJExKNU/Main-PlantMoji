@@ -15,7 +15,7 @@ export default function HomeEnvironmentGlance({ snapshot, locale }: { snapshot: 
       <div className="pm-home-environment-head">
         <div>
           <span className="pm-home-environment-kicker">{locale === "id" ? "SENSOR TERKINI" : "LATEST SENSORS"}</span>
-          <h2 id="home-environment-title">{locale === "id" ? "Lingkungan kebunku" : "My garden environment"}</h2>
+          <h2 id="home-environment-title">{locale === "id" ? "Vital kebunku" : "Garden vitals"}</h2>
         </div>
         <Link href="/plants">{locale === "id" ? "Jelajahi →" : "Explore →"}</Link>
       </div>
@@ -24,8 +24,8 @@ export default function HomeEnvironmentGlance({ snapshot, locale }: { snapshot: 
           const value = snapshot?.[metric.key];
           return (
             <article key={metric.key} className={`pm-home-sensor pm-home-sensor-${metric.tone}`}>
-              <span className="pm-home-sensor-icon" aria-hidden="true">{metric.icon}</span>
-              <div><span>{locale === "id" ? metric.id : metric.en}</span><strong>{value == null ? "—" : `${value}${metric.suffix}`}</strong></div>
+              <div className="pm-home-sensor-head"><span className="pm-home-sensor-icon" aria-hidden="true">{metric.icon}</span><span>{locale === "id" ? metric.id : metric.en}</span></div>
+              <div className="pm-home-sensor-reading"><strong>{value == null ? "—" : value}</strong>{value != null && metric.suffix && <small>{metric.suffix}</small>}</div>
             </article>
           );
         })}

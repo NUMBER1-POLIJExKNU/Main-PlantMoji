@@ -16,6 +16,7 @@ import { explainEnvironment } from "@/lib/environment-explanation";
 import CropExplorer from "@/components/crop-explorer";
 import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
 import { compareEnvironmentToCrops } from "@/lib/environment-analyzer";
+import { getEnvironmentDemoPreset, type EnvironmentDemoPreset, ENVIRONMENT_DEMO_PRESETS } from "@/lib/environment-demo";
 
 export const dynamic = "force-dynamic";
 const PLANT_ID = "plant-01";
@@ -94,7 +95,9 @@ function Metric({ icon, label, guideLabel, guide, value, status, locale }: {
   );
 }
 
-export default async function PlantsPage() {
+export default async function PlantsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const requestedDemo = (await searchParams).demo;
+  const demoPreset = typeof requestedDemo === "string" && requestedDemo in ENVIRONMENT_DEMO_PRESETS ? requestedDemo as EnvironmentDemoPreset : null;
   const locale = await getRequestLocale();
   const copy = PAGE_COPY[locale];
   const supabase = getServerSupabase();
@@ -102,11 +105,12 @@ export default async function PlantsPage() {
   // Independent queries in parallel. Neither ever rejects (both map failures
   // to status objects / null), so the error Notice below still depends only
   // on getPlant — identical behavior, one round-trip instead of two.
-  const [result, snapshot, explorerCrops] = await Promise.all([
+  const [result, realSnapshot, explorerCrops] = await Promise.all([
     getPlant(supabase, PLANT_ID),
     getLatestSensorSnapshot(supabase, PLANT_ID),
     getJemberCropCatalog(supabase, locale),
   ]);
+  const snapshot = demoPreset ? getEnvironmentDemoPreset(demoPreset) : realSnapshot;
   if (result.status !== "ok") {
     return <Notice title="Couldn't load crop info" lines={[result.status === "error" ? result.message : "Check the migrations and the plant-01 seed."]} />;
   }
@@ -121,7 +125,7 @@ export default async function PlantsPage() {
   return (
     <main>
       <PageHeader icon="🌱" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
-      <CropExplorer locale={locale} initialSnapshot={snapshot} initialCrops={explorerCrops} initialResults={compareEnvironmentToCrops(snapshot, explorerCrops)} />
+      <CropExplorer locale={locale} initialSnapshot={snapshot} initialCrops={explorerCrops} initialResults={compareEnvironmentToCrops(snapshot, explorerCrops)} initialDemoPreset={demoPreset} />
 
       <form action={updateCropProfile} className="pm-panel mb-6">
         <input type="hidden" name="plantId" value={result.plant.id} />
