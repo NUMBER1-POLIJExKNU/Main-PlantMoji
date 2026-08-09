@@ -55,7 +55,7 @@ const COPY = {
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
-    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir",
+    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Belum ada misi aktif",
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
@@ -81,7 +81,7 @@ const COPY = {
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
     "sensor.unavailable": "Indoor sensor not connected",
-    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last",
+    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "No active quest",
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
@@ -1726,6 +1726,48 @@ function petYawnLine() {
   return PM().pettingYawn ?? "So cozy… Jamkachu needs a tiny nap now. Zzz…";
 }
 
+/** Dopamine contract (2026-08-09): a tap on Jamkachu NEVER dies silently.
+ *  The full pet path stays paced (600ms cooldown, 5-in-30s satiation), but
+ *  declined taps get these cheap acknowledgments instead of nothing —
+ *  compositor-only, no bubble churn, no satiation/cooldown accounting, so
+ *  the pacing changes the response's flavor, never its existence. Audio
+ *  rides the sfx dispatcher's own rate limit. */
+function quickPetResponse() {
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper && !prefersReducedMotion()) {
+    animateSafe(
+      wrapper,
+      [
+        { transform: "scale(1, 1)" },
+        { transform: "scale(1.05, 0.96)" },
+        { transform: "scale(1, 1)" },
+      ],
+      { duration: 160, easing: "steps(3, end)" },
+    );
+  }
+  spawnHeart(wrapper ? wrapper.getBoundingClientRect() : null);
+  window.PMSfx?.play("pet");
+}
+
+/** Satiated (in-fiction rest) taps: sleepy flavor, still alive — a soft
+ *  breath-squash and a floating lullaby note instead of hearts. */
+function drowsyPetResponse() {
+  const wrapper = $(".mascot-wrapper");
+  if (wrapper && !prefersReducedMotion()) {
+    animateSafe(
+      wrapper,
+      [
+        { transform: "scale(1, 1)" },
+        { transform: "scale(1.03, 0.98)" },
+        { transform: "scale(1, 1)" },
+      ],
+      { duration: 260, easing: "ease-out" },
+    );
+  }
+  spawnLullabyNote(mascotRect());
+  window.PMSfx?.play("purr");
+}
+
 function petMascot(part = "head") {
   // Night sleep (spec §6.2): a sleeping Jamkachu is never squash-animated,
   // hearted, or chatted awake — mirror the care button's quiet good-night
@@ -1743,13 +1785,19 @@ function petMascot(part = "head") {
   // never rises (no extra satiation entry, cooldown re-armed like a pet).
   const sinceLastTap = now - lastPetTapAt;
   lastPetTapAt = now;
-  if (now < petSatiatedUntil) return;
+  if (now < petSatiatedUntil) {
+    drowsyPetResponse();
+    return;
+  }
   if (sinceLastTap <= DOUBLE_TAP_MS && now < petCooldownUntil) {
     lastPetTapAt = 0; // a third tap never chains a second hop
     surpriseHop(now);
     return;
   }
-  if (now < petCooldownUntil) return;
+  if (now < petCooldownUntil) {
+    quickPetResponse();
+    return;
+  }
   petCooldownUntil = now + PET_COOLDOWN_MS;
   petTapTimes = petTapTimes.filter((time) => now - time < PET_WINDOW_MS);
   petTapTimes.push(now);
@@ -2580,12 +2628,12 @@ function maybeWindGust() {
 // and NEVER watering/fertilizing (those sensors do not exist). Tapping him
 // grants NOTHING, ever — he is pure guidance and charm.
 const FARMER_BUBBLE_MS = 6000;
-const FARMER_COOLDOWN_MS = 60_000;
-const FARMER_FIRST_MIN_MS = 20_000;
-const FARMER_FIRST_MAX_MS = 35_000;
-const FARMER_AUTO_MIN_MS = 75_000;
-const FARMER_AUTO_MAX_MS = 150_000;
-const FARMER_ACTIVITY_QUIET_MS = 45_000;
+const FARMER_COOLDOWN_MS = 25_000;
+const FARMER_FIRST_MIN_MS = 8_000;
+const FARMER_FIRST_MAX_MS = 15_000;
+const FARMER_AUTO_MIN_MS = 35_000;
+const FARMER_AUTO_MAX_MS = 70_000;
+const FARMER_ACTIVITY_QUIET_MS = 20_000;
 // English fallbacks — PM_STRINGS.farmer carries the localized sets. Both
 // soil moods share the "Soil" family, exactly like the care button.
 const FARMER_FALLBACK = {
@@ -2655,7 +2703,7 @@ let farmerDragPleaTimer = null;
 
 const FARMER_CHAT_COPY = {
   id: {
-    kicker: "TEMAN KEBUNMU", title: "Kakek Tani", close: "Tutup percakapan",
+    kicker: "TEMAN KEBUN DENGAN AI", title: "Kakek Tani", close: "Tutup percakapan",
     hello: "Hoho… datanglah, Nak. Apa yang ingin kamu ketahui tentang tanaman kecil kita?",
     placeholder: "Tanya tentang tanaman atau sensor…", send: "TANYA",
     note: "Kakek menjelaskan data sensor. Untuk perubahan tanah, tanyakan juga kepada guru atau petani setempat.",
@@ -2664,7 +2712,7 @@ const FARMER_CHAT_COPY = {
     prompts: ["Bagaimana keadaan tanaman sekarang?", "Apakah cahayanya cukup?", "Apa arti pH tanah?"],
   },
   en: {
-    kicker: "YOUR GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
+    kicker: "AI-ASSISTED GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
     hello: "Hoho… come sit with me, my young friend. What would you like to know about our little plant?",
     placeholder: "Ask about the plant or sensors…", send: "ASK",
     note: "Grandpa explains sensor data. Ask a teacher or local farmer before changing the soil.",
@@ -2984,7 +3032,11 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
   bubble.className = "npc-bubble";
   bubble.setAttribute("aria-live", "polite");
   bubble.setAttribute("aria-label", `${text} ${appLocale === "id" ? "Ketuk untuk berbicara dengan Kakek Tani." : "Tap to talk with Grandpa Tani."}`);
-  bubble.textContent = text;
+  const line = document.createElement("span");
+  line.textContent = text;
+  const cta = document.createElement("small");
+  cta.textContent = appLocale === "id" ? "✨ KETUK UNTUK CHAT AI" : "✨ TAP FOR AI CHAT";
+  bubble.append(line, cta);
   bubble.addEventListener("click", openFarmerChat);
   bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
   bubble.style.top = `${Math.round(rect.top - 8)}px`;
@@ -3642,6 +3694,32 @@ function fxDecorReveal(level) {
   }, DECOR_REVEAL_MS);
 }
 
+// ── Seed Shop purchases (milestone18) ────────────────────────────────────
+// PURE presentation from shop_purchases rows: the ONE equipped pot and ONE
+// equipped accessory become .shop-<item_key> classes on .mascot-svg, and
+// every owned decor item becomes .own-<item_key> on .shop-decor-layer.
+// Applied idempotently on every render, exactly like applyDecorations.
+
+const SHOP_POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan"];
+const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses"];
+const SHOP_DECOR_KEYS = ["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond"];
+
+function renderShopPurchases(rows) {
+  const svg = $(".mascot-svg");
+  const layer = $(".shop-decor-layer");
+  const list = Array.isArray(rows) ? rows : [];
+  const equippedPot = list.find((r) => r.category === "pot" && r.equipped)?.item_key ?? null;
+  const equippedAcc = list.find((r) => r.category === "accessory" && r.equipped)?.item_key ?? null;
+  const ownedDecor = new Set(list.filter((r) => r.category === "decor").map((r) => r.item_key));
+  if (svg) {
+    SHOP_POT_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedPot));
+    SHOP_ACC_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedAcc));
+  }
+  if (layer) {
+    SHOP_DECOR_KEYS.forEach((key) => layer.classList.toggle(`own-${key}`, ownedDecor.has(key)));
+  }
+}
+
 /** HP is character state (mood-derived, HP_BY_MOOD) — rendered inline next
  *  to the XP bar (#hp-inline), not in the environment strip (spec §2.1). */
 function renderHp(moodState) {
@@ -3797,6 +3875,22 @@ function renderBond(bond, plantName) {
     // Flame tier grows at 7/14/30 days (Task 15) — text-level, no sprites.
     streak.innerHTML = `<i class="icon">${flameFor(streakDays)}</i> ${streakDays} ${t("days")}`;
     streak.style.display = streakDays > 0 ? "" : "none";
+  }
+
+  // Seed coin balance (milestone18): shown verbatim from bond_state.seeds —
+  // the farm layer never computes balances. The chip stays hidden until the
+  // migration adds the column (bond.seeds === undefined pre-migration).
+  const seedsBadge = $(".badge.seeds");
+  if (seedsBadge) {
+    if (typeof bond.seeds === "number") {
+      seedsBadge.hidden = false;
+      const numEl2 = seedsBadge.querySelector("[data-seed-num]");
+      const labelEl = seedsBadge.querySelector("[data-seed-label]");
+      if (numEl2) numEl2.textContent = String(bond.seeds);
+      if (labelEl) labelEl.textContent = PM().seedShop?.label ?? "Seeds";
+    } else {
+      seedsBadge.hidden = true;
+    }
   }
 
   if (xpDelta > 0) {
@@ -4662,7 +4756,7 @@ async function main() {
     // sensor reading below — never awaited, so a slow/failed fetch can
     // never delay the rest of the render.
     refreshCropProfile();
-    const [plantRes, bondRes, sensorRes, questRes, eventsRes, companionRes] = await Promise.all([
+    const [plantRes, bondRes, sensorRes, questRes, eventsRes, companionRes, shopRes] = await Promise.all([
       supabase.from("plants").select("*").eq("id", PLANT_ID).maybeSingle(),
       supabase.from("bond_state").select("*").eq("plant_id", PLANT_ID).maybeSingle(),
       supabase
@@ -4694,6 +4788,9 @@ async function main() {
         .then((res) => res)
         .catch(() => ({ data: null })),
       supabase.from("companion_state").select("stage, form_key, updated_at").eq("plant_id", PLANT_ID).maybeSingle().then((res) => res).catch(() => ({ data: null })),
+      // Shop purchases (milestone18): failure-tolerant like companionRes —
+      // a missing milestone18 migration must never break the page.
+      supabase.from("shop_purchases").select("item_key, category, equipped").eq("plant_id", PLANT_ID).then((res) => res).catch(() => ({ data: null })),
     ]);
     if (bondRes.data) renderBond(bondRes.data, plantName ?? plantRes.data?.name);
     if (plantRes.data) {
@@ -4704,6 +4801,7 @@ async function main() {
     if (questRes.data) trackQuests(questRes.data);
     if (Array.isArray(eventsRes?.data)) noteMemoryRows(eventsRes.data);
     if (companionRes?.data) renderCompanion(companionRes.data);
+    if (Array.isArray(shopRes?.data)) renderShopPurchases(shopRes.data);
     maybeShowMemory(); // hour-gated; only into an idle Happy bubble
   };
 
@@ -4759,6 +4857,31 @@ async function main() {
       .subscribe();
   } catch {
     // Chips stay unlabeled — never block the page over a nice-to-have.
+  }
+
+  // Shop purchases realtime (milestone18) — isolated channel, same rationale
+  // as farm-events above: until the migration runs, this join errors and
+  // must never touch the main channel. Any change re-fetches the full row
+  // set (equip exclusivity is cross-row, so a single payload is not enough).
+  try {
+    supabase
+      .channel(`farm-shop-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shop_purchases", filter: `plant_id=eq.${PLANT_ID}` },
+        () => {
+          supabase
+            .from("shop_purchases")
+            .select("item_key, category, equipped")
+            .eq("plant_id", PLANT_ID)
+            .then((res) => {
+              if (Array.isArray(res.data)) renderShopPurchases(res.data);
+            });
+        },
+      )
+      .subscribe();
+  } catch {
+    // Purchases still land via the 15s refresh poll — never block the page.
   }
 
   // Polling fallback + sensor refresh (sensor_readings has no realtime).
