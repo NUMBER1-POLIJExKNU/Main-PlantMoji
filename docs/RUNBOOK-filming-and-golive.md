@@ -46,7 +46,8 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 16 | *(reserved — no file yet)* | companion evolution ladder (Seed → Sprout → Bud → Bloom → Guardian) — in flight, skip until it ships |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz never deducts XP — kind scoring: a wrong/timed-out Daily Quiz answer now awards 0 XP instead of −1, so a miss can never demote Bond Level |
 | 18 | `milestone18-seed-shop.sql` | Seed Shop economy — `bond_state.seeds` + `seed_rewards` ledger + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPCs, realtime on `shop_purchases`. Seeds MAY decrease (spendable currency); XP/Bond Level still never decrease |
-| 19 | `milestone19-photo-diary.sql` | `plant-photos` Storage bucket + `growth_records.photo_url`/`ai_comment` — **required before the Camera photo diary can save photos**; without it `/camera` shows an operator "coming soon" note and the diary renders without thumbnails |
+| 19 | `milestone19-photo-diary.sql` | `plant-photos` Storage bucket + `growth_records.photo_url`/`ai_comment` — **required before the Camera photo diary can save photos**; without it `/camera` shows an operator "coming soon" note and the diary renders without thumbnails **(superseded — `/camera` is now the Live Guardian; this migration remains only for old diary thumbnails / the future growth album)** |
+| 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` table (kind `touch`/`pest_advice`, jsonb note) + realtime — **required before a real-leaf touch can make Jamkachu giggle on the farm screen**; without it `/camera` still watches and reacts locally with an operator note. Creates NO storage bucket: the guardian never stores what it sees |
 
 - [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone18 are newer** — verify all nine before go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 has no file yet, see below).
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all sixteen again in order (skip milestone16 — reserved, no file yet).
@@ -55,7 +56,8 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] Milestone 16 has no file yet — reserved for the in-flight companion evolution ladder plan. Skip it in the migration order until it ships.
 - [ ] Milestone 17 replaces Milestone 13's `answer_daily_quiz` RPC in place (`create or replace`, same signature/return shape): a wrong or timed-out Daily Quiz answer now awards exactly 0 XP instead of −1, so Bond Level can never be demoted right after a "LEVEL UP!". Correct-answer XP is unchanged.
 - [ ] Milestone 18 is required for the Seed Shop. Without it the /shop route shows a friendly "coming soon" state, the farm HUD hides the Seeds chip, and every seed grant is a silent no-op — nothing breaks.
-- [ ] Milestone 19 is required for the Camera photo diary. Without it `/camera` renders a "coming soon" operator note with the camera input disabled — nothing crashes. The +1 Seed first-photo-of-the-day grant additionally needs milestone18; without milestone18 the photo still saves and the grant is skipped silently. AI comments need `GEMINI_API_KEY` in Vercel — without it every photo gets the deterministic sensor-template comment (fully functional).
+- [ ] (superseded) Milestone 19 is required for the Camera photo diary. Without it `/camera` renders a "coming soon" operator note with the camera input disabled — nothing crashes. The +1 Seed first-photo-of-the-day grant additionally needs milestone18; without milestone18 the photo still saves and the grant is skipped silently. AI comments need `GEMINI_API_KEY` in Vercel — without it every photo gets the deterministic sensor-template comment (fully functional).
+- [ ] Milestone 19 (`milestone19-camera-guardian.sql`) is required for the Live Guardian fan-out. Without it `/camera` still watches, the on-device mini Jamkachu still giggles instantly, and an operator note explains that reactions stay local — nothing crashes. Pest advisories additionally need `GEMINI_API_KEY` in Vercel; without it the page runs in labeled motion-only mode. No camera signal ever grants XP or Seeds — reactions are presentation only.
 
 #### 1.3 Hardware teammate — where to point them
 
@@ -114,6 +116,9 @@ Open **Treasures** (`/collection`).
 - [ ] Happy mood inside 18:00–06:00 WIB shows sleeping Jamkachu: closed eyes, slow breath, sleep bubble, light row shown as "Night 🌙" — never as a problem.
 - [ ] Problem moods ALWAYS override sleep (cycle with hotkey `5` to confirm the problem faces still show). Safety visibility wins.
 - [ ] The window flips at 18:00 / 06:00 without a reload (60 s clock).
+
+**Guardian mount (4 min)**
+- [ ] Guardian mount: open `/camera` on a second device (tablet/phone), allow the camera, and mount it facing the real plant with the screen visible (the Wake Lock keeps it on). Stroke a real leaf → the mini Jamkachu on the camera device giggles INSTANTLY and the farm-home Jamkachu giggles within ~2s (realtime). Wave a hand in front of the lens → at most a giggle — verify NO XP, Seeds, or quest movement anywhere. Disconnect the network → the camera-device reaction stays instant (local); the farm reaction resumes on reconnect. Between 18:00–06:00 WIB the chip shows night rest and detection is suspended.
 
 ### 3. Filming: the three demo beats (+ optional Explore/Treasures close)
 
@@ -176,7 +181,8 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 16 | *(dicadangkan — belum ada file)* | tangga evolusi companion (Seed → Sprout → Bud → Bloom → Guardian) — masih dikerjakan, lewati sampai rilis |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz tidak lagi mengurangi XP — kind scoring: jawaban salah/timeout pada Daily Quiz kini memberi 0 XP, bukan −1, sehingga jawaban salah tidak akan pernah menurunkan Bond Level |
 | 18 | `milestone18-seed-shop.sql` | ekonomi Toko Benih — `bond_state.seeds` + ledger `seed_rewards` + `shop_purchases` + RPC `award_seeds`/`purchase_item`/`equip_item`, realtime pada `shop_purchases`. Benih BOLEH berkurang (mata uang yang bisa dibelanjakan); XP/Bond Level tetap tidak pernah turun |
-| 19 | `milestone19-photo-diary.sql` | bucket Storage `plant-photos` + kolom `growth_records.photo_url`/`ai_comment` — **wajib sebelum Camera photo diary bisa menyimpan foto**; tanpanya `/camera` menampilkan catatan operator "hampir siap" dan diary tampil tanpa thumbnail |
+| 19 | `milestone19-photo-diary.sql` | bucket Storage `plant-photos` + kolom `growth_records.photo_url`/`ai_comment` — **wajib sebelum Camera photo diary bisa menyimpan foto**; tanpanya `/camera` menampilkan catatan operator "hampir siap" dan diary tampil tanpa thumbnail **(digantikan — `/camera` kini Live Guardian; migrasi ini tinggal untuk thumbnail diary lama / growth album di masa depan)** |
+| 19 | `milestone19-camera-guardian.sql` | tabel `camera_events` Live Guardian (kind `touch`/`pest_advice`, note jsonb) + realtime — **wajib sebelum sentuhan daun asli bisa membuat Jamkachu terkikik di layar kebun**; tanpanya `/camera` tetap mengawasi dan bereaksi lokal dengan catatan operator. TANPA bucket Storage: penjaga tidak pernah menyimpan yang dilihatnya |
 
 - [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone18 yang lebih baru** — pastikan kesembilannya sebelum go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 belum punya file, lihat di bawah).
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi keenam belas file sesuai urutan (lewati milestone16 — dicadangkan, belum ada file).
@@ -185,7 +191,8 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] Milestone 16 belum punya file — dicadangkan untuk rencana tangga evolusi companion yang masih dikerjakan. Lewati dalam urutan migrasi sampai rilis.
 - [ ] Milestone 17 menggantikan RPC `answer_daily_quiz` milik Milestone 13 di tempat yang sama (`create or replace`, signature/bentuk return tetap sama): jawaban Daily Quiz yang salah atau timeout kini memberi tepat 0 XP, bukan −1, sehingga Bond Level tidak akan pernah turun tepat setelah "LEVEL UP!". XP untuk jawaban benar tidak berubah.
 - [ ] Milestone 18 diperlukan untuk Toko Benih. Tanpanya, rute /shop menampilkan status "segera hadir" yang ramah, chip Benih di HUD kebun disembunyikan, dan semua hadiah Benih menjadi no-op senyap — tidak ada yang rusak.
-- [ ] Milestone 19 wajib untuk Camera photo diary. Tanpanya `/camera` menampilkan catatan operator dengan input kamera dinonaktifkan — tidak ada yang crash. Hadiah +1 Benih foto-pertama-hari-ini juga membutuhkan milestone18; tanpa milestone18 foto tetap tersimpan dan hadiahnya dilewati diam-diam. Komentar AI membutuhkan `GEMINI_API_KEY` di Vercel — tanpanya setiap foto mendapat komentar template sensor deterministik (tetap berfungsi penuh).
+- [ ] (digantikan) Milestone 19 wajib untuk Camera photo diary. Tanpanya `/camera` menampilkan catatan operator dengan input kamera dinonaktifkan — tidak ada yang crash. Hadiah +1 Benih foto-pertama-hari-ini juga membutuhkan milestone18; tanpa milestone18 foto tetap tersimpan dan hadiahnya dilewati diam-diam. Komentar AI membutuhkan `GEMINI_API_KEY` di Vercel — tanpanya setiap foto mendapat komentar template sensor deterministik (tetap berfungsi penuh).
+- [ ] Milestone 19 (`milestone19-camera-guardian.sql`) wajib untuk penyebaran Live Guardian. Tanpanya `/camera` tetap mengawasi, mini Jamkachu di perangkat tetap terkikik seketika, dan catatan operator menjelaskan bahwa reaksi hanya lokal — tidak ada yang crash. Saran hama juga membutuhkan `GEMINI_API_KEY` di Vercel; tanpanya halaman berjalan dalam mode gerakan-saja yang diberi label. Tidak ada sinyal kamera yang pernah memberi XP atau Benih — reaksi hanyalah presentasi.
 
 #### 1.3 Rekan hardware — arahkan ke sini
 
@@ -244,6 +251,9 @@ Buka **Harta** (`/collection`).
 - [ ] Mood Happy dalam jendela 18:00–06:00 WIB menampilkan Jamkachu tidur: mata tertutup, napas pelan, gelembung tidur, baris cahaya tampil sebagai "Night 🌙" — tidak pernah sebagai masalah.
 - [ ] Mood bermasalah SELALU mengalahkan tidur (putar dengan hotkey `5` untuk memastikan wajah masalah tetap tampil). Keterlihatan keselamatan menang.
 - [ ] Jendela berganti pada 18:00 / 06:00 tanpa muat ulang (jam 60 detik).
+
+**Pemasangan penjaga (4 menit)**
+- [ ] Pemasangan penjaga: buka `/camera` di perangkat kedua (tablet/ponsel), izinkan kamera, dan pasang menghadap tanaman asli dengan layar terlihat (Wake Lock menjaganya tetap menyala). Usap daun asli → mini Jamkachu di perangkat kamera terkikik SEKETIKA dan Jamkachu di layar kebun terkikik dalam ~2 detik (realtime). Lambaikan tangan di depan lensa → paling banyak kikikan — pastikan TIDAK ada XP, Benih, atau pergerakan misi di mana pun. Putuskan jaringan → reaksi di perangkat kamera tetap seketika (lokal); reaksi kebun kembali saat tersambung. Pukul 18.00–06.00 WIB chip menampilkan istirahat malam dan deteksi ditangguhkan.
 
 ### 3. Syuting: tiga adegan demo (+ penutup opsional Jelajah/Harta)
 
@@ -306,7 +316,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 16 | *(예약됨 — 아직 파일 없음)* | 컴패니언 진화 단계 (Seed → Sprout → Bud → Bloom → Guardian) — 진행 중, 출시될 때까지 건너뛰기 |
 | 17 | `milestone17-quiz-kind-scoring.sql` | 퀴즈가 더 이상 XP를 깎지 않음 — kind scoring: Daily Quiz 오답/시간초과가 이제 −1이 아니라 0 XP를 지급하여 오답으로 Bond Level이 절대 내려가지 않음 |
 | 18 | `milestone18-seed-shop.sql` | Seed Shop 경제 — `bond_state.seeds` + `seed_rewards` 원장 + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPC, `shop_purchases` realtime. Seeds는 줄어들 수 있음(소비 가능한 화폐); XP/Bond Level은 여전히 절대 감소하지 않음 |
-| 19 | `milestone19-camera-guardian.sql` | Camera AI Live Guardian의 텍스트 이벤트 fan-out. 이미지·영상 Storage는 만들지 않음 |
+| 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` 테이블 (kind `touch`/`pest_advice`, note jsonb) + realtime — **진짜 잎을 만졌을 때 농장 화면의 Jamkachu가 웃으려면 필수**; 없어도 `/camera`는 로컬로 계속 감시·반응하며 운영자 안내를 표시합니다. Storage 버킷 없음: 가디언은 본 것을 절대 저장하지 않습니다 |
 
 - [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone18이 더 최신** — 고라이브 전에 아홉 개 모두 확인하세요 (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16은 아직 파일이 없습니다, 아래 참고).
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 열여섯 개를 순서대로 다시 실행하세요 (milestone16은 건너뛰기 — 예약됨, 아직 파일 없음).
@@ -315,7 +325,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] Milestone 16은 아직 파일이 없습니다 — 진행 중인 컴패니언 진화 단계 계획을 위해 예약되어 있습니다. 출시될 때까지 마이그레이션 순서에서 건너뛰세요.
 - [ ] Milestone 17은 Milestone 13의 `answer_daily_quiz` RPC를 같은 자리에서 대체합니다 (`create or replace`, 시그니처/반환 형태 동일): 오답이거나 시간초과된 Daily Quiz 답변은 이제 −1이 아니라 정확히 0 XP를 지급하므로 "LEVEL UP!" 직후에 Bond Level이 절대 내려가지 않습니다. 정답 XP는 변경되지 않았습니다.
 - [ ] Milestone 18은 Seed Shop에 필요합니다. 없으면 /shop 라우트는 친절한 "곧 만나요" 상태를 보여주고, 농장 HUD의 Seeds 칩은 숨겨지며, 모든 Seed 지급은 조용한 no-op이 됩니다 — 아무것도 깨지지 않습니다.
-- [ ] Milestone 19는 Camera AI 반응을 다른 Farm 화면에 전달할 때 필요합니다. 없어도 카메라 기기의 로컬 움직임 감지와 Jamkachu 반응은 계속 작동합니다.
+- [ ] Milestone 19(`milestone19-camera-guardian.sql`)는 Live Guardian 팬아웃에 필요합니다. 없어도 `/camera`는 계속 감시하고 기기 내 미니 Jamkachu는 즉시 웃으며, 운영자 안내가 반응이 로컬에만 머문다고 설명합니다 — 아무것도 깨지지 않습니다. 해충 안내는 Vercel의 `GEMINI_API_KEY`가 추가로 필요하며, 없으면 라벨이 붙은 모션 전용 모드로 동작합니다. 어떤 카메라 신호도 XP나 Seeds를 주지 않습니다 — 반응은 오직 표현입니다.
 
 #### 1.3 하드웨어 담당자 안내
 
@@ -363,12 +373,6 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 **복원력 (4분)**
 - [ ] 네트워크 끊고 새로고침 (또는 프리뷰에서 Supabase 미설정): 페이지가 여전히 렌더링되고, FX는 조용히 축소되며, 정적 데모 모드에서 정직한 "DEMO" 태그가 표시되고, 화면에 오류 텍스트가 없음.
 
-**Camera AI Live Guardian (4분)**
-- [ ] `/camera`에서 카메라 권한 허용 → `Watching` 상태와 실제 식물 영상 표시.
-- [ ] 잎을 가볍게 건드림 → 카메라 기기의 Jamkachu가 즉시 반응하고, milestone19 적용 시 Farm 홈에도 반응이 전달됨. XP·퀘스트·Seeds 변화 없음.
-- [ ] `GEMINI_API_KEY` 없이도 화면에 motion-only 모드가 표시되고 움직임 반응은 그대로 작동함.
-- [ ] 영상은 저장되지 않으며 AI 확인 시 축소 스냅샷 한 장만 메모리에서 전송됨. 사람/얼굴이 프레임에 들어오지 않도록 식물만 비춤.
-
 **접근성 & 화면 (5분)**
 - [ ] Reduced-motion 점검: OS 설정에서 "동작 줄이기"를 켜고 새로고침 — 오브 캐스케이드가 단일 카운트업으로 축소되고 정보 손실이 없음.
 - [ ] 프로젝터 대비: 틴트 배경 위 흰 카드, 테두리, 어두운 텍스트 (`#243421`)가 방 뒤에서도 읽혀야 함. 먼저 프로젝터 밝기로 해결; 촬영 당일 CSS 수정 금지.
@@ -380,6 +384,9 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] 18:00–06:00 WIB 사이 Happy 무드는 잠자는 Jamkachu를 표시: 감은 눈, 느린 숨, 잠 말풍선, 조도 행은 "Night 🌙"로 표시 — 절대 문제로 표시되지 않음.
 - [ ] 문제 무드는 항상 수면보다 우선 (핫키 `5`로 순환하며 문제 얼굴이 계속 표시되는지 확인). 안전 가시성이 이깁니다.
 - [ ] 18:00 / 06:00 경계는 새로고침 없이 전환됨 (60초 시계).
+
+**가디언 거치 (4분)**
+- [ ] 가디언 거치: 두 번째 기기(태블릿/폰)에서 `/camera`를 열고 카메라를 허용한 뒤 실제 식물을 향해 화면이 보이게 거치합니다(Wake Lock이 화면을 유지). 진짜 잎을 쓰다듬으면 → 카메라 기기의 미니 Jamkachu가 즉시 웃고, 농장 홈 Jamkachu도 ~2초 안에 웃습니다(realtime). 렌즈 앞에서 손을 흔들면 → 기껏해야 웃음뿐 — 어디에서도 XP·Seeds·퀘스트 변화가 없는지 확인합니다. 네트워크를 끊으면 → 카메라 기기 반응은 그대로 즉시(로컬)이고, 농장 반응은 재연결 시 재개됩니다. 18:00–06:00 WIB에는 칩이 야간 휴식을 표시하고 감지가 중단됩니다.
 
 ### 3. 촬영: 세 가지 데모 장면 (+ Explore·Treasures 선택적 마무리)
 

@@ -68,11 +68,6 @@ export interface MemoryReflectionAiInput {
   locale: AppLocale;
 }
 
-export interface CameraAdviceInput {
-  imageBase64: string;
-  mimeType: "image/jpeg";
-  locale: AppLocale;
-}
 
 // ── Gemini generateContent constants ───────────────────────────────────
 
@@ -334,29 +329,4 @@ export async function generateMemoryReflection(input: MemoryReflectionAiInput): 
   } catch {
     return null;
   }
-}
-
-/** Optional vision advisory. The result is deliberately a coarse sentinel,
- * never a diagnosis: camera output cannot create quests, rewards, or truth. */
-export async function generateCameraAdvice(input: CameraAdviceInput): Promise<"POSSIBLE_PEST" | "NO_PLANT" | null> {
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || !/^[A-Za-z0-9+/=]+$/.test(input.imageBase64)) return null;
-    const response = await fetch(GEMINI_API_URL, {
-      method: "POST",
-      headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [
-          { text: "This is an optional classroom plant-camera advisory. If any person or face is visible, if no plant is clearly visible, or if uncertain, answer exactly NO_PLANT. Only when a clearly visible plant has a clearly visible small insect or pest-like object on it, answer exactly POSSIBLE_PEST. Do not diagnose disease. Output one sentinel only." },
-          { inlineData: { mimeType: input.mimeType, data: input.imageBase64 } },
-        ] }],
-        generationConfig: { maxOutputTokens: 8, temperature: 0 },
-      }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      cache: "no-store",
-    });
-    if (!response.ok) return null;
-    const text = extractText(await response.json())?.trim();
-    return text === "POSSIBLE_PEST" || text === "NO_PLANT" ? text : null;
-  } catch { return null; }
 }

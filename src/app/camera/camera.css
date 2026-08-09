@@ -1,0 +1,109 @@
+/* Camera Live Guardian route styles (milestone19). NEW file on purpose: a
+   concurrent workstream owns src/app/globals.css. Namespaced pm-cam-*. */
+
+.pm-cam { display: grid; gap: 14px; }
+
+.pm-cam-privacy {
+  padding: 12px 16px;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+}
+.pm-cam-privacy strong { display: block; margin-bottom: 4px; }
+.pm-cam-privacy-alt { opacity: 0.65; font-size: 11px; margin-top: 4px; }
+
+.pm-cam-chip {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 20px;
+  background: #fff;
+  font-family: var(--font-heading, "Press Start 2P", monospace);
+  font-size: 11px;
+}
+.pm-cam-chip.is-motion { background: #fff3c4; }
+.pm-cam-chip.is-checking { background: #dcebff; }
+.pm-cam-chip.is-suspended,
+.pm-cam-chip.is-hidden { background: #e8e6f4; opacity: 0.85; }
+
+.pm-cam-stage { position: relative; }
+.pm-cam-video {
+  width: 100%;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 12px;
+  background: #111;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+/* Mini Jamkachu: plays the tickle reaction locally, zero network. */
+.pm-cam-jamkachu {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 50%;
+  background: #eaf6dc;
+  font-size: 40px;
+  line-height: 1;
+}
+.pm-cam-jamkachu.is-tickled { animation: pm-cam-tickle 0.5s steps(4, end); }
+@keyframes pm-cam-tickle {
+  0% { transform: scale(1, 1); }
+  35% { transform: scale(1.12, 0.88); }
+  70% { transform: scale(0.94, 1.06); }
+  100% { transform: scale(1, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-cam-jamkachu.is-tickled { animation: none; }
+}
+
+.pm-cam-note {
+  font-size: 12px;
+  padding: 8px 12px;
+  border: 3px dashed var(--color-outline, #243421);
+  border-radius: 10px;
+  background: #fffbe8;
+}
+
+.pm-cam-model { display:flex; align-items:center; gap:11px; border:3px solid var(--color-border); border-radius:12px; padding:11px 13px; color:var(--color-text); background:var(--color-surface); box-shadow:var(--pm-shadow); }
+.pm-cam-model > span { font-size:25px; }.pm-cam-model > div { display:grid; gap:3px; }.pm-cam-model strong { color:var(--color-forest); font:8px/1.3 var(--pm-font-pixel); }.pm-cam-model p { font-size:14px; font-weight:750; }.pm-cam-model small { color:color-mix(in srgb,var(--color-text) 70%,transparent); font-size:10px; }
+.pm-cam-model.is-foreign { border-color:#d58b68; background:color-mix(in srgb,#9e3f2f 13%,var(--color-surface)); }
+
+.pm-cam-blocked { padding: 18px; text-align: center; }
+.pm-cam-blocked h2 { font-size: 14px; margin-bottom: 6px; }
+
+.pm-cam-empty { font-size: 12px; opacity: 0.75; }
+.pm-cam-feed { display: grid; gap: 8px; list-style: none; padding: 0; }
+.pm-cam-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.pm-cam-event time { margin-left: auto; opacity: 0.6; font-size: 11px; }
+.pm-cam-event.is-pest_advice { background: #fff3c4; }
+
+html[data-theme="night"] .pm-cam-privacy,
+html[data-theme="night"] .pm-cam-chip {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+html[data-theme="night"] .pm-cam-privacy-alt,
+html[data-theme="night"] .pm-cam-event time { color: #b8c9bb; opacity: 1; }
+html[data-theme="night"] .pm-cam-chip.is-motion { background: color-mix(in srgb,#ffde6a 18%,var(--color-surface)); }
+html[data-theme="night"] .pm-cam-chip.is-checking { background: color-mix(in srgb,#70a8e8 18%,var(--color-surface)); }
+html[data-theme="night"] .pm-cam-chip.is-suspended,
+html[data-theme="night"] .pm-cam-chip.is-hidden { background: color-mix(in srgb,#8a83ba 18%,var(--color-surface)); opacity: 1; }
+html[data-theme="night"] .pm-cam-note { border-color:var(--color-border); color:var(--color-text); background:#332f1f; }
+html[data-theme="night"] .pm-cam-event.is-pest_advice { color:var(--color-text); background:#39331f; }

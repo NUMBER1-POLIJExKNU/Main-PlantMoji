@@ -178,7 +178,10 @@ function applyMoodPulse(mood) {
   for (const kind of ["temp", "hum", "light", "ph"]) {
     const card = $(`[data-vital="${kind}"]`);
     if (!card) continue;
-    if (kind === targetKind) {
+    // The persisted mood can lag behind the newest sensor snapshot. Never
+    // paint a warning pulse over a card whose current deterministic reading
+    // says Stable/In range — that would show two contradictory truths.
+    if (kind === targetKind && card.classList.contains("is-alert")) {
       card.style.setProperty("--pulse-color", color);
       card.classList.add("is-mood-pulse");
     } else {
@@ -1870,17 +1873,52 @@ function petMascot(part = "head") {
   showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
 }
 
-/** Realtime presentation from the separate camera device. Camera events are
- * advisory/presentation only: no XP, quest, mood, or sensor state is touched. */
-function onCameraGuardianEvent(row) {
-  if (!row || sleepShown || isNightWIB() || fxPlaying || hatchActive) return;
+// ── Camera Live Guardian (milestone19) ──────────────────────────────────
+// camera_events realtime → presentation ONLY. `touch` rows ride the
+// existing pet-response machinery (quickPetResponse: compositor squash +
+// heart + pet sfx — instant, no bubble churn) plus one giggle line;
+// `pest_advice` rows show a transient advisory bubble and a T2-queued
+// why-card. No XP, no Seed surface, no counters, no network — a camera
+// signal can never be a reward (spec §Invariants). Never while asleep,
+// hatching, mid-fx, or during night suspension. The 10s client throttle
+// additionally swallows any replayed backlog on a flaky reconnect.
+let lastCameraTouchAt = 0;
+const CAMERA_TOUCH_GAP_MS = 10_000;
+
+function onCameraEventInsert(row) {
+  if (!row || typeof row !== "object") return;
+  if (sleepShown || hatchActive || isNightWIB() || fxPlaying) return; // never tickle a sleeping/hatching Jamkachu
   if (row.kind === "touch") {
+    const now = Date.now();
+    if (now - lastCameraTouchAt < CAMERA_TOUCH_GAP_MS) return;
+    lastCameraTouchAt = now;
     quickPetResponse();
-    showTransientBubble(appLocale === "id" ? "Hihi! Geli! Ada yang menyentuh daunku, ya?" : "Hehe! That tickles! Was someone touching my leaf?", PET_BUBBLE_RESTORE_MS);
-  } else if (row.kind === "pest_advice") {
-    const supplied = typeof row.note?.advice === "string" ? row.note.advice.trim().slice(0, 220) : "";
-    const fallback = appLocale === "id" ? "Mungkin ada sesuatu di daun. Yuk periksa bersama guru." : "Something may be on a leaf. Please look closely with a teacher.";
-    showTransientBubble(supplied || fallback, PET_BUBBLE_RESTORE_MS);
+    showTransientBubble(
+      PM().cameraGuardian?.touchLine ??
+        (appLocale === "id"
+          ? "Hihi, geli! Ada yang menyentuh daun asliku 🌿"
+          : "Hehe, that tickles! Someone touched my real leaves 🌿"),
+      PET_BUBBLE_RESTORE_MS,
+    );
+    return;
+  }
+  if (row.kind === "pest_advice") {
+    const note = row.note && typeof row.note === "object" ? row.note : {};
+    const rawAdvice = typeof note.message === "string" ? note.message : note.advice;
+    const line = typeof rawAdvice === "string" && rawAdvice.trim() ? rawAdvice.trim().slice(0, 220) : null;
+    if (line) showTransientBubble(line, 6000);
+    fxEnqueue(
+      2,
+      () =>
+        floatWhyCard(
+          PM().cameraGuardian?.pestWhy ??
+            (appLocale === "id"
+              ? "Kamera penjaga menduga ada sesuatu di tanaman asli — sekadar petunjuk, coba lihat ya!"
+              : "The watch camera thinks something might be on the real plant — just a hint, worth a look!"),
+          mascotRect(),
+        ),
+      1200,
+    );
   }
 }
 
@@ -4509,6 +4547,10 @@ function renderSensors(reading) {
   if (reading?.humidity != null && Number.isFinite(humidity)) indoorParts.push(`${Math.round(humidity)}% RH`);
   if (indoorParts.length > 0) setText(".indoor-reading", `${t("weather.indoor")}: ${indoorParts.join(" · ")}`);
 
+  // Reconcile a possibly older plants.current_state with the newest sensor
+  // card alerts after all four cards have been evaluated.
+  applyMoodPulse(careMood);
+
   // Causal echo (Task 11): diff-driven chips for real sensor improvements.
   causalEcho({
     temperature: reading?.temperature != null && Number.isFinite(temperature) ? temperature : null,
@@ -4941,7 +4983,7 @@ async function main() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "camera_events", filter: `plant_id=eq.${PLANT_ID}` },
-        (payload) => onCameraGuardianEvent(payload.new),
+        (payload) => onCameraEventInsert(payload.new),
       )
       .subscribe();
   } catch {

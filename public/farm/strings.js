@@ -75,6 +75,13 @@
         label: "Seeds",
       },
 
+      // Camera Live Guardian (milestone19): farm-side reactions to
+      // camera_events realtime rows. Presentation only — never rewards.
+      cameraGuardian: {
+        touchLine: "Hehe, that tickles! Someone touched my real leaves 🌿",
+        pestWhy: "The watch camera thinks something might be on the real plant — just a hint, worth a look!",
+      },
+
       // Why-card chips for the care ritual buttons (Task 8). Zero XP — the copy
       // must always end by pointing at real, sensor-verified care.
       ritual: {
@@ -408,6 +415,13 @@
 
       seedShop: {
         label: "Benih",
+      },
+
+      // Camera Live Guardian (milestone19): reaksi kebun untuk baris
+      // realtime camera_events. Hanya presentasi — tidak pernah hadiah.
+      cameraGuardian: {
+        touchLine: "Hihi, geli! Ada yang menyentuh daun asliku 🌿",
+        pestWhy: "Kamera penjaga menduga ada sesuatu di tanaman asli — sekadar petunjuk, coba lihat ya!",
       },
 
       // The honesty ending is the load-bearing sentence: exact meaning of
