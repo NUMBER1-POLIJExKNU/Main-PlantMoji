@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored, pinned Supabase browser bundle. Lint the integration code,
+    // not third-party minified output checked in for offline demos.
+    "public/farm/vendor/**",
   ]),
 ]);
 
