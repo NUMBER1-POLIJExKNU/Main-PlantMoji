@@ -425,15 +425,17 @@
 
                 <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
                     <span aria-hidden="true">🧠</span>
+                    <span class="quiz-bonus-label" data-i18n="hud.bonus">BONUS</span>
                     <span class="quiz-chip-copy"><strong>QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
                     <span class="quiz-chip-xp">+9 XP</span>
                 </button>
 
                 <!-- Current Quest (fed by the existing quests query) -->
-                <div id="current-quest" class="panel-glass">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></div>
+                <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></span></div>
 
                 <!-- Bond / XP / HP / Streak (character state, moved down from hud-top) -->
                 <div class="user-gamification panel-glass">
+                    <span class="hud-section-label" data-i18n="hud.status">STATUS JAMKACHU</span>
                     <div class="avatar">
                         <svg viewBox="0 0 64 64" class="avatar-img" role="img" aria-label="Pixel cat avatar" shape-rendering="crispEdges">
                             <!-- Ears -->
