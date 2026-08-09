@@ -85,6 +85,8 @@ export function analyzeEnvironment(snapshot: SensorSnapshot | null, profile: Env
 export function compareEnvironmentToCrops(snapshot: SensorSnapshot | null, profiles: EnvironmentCropProfile[]) {
   return profiles.map((profile) => analyzeEnvironment(snapshot, profile)).sort((a, b) =>
     b.matchedConditions - a.matchedConditions || b.evaluatedConditions - a.evaluatedConditions ||
-    (profiles.findIndex((p) => p.key === a.cropKey) - profiles.findIndex((p) => p.key === b.cropKey)) || a.cropKey.localeCompare(b.cropKey),
+    ((profiles.find((p) => p.key === a.cropKey)?.catalogOrder ?? Number.MAX_SAFE_INTEGER) -
+      (profiles.find((p) => p.key === b.cropKey)?.catalogOrder ?? Number.MAX_SAFE_INTEGER)) ||
+    a.cropKey.localeCompare(b.cropKey),
   );
 }

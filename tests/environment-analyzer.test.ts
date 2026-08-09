@@ -26,6 +26,12 @@ describe("Environment Analyzer", () => {
   it("ranks deterministically by matches, evaluated count, then catalog order", () => {
     const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 1 };
     const results = compareEnvironmentToCrops(snapshot, [crop("second", 2), crop("first", 1)]);
-    expect(results.map((item) => item.cropKey)).toEqual(["second", "first"]);
+    expect(results.map((item) => item.cropKey)).toEqual(["first", "second"]);
+  });
+  it("uses the crop key as a stable final tie-break when catalog order is unavailable", () => {
+    const snapshot = { temperature: 25, humidity: 70, soilPh: 6, light: 1 };
+    const beta = crop("beta"); beta.catalogOrder = null;
+    const alpha = crop("alpha"); alpha.catalogOrder = null;
+    expect(compareEnvironmentToCrops(snapshot, [beta, alpha]).map((item) => item.cropKey)).toEqual(["alpha", "beta"]);
   });
 });

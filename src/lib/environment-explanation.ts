@@ -10,7 +10,7 @@ export type EnvironmentAnalyzerResult = Record<"temperature" | "airHumidity" | "
 
 /** Gemini receives decisions, never raw authority: every match/mismatch and
  * allowed recommendation below was already produced deterministically. */
-export async function explainEnvironment(profile: CropProfile, snapshot: SensorSnapshot | null, result: EnvironmentAnalyzerResult) {
+export async function explainEnvironment(profile: CropProfile, snapshot: SensorSnapshot | null, result: EnvironmentAnalyzerResult, locale: AppLocale) {
   const fact = (label: string, value: string, status: AdvisoryStatus, recommendation: string) =>
     `${label}: ${value}; analyzer decision=${status}; allowed recommendation=${recommendation}.`;
   const summary = [
@@ -19,8 +19,10 @@ export async function explainEnvironment(profile: CropProfile, snapshot: SensorS
     fact("soil pH", snapshot?.soilPh == null ? "missing" : String(snapshot.soilPh), result.soilPh, result.soilPh === "Optimal" ? "keep observing" : "ask a teacher or adult to inspect pH; give no chemical dose"),
     fact("binary light", snapshot?.light == null ? "missing" : String(snapshot.light), result.light, result.light === "Low" ? "check for a brighter safe daytime spot" : "keep observing"),
   ].join(" ");
-  const fallback = `The deterministic analyzer found: temperature ${result.temperature.toLowerCase()}, air humidity ${result.airHumidity.toLowerCase()}, soil pH ${result.soilPh.toLowerCase()}, and light ${result.light.toLowerCase()}. Follow the highlighted sensor guidance and ask an adult for any pH adjustment.`;
-  return (await generateAiMessage({ kind: "ENVIRONMENT_ANALYSIS", personality: "calm", plantName: profile.displayName, environmentSummary: summary })) ?? fallback;
+  const fallback = locale === "id"
+    ? `Penganalisis aturan menemukan: suhu ${result.temperature.toLowerCase()}, kelembapan udara ${result.airHumidity.toLowerCase()}, pH tanah ${result.soilPh.toLowerCase()}, dan cahaya ${result.light.toLowerCase()}. Ikuti panduan sensor yang ditandai dan minta bantuan orang dewasa untuk perubahan pH.`
+    : `The deterministic analyzer found: temperature ${result.temperature.toLowerCase()}, air humidity ${result.airHumidity.toLowerCase()}, soil pH ${result.soilPh.toLowerCase()}, and light ${result.light.toLowerCase()}. Follow the highlighted sensor guidance and ask an adult for any pH adjustment.`;
+  return (await generateAiMessage({ kind: "ENVIRONMENT_ANALYSIS", personality: "calm", plantName: profile.displayName, environmentSummary: summary, locale })) ?? fallback;
 }
 
 const PARAMETER_COPY: Record<AppLocale, Record<EnvironmentParameter, string>> = {
@@ -35,7 +37,9 @@ export async function explainCropMismatch(crop: ExplorerCrop, analysis: Environm
     : `${analysis.matchedConditions} of ${analysis.evaluatedConditions} measured conditions match. Keep conditions steady and observe again later.`;
   const condition = analysis.conditions[mismatch.parameter];
   const label = PARAMETER_COPY[locale][mismatch.parameter];
-  const direction = locale === "id" ? (mismatch.direction === "low" ? "di bawah" : "di atas") : mismatch.direction;
+  const direction = locale === "id"
+    ? (mismatch.direction === "low" ? "di bawah" : "di atas")
+    : (mismatch.direction === "low" ? "below" : "above");
   const safeAction: Record<EnvironmentParameter, Record<AppLocale, string>> = {
     temperature: { id: mismatch.direction === "high" ? "Coba tempat yang lebih teduh atau sejuk, lalu ukur lagi." : "Minta bantuan untuk mencari tempat yang sedikit lebih hangat, lalu ukur lagi.", en: mismatch.direction === "high" ? "Try a cooler or shaded place, then measure again." : "Ask for help finding a slightly warmer place, then measure again." },
     airHumidity: { id: "Periksa kelembapan udara ruangan; ini bukan perintah untuk menyiram tanah.", en: "Check room air humidity; this is not an instruction to water the soil." },

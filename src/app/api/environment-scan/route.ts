@@ -1,5 +1,6 @@
 import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { compareEnvironmentToCrops } from "@/lib/environment-analyzer";
+import { ENVIRONMENT_DEMO_SNAPSHOT } from "@/lib/environment-demo";
 import { normalizeLocale } from "@/lib/i18n";
 import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
 import { getServerSupabase } from "@/lib/supabase/server";
@@ -13,8 +14,12 @@ export async function GET(request: Request) {
   const supabase = getServerSupabase();
   if (!supabase) return Response.json({ ok: false, error: "no_env" }, { status: 503 });
   const locale = normalizeLocale(params.get("locale"));
-  const [snapshot, crops] = await Promise.all([getLatestSensorSnapshot(supabase, plantId), getJemberCropCatalog(supabase, locale)]);
+  const demo = params.get("demo") === "1";
+  const [snapshot, crops] = await Promise.all([
+    demo ? Promise.resolve(ENVIRONMENT_DEMO_SNAPSHOT) : getLatestSensorSnapshot(supabase, plantId),
+    getJemberCropCatalog(supabase, locale),
+  ]);
   if (!snapshot) return Response.json({ ok: false, error: "no_sensor_snapshot" }, { status: 404 });
   if (!crops.length) return Response.json({ ok: false, error: "catalog_unavailable" }, { status: 503 });
-  return Response.json({ ok: true, snapshot, crops, results: compareEnvironmentToCrops(snapshot, crops) });
+  return Response.json({ ok: true, source: demo ? "demo" : "sensor", snapshot, crops, results: compareEnvironmentToCrops(snapshot, crops) });
 }

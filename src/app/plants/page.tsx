@@ -115,7 +115,7 @@ export default async function PlantsPage() {
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: profile.timezone }).format(new Date()));
   const isLightingHours = hour >= profile.light.lightingHours.start && hour < profile.light.lightingHours.end;
   const states = evaluateCropEnvironment(snapshot, profile, isLightingHours);
-  const explanation = await explainEnvironment(profile, snapshot, states);
+  const explanation = await explainEnvironment(profile, snapshot, states, locale);
   const shown = (value: number | null | undefined, suffix: string) => value == null ? copy.waiting : `${value}${suffix}`;
 
   return (
