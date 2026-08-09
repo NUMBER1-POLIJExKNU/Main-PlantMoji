@@ -42,11 +42,16 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 12 | `milestone12-selectable-crops.sql` | activates soybean + cayenne pepper profiles for automatic quests |
 | 13 | `milestone13-daily-quiz.sql` | `daily_quiz_attempts` table + `answer_daily_quiz` RPC — **required before the Farm Case Quiz can award XP** |
 | 14 | `milestone14-fast-levels.sql` | flat 30-XP Bond Level progression |
+| 15 | `milestone15-light-percentage.sql` | `sensor_readings.light` stored as calibrated 0–100% (not lux/PPFD/DLI) |
+| 16 | *(reserved — no file yet)* | companion evolution ladder (Seed → Sprout → Bud → Bloom → Guardian) — in flight, skip until it ships |
+| 17 | `milestone17-quiz-kind-scoring.sql` | quiz never deducts XP — kind scoring: a wrong/timed-out Daily Quiz answer now awards 0 XP instead of −1, so a miss can never demote Bond Level |
 
-- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone14 are newer** — verify all six before go-live.
-- [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all fourteen again in order.
+- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone17 are newer** — verify all eight before go-live (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16 has no file yet, see below).
+- [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all sixteen again in order (skip milestone16 — reserved, no file yet).
 - [ ] Milestone 10 seeds Jember profiles as `draft` / `reference_only` with strawberry pre-approved; **milestone12 then adds soybean + cayenne pepper to the approved set for automatic mood/quest decisions** (tobacco and under-sensored crops stay unavailable). Read `docs/CROP-PROFILE-CATALOG-jember.md` before activating any other crop.
 - [ ] Milestone 13 is required for the Farm Case Quiz chip to award XP. Without it the quiz still renders and can be answered, but the app returns `quiz_migration_required` instead of granting XP.
+- [ ] Milestone 16 has no file yet — reserved for the in-flight companion evolution ladder plan. Skip it in the migration order until it ships.
+- [ ] Milestone 17 replaces Milestone 13's `answer_daily_quiz` RPC in place (`create or replace`, same signature/return shape): a wrong or timed-out Daily Quiz answer now awards exactly 0 XP instead of −1, so Bond Level can never be demoted right after a "LEVEL UP!". Correct-answer XP is unchanged.
 
 #### 1.3 Hardware teammate — where to point them
 
@@ -76,8 +81,8 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 
 **Farm Case Quiz (4 min)**
 - [ ] On the farm home page, tap the **QUIZ HARI INI** chip to open the quiz modal (`/api/daily-quiz`; needs milestone13 applied, see §1.2).
-- [ ] Let one question's 15-second timer ring run to zero: it counts as a miss (−1 XP) and does not hang or freeze the modal.
-- [ ] Answer wrong once: a category hint appears and the same question re-arms with a fresh 15 s timer. Each miss — including the first — deducts 1 XP.
+- [ ] Let one question's 15-second timer ring run to zero: it counts as a miss (0 XP — kind scoring, milestone17) and does not hang or freeze the modal.
+- [ ] Answer wrong once: a category hint appears and the same question re-arms with a fresh 15 s timer. A miss never deducts XP (milestone17 kind scoring) — Bond Level can never go down.
 - [ ] Answer the same question wrong a second time: the correct choice highlights with its explanation, then the quiz advances — no third attempt is offered.
 - [ ] Answer correctly: a +1–3 XP orb animates into the XP badge, the mascot plays a short cheer plus a matching speech-bubble line, and a Level Up overlay fires if the new total crosses a threshold.
 - [ ] Finish all 3 questions: a mastery-by-category summary appears, then **"Keep practicing →"** loads a fresh three-phase farm case (OBSERVE → UNDERSTAND → ACT) — the quiz is endless, not capped at 3/day.
@@ -120,7 +125,7 @@ Open **Treasures** (`/collection`).
 **Honest-demo rule (spec §4.5)**
 - [ ] Prefer the **seeded-DB real-sensor path**: seed a replay-safe showcase via Settings → Demo Control Center (needs `DEMO_CHEAT_CODE`), then let the real sensor loop drive the three beats.
 - [ ] **Disclose the `?demo=1` hotkeys to the producers**: they are presentation replays only — zero data writes, zero XP, zero network. Never present a hotkey replay as a live sensor event.
-- [ ] The Farm Case Quiz is a separate, deliberately small scoring track (+1–3 / −1 XP) — never present a quiz answer on camera as sensor-verified care XP.
+- [ ] The Farm Case Quiz is a separate, deliberately small scoring track (+1–3 XP correct, 0 on a miss) — never present a quiz answer on camera as sensor-verified care XP.
 - [ ] Between takes, use "Reset to start" (sensor data, growth records, crop thresholds, and hardware control are untouched).
 
 ---
@@ -162,11 +167,16 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 12 | `milestone12-selectable-crops.sql` | mengaktifkan profil kedelai + cabai rawit untuk quest otomatis |
 | 13 | `milestone13-daily-quiz.sql` | tabel `daily_quiz_attempts` + RPC `answer_daily_quiz` — **wajib sebelum Farm Case Quiz bisa memberi XP** |
 | 14 | `milestone14-fast-levels.sql` | progresi Bond Level rata 30 XP |
+| 15 | `milestone15-light-percentage.sql` | `sensor_readings.light` disimpan sebagai persentase kalibrasi 0–100% (bukan lux/PPFD/DLI) |
+| 16 | *(dicadangkan — belum ada file)* | tangga evolusi companion (Seed → Sprout → Bud → Bloom → Guardian) — masih dikerjakan, lewati sampai rilis |
+| 17 | `milestone17-quiz-kind-scoring.sql` | quiz tidak lagi mengurangi XP — kind scoring: jawaban salah/timeout pada Daily Quiz kini memberi 0 XP, bukan −1, sehingga jawaban salah tidak akan pernah menurunkan Bond Level |
 
-- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone14 yang lebih baru** — pastikan keenamnya sebelum go-live.
-- [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi keempat belas file sesuai urutan.
+- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone17 yang lebih baru** — pastikan kedelapannya sebelum go-live (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16 belum punya file, lihat di bawah).
+- [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi keenam belas file sesuai urutan (lewati milestone16 — dicadangkan, belum ada file).
 - [ ] Milestone 10 mengisi profil Jember sebagai `draft` / `reference_only` dengan stroberi sudah disetujui; **milestone12 kemudian menambahkan kedelai + cabai rawit ke daftar yang disetujui untuk keputusan mood/quest otomatis** (tembakau dan tanaman tanpa sensor lengkap tetap tidak tersedia). Baca `docs/CROP-PROFILE-CATALOG-jember.md` sebelum mengaktifkan tanaman lain.
 - [ ] Milestone 13 wajib agar chip Farm Case Quiz bisa memberi XP — tanpanya, quiz tetap tampil dan bisa dijawab, tapi aplikasi mengembalikan `quiz_migration_required`, bukan memberi XP.
+- [ ] Milestone 16 belum punya file — dicadangkan untuk rencana tangga evolusi companion yang masih dikerjakan. Lewati dalam urutan migrasi sampai rilis.
+- [ ] Milestone 17 menggantikan RPC `answer_daily_quiz` milik Milestone 13 di tempat yang sama (`create or replace`, signature/bentuk return tetap sama): jawaban Daily Quiz yang salah atau timeout kini memberi tepat 0 XP, bukan −1, sehingga Bond Level tidak akan pernah turun tepat setelah "LEVEL UP!". XP untuk jawaban benar tidak berubah.
 
 #### 1.3 Rekan hardware — arahkan ke sini
 
@@ -196,8 +206,8 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 
 **Farm Case Quiz (4 menit)**
 - [ ] Di beranda farm, ketuk chip **QUIZ HARI INI** untuk membuka modal quiz (`/api/daily-quiz`; butuh milestone13, lihat §1.2).
-- [ ] Biarkan timer 15 detik satu soal habis sampai nol: dihitung sebagai jawaban salah (−1 XP) dan modal tidak macet/hang.
-- [ ] Jawab salah sekali: petunjuk kategori muncul dan soal yang sama diulang dengan timer 15 detik baru. Setiap kesalahan — termasuk yang pertama — mengurangi 1 XP.
+- [ ] Biarkan timer 15 detik satu soal habis sampai nol: dihitung sebagai jawaban salah (0 XP — skor ramah, milestone17) dan modal tidak macet/hang.
+- [ ] Jawab salah sekali: petunjuk kategori muncul dan soal yang sama diulang dengan timer 15 detik baru. Jawaban salah tidak pernah mengurangi XP (skor ramah milestone17) — Level Ikatan tidak pernah turun.
 - [ ] Jawab salah kedua kalinya pada soal yang sama: jawaban benar disorot beserta penjelasannya, lalu quiz lanjut — tidak ada percobaan ketiga.
 - [ ] Jawab benar: orb +1–3 XP mengalir ke lencana XP, maskot memberi sorakan singkat + baris gelembung ucapan yang sesuai, dan overlay Level Up muncul jika total baru melewati ambang.
 - [ ] Selesaikan 3 soal: ringkasan penguasaan per kategori muncul, lalu **"Lanjut latihan tanpa batas →"** memuat farm case tiga-fase baru (AMATI → PAHAMI → BERTINDAK) — quiz tidak terbatas, tidak dibatasi 3/hari.
@@ -240,7 +250,7 @@ Buka **Harta** (`/collection`).
 **Aturan demo jujur (spec §4.5)**
 - [ ] Utamakan **jalur sensor-nyata dengan DB ter-seed**: siapkan kondisi pameran yang aman diulang lewat Settings → Demo Control Center (butuh `DEMO_CHEAT_CODE`), lalu biarkan loop sensor nyata menggerakkan ketiga adegan.
 - [ ] **Beri tahu produser tentang hotkey `?demo=1`**: hanya pemutaran ulang visual — tanpa tulis data, tanpa XP, tanpa jaringan. Jangan pernah menampilkan replay hotkey seolah-olah kejadian sensor langsung.
-- [ ] Farm Case Quiz adalah jalur skor terpisah yang sengaja dibuat kecil (+1–3 / −1 XP) — jangan pernah menampilkan jawaban quiz di kamera seolah-olah XP perawatan terverifikasi sensor.
+- [ ] Farm Case Quiz adalah jalur skor terpisah yang sengaja dibuat kecil (+1–3 XP benar, 0 untuk salah) — jangan pernah menampilkan jawaban quiz di kamera seolah-olah XP perawatan terverifikasi sensor.
 - [ ] Di antara pengambilan gambar, gunakan "Kembali ke awal" (data sensor, catatan pertumbuhan, ambang tanaman, dan kontrol hardware tidak tersentuh).
 
 ---
@@ -282,11 +292,16 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 12 | `milestone12-selectable-crops.sql` | 콩(soybean)+카옌 고추 프로필을 자동 퀘스트용으로 활성화 |
 | 13 | `milestone13-daily-quiz.sql` | `daily_quiz_attempts` 테이블 + `answer_daily_quiz` RPC — **Farm Case Quiz가 XP를 지급하려면 필수** |
 | 14 | `milestone14-fast-levels.sql` | 평평한 30 XP Bond Level 진행 |
+| 15 | `milestone15-light-percentage.sql` | `sensor_readings.light`를 보정된 0–100% 값으로 저장 (lux/PPFD/DLI 아님) |
+| 16 | *(예약됨 — 아직 파일 없음)* | 컴패니언 진화 단계 (Seed → Sprout → Bud → Bloom → Guardian) — 진행 중, 출시될 때까지 건너뛰기 |
+| 17 | `milestone17-quiz-kind-scoring.sql` | 퀴즈가 더 이상 XP를 깎지 않음 — kind scoring: Daily Quiz 오답/시간초과가 이제 −1이 아니라 0 XP를 지급하여 오답으로 Bond Level이 절대 내려가지 않음 |
 
-- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone14가 더 최신** — 고라이브 전에 여섯 개 모두 확인하세요.
-- [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 열네 개를 순서대로 다시 실행하세요.
+- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone17이 더 최신** — 고라이브 전에 여덟 개 모두 확인하세요 (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16은 아직 파일이 없습니다, 아래 참고).
+- [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 열여섯 개를 순서대로 다시 실행하세요 (milestone16은 건너뛰기 — 예약됨, 아직 파일 없음).
 - [ ] Milestone 10은 Jember 프로필을 `draft` / `reference_only`로 시드하며 딸기는 처음부터 승인되어 있습니다; **milestone12가 콩(soybean)+카옌 고추를 자동 무드/퀘스트 판단 승인 목록에 추가**합니다 (담배와 센서가 부족한 작물은 계속 사용 불가). 다른 작물을 활성화하기 전에 `docs/CROP-PROFILE-CATALOG-jember.md`를 읽으세요.
 - [ ] Milestone 13은 Farm Case Quiz 칩이 XP를 지급하는 데 필수입니다 — 없으면 퀴즈는 표시되고 답할 수 있지만, 앱은 XP 대신 `quiz_migration_required`를 반환합니다.
+- [ ] Milestone 16은 아직 파일이 없습니다 — 진행 중인 컴패니언 진화 단계 계획을 위해 예약되어 있습니다. 출시될 때까지 마이그레이션 순서에서 건너뛰세요.
+- [ ] Milestone 17은 Milestone 13의 `answer_daily_quiz` RPC를 같은 자리에서 대체합니다 (`create or replace`, 시그니처/반환 형태 동일): 오답이거나 시간초과된 Daily Quiz 답변은 이제 −1이 아니라 정확히 0 XP를 지급하므로 "LEVEL UP!" 직후에 Bond Level이 절대 내려가지 않습니다. 정답 XP는 변경되지 않았습니다.
 
 #### 1.3 하드웨어 담당자 안내
 
@@ -316,8 +331,8 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 
 **Farm Case Quiz (4분)**
 - [ ] 팜 홈에서 **QUIZ HARI INI** 칩을 탭해 퀴즈 모달을 엽니다 (`/api/daily-quiz`; milestone13 필요, §1.2 참고).
-- [ ] 한 문제의 15초 타이머를 0까지 흘려보내세요: 오답(−1 XP)으로 처리되며 모달이 멈추지 않아야 합니다.
-- [ ] 한 번 오답: 카테고리 힌트가 뜨고 같은 문제가 새 15초 타이머로 다시 시작됩니다. 첫 오답을 포함한 모든 오답은 1 XP를 차감합니다.
+- [ ] 한 문제의 15초 타이머를 0까지 흘려보내세요: 오답(0 XP — milestone17 친절 채점)으로 처리되며 모달이 멈추지 않아야 합니다.
+- [ ] 한 번 오답: 카테고리 힌트가 뜨고 같은 문제가 새 15초 타이머로 다시 시작됩니다. 오답은 XP를 절대 차감하지 않습니다(milestone17 친절 채점) — Bond Level은 절대 내려가지 않습니다.
 - [ ] 같은 문제에서 두 번째로 오답: 정답이 설명과 함께 강조되고 퀴즈가 다음으로 넘어갑니다 — 세 번째 시도는 없습니다.
 - [ ] 정답: +1–3 XP 오브가 XP 배지로 애니메이션되고, 마스코트가 짧은 환호 + 어울리는 말풍선 대사를 재생하며, 새 총합이 임계값을 넘으면 Level Up 오버레이가 뜹니다.
 - [ ] 3문제를 마치면 카테고리별 숙련도 요약이 뜨고, **"Keep practicing →"**를 누르면 새로운 3단계 농장 사례(OBSERVE → UNDERSTAND → ACT)가 로드됩니다 — 퀴즈는 하루 3개로 제한되지 않고 무한합니다.
@@ -360,5 +375,5 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 **정직한 데모 원칙 (스펙 §4.5)**
 - [ ] **시드된 DB + 실제 센서 경로를 우선**: Settings → Demo Control Center (`DEMO_CHEAT_CODE` 필요)로 재실행 안전한 쇼케이스 상태를 시드한 뒤, 실제 센서 루프가 세 장면을 이끌게 하세요.
 - [ ] **`?demo=1` 핫키를 프로듀서에게 공개**: 프레젠테이션용 시각 재생일 뿐 — 데이터 쓰기 0, XP 0, 네트워크 0. 핫키 재생을 실제 센서 이벤트처럼 보여 주지 마세요.
-- [ ] Farm Case Quiz는 의도적으로 작게 설계된 별도의 점수 트랙입니다 (+1–3 / −1 XP) — 카메라 앞에서 퀴즈 정답을 센서 검증된 케어 XP인 것처럼 보여주지 마세요.
+- [ ] Farm Case Quiz는 의도적으로 작게 설계된 별도의 점수 트랙입니다 (정답 +1–3 XP, 오답 0) — 카메라 앞에서 퀴즈 정답을 센서 검증된 케어 XP인 것처럼 보여주지 마세요.
 - [ ] 테이크 사이에는 "Reset to start" 사용 (센서 데이터, 성장 기록, 작물 임계값, 하드웨어 제어는 건드리지 않음).
