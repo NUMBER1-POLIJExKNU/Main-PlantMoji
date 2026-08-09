@@ -149,14 +149,15 @@ export default async function ReportsPage() {
       />
 
       {narration && plantResult.status === "ok" && (
-        <section aria-label="Plant's note" className="mb-6">
+        <section aria-label="Plant's note" className="pm-report-jam-note mb-6">
+          <div className="pm-report-jamkachu" aria-hidden="true"><i /><i /><b /><b /></div>
           <p className="pm-heading mb-2 text-center text-[9px] uppercase" style={{ color: INK_MUTED }}>
             {locale === "id"
               ? `Sepatah kata dari ${plantResult.plant.name}`
               : `A word from ${plantResult.plant.name}`}
           </p>
           <div
-            className="pm-panel text-center text-sm leading-6"
+            className="pm-panel pm-report-speech text-center text-sm leading-6"
             style={{ borderColor: "var(--color-grass-light)" }}
           >
             <span aria-hidden="true">&ldquo;</span>

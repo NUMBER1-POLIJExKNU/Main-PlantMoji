@@ -2464,6 +2464,17 @@ function idleLeafRuffle() {
   );
 }
 
+function idleHappyExpression() {
+  if (careMood !== "Happy" || sleepShown) return;
+  const svg = $(".mascot-svg");
+  if (!svg) return;
+  const expressions = ["expr-curious", "expr-proud", "expr-giggle"];
+  const selected = expressions[Math.floor(Math.random() * expressions.length)];
+  svg.classList.remove(...expressions);
+  svg.classList.add(selected);
+  window.setTimeout(() => svg.classList.remove(selected), 1900);
+}
+
 function maybeIdleBehavior() {
   if (prefersReducedMotion()) return; // spec: skipped entirely
   if (document.visibilityState !== "visible") return;
@@ -2473,10 +2484,11 @@ function maybeIdleBehavior() {
   if (Date.now() - lastPointerAt < IDLE_MIN_MS) return; // user is around
   idleBehaviorCount++;
   if (idleBehaviorCount % IDLE_HUM_EVERY === 0) window.PMSfx?.play("hum");
-  const roll = Math.floor(Math.random() * 3);
+  const roll = Math.floor(Math.random() * 4);
   if (roll === 0) idleLookAround();
   else if (roll === 1) idleSquashStretch();
-  else idleLeafRuffle();
+  else if (roll === 2) idleLeafRuffle();
+  else idleHappyExpression();
 }
 
 (function scheduleIdleBehavior() {

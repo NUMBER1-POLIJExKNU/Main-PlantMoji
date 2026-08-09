@@ -17,5 +17,8 @@ describe("Quest game UI", () => {
     expect(page.indexOf('<section aria-label="Active quests"')).toBeLessThan(page.lastIndexOf("<DailyEventBanner"));
     expect(page).toContain("history.slice(0, 3)");
     expect(css).toContain(".pm-quest-hero");
+    expect(page).toContain("featured={index === 0}");
+    expect(page).toContain("I'm watching the sensors");
+    expect(css).toContain(".pm-quest-jam");
   });
 });

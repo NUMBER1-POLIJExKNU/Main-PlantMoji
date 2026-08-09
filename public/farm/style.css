@@ -744,6 +744,12 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.face-sleepy [data-face="sleepy"] { display: block; }
 .mascot-svg.face-acidic [data-face="acidic"] { display: block; }
 .mascot-svg.face-alkaline [data-face="alkaline"] { display: block; }
+.mascot-svg.expr-curious [data-face="curious"],
+.mascot-svg.expr-proud [data-face="proud"],
+.mascot-svg.expr-giggle [data-face="giggle"] { display: block; }
+.mascot-svg.expr-curious .face-default,
+.mascot-svg.expr-proud .face-default,
+.mascot-svg.expr-giggle .face-default { display:none; }
 .mascot-svg.face-hot .face-default,
 .mascot-svg.face-dry .face-default,
 .mascot-svg.face-sleepy .face-default,

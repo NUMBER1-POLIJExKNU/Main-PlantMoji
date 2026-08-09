@@ -73,4 +73,12 @@ describe("Grandpa Tani living-world UI", () => {
     expect(css).toContain("left: var(--celestial-x");
     expect(css).toContain("body.night .env-sun");
   });
+
+  it("gives comfortable Jamkachu several grounded micro expressions", () => {
+    expect(html).toContain('data-face="curious"');
+    expect(html).toContain('data-face="proud"');
+    expect(html).toContain('data-face="giggle"');
+    expect(live).toContain('careMood !== "Happy"');
+    expect(css).toContain(".mascot-svg.expr-giggle");
+  });
 });

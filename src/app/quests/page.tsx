@@ -69,7 +69,7 @@ const STATUS_PILL: Partial<Record<QuestStatus, { label: string; style: CSSProper
   },
 };
 
-function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale }) {
+function ActiveQuestCard({ quest, locale, featured = false }: { quest: QuestRow; locale: AppLocale; featured?: boolean }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
@@ -83,8 +83,8 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
   return (
     // Active quests get the grass-green border accent — same white surface
     // family as every farm panel, but clearly "alive" next to history rows.
-    <article className={`pm-panel pm-quest-hero${verifying ? " is-verifying" : ""}`}>
-      <div className="pm-quest-ribbon">{locale === "id" ? "MISI AKTIF" : "ACTIVE MISSION"}</div>
+    <article className={`pm-panel ${featured ? "pm-quest-hero" : "pm-quest-side"}${verifying ? " is-verifying" : ""}`}>
+      <div className="pm-quest-ribbon">{featured ? (locale === "id" ? "MISI UTAMA" : "HERO MISSION") : (locale === "id" ? "MISI SAMPINGAN" : "SIDE MISSION")}</div>
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" role="img" aria-hidden="true">
           {def.emoji}
@@ -102,13 +102,14 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
         </div>
       </div>
 
-      <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>
+      {featured && <div className="pm-quest-companion"><div className={`pm-quest-jam${verifying ? " is-watching" : ""}`} aria-hidden="true"><i /><i /></div><p>{verifying ? (locale === "id" ? "Aku sedang melihat sensornya… pertahankan sebentar lagi!" : "I'm watching the sensors… keep it steady a little longer!") : (locale === "id" ? "Kita lakukan bersama, ya! Setelah itu sensor akan memeriksanya." : "Let's do this together! Then the sensors will check our work.")}</p></div>}
+      {featured && <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>
         {steps.map((step, index) => <li key={step} className={index < currentStep ? "is-done" : index === currentStep ? "is-current" : ""}><span>{index < currentStep ? "✓" : index + 1}</span><small>{step}</small></li>)}
-      </ol>
-      <div className="pm-quest-action-well">
+      </ol>}
+      {featured && <div className="pm-quest-action-well">
         <div><small>{verifying ? (locale === "id" ? "SENSOR SEDANG MEMERIKSA" : "SENSOR CHECK") : (locale === "id" ? "YANG HARUS DILAKUKAN" : "WHAT TO DO")}</small><strong>{verifying ? (locale === "id" ? "Pertahankan kondisi ini" : "Keep this condition steady") : localized.description}</strong></div>
         <div className="pm-quest-target"><small>TARGET</small><strong>{target}</strong></div>
-      </div>
+      </div>}
 
       {quest.status === "ACTIVE" && def.kind === "maintain" && (
         <QuestProgress
@@ -323,7 +324,7 @@ export default async function QuestsPage() {
             </p>
           </div>
         ) : (
-          active.map((quest) => <ActiveQuestCard key={quest.id} quest={quest} locale={locale} />)
+          active.map((quest, index) => <ActiveQuestCard key={quest.id} quest={quest} locale={locale} featured={index === 0} />)
         )}
       </section>
 
