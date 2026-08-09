@@ -720,7 +720,12 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     -webkit-user-select: none;
 }
 .mascot-wrapper:active { cursor: grabbing; }
-.mascot-svg { width: 100%; height: auto; }
+/* overflow: visible — the straw-hat accessory sits at y=0-24 inside
+   .animated-leaves, which companion stages scale up to 1.18; the SVG's
+   default hidden overflow clipped a PAID cosmetic to invisibility at
+   Bud/Bloom/Guardian. All art is inside the viewBox at rest, so nothing
+   relies on clipping. */
+.mascot-svg { width: 100%; height: auto; overflow: visible; }
 .badge-tap-particle {
     position: fixed; z-index: 1005; pointer-events: none; font-size: 30px; line-height: 1;
     transform: translate(-50%,-50%); filter: drop-shadow(2px 3px 0 rgba(36,52,33,.24));
@@ -1293,6 +1298,7 @@ body.env-hot .env-haze { opacity: 1; }
     touch-action: none;
 }
 .npc-farmer.npc-ready { opacity: 1; }
+.npc-ai-tag { position:absolute; left:50%; bottom:calc(100% + 5px); min-width:max-content; padding:4px 6px; border:2px solid var(--color-outline); border-radius:6px; color:#243421; background:var(--color-yellow); box-shadow:0 2px 0 var(--color-outline); font:6px/1.2 var(--font-heading); transform:translateX(-50%); }
 body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .npc-farmer.npc-falling { pointer-events: none; }
 .npc-farmer.npc-grabbed {
@@ -1438,6 +1444,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 }
 .npc-bubble:hover { border-color: var(--color-forest); }
 .npc-bubble:focus-visible { outline: 3px solid var(--color-water); outline-offset: 3px; }
+.npc-bubble > span { display:block; }.npc-bubble > small { display:block; margin-top:6px; padding-top:5px; border-top:1px dashed var(--color-border); color:var(--color-forest); font:6px/1.4 var(--font-heading); }
 
 /* Grandpa Tani chat: game chrome outside, highly readable body copy inside. */
 .farmer-chat {
@@ -1766,3 +1773,40 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     #care-action { min-height: 50px; padding: 9px 14px; }
     #env-strip { padding-top: 5px; padding-bottom: 5px; }
 }
+
+/* ── Seed Shop farm rendering (milestone18) ─────────────────────────────
+   Display-only: live.js renderShopPurchases toggles .shop-<item_key> on
+   .mascot-svg (equipped pot/accessory) and .own-<item_key> on
+   .shop-decor-layer (owned decor). Same idempotent mechanism as the level
+   decorations (.decor-lv*) above. */
+.mascot-svg .shop-item { display: none; }
+.mascot-svg.shop-pot_terracotta .shop-g-pot_terracotta { display: block; }
+.mascot-svg.shop-pot_batik .shop-g-pot_batik { display: block; }
+.mascot-svg.shop-pot_tincan .shop-g-pot_tincan { display: block; }
+.mascot-svg.shop-acc_strawhat .shop-g-acc_strawhat { display: block; }
+.mascot-svg.shop-acc_ribbon .shop-g-acc_ribbon { display: block; }
+.mascot-svg.shop-acc_glasses .shop-g-acc_glasses { display: block; }
+
+.shop-decor-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.shop-decor-layer .shop-decor { display: none; }
+.shop-decor-layer.own-decor_scarecrow .shop-decor-scarecrow { display: block; }
+.shop-decor-layer.own-decor_fence .shop-decor-fence { display: block; }
+.shop-decor-layer.own-decor_lantern .shop-decor-lantern { display: block; }
+.shop-decor-layer.own-decor_pond .shop-decor-pond { display: block; }
+
+/* Scarecrow: post + head + arms (box-shadow sprite, .grass-tuft technique) */
+.shop-decor-scarecrow { position: absolute; left: 6%; bottom: 60px; width: 12px; height: 74px; background: #8a6b48; border: 3px solid #243421; }
+.shop-decor-scarecrow i { position: absolute; left: -26px; top: 10px; width: 64px; height: 10px; background: #8a6b48; border: 3px solid #243421; }
+.shop-decor-scarecrow b { position: absolute; left: -8px; top: -24px; width: 28px; height: 24px; background: #f4c95d; border: 3px solid #243421; }
+
+/* Bamboo fence: three posts via box-shadow */
+.shop-decor-fence { position: absolute; right: 4%; bottom: 56px; width: 10px; height: 46px; background: #c9a24b; border: 3px solid #243421; box-shadow: 22px 6px 0 #c9a24b, 44px 0 0 #c9a24b; }
+.shop-decor-fence i { position: absolute; left: -6px; top: 10px; width: 66px; height: 8px; background: #e0bc6a; border: 3px solid #243421; }
+
+/* Lantern: warm glowing box on a hook */
+.shop-decor-lantern { position: absolute; left: 16%; bottom: 118px; width: 22px; height: 30px; background: #ffb84d; border: 3px solid #243421; box-shadow: 0 0 18px 6px rgba(255, 184, 77, 0.45); }
+.shop-decor-lantern i { position: absolute; left: 6px; top: -12px; width: 6px; height: 12px; background: #243421; }
+
+/* Mini pond: water oval + lily pad */
+.shop-decor-pond { position: absolute; right: 12%; bottom: 34px; width: 84px; height: 26px; background: #4da1ed; border: 3px solid #243421; border-radius: 50%; }
+.shop-decor-pond i { position: absolute; left: 14px; top: 4px; width: 22px; height: 10px; background: #69b957; border: 2px solid #243421; border-radius: 50%; }

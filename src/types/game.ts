@@ -83,6 +83,8 @@ export interface BondState {
   /** YYYY-MM-DD in STREAK_TIMEZONE, or null if no day ever qualified. */
   last_qualified_date: string | null;
   current_chapter: number;
+  /** Seed coin balance (milestone18); absent until the migration runs. */
+  seeds?: number;
   updated_at: string;
 }
 

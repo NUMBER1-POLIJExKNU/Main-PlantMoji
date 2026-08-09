@@ -69,6 +69,12 @@
         growth: "Diary entry",
       },
 
+      // Seed Shop (milestone18): farm HUD chip label. Balance itself comes
+      // from bond_state.seeds — the farm layer never computes it.
+      seedShop: {
+        label: "Seeds",
+      },
+
       // Why-card chips for the care ritual buttons (Task 8). Zero XP — the copy
       // must always end by pointing at real, sensor-verified care.
       ritual: {
@@ -398,6 +404,10 @@
         mood: "Suasana baru ditemukan",
         daily: "Tantangan harian",
         growth: "Catatan pertumbuhan",
+      },
+
+      seedShop: {
+        label: "Benih",
       },
 
       // The honesty ending is the load-bearing sentence: exact meaning of

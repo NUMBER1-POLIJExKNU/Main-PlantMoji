@@ -29,6 +29,7 @@ import {
 } from "@/game/random/daily-events";
 import { isLuckyQuest, luckyRewardKey } from "@/game/random/lucky";
 import { evaluateCompanion } from "@/game/companion/companion-engine";
+import { sweepSeedGrants } from "@/game/economy/seed-engine";
 
 /**
  * Game Event Processor (handoff §25): the single orchestration point where a
@@ -397,6 +398,13 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
   // Virtual evolution only reads persisted, sensor-verified COMPLETED quests.
   // It awards no XP and safely no-ops until milestone11 is installed.
   await evaluateCompanion(supabase, plantId);
+
+  // Seed coin sweep (milestone18): mirrors the persisted-state XP bonus
+  // sweeps above — every COMPLETED quest / unlocked badge / reached chapter /
+  // latest qualifying streak day grants Seeds once, forever, via the
+  // seed_rewards ledger. Internally tolerant: it never throws, and it
+  // no-ops gracefully until the milestone18 migration is installed.
+  await sweepSeedGrants(supabase, plantId);
 }
 
 export interface ProcessOptions {

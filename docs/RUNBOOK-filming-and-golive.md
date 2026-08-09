@@ -45,13 +45,15 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 15 | `milestone15-light-percentage.sql` | `sensor_readings.light` stored as calibrated 0–100% (not lux/PPFD/DLI) |
 | 16 | *(reserved — no file yet)* | companion evolution ladder (Seed → Sprout → Bud → Bloom → Guardian) — in flight, skip until it ships |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz never deducts XP — kind scoring: a wrong/timed-out Daily Quiz answer now awards 0 XP instead of −1, so a miss can never demote Bond Level |
+| 18 | `milestone18-seed-shop.sql` | Seed Shop economy — `bond_state.seeds` + `seed_rewards` ledger + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPCs, realtime on `shop_purchases`. Seeds MAY decrease (spendable currency); XP/Bond Level still never decrease |
 
-- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone17 are newer** — verify all eight before go-live (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16 has no file yet, see below).
+- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone18 are newer** — verify all nine before go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 has no file yet, see below).
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all sixteen again in order (skip milestone16 — reserved, no file yet).
 - [ ] Milestone 10 seeds Jember profiles as `draft` / `reference_only` with strawberry pre-approved; **milestone12 then adds soybean + cayenne pepper to the approved set for automatic mood/quest decisions** (tobacco and under-sensored crops stay unavailable). Read `docs/CROP-PROFILE-CATALOG-jember.md` before activating any other crop.
 - [ ] Milestone 13 is required for the Farm Case Quiz chip to award XP. Without it the quiz still renders and can be answered, but the app returns `quiz_migration_required` instead of granting XP.
 - [ ] Milestone 16 has no file yet — reserved for the in-flight companion evolution ladder plan. Skip it in the migration order until it ships.
 - [ ] Milestone 17 replaces Milestone 13's `answer_daily_quiz` RPC in place (`create or replace`, same signature/return shape): a wrong or timed-out Daily Quiz answer now awards exactly 0 XP instead of −1, so Bond Level can never be demoted right after a "LEVEL UP!". Correct-answer XP is unchanged.
+- [ ] Milestone 18 is required for the Seed Shop. Without it the /shop route shows a friendly "coming soon" state, the farm HUD hides the Seeds chip, and every seed grant is a silent no-op — nothing breaks.
 
 #### 1.3 Hardware teammate — where to point them
 
@@ -171,13 +173,15 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 15 | `milestone15-light-percentage.sql` | `sensor_readings.light` disimpan sebagai persentase kalibrasi 0–100% (bukan lux/PPFD/DLI) |
 | 16 | *(dicadangkan — belum ada file)* | tangga evolusi companion (Seed → Sprout → Bud → Bloom → Guardian) — masih dikerjakan, lewati sampai rilis |
 | 17 | `milestone17-quiz-kind-scoring.sql` | quiz tidak lagi mengurangi XP — kind scoring: jawaban salah/timeout pada Daily Quiz kini memberi 0 XP, bukan −1, sehingga jawaban salah tidak akan pernah menurunkan Bond Level |
+| 18 | `milestone18-seed-shop.sql` | ekonomi Toko Benih — `bond_state.seeds` + ledger `seed_rewards` + `shop_purchases` + RPC `award_seeds`/`purchase_item`/`equip_item`, realtime pada `shop_purchases`. Benih BOLEH berkurang (mata uang yang bisa dibelanjakan); XP/Bond Level tetap tidak pernah turun |
 
-- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone17 yang lebih baru** — pastikan kedelapannya sebelum go-live (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16 belum punya file, lihat di bawah).
+- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone18 yang lebih baru** — pastikan kesembilannya sebelum go-live (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16 belum punya file, lihat di bawah).
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi keenam belas file sesuai urutan (lewati milestone16 — dicadangkan, belum ada file).
 - [ ] Milestone 10 mengisi profil Jember sebagai `draft` / `reference_only` dengan stroberi sudah disetujui; **milestone12 kemudian menambahkan kedelai + cabai rawit ke daftar yang disetujui untuk keputusan mood/quest otomatis** (tembakau dan tanaman tanpa sensor lengkap tetap tidak tersedia). Baca `docs/CROP-PROFILE-CATALOG-jember.md` sebelum mengaktifkan tanaman lain.
 - [ ] Milestone 13 wajib agar chip Farm Case Quiz bisa memberi XP — tanpanya, quiz tetap tampil dan bisa dijawab, tapi aplikasi mengembalikan `quiz_migration_required`, bukan memberi XP.
 - [ ] Milestone 16 belum punya file — dicadangkan untuk rencana tangga evolusi companion yang masih dikerjakan. Lewati dalam urutan migrasi sampai rilis.
 - [ ] Milestone 17 menggantikan RPC `answer_daily_quiz` milik Milestone 13 di tempat yang sama (`create or replace`, signature/bentuk return tetap sama): jawaban Daily Quiz yang salah atau timeout kini memberi tepat 0 XP, bukan −1, sehingga Bond Level tidak akan pernah turun tepat setelah "LEVEL UP!". XP untuk jawaban benar tidak berubah.
+- [ ] Milestone 18 diperlukan untuk Toko Benih. Tanpanya, rute /shop menampilkan status "segera hadir" yang ramah, chip Benih di HUD kebun disembunyikan, dan semua hadiah Benih menjadi no-op senyap — tidak ada yang rusak.
 
 #### 1.3 Rekan hardware — arahkan ke sini
 
@@ -297,13 +301,15 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 15 | `milestone15-light-percentage.sql` | `sensor_readings.light`를 보정된 0–100% 값으로 저장 (lux/PPFD/DLI 아님) |
 | 16 | *(예약됨 — 아직 파일 없음)* | 컴패니언 진화 단계 (Seed → Sprout → Bud → Bloom → Guardian) — 진행 중, 출시될 때까지 건너뛰기 |
 | 17 | `milestone17-quiz-kind-scoring.sql` | 퀴즈가 더 이상 XP를 깎지 않음 — kind scoring: Daily Quiz 오답/시간초과가 이제 −1이 아니라 0 XP를 지급하여 오답으로 Bond Level이 절대 내려가지 않음 |
+| 18 | `milestone18-seed-shop.sql` | Seed Shop 경제 — `bond_state.seeds` + `seed_rewards` 원장 + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPC, `shop_purchases` realtime. Seeds는 줄어들 수 있음(소비 가능한 화폐); XP/Bond Level은 여전히 절대 감소하지 않음 |
 
-- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone17이 더 최신** — 고라이브 전에 여덟 개 모두 확인하세요 (milestone9, 10, 11, 12, 13, 14, 15, 17 — milestone16은 아직 파일이 없습니다, 아래 참고).
+- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone18이 더 최신** — 고라이브 전에 아홉 개 모두 확인하세요 (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16은 아직 파일이 없습니다, 아래 참고).
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 열여섯 개를 순서대로 다시 실행하세요 (milestone16은 건너뛰기 — 예약됨, 아직 파일 없음).
 - [ ] Milestone 10은 Jember 프로필을 `draft` / `reference_only`로 시드하며 딸기는 처음부터 승인되어 있습니다; **milestone12가 콩(soybean)+카옌 고추를 자동 무드/퀘스트 판단 승인 목록에 추가**합니다 (담배와 센서가 부족한 작물은 계속 사용 불가). 다른 작물을 활성화하기 전에 `docs/CROP-PROFILE-CATALOG-jember.md`를 읽으세요.
 - [ ] Milestone 13은 Farm Case Quiz 칩이 XP를 지급하는 데 필수입니다 — 없으면 퀴즈는 표시되고 답할 수 있지만, 앱은 XP 대신 `quiz_migration_required`를 반환합니다.
 - [ ] Milestone 16은 아직 파일이 없습니다 — 진행 중인 컴패니언 진화 단계 계획을 위해 예약되어 있습니다. 출시될 때까지 마이그레이션 순서에서 건너뛰세요.
 - [ ] Milestone 17은 Milestone 13의 `answer_daily_quiz` RPC를 같은 자리에서 대체합니다 (`create or replace`, 시그니처/반환 형태 동일): 오답이거나 시간초과된 Daily Quiz 답변은 이제 −1이 아니라 정확히 0 XP를 지급하므로 "LEVEL UP!" 직후에 Bond Level이 절대 내려가지 않습니다. 정답 XP는 변경되지 않았습니다.
+- [ ] Milestone 18은 Seed Shop에 필요합니다. 없으면 /shop 라우트는 친절한 "곧 만나요" 상태를 보여주고, 농장 HUD의 Seeds 칩은 숨겨지며, 모든 Seed 지급은 조용한 no-op이 됩니다 — 아무것도 깨지지 않습니다.
 
 #### 1.3 하드웨어 담당자 안내
 

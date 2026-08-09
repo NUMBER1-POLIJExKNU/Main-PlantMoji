@@ -1,0 +1,77 @@
+/* Seed Shop route styles (milestone18). NEW file on purpose: a concurrent
+   workstream owns src/app/globals.css edits; these classes are namespaced
+   pm-shop-* so they can be folded into the shared sheet later. */
+
+.pm-shop-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 20px;
+  background: #fff;
+  font-family: var(--font-heading, "Press Start 2P", monospace);
+  font-size: 11px;
+}
+
+.pm-shop-sections { display: grid; gap: 20px; margin-top: 16px; }
+
+.pm-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.pm-shop-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  padding: 14px 12px;
+}
+
+.pm-shop-card .pm-shop-emoji { font-size: 34px; line-height: 1; }
+.pm-shop-card h3 { font-size: 12px; }
+.pm-shop-card p { font-size: 11px; opacity: 0.8; min-height: 2.2em; }
+
+.pm-shop-price {
+  font-family: var(--font-heading, "Press Start 2P", monospace);
+  font-size: 10px;
+}
+.pm-shop-price.is-short { opacity: 0.65; }
+
+.pm-shop-owned {
+  font-family: var(--font-heading, "Press Start 2P", monospace);
+  font-size: 9px;
+  color: #397a2b;
+}
+
+.pm-shop-toast {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 3px solid var(--color-outline, #243421);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+}
+.pm-shop-toast.is-error { background: #ffe9e9; }
+
+/* Small T2 celebration: a handful of seed emoji popping from the card —
+   buying is frequent, keep it light (no full-screen ceremony). */
+.pm-shop-confetti {
+  position: fixed;
+  z-index: 1005;
+  pointer-events: none;
+  font-size: 22px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: pm-shop-confetti-pop 0.9s ease-out forwards;
+}
+@keyframes pm-shop-confetti-pop {
+  0% { opacity: 0; transform: translate(-50%, -20%) scale(0.4); }
+  25% { opacity: 1; transform: translate(-50%, -60%) scale(1.1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -140px) scale(0.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-shop-confetti { animation: none; opacity: 0; }
+}

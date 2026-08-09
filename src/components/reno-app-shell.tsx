@@ -11,18 +11,18 @@ import AppearanceControls from "@/components/appearance-controls";
 // with operational views tucked into a small tool pocket. Keep
 // public/farm/index.html in sync until the static home has been retired.
 const NAV_ITEMS = [
-  { key: "home", href: "/", icon: "🌱", id: "Kebunku", en: "My Garden" },
-  { key: "quests", href: "/quests", icon: "💚", id: "Rawat", en: "Care" },
-  { key: "plants", href: "/plants", icon: "🗺️", id: "Jelajah", en: "Explore" },
-  { key: "camera", href: null, icon: "📷", id: "Kamera AI", en: "Camera AI" },
-  { key: "diary", href: "/diary", icon: "📖", id: "Kenangan", en: "Memories" },
-  { key: "collection", href: "/collection", icon: "💎", id: "Harta", en: "Treasures" },
-  { key: "shop", href: null, icon: "🛒", id: "Toko", en: "Shop" },
+  { key: "home", href: "/", icon: "🌱", id: "Kebun Saya", en: "My Garden" },
+  { key: "quests", href: "/quests", icon: "💚", id: "Misi", en: "Quests" },
+  { key: "plants", href: "/plants", icon: "🗺️", id: "Eksplor Tanaman", en: "Crop Explorer" },
+  { key: "camera", href: null, icon: "📷", id: "Kamera AI", en: "AI Camera" },
+  { key: "diary", href: "/diary", icon: "📖", id: "Diari Tumbuh", en: "Growth Diary" },
+  { key: "collection", href: "/collection", icon: "💎", id: "Koleksi", en: "Collection" },
+  { key: "shop", href: "/shop", icon: "🛒", id: "Toko", en: "Shop" },
 ] as const;
 const TOOL_ITEMS = [
   { key: "status", href: "/monitoring", icon: "📡", id: "Sensor", en: "Sensors" },
-  { key: "reports", href: "/reports", icon: "📜", id: "Rekap", en: "Recap" },
-  { key: "settings", href: "/settings", icon: "🧰", id: "Alat", en: "Tools" },
+  { key: "reports", href: "/reports", icon: "📜", id: "Laporan", en: "Reports" },
+  { key: "settings", href: "/settings", icon: "🧰", id: "Pengaturan", en: "Settings" },
 ] as const;
 
 function changeAppLocale(nextLocale: AppLocale) {

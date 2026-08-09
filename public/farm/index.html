@@ -50,7 +50,7 @@
                 <span class="nav-item nav-disabled" aria-disabled="true" title="Segera hadir"><i class="icon">📷</i> <span data-i18n="nav.camera">Kamera AI</span></span>
                 <a href="/diary" class="nav-item"><i class="icon">📖</i> <span data-i18n="nav.memories">Kenangan</span></a>
                 <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Harta</span></a>
-                <span class="nav-item nav-disabled" aria-disabled="true" title="Segera hadir"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></span>
+                <a href="/shop" class="nav-item"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></a>
                 <div class="nav-tool-pocket" aria-label="Alat penjaga">
                     <span class="nav-section-title" data-i18n="nav.tools">ALAT</span>
                     <div class="nav-tool-grid">
@@ -101,6 +101,19 @@
                         <div class="grass-flower flower-1"></div>
                         <div class="grass-flower flower-2"></div>
                     </div>
+
+                    <!-- Shop farm decorations (milestone18): pixel props owned via
+                         shop_purchases, displayed whenever owned (no equip concept).
+                         live.js toggles own-<item_key> classes on this layer.
+                         INSIDE .grass-floor (like .grass-decor) so the props stand
+                         on the fixed viewport-bottom grass at every screen height,
+                         not at the content-height stage's lower edge. -->
+                    <div class="shop-decor-layer" aria-hidden="true">
+                        <div class="shop-decor shop-decor-scarecrow"><i></i><b></b></div>
+                        <div class="shop-decor shop-decor-fence"><i></i></div>
+                        <div class="shop-decor shop-decor-lantern"><i></i></div>
+                        <div class="shop-decor shop-decor-pond"><i></i></div>
+                    </div>
                 </div>
 
                 <!-- Farmer grandpa NPC (living world): pixel sprite drawn with
@@ -108,7 +121,7 @@
                      pure-CSS wander BEHIND the mascot, hidden while body.night.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
                 <div id="npc-farmer-vine" class="npc-farmer-vine" aria-hidden="true"></div>
 
                 <!-- Mascot -->
@@ -126,6 +139,34 @@
                                 <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3"/>
                             </g>
 
+                            <!-- Shop pot skins (milestone18): overlay groups toggled by
+                                 live.js renderShopPurchases via .mascot-svg.shop-<item_key>.
+                                 Drawn right after the clay pot so the stem, decor stickers,
+                                 and golden-rim keepsake still layer above them. Static like
+                                 the pot itself (pots never breathe). Display-only. -->
+                            <g class="shop-item shop-g-pot_terracotta" aria-hidden="true">
+                                <rect x="75" y="220" width="150" height="110" fill="#C86B4A" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="60" y="190" width="180" height="30" fill="#E08B5F" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="100" y="240" width="100" height="10" fill="#9A4E33" opacity="0.4"/>
+                            </g>
+                            <g class="shop-item shop-g-pot_batik" aria-hidden="true">
+                                <rect x="75" y="220" width="150" height="110" fill="#5B4632" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="60" y="190" width="180" height="30" fill="#8A6B48" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="88" y="248" width="16" height="16" fill="#E8D5A9"/>
+                                <rect x="120" y="270" width="16" height="16" fill="#E8D5A9"/>
+                                <rect x="152" y="248" width="16" height="16" fill="#E8D5A9"/>
+                                <rect x="184" y="270" width="16" height="16" fill="#E8D5A9"/>
+                                <rect x="104" y="252" width="8" height="8" fill="#B8862F"/>
+                                <rect x="168" y="252" width="8" height="8" fill="#B8862F"/>
+                            </g>
+                            <g class="shop-item shop-g-pot_tincan" aria-hidden="true">
+                                <rect x="75" y="220" width="150" height="110" fill="#B9C2C9" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="60" y="190" width="180" height="30" fill="#D7DDE2" stroke="var(--color-outline)" stroke-width="8"/>
+                                <rect x="82" y="252" width="136" height="8" fill="#8E979E"/>
+                                <rect x="82" y="284" width="136" height="8" fill="#8E979E"/>
+                                <rect x="96" y="240" width="24" height="8" fill="#F2F6F8"/>
+                            </g>
+
                             <!-- Stem (classed so the hatching intro can hide the plant, pot stays) -->
                             <rect class="mascot-stem" x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke="var(--color-outline)" stroke-width="8"/>
 
@@ -139,6 +180,22 @@
                                 <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke="var(--color-outline)" stroke-width="8"/>
 
                                 <!-- Face (Happy — default, shows when no face-* class is set) -->
+                                <!-- Shop head accessories (milestone18): at most ONE
+                                     shows (equip_item exclusivity). Painted BEFORE every
+                                     mascot-face group on purpose: the face features and
+                                     the sleep/sleepy/hot indicator glyphs (up to y=14)
+                                     must always draw on top of the hat brim/glasses.
+                                     Toggled by live.js via .mascot-svg.shop-<item_key>. -->
+                                <g class="shop-item shop-g-acc_strawhat" aria-hidden="true">
+                                    <rect x="112" y="0" width="76" height="14" fill="#E8C56A" stroke="var(--color-outline)" stroke-width="5"/>
+                                    <rect x="86" y="12" width="128" height="12" fill="#D9B04E" stroke="var(--color-outline)" stroke-width="5"/>
+                                    <rect x="112" y="8" width="76" height="5" fill="#B8862F"/>
+                                </g>
+                                <g class="shop-item shop-g-acc_glasses" aria-hidden="true">
+                                    <rect x="104" y="24" width="26" height="10" fill="none" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <rect x="170" y="24" width="26" height="10" fill="none" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <rect x="130" y="27" width="40" height="4" fill="var(--color-outline)"/>
+                                </g>
                                 <g class="mascot-face face-default">
                                     <!-- Eyes -->
                                     <g class="eyes">
@@ -285,6 +342,18 @@
                                     <rect x="184" y="4" width="16" height="14" fill="var(--color-cheek)" stroke="var(--color-outline)" stroke-width="4"/>
                                     <rect x="175" y="8" width="8" height="8" fill="#E5697C" stroke="var(--color-outline)" stroke-width="3"/>
                                 </g>
+
+                                <!-- Shop stem accessory (milestone18): the head accessories
+                                     (hat, glasses) are painted BEFORE the face groups —
+                                     see the block above face-default — so the sleep zZ,
+                                     sleepy zzz, and sweat-drop glyphs (which reach up to
+                                     y=14) always draw on top of them. The stem ribbon
+                                     lives down at y=150 and can't occlude anything. -->
+                                <g class="shop-item shop-g-acc_ribbon" aria-hidden="true">
+                                    <rect x="110" y="150" width="14" height="12" fill="var(--color-cheek)" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <rect x="134" y="150" width="14" height="12" fill="var(--color-cheek)" stroke="var(--color-outline)" stroke-width="4"/>
+                                    <rect x="126" y="153" width="8" height="8" fill="#E5697C" stroke="var(--color-outline)" stroke-width="3"/>
+                                </g>
                             </g>
 
                             <!-- Level decorations (spec §6.4): pot-anchored keepsakes, static
@@ -383,6 +452,7 @@
                     <div class="badges">
                         <div class="badge coin"><i class="icon">⭐</i> -- XP</div>
                         <div class="badge streak"><i class="icon">🔥</i> -- Days</div>
+                        <div class="badge seeds" hidden><i class="icon">🌰</i> <span data-seed-num>0</span> <span data-seed-label>Benih</span></div>
                     </div>
                 </div>
 
