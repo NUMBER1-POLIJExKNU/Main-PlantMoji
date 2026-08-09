@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-08-09):** Camera AI was redefined as a continuous live-detection camera — see `2026-08-09-camera-live-guardian-design.md`. Kept for reference; the photo diary may return later as a separate growth-album feature.
+
 # Camera AI — growth photo diary design spec (2026-08-09)
 
 ## Goal

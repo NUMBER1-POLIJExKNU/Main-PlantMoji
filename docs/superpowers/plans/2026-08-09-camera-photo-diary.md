@@ -1,3 +1,5 @@
+> **SUPERSEDED (2026-08-09):** built for the pivoted-away photo-diary design — see spec `2026-08-09-camera-live-guardian-design.md` and its replacement plan. Do not execute.
+
 # Camera Growth Photo Diary Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
