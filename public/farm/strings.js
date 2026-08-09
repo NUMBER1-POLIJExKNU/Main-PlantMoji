@@ -209,6 +209,21 @@
           "Listen to the sensors, little farmer — they speak for the plant.",
           "A happy plant means a watchful friend. Keep it up, hm?",
         ],
+        idle: {
+          companion: [
+            "A quiet garden is still a busy place, my young friend. Leaves do plenty of work without making a fuss.",
+            "Hoho… no need to hurry. Plants are very good teachers of patience.",
+            "You noticed our little friend today. That alone is a fine start.",
+            "Let’s give the plant a calm moment, then ask the sensors how things are going.",
+            "Every careful look teaches us something, even when nothing needs changing.",
+          ],
+          wisdom: [
+            "Good gardeners change one small thing at a time, then watch what happens.",
+            "A sensor is a clue, not a command. We look, think, and check again together.",
+            "Air humidity tells us about the air around the leaves—not how wet the soil is.",
+            "Soil pH deserves careful hands. Ask a teacher or local farmer before changing it.",
+          ],
+        },
       },
 
       // Threshold-true vital comments (Task 19). Boundaries mirror the mood
@@ -489,6 +504,21 @@
           "Dengarkan sensornya, petani kecil — mereka bicara mewakili tanaman.",
           "Tanaman yang senang tandanya temannya perhatian. Pertahankan, ya?",
         ],
+        idle: {
+          companion: [
+            "Kebun yang tenang tetap sibuk, Nak. Daun bekerja tanpa banyak ribut.",
+            "Hoho… tidak perlu terburu-buru. Tanaman pandai sekali mengajarkan kesabaran.",
+            "Kamu sudah menyapa si kecil hari ini. Itu awal yang bagus, Nak.",
+            "Kita beri tanaman waktu tenang, lalu tanyakan lagi kabarnya kepada sensor.",
+            "Setiap pengamatan mengajarkan sesuatu, bahkan saat belum ada yang perlu diubah.",
+          ],
+          wisdom: [
+            "Perawat kebun yang baik mengubah satu hal kecil, lalu memperhatikan hasilnya.",
+            "Sensor itu petunjuk, bukan perintah. Kita lihat, pikirkan, lalu periksa lagi bersama.",
+            "Kelembapan udara bercerita tentang udara di sekitar daun, bukan basahnya tanah.",
+            "pH tanah perlu tangan yang hati-hati. Tanyakan kepada guru atau petani setempat sebelum mengubahnya.",
+          ],
+        },
       },
 
       vitals: {

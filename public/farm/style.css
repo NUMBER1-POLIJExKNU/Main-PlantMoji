@@ -1188,12 +1188,13 @@ body.env-hot .env-haze { opacity: 1; }
     background: transparent;
     cursor: pointer;
     pointer-events: auto;
-    z-index: 1;
+    z-index: 15;
     image-rendering: pixelated;
     transform-origin: 50% 100%;
     transition: opacity 2s ease;
     will-change: left, top, transform;
     opacity: 0;
+    touch-action: manipulation;
 }
 .npc-farmer.npc-ready { opacity: 1; }
 body.night .npc-farmer { opacity: 0; pointer-events: none; }
@@ -1329,8 +1330,11 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     box-shadow: 0 4px 0 rgba(36, 52, 33, 0.15);
     padding: 8px 12px;
     text-align: center;
-    pointer-events: none;
+    cursor: pointer;
+    pointer-events: auto;
 }
+.npc-bubble:hover { border-color: var(--color-forest); }
+.npc-bubble:focus-visible { outline: 3px solid var(--color-water); outline-offset: 3px; }
 
 /* Grandpa Tani chat: game chrome outside, highly readable body copy inside. */
 .farmer-chat {
@@ -1346,6 +1350,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     box-shadow: 0 8px 0 var(--color-outline), 0 18px 55px rgba(20,35,20,.3);
     font-family: var(--font-body);
 }
+.farmer-chat[open] { display: block; }
 .farmer-chat::backdrop { background: rgba(22,32,20,.48); backdrop-filter: blur(2px); }
 .farmer-chat-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 14px; background: var(--color-bg); border-bottom: 3px solid var(--color-border); }
 .farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; font: 28px/1 sans-serif; }

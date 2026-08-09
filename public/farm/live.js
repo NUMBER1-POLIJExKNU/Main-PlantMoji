@@ -2453,8 +2453,11 @@ function maybeWindGust() {
 // grants NOTHING, ever — he is pure guidance and charm.
 const FARMER_BUBBLE_MS = 6000;
 const FARMER_COOLDOWN_MS = 60_000;
-const FARMER_AUTO_MIN_MS = 2 * 60_000;
-const FARMER_AUTO_MAX_MS = 4 * 60_000;
+const FARMER_FIRST_MIN_MS = 20_000;
+const FARMER_FIRST_MAX_MS = 35_000;
+const FARMER_AUTO_MIN_MS = 75_000;
+const FARMER_AUTO_MAX_MS = 150_000;
+const FARMER_ACTIVITY_QUIET_MS = 45_000;
 // English fallbacks — PM_STRINGS.farmer carries the localized sets. Both
 // soil moods share the "Soil" family, exactly like the care button.
 const FARMER_FALLBACK = {
@@ -2482,8 +2485,35 @@ const FARMER_FALLBACK = {
     "A happy plant means a watchful friend. Keep it up, hm?",
   ],
 };
+const FARMER_IDLE_FALLBACK = {
+  en: {
+    companion: [
+      "Hoho… no need to hurry. Plants are very good teachers of patience.",
+      "Every careful look teaches us something, even when nothing needs changing.",
+      "Let’s give the little one a calm moment, then ask the sensors again.",
+    ],
+    wisdom: [
+      "A sensor is a clue, not a command. We look, think, and check again together.",
+      "Good gardeners change one small thing at a time, then watch what happens.",
+    ],
+  },
+  id: {
+    companion: [
+      "Hoho… tidak perlu terburu-buru. Tanaman pandai mengajarkan kesabaran.",
+      "Setiap pengamatan mengajarkan sesuatu, bahkan saat belum ada yang perlu diubah.",
+      "Kita beri si kecil waktu tenang, lalu tanyakan lagi kepada sensor.",
+    ],
+    wisdom: [
+      "Sensor itu petunjuk, bukan perintah. Kita lihat, pikirkan, lalu periksa lagi bersama.",
+      "Perawat kebun yang baik mengubah satu hal kecil, lalu memperhatikan hasilnya.",
+    ],
+  },
+};
 let farmerCooldownUntil = 0;
 const farmerLineIndex = {}; // per-family rotation so he never repeats verbatim
+const farmerRecentLines = [];
+const farmerRecentCategories = [];
+let farmerLastUserActivityAt = 0;
 let farmerBubbleEl = null;
 let farmerBubbleTimer = null;
 let farmerChatController = null;
