@@ -34,6 +34,7 @@ export interface GrowthRecordRow {
   height_cm: number | null;
   leaf_count: number | null;
   note: string | null;
+  photo_path: string | null;
   created_at: string;
 }
 

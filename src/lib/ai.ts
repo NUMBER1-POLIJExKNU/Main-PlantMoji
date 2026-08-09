@@ -61,6 +61,13 @@ export interface FarmerAiInput {
   locale: AppLocale;
 }
 
+export interface MemoryReflectionAiInput {
+  plantName: string;
+  verifiedMemory: string;
+  fallback: string;
+  locale: AppLocale;
+}
+
 // ── Gemini generateContent constants ───────────────────────────────────
 
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
@@ -279,6 +286,45 @@ export async function generateFarmerAiReply(input: FarmerAiInput): Promise<strin
     if (!response.ok) return null;
     const text = extractText(await response.json());
     return text && text.length <= 440 ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Gives one persisted memory a warm Jamkachu voice. The event itself is
+ * selected and verified by application code; Gemini only rewrites it. */
+export async function generateMemoryReflection(input: MemoryReflectionAiInput): Promise<string | null> {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+    const name = cleanFragment(input.plantName, 60) ?? "Jamkachu";
+    const memory = cleanFragment(input.verifiedMemory, 300);
+    const fallback = cleanFragment(input.fallback, 400);
+    if (!memory || !fallback) return null;
+    const language = input.locale === "id" ? "Bahasa Indonesia" : "English";
+    const prompt = [
+      `You are ${name}, a small plant companion in PlantMoji, fondly remembering a real shared moment.`,
+      "Speak in first person with warm nostalgia, affection, and child-friendly natural language. Never sound like an AI, report, or dashboard.",
+      "The verified memory below is the complete truth. Only rephrase it; never add an event, sensor value, date, achievement, or cause.",
+      "Do not give care advice. This is emotional recollection, not analysis.",
+      `Reply in ${language}, plain text, 1-2 short sentences under 300 characters. No markdown, lists, or quotation marks.`,
+      `Verified memory: ${memory}`,
+      `Safe fallback whose meaning must be preserved: ${fallback}`,
+    ].join("\n");
+    const response = await fetch(GEMINI_API_URL, {
+      method: "POST",
+      headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: prompt }] },
+        contents: [{ role: "user", parts: [{ text: "Remember this moment warmly using only the supplied memory." }] }],
+        generationConfig: { maxOutputTokens: 120, temperature: 0.55 },
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const text = extractText(await response.json());
+    return text && text.length <= 300 ? text : null;
   } catch {
     return null;
   }

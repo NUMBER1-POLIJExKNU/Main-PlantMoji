@@ -25,7 +25,7 @@
             <div class="env-stars stars-a"></div>
             <div class="env-stars stars-b"></div>
         </div>
-        <div class="env-sun"></div>
+        <div class="env-sun" aria-hidden="true"></div>
         <div class="env-clouds">
             <div class="cloud cloud-1"></div>
             <div class="cloud cloud-2"></div>
@@ -110,25 +110,6 @@
                      grants NOTHING, he only shares mood-grounded guidance. -->
                 <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"></button>
                 <div id="npc-farmer-vine" class="npc-farmer-vine" aria-hidden="true"></div>
-
-                <dialog id="farmer-chat" class="farmer-chat" aria-labelledby="farmer-chat-title">
-                    <form method="dialog" class="farmer-chat-top">
-                        <div class="farmer-chat-portrait" aria-hidden="true">👨‍🌾</div>
-                        <div>
-                            <span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span>
-                            <h2 id="farmer-chat-title">Grandpa Tani</h2>
-                        </div>
-                        <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
-                    </form>
-                    <div id="farmer-chat-log" class="farmer-chat-log" role="log" aria-live="polite"></div>
-                    <div id="farmer-chat-prompts" class="farmer-chat-prompts"></div>
-                    <form id="farmer-chat-form" class="farmer-chat-form">
-                        <label class="sr-only" for="farmer-chat-input">Ask Grandpa Tani</label>
-                        <input id="farmer-chat-input" maxlength="280" autocomplete="off" />
-                        <button id="farmer-chat-send" type="submit">ASK</button>
-                    </form>
-                    <p id="farmer-chat-note" class="farmer-chat-note"></p>
-                </dialog>
 
                 <!-- Mascot -->
                 <div class="mascot-container">
@@ -388,10 +369,25 @@
 
                 <hr class="home-divider">
 
-                <!-- 7) Environment: compact one-line strip (detail lives in
-                     Plant Status). Each value is pressable (plan T19):
-                     tap → Jamkachu comments in the speech bubble. -->
-                <div id="env-strip" class="panel-glass">🌡 <span id="env-temp" role="button" tabindex="0">--°C</span> · 💧 <span id="env-hum" role="button" tabindex="0">--%</span> · ☀️ <span id="env-light" role="button" tabindex="0">--</span> · ⚗️ <span id="env-ph" role="button" tabindex="0">pH --</span></div>
+                <!-- 7) Environment: 2×2 game-HUD stat tiles (4×1 row on the
+                     ≥801px desktop rail — see style.css). Detail lives in
+                     Plant Status. Each tile is pressable (plan T19): tap →
+                     Jamkachu comments in the speech bubble. #env-temp/-hum/
+                     -light/-ph, .env-status and [data-vital] are the SAME
+                     anchors live.js has always written/listened on — the
+                     redesign only adds .env-gauge (10-seg comfort gauge,
+                     built by live.js's ensureGaugeSegments) and .env-range
+                     (explicit "Ideal min–max" line, hidden until the active
+                     crop profile loads from /api/crop-profile). -->
+                <section id="env-strip" class="panel-glass" aria-label="Current environment">
+                    <div class="env-hud-title"><span data-i18n="env.title">KONDISI KEBUN</span><a href="/monitoring" data-i18n="env.details">Lihat detail ›</a></div>
+                    <div class="env-hud-grid">
+                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true">🌡️</i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="temp" hidden></span></span></button>
+                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true">💧</i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="hum" hidden></span></span></button>
+                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true">☀️</i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="light" hidden></span></span></button>
+                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true">🧪</i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="ph" hidden></span></span></button>
+                    </div>
+                </section>
 
                 <!-- Contextual care action (spec §6.1): ONE mood-driven safe
                      action — guidance only, zero XP, zero writes. live.js
@@ -408,6 +404,24 @@
 
         </main>
     </div>
+    <!-- Top-level dialog: keeping it outside .mascot-stage avoids inheriting
+         the game world's pointer-events:none and stacking context. -->
+    <dialog id="farmer-chat" class="farmer-chat" aria-labelledby="farmer-chat-title">
+        <form method="dialog" class="farmer-chat-top">
+            <div class="farmer-chat-portrait" aria-hidden="true">👨‍🌾</div>
+            <div><span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span><h2 id="farmer-chat-title">Grandpa Tani</h2></div>
+            <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
+        </form>
+        <div id="farmer-chat-log" class="farmer-chat-log" role="log" aria-live="polite"></div>
+        <div id="farmer-chat-prompts" class="farmer-chat-prompts"></div>
+        <form id="farmer-chat-form" class="farmer-chat-form">
+            <label class="sr-only" for="farmer-chat-input">Ask Grandpa Tani</label>
+            <input id="farmer-chat-input" maxlength="280" autocomplete="off" />
+            <button id="farmer-chat-send" type="submit">ASK</button>
+        </form>
+        <p id="farmer-chat-note" class="farmer-chat-note"></p>
+    </dialog>
+
     <div id="daily-quiz-modal" class="quiz-modal" hidden>
         <div class="quiz-backdrop" data-quiz-close></div>
         <section class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quiz-title" tabindex="-1">

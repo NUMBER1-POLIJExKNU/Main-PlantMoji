@@ -60,17 +60,20 @@ body {
 
 .env-sun {
     position: absolute;
-    top: 80px; right: 120px;
+    left: var(--celestial-x, 78%);
+    top: var(--celestial-y, 12%);
     width: 120px; height: 120px;
     background: var(--color-yellow);
     border-radius: 50%;
     box-shadow: 0 0 60px rgba(255, 222, 106, 0.8);
-    animation: pulseSun 6s ease-in-out infinite alternate;
+    transform: translate(-50%, -50%);
+    transition: left 1.2s linear, top 1.2s linear, background 3s ease, box-shadow 3s ease;
 }
 @keyframes pulseSun {
-    from { transform: scale(1); opacity: 0.9; }
-    to { transform: scale(1.05); opacity: 1; }
+    from { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+    to { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
 }
+@media (prefers-reduced-motion: no-preference) { .env-sun { animation: pulseSun 6s ease-in-out infinite alternate; } }
 
 .env-clouds .cloud {
     position: absolute;
@@ -384,14 +387,53 @@ body {
 }
 .env-hud-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 9px; font:8px/1.4 var(--font-heading); color:var(--color-forest); }
 .env-hud-title a { color:var(--color-text-muted); font:11px/1.4 var(--font-body); text-decoration:none; }
-.env-hud-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
-.env-hud-card { --hud-accent:var(--color-grass); position:relative; min-width:0; min-height:86px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 15px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; }
+
+/* Sensor HUD stat tiles (2026-08-09 spec): 2×2 by default — the desktop
+   rail switches to 4×1 at ≥801px inside that breakpoint's own block below,
+   since the rail is a separate narrow column, not this same grid width. */
+.env-hud-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.env-hud-card { --hud-accent:var(--color-grass); --pulse-color:transparent; position:relative; min-width:0; min-height:132px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 10px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; transition:opacity .3s ease, filter .3s ease; }
 .env-hud-card.is-temp { --hud-accent:#ef8d64; }.env-hud-card.is-hum { --hud-accent:#4da1ed; }.env-hud-card.is-light { --hud-accent:#e9b936; }.env-hud-card.is-ph { --hud-accent:#69b957; }
 .env-hud-card > i { display:grid; place-items:center; width:32px; height:32px; border:2px solid var(--color-outline); border-radius:8px; background:color-mix(in srgb,var(--hud-accent) 25%,white); font:18px/1 sans-serif; }
-.env-hud-copy { min-width:0; display:flex; flex-direction:column; }.env-hud-copy small { overflow:hidden; color:var(--color-text-muted); font:6px/1.4 var(--font-heading); white-space:nowrap; text-overflow:ellipsis; }.env-hud-copy strong { margin-top:3px; font:15px/1.25 var(--font-body); }.env-hud-copy em { color:var(--color-forest); font:10px/1.3 var(--font-body); font-style:normal; white-space:nowrap; }
-.env-meter { position:absolute; left:8px; right:8px; bottom:7px; height:6px; overflow:hidden; border:1px solid var(--color-outline); background:#dcead5; }.env-meter b { display:block; width:var(--meter,0%); height:100%; background:var(--hud-accent); transition:width .45s steps(8,end); }
-.env-hud-card.is-alert { animation:none; border-color:#8c5b30; }.env-hud-card.is-alert .env-status { color:#a34d32; }.env-hud-card:hover { transform:translateY(-1px); box-shadow:0 5px 0 var(--color-outline); }.env-hud-card:active { transform:translateY(3px); box-shadow:0 1px 0 var(--color-outline); }.env-hud-card:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
-@media (max-width:620px) { .env-hud-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.env-hud-card { min-height:82px; } }
+.env-hud-copy { min-width:0; display:flex; flex-direction:column; }
+.env-hud-copy small { overflow:hidden; color:var(--color-text-muted); font:6px/1.4 var(--font-heading); white-space:nowrap; text-overflow:ellipsis; }
+/* Big real reading — roughly 2× the pre-tile 15px strip value. */
+.env-hud-copy strong { margin-top:4px; overflow:hidden; font:26px/1.15 var(--font-body); font-weight:700; color:var(--color-text); text-overflow:ellipsis; white-space:nowrap; }
+.env-hud-copy em { display:block; overflow:hidden; color:var(--color-forest); font:10px/1.3 var(--font-body); font-style:normal; white-space:nowrap; text-overflow:ellipsis; }
+.env-hud-card.is-alert .env-status { color:#a34d32; }
+/* Explicit "Ideal min–max" line (crop-profile sourced; hidden — never a
+   hand-typed number — when the profile fetch is unavailable). */
+.env-range { display:block; margin-top:1px; overflow:hidden; color:var(--color-text-muted); font:9px/1.35 var(--font-body); white-space:normal; }
+.env-range[hidden] { display:none; }
+
+/* 10-segment comfort gauge: equal-width cells, the comfort band highlighted
+   in the tile's own accent, a marker pinned at the real reading's position.
+   No band (profile unavailable) → neutral grey cells, marker still shows the
+   real value's position on a plain 0–100 scale. */
+.env-gauge { position:relative; display:flex; gap:2px; margin:7px 0 5px; height:9px; }
+.env-gauge-seg { flex:1 1 0; min-width:0; height:100%; border:1px solid var(--color-outline); border-radius:2px; background:#dcead5; }
+.env-gauge-seg.in-band { border-color:var(--hud-accent); background:color-mix(in srgb,var(--hud-accent) 55%,white); }
+.env-gauge.no-band .env-gauge-seg { border-color:#b9c2b5; background:#e8ece6; }
+.env-gauge-marker { position:absolute; top:-3px; width:3px; height:15px; background:var(--color-outline); transform:translateX(-50%); pointer-events:none; }
+.env-gauge-marker[hidden] { display:none; }
+
+/* Out-of-comfort pulse: driven by live.js's applyMoodPulse(mood) — the SAME
+   mood the mascot face reads, never a client re-derivation from thresholds.
+   Opacity-only (compositor animation); reduced motion keeps the tint static. */
+.env-hud-card.is-mood-pulse::after { content:""; position:absolute; inset:0; border-radius:8px; background:var(--pulse-color); opacity:.16; pointer-events:none; }
+@media (prefers-reduced-motion:no-preference) {
+    .env-hud-card.is-mood-pulse::after { animation:pm-tile-mood-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes pm-tile-mood-pulse { 0%, 100% { opacity:.12; } 50% { opacity:.4; } }
+
+/* Staleness honesty: a reading older than 10 minutes dims the tile and its
+   comfort-state line swaps to "last/terakhir HH:MM" (live.js renderSensors). */
+.env-hud-card.is-stale { opacity:.62; filter:grayscale(.3); }
+.env-hud-card.is-stale .env-status { color:var(--color-text-muted); }
+
+.env-hud-card:hover { transform:translateY(-1px); box-shadow:0 5px 0 var(--color-outline); }.env-hud-card:active { transform:translateY(3px); box-shadow:0 1px 0 var(--color-outline); }.env-hud-card:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
+@media (max-width:430px) { .env-hud-copy strong { font-size:23px; } }
+@media (max-width:360px) { .env-hud-copy strong { font-size:21px; }.env-hud-card { padding:8px 7px 9px; min-height:126px; } }
 
 /* Actions */
 .actions-panel {
@@ -1393,6 +1435,8 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 
 /* Grandpa Tani chat: game chrome outside, highly readable body copy inside. */
 .farmer-chat {
+    position: fixed;
+    z-index: 5000;
     width: min(440px, calc(100vw - 28px));
     max-height: min(650px, calc(100dvh - 28px));
     margin: auto;
@@ -1404,8 +1448,13 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     border-radius: 18px;
     box-shadow: 0 8px 0 var(--color-outline), 0 18px 55px rgba(20,35,20,.3);
     font-family: var(--font-body);
+    pointer-events: auto;
+    user-select: text;
 }
 .farmer-chat[open] { display: block; }
+.farmer-chat button,
+.farmer-chat input,
+.farmer-chat form { pointer-events: auto; }
 .farmer-chat::backdrop { background: rgba(22,32,20,.48); backdrop-filter: blur(2px); }
 .farmer-chat-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 14px; background: var(--color-bg); border-bottom: 3px solid var(--color-border); }
 .farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; font: 28px/1 sans-serif; }
@@ -1671,6 +1720,10 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         font-size: 11px;
     }
     #env-strip { padding: 9px 12px; font-size: 14px; white-space: nowrap; }
+    /* Desktop rail (spec: 4×1 row on ≥801px, the narrower rail column). */
+    .env-hud-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .env-hud-card { min-height: 116px; padding: 8px 6px 9px; }
+    .env-hud-copy strong { font-size: 18px; }
 
     .hud-top {
         position: absolute;

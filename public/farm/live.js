@@ -55,7 +55,7 @@ const COPY = {
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
-    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "KELEMBAPAN UDARA", "env.light": "CAHAYA", "env.ph": "pH TANAH",
+    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir",
     "quest.none": "Belum ada misi aktif",
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
@@ -81,7 +81,7 @@ const COPY = {
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
     "sensor.unavailable": "Indoor sensor not connected",
-    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMPERATURE", "env.humidity": "AIR HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL pH",
+    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last",
     "quest.none": "No active quest",
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
@@ -158,6 +158,31 @@ const MOOD_EMOJI = { Happy: "😊", Overheating: "🥵", DryAir: "😵", Sleepy:
 // on purpose: with no variant class matched, the default happy group shows).
 const MOOD_FACE = { Happy: "face-happy", Overheating: "face-hot", DryAir: "face-dry", Sleepy: "face-sleepy", SoilAcidic: "face-acidic", SoilAlkaline: "face-alkaline" };
 
+// Sensor HUD stat-tile pulse (2026-08-09 spec): which env-hud-card a problem
+// mood pulses, and in what color. This is the SAME mood state the mascot
+// face above reads — never a client-side re-derivation from raw thresholds
+// — so the tile and the face can never disagree about what's wrong.
+const MOOD_TILE_KIND = { Overheating: "temp", DryAir: "hum", Sleepy: "light", SoilAcidic: "ph", SoilAlkaline: "ph" };
+const MOOD_TILE_COLOR = { Overheating: "#e2643c", DryAir: "#e2a23c", Sleepy: "#6f6ac2", SoilAcidic: "#8fae3f", SoilAlkaline: "#c2618a" };
+
+/** Pulses the one env-hud-card matching `mood` (mascot's real mood) in that
+ *  mood's color; clears the pulse from every other tile. Happy (or any mood
+ *  with no tile mapping) clears all four — nothing pulses while comfortable. */
+function applyMoodPulse(mood) {
+  const targetKind = MOOD_TILE_KIND[mood];
+  const color = MOOD_TILE_COLOR[mood];
+  for (const kind of ["temp", "hum", "light", "ph"]) {
+    const card = $(`[data-vital="${kind}"]`);
+    if (!card) continue;
+    if (kind === targetKind) {
+      card.style.setProperty("--pulse-color", color);
+      card.classList.add("is-mood-pulse");
+    } else {
+      card.classList.remove("is-mood-pulse");
+    }
+  }
+}
+
 /** Swap Jamkachu's face group + identity line (#char-mood) to the given mood.
  *  Same body, same pot — only the expression changes (spec §2.2). */
 function setMascotMood(state) {
@@ -174,6 +199,7 @@ function setMascotMood(state) {
     const emoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
     moodEl.textContent = `${word} ${emoji}`;
   }
+  applyMoodPulse(state);
   // Contextual care button + night sleep (spec §6.1/§6.2): every mood
   // render re-derives the one safe action and the sleep presentation —
   // the label is state, not a celebration, so it must always be correct.
@@ -2304,8 +2330,19 @@ function setupCareInteractions() {
 // of day. Composes with room-warm/env-hot; the night overlay paints above
 // them. Silent — no cue, no copy.
 function applyNightUi() {
-  const night = isNightWIB();
+  const now = wibNow();
+  const night = now ? now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR : false;
   document.body?.classList.toggle("night", night);
+  const celestial = $(".env-sun");
+  if (celestial && now) {
+    const hour = now.hour + now.minute / 60;
+    const progress = night
+      ? (hour >= SLEEP_START_HOUR ? hour - SLEEP_START_HOUR : hour + 24 - SLEEP_START_HOUR) / 12
+      : (hour - SLEEP_END_HOUR) / 12;
+    const clamped = Math.max(0, Math.min(1, progress));
+    celestial.style.setProperty("--celestial-x", `${8 + clamped * 84}%`);
+    celestial.style.setProperty("--celestial-y", `${70 - Math.sin(Math.PI * clamped) * 58}%`);
+  }
   if (night) clearFarmerBubble(); // grandpa is gone at night — mid-line too
   syncFireflies();
 }
@@ -3818,11 +3855,12 @@ function wibNow() {
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
+      minute: "2-digit",
     }).formatToParts(new Date());
     const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
     const date = `${get("year")}-${get("month")}-${get("day")}`;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-    return { date, hour: Number(get("hour")) % 24 }; // some engines say "24" at midnight
+    return { date, hour: Number(get("hour")) % 24, minute: Number(get("minute")) || 0 }; // some engines say "24" at midnight
   } catch {
     return null;
   }
@@ -4059,16 +4097,179 @@ function causalEcho(next) {
   if (next.light != null) prevSensors.light = next.light;
 }
 
-/** Environment strip (#env-strip): compact one-line reading — the old 5-row
- *  vitals panel is gone; detail lives in Plant Status (/monitoring). */
+// ── Sensor HUD stat-tile gauge + comfort range (2026-08-09 spec) ────────
+// The 10-segment comfort gauge and the explicit "Ideal min–max" line are
+// both sourced from the ACTIVE crop profile's real thresholds via the
+// existing /api/crop-profile endpoint — never hand-typed numbers. When the
+// endpoint is unavailable `cropProfile` stays null: the range line hides and
+// the gauge falls back to a neutral, band-less bar (still plotting the real
+// reading's position on a plain scale).
+
+let cropProfile = null; // toDeviceCropProfile() shape from /api/crop-profile, or null
+let cropProfileFetchedOnce = false;
+let lastReading = null; // latest raw sensor row, replayed once the profile lands
+
+async function refreshCropProfile() {
+  try {
+    const res = await fetch(`/api/crop-profile?plantId=${encodeURIComponent(PLANT_ID)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ok && data.profile) cropProfile = data.profile;
+      // A non-ok body (404 unknown plant, 503 no supabase) is left as-is:
+      // keep whatever the last known-good profile was rather than blanking
+      // the range lines over a transient hiccup.
+    }
+  } catch {
+    // Network hiccup — keep the last known-good profile (or null on the
+    // very first attempt, which correctly hides the range line).
+  } finally {
+    if (!cropProfileFetchedOnce) {
+      cropProfileFetchedOnce = true;
+      // Repaint immediately once the FIRST fetch settles so the range line
+      // doesn't wait for the next 15s poll tick to appear.
+      if (lastReading) renderSensors(lastReading);
+    }
+  }
+}
+
+const GAUGE_SEGMENTS = 10;
+// Neutral (profile-unavailable) position-only scales — no comfort claim.
+const GAUGE_NEUTRAL_DOMAIN = {
+  temp: { min: 10, max: 40 },
+  hum: { min: 0, max: 100 },
+  light: { min: 0, max: 100 },
+  ph: { min: 0, max: 14 },
+};
+
+/** Gauge domain (full scale) + comfort band for one vital, from the active
+ *  crop profile. Domain fields (tolerated / 0–100 / 0–14) are real profile
+ *  shape, not invented; the band is the profile's recommended/comfortable
+ *  range — the same numbers the range line prints. Returns `band: null`
+ *  when no profile is loaded (neutral gauge). */
+function gaugeDomainAndBand(kind, profile) {
+  if (!profile) return { domain: GAUGE_NEUTRAL_DOMAIN[kind], band: null };
+  if (kind === "temp") {
+    return {
+      domain: { min: profile.temperature.tolerated.min, max: profile.temperature.tolerated.max },
+      band: { min: profile.temperature.recommended.min, max: profile.temperature.recommended.max },
+    };
+  }
+  if (kind === "hum") {
+    return { domain: { min: 0, max: 100 }, band: { min: profile.airHumidity.recommended.min, max: profile.airHumidity.recommended.max } };
+  }
+  if (kind === "light") {
+    return { domain: { min: 0, max: 100 }, band: { min: profile.light.minimumPercentDuringLightingHours, max: 100 } };
+  }
+  return { domain: { min: 0, max: 14 }, band: { min: profile.soilPh.recommended.min, max: profile.soilPh.recommended.max } };
+}
+
+/** Builds the 10 segment cells + the position marker once per gauge element
+ *  (idempotent — a re-render only updates classes/position, never rebuilds
+ *  the DOM). */
+function ensureGaugeSegments(gauge) {
+  if (gauge.childElementCount > 0) return;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < GAUGE_SEGMENTS; i++) {
+    const seg = document.createElement("span");
+    seg.className = "env-gauge-seg";
+    frag.appendChild(seg);
+  }
+  const marker = document.createElement("b");
+  marker.className = "env-gauge-marker";
+  marker.hidden = true;
+  frag.appendChild(marker);
+  gauge.appendChild(frag);
+}
+
+/** Paints one tile's 10-segment gauge: highlights the comfort band's cells
+ *  (none when `profile` is null) and positions the marker at `value`'s real
+ *  position on the domain. */
+function renderGauge(kind, value, profile) {
+  const gauge = $(`.env-gauge[data-gauge="${kind}"]`);
+  if (!gauge) return;
+  ensureGaugeSegments(gauge);
+  const { domain, band } = gaugeDomainAndBand(kind, profile);
+  const span = domain.max - domain.min || 1;
+  let bandStart = -1;
+  let bandEnd = -1;
+  if (band) {
+    bandStart = Math.max(0, Math.min(GAUGE_SEGMENTS - 1, Math.floor(((band.min - domain.min) / span) * GAUGE_SEGMENTS)));
+    bandEnd = Math.max(0, Math.min(GAUGE_SEGMENTS - 1, Math.ceil(((band.max - domain.min) / span) * GAUGE_SEGMENTS) - 1));
+  }
+  gauge.querySelectorAll(".env-gauge-seg").forEach((seg, i) => {
+    seg.classList.toggle("in-band", band != null && i >= bandStart && i <= bandEnd);
+  });
+  gauge.classList.toggle("no-band", band == null);
+  const marker = gauge.querySelector(".env-gauge-marker");
+  if (!marker) return;
+  if (Number.isFinite(value)) {
+    marker.style.left = `${Math.max(0, Math.min(100, ((value - domain.min) / span) * 100))}%`;
+    marker.hidden = false;
+  } else {
+    marker.hidden = true;
+  }
+}
+
+/** Fills/hides one tile's explicit "Ideal min–max" line. Hidden — never an
+ *  invented number — whenever the active crop profile hasn't loaded. */
+function renderRangeLine(kind, profile) {
+  const el = $(`.env-range[data-range="${kind}"]`);
+  if (!el) return;
+  if (!profile) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  const ideal = t("env.ideal");
+  const text =
+    kind === "temp" ? `${ideal} ${profile.temperature.recommended.min}–${profile.temperature.recommended.max}°C`
+    : kind === "hum" ? `${ideal} ${profile.airHumidity.recommended.min}–${profile.airHumidity.recommended.max}%`
+    : kind === "light" ? `${ideal} ${profile.light.minimumPercentDuringLightingHours}–100%`
+    : `${ideal} pH ${profile.soilPh.recommended.min}–${profile.soilPh.recommended.max}`;
+  el.textContent = text;
+  el.hidden = false;
+}
+
+const STALE_READING_MS = 10 * 60_000; // 10 minutes (spec: staleness honesty)
+
+/** "HH:MM" in WIB (the sensor's own clock), or null if Intl/timezone data
+ *  is unavailable — the staleness line then simply stays absent. */
+function wibTimeLabel(date) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour12: false, hour: "2-digit", minute: "2-digit" }).formatToParts(date);
+    const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
+    return `${get("hour")}:${get("minute")}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Returns the localized "last/terakhir HH:MM" line when `recordedAt` is
+ *  older than 10 minutes, else null (fresh — no staleness line). */
+function staleLabel(recordedAt) {
+  if (!recordedAt) return null;
+  const ts = Date.parse(recordedAt);
+  if (!Number.isFinite(ts) || Date.now() - ts < STALE_READING_MS) return null;
+  const time = wibTimeLabel(new Date(ts));
+  return time ? `${t("env.last")} ${time}` : null;
+}
+
+/** Environment strip (#env-strip): 2×2 game-HUD stat tiles (4×1 on the
+ *  ≥801px desktop rail) — big real reading, 10-segment comfort gauge, the
+ *  explicit "Ideal min–max" line, and staleness honesty. Detail lives in
+ *  Plant Status (/monitoring). */
 function renderSensors(reading) {
-  const updateHud = (kind, percent, status, alert) => {
+  lastReading = reading; // replayed by refreshCropProfile() once ranges land
+  const staleText = staleLabel(reading?.recorded_at);
+  const updateHud = (kind, value, status, alert) => {
     const card = $(`[data-vital="${kind}"]`);
     if (!card) return;
-    card.style.setProperty("--meter", `${Math.max(0, Math.min(100, percent))}%`);
+    renderGauge(kind, value, cropProfile);
+    renderRangeLine(kind, cropProfile);
     card.classList.toggle("is-alert", alert);
+    card.classList.toggle("is-stale", staleText != null);
     const label = card.querySelector(".env-status");
-    if (label) label.textContent = status;
+    if (label) label.textContent = staleText ?? status;
   };
   const temperature = Number(reading?.temperature);
   if (reading?.temperature != null && Number.isFinite(temperature)) {
@@ -4078,21 +4279,21 @@ function renderSensors(reading) {
     // >32°C threshold the pressable vitals + mood engine use. Pure state —
     // silent, no copy, removed as soon as readings return to range.
     document.body?.classList.toggle("env-hot", temperature > VITAL_TEMP_HOT);
-    updateHud("temp", ((temperature - 10) / 30) * 100, temperature > VITAL_TEMP_HOT ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil" : "Stable"), temperature > VITAL_TEMP_HOT);
+    updateHud("temp", temperature, temperature > VITAL_TEMP_HOT ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil ✓" : "Stable ✓"), temperature > VITAL_TEMP_HOT);
   }
 
   const humidity = Number(reading?.humidity);
   if (reading?.humidity != null && Number.isFinite(humidity)) {
     setText("#env-hum", `${Math.round(humidity)}%`);
     lastVitals.humidity = humidity;
-    updateHud("hum", humidity, humidity < VITAL_HUM_DRY ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup" : "Sufficient"), humidity < VITAL_HUM_DRY);
+    updateHud("hum", humidity, humidity < VITAL_HUM_DRY ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), humidity < VITAL_HUM_DRY);
   }
 
   const soilPh = Number(reading?.soil_ph);
   if (reading?.soil_ph != null && Number.isFinite(soilPh)) {
     setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
     lastVitals.soilPh = soilPh;
-    updateHud("ph", (soilPh / 14) * 100, soilPh >= VITAL_PH_MIN && soilPh <= VITAL_PH_MAX ? (appLocale === "id" ? "Dalam rentang" : "In range") : (appLocale === "id" ? "Perlu diperiksa" : "Check needed"), soilPh < VITAL_PH_MIN || soilPh > VITAL_PH_MAX);
+    updateHud("ph", soilPh, soilPh >= VITAL_PH_MIN && soilPh <= VITAL_PH_MAX ? (appLocale === "id" ? "Dalam rentang ✓" : "In range ✓") : (appLocale === "id" ? "Perlu diperiksa" : "Check needed"), soilPh < VITAL_PH_MIN || soilPh > VITAL_PH_MAX);
   }
 
   const light = Number(reading?.light);
@@ -4104,7 +4305,7 @@ function renderSensors(reading) {
       "#env-light",
       isNightWIB() && light < 30 ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : `${light}%`,
     );
-    updateHud("light", light, isNightWIB() && light < 30 ? (appLocale === "id" ? "Malam" : "Night") : light < 30 ? (appLocale === "id" ? "Rendah" : "Low") : (appLocale === "id" ? "Cukup" : "Sufficient"), !isNightWIB() && light < 30);
+    updateHud("light", light, isNightWIB() && light < 30 ? (appLocale === "id" ? "Malam ✓" : "Night ✓") : light < 30 ? (appLocale === "id" ? "Rendah" : "Low") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), !isNightWIB() && light < 30);
   }
 
   const indoorParts = [];
@@ -4428,6 +4629,11 @@ async function main() {
   let plantName = null;
 
   const refresh = async () => {
+    // Crop-profile ranges (sensor HUD stat tiles): fire-and-forget, cached
+    // in `cropProfile`, refreshed on this SAME 15s poll cadence as the
+    // sensor reading below — never awaited, so a slow/failed fetch can
+    // never delay the rest of the render.
+    refreshCropProfile();
     const [plantRes, bondRes, sensorRes, questRes, eventsRes, companionRes] = await Promise.all([
       supabase.from("plants").select("*").eq("id", PLANT_ID).maybeSingle(),
       supabase.from("bond_state").select("*").eq("plant_id", PLANT_ID).maybeSingle(),

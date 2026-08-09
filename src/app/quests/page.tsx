@@ -73,11 +73,18 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
+  const currentStep = verifying ? 2 : 1;
+  const steps = locale === "id" ? ["RASAKAN", "BERTINDAK", "VERIFIKASI", "HADIAH"] : ["SENSE", "ACT", "VERIFY", "REWARD"];
+  const target = def.verifyTemperatureMax != null ? `≤ ${def.verifyTemperatureMax}°C`
+    : def.verifyHumidityMin != null ? `≥ ${def.verifyHumidityMin}% RH`
+      : def.verifyPhRange ? `pH ${def.verifyPhRange.min}–${def.verifyPhRange.max}`
+        : locale === "id" ? "Kondisi nyaman dan stabil" : "Comfortable and stable";
 
   return (
     // Active quests get the grass-green border accent — same white surface
     // family as every farm panel, but clearly "alive" next to history rows.
-    <article className="pm-panel" style={{ borderColor: "var(--color-grass)" }}>
+    <article className={`pm-panel pm-quest-hero${verifying ? " is-verifying" : ""}`}>
+      <div className="pm-quest-ribbon">{locale === "id" ? "MISI AKTIF" : "ACTIVE MISSION"}</div>
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" role="img" aria-hidden="true">
           {def.emoji}
@@ -93,6 +100,14 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
             {localized.description}
           </p>
         </div>
+      </div>
+
+      <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>
+        {steps.map((step, index) => <li key={step} className={index < currentStep ? "is-done" : index === currentStep ? "is-current" : ""}><span>{index < currentStep ? "✓" : index + 1}</span><small>{step}</small></li>)}
+      </ol>
+      <div className="pm-quest-action-well">
+        <div><small>{verifying ? (locale === "id" ? "SENSOR SEDANG MEMERIKSA" : "SENSOR CHECK") : (locale === "id" ? "YANG HARUS DILAKUKAN" : "WHAT TO DO")}</small><strong>{verifying ? (locale === "id" ? "Pertahankan kondisi ini" : "Keep this condition steady") : localized.description}</strong></div>
+        <div className="pm-quest-target"><small>TARGET</small><strong>{target}</strong></div>
       </div>
 
       {quest.status === "ACTIVE" && def.kind === "maintain" && (
@@ -127,7 +142,7 @@ function ActiveQuestCard({ quest, locale }: { quest: QuestRow; locale: AppLocale
 
       {/* Educational layer (handoff §2, §51): teach the science behind the
           quest, not just the reward. Collapsible so the card stays compact. */}
-      <details className="mt-3">
+      <details className="pm-quest-why mt-3">
         <summary
           className="font-pixel cursor-pointer select-none text-[10px] leading-relaxed hover:underline"
           style={{ color: "var(--color-forest)" }}
@@ -164,7 +179,7 @@ function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLoc
   return (
     <section
       aria-label="Today's event"
-      className="pm-panel mb-4"
+      className="pm-panel pm-daily-event mt-5 mb-4"
       style={{ background: "#FFF7DF", borderColor: "#E8C46B" }}
     >
       <div className="flex items-start gap-3">
@@ -294,8 +309,6 @@ export default async function QuestsPage() {
           : "Real care, verified by sensors — no tap-to-win."}
       />
 
-      <DailyEventBanner event={getDailyEvent(PLANT_ID)} locale={locale} />
-
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (
           <div className="pm-panel text-center">
@@ -314,6 +327,8 @@ export default async function QuestsPage() {
         )}
       </section>
 
+      <DailyEventBanner event={getDailyEvent(PLANT_ID)} locale={locale} />
+
       <section aria-label="Quest history" className="mt-8">
         <h2 className="pm-heading mb-3 text-xs uppercase tracking-wide">
           {locale === "id" ? "Riwayat" : "History"}
@@ -323,11 +338,14 @@ export default async function QuestsPage() {
             {locale === "id" ? "Belum ada misi selesai — cerita kita segera dimulai!" : "No completed quests yet — our story starts soon!"}
           </p>
         ) : (
+          <>
           <ul className="flex flex-col gap-2">
-            {history.map((quest) => (
+            {history.slice(0, 3).map((quest) => (
               <HistoryItem key={quest.id} quest={quest} locale={locale} />
             ))}
           </ul>
+          {history.length > 3 && <details className="pm-quest-history-more mt-3"><summary>{locale === "id" ? `LIHAT ${history.length - 3} RIWAYAT LAINNYA` : `VIEW ${history.length - 3} MORE ADVENTURES`}</summary><ul className="mt-3 flex flex-col gap-2">{history.slice(3).map((quest) => <HistoryItem key={quest.id} quest={quest} locale={locale} />)}</ul></details>}
+          </>
         )}
       </section>
     </main>

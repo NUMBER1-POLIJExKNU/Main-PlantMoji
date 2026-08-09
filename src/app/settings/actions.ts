@@ -10,7 +10,7 @@
 // the same way a user would write a new line in a paper growth journal.
 
 import { revalidatePath } from "next/cache";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { applyDemoMaxState } from "@/game/demo/demo-max";
 import { resetDemoProgress } from "@/game/demo/demo-reset";
 import { parseGrowthInput } from "@/lib/growth";
@@ -138,16 +138,40 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   }
 
   const { plantId, stage, heightCm, leafCount, note } = parsed.input;
+  const photo = formData.get("photo");
+  const acceptedPhoto = photo instanceof File && photo.size > 0
+    && photo.size <= 5 * 1024 * 1024
+    && ["image/jpeg", "image/png", "image/webp"].includes(photo.type)
+    ? photo
+    : null;
+  if (photo instanceof File && photo.size > 0 && !acceptedPhoto) {
+    console.error("addGrowthRecord rejected photo: use JPEG, PNG, or WebP up to 5 MB");
+    return;
+  }
+  const recordId = randomUUID();
+  let photoPath: string | null = null;
+  if (acceptedPhoto) {
+    const extension = acceptedPhoto.type === "image/png" ? "png" : acceptedPhoto.type === "image/webp" ? "webp" : "jpg";
+    photoPath = `${plantId}/${recordId}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("growth-snapshots").upload(photoPath, await acceptedPhoto.arrayBuffer(), { contentType: acceptedPhoto.type, upsert: false });
+    if (uploadError) {
+      console.error(`addGrowthRecord(${plantId}) snapshot upload failed:`, uploadError.message);
+      photoPath = null; // the written growth fact must not depend on photo storage
+    }
+  }
 
   const { error: insertError } = await supabase.from("growth_records").insert({
+    id: recordId,
     plant_id: plantId,
     stage,
     height_cm: heightCm,
     leaf_count: leafCount,
     note,
+    photo_path: photoPath,
   });
 
   if (insertError) {
+    if (photoPath) await supabase.storage.from("growth-snapshots").remove([photoPath]);
     console.error(`addGrowthRecord(${plantId}) insert failed:`, insertError.message);
     return;
   }

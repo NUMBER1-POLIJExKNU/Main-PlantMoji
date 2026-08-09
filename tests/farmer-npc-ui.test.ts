@@ -25,11 +25,14 @@ describe("Grandpa Tani living-world UI", () => {
   it("provides an accessible localized chat dialog with server-side answers", () => {
     expect(html).toContain('id="farmer-chat"');
     expect(html).toContain('aria-labelledby="farmer-chat-title"');
+    expect(html.indexOf('id="farmer-chat"')).toBeGreaterThan(html.indexOf('</main>'));
     expect(live).toContain('fetch("/api/farmer-chat"');
     expect(live).toContain("VIRTUAL SENSOR DATA · DEMO MODE");
     expect(live).not.toContain("instanceof HTMLDialogElement");
     expect(live).toContain('typeof dialog.showModal === "function"');
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?z-index:\s*15/);
+    expect(css).toMatch(/\.farmer-chat\s*\{[\s\S]*?pointer-events:\s*auto/);
+    expect(css).toMatch(/\.farmer-chat input[\s\S]*?pointer-events:\s*auto/);
   });
 
   it("schedules varied autonomous speech without interrupting important states", () => {
@@ -61,5 +64,13 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).toContain("Math.min(ground.right, startLeft)");
     expect(css).toMatch(/\.npc-farmer\.npc-grabbed[\s\S]*?cursor:\s*grabbing/);
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
+  });
+
+  it("moves the sun and moon along a WIB time-based sky arc", () => {
+    expect(live).toContain('minute: "2-digit"');
+    expect(live).toContain('celestial.style.setProperty("--celestial-x"');
+    expect(live).toContain("Math.sin(Math.PI * clamped)");
+    expect(css).toContain("left: var(--celestial-x");
+    expect(css).toContain("body.night .env-sun");
   });
 });

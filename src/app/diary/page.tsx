@@ -11,11 +11,13 @@
 
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
+import JamkachuMemoryReflection from "@/components/jamkachu-memory-reflection";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
+import { toJamkachuMemory, type MemoryEventRow } from "@/lib/jamkachu-memory";
 import { addGrowthRecord } from "../settings/actions";
 
 // Always reflect the latest saved values.
@@ -104,21 +106,26 @@ export default async function DiaryPage() {
   // Manual growth log (handoff §14, §35). Empty when milestone5 hasn't been
   // run yet — fetchGrowthRecords tolerates the missing table on its own.
   const growthRecords = await growthRecordsPromise;
+  const snapshotUrls = new Map<string, string>();
+  await Promise.all(growthRecords.map(async (record) => {
+    if (!record.photo_path) return;
+    const { data } = await supabase.storage.from("growth-snapshots").createSignedUrl(record.photo_path, 3600);
+    if (data?.signedUrl) snapshotUrls.set(record.id, data.signedUrl);
+  }));
+  const featuredSnapshotRecord = growthRecords.find((record) => snapshotUrls.has(record.id));
+  const featuredSnapshot = featuredSnapshotRecord ? {
+    url: snapshotUrls.get(featuredSnapshotRecord.id)!,
+    date: growthDateFormat.format(new Date(featuredSnapshotRecord.recorded_at)),
+    stage: featuredSnapshotRecord.stage,
+  } : undefined;
   const [memoryResult, companionResult] = await Promise.all([
     supabase.from("bond_events").select("event_id,type,data,occurred_at").eq("plant_id", PLANT_ID).in("type", ["QUEST_COMPLETED", "COMPANION_EVOLVED", "LEVEL_UP", "BADGE_UNLOCKED", "CHAPTER_UNLOCKED"]).order("occurred_at", { ascending: false }).limit(50),
     supabase.from("companion_state").select("stage,form_key").eq("plant_id", PLANT_ID).maybeSingle(),
   ]);
-  const memories = memoryResult.error ? [] : (memoryResult.data ?? []);
+  const memories = (memoryResult.error ? [] : (memoryResult.data ?? []))
+    .map((row) => toJamkachuMemory(row as MemoryEventRow, locale))
+    .filter((memory) => memory !== null);
   const companion = companionResult.error ? null : companionResult.data;
-
-  const memoryTitle = (row: { type: string; data: Record<string, unknown> | null }) => {
-    const data = row.data ?? {};
-    if (row.type === "QUEST_COMPLETED") return locale === "id" ? `Perawatan terverifikasi: ${data.title ?? data.questKey ?? "Quest"}` : `Verified care: ${data.title ?? data.questKey ?? "Quest"}`;
-    if (row.type === "COMPANION_EVOLVED") return locale === "id" ? `Companion berevolusi menjadi ${data.stage}` : `Companion evolved into ${data.stage}`;
-    if (row.type === "LEVEL_UP") return locale === "id" ? `Bond naik ke Level ${data.levelAfter ?? "?"}` : `Bond reached Level ${data.levelAfter ?? "?"}`;
-    if (row.type === "BADGE_UNLOCKED") return locale === "id" ? `Lencana terbuka: ${data.name ?? data.badgeKey}` : `Badge unlocked: ${data.name ?? data.badgeKey}`;
-    return locale === "id" ? `Bab cerita terbuka: ${data.title ?? data.chapter}` : `Story chapter unlocked: ${data.title ?? data.chapter}`;
-  };
 
   // Farm column: cards cap at 640px like the farm home stack (.pm-card).
   return (
@@ -134,24 +141,12 @@ export default async function DiaryPage() {
       />
 
       <div className="mx-auto w-full max-w-[640px]">
-        <section className="pm-panel mb-5 flex flex-col gap-4">
-          <div>
-            <h2 className="pm-heading text-xs">{locale === "id" ? "Kenangan Perawatan" : "Care Memories"}</h2>
-            <p className={fieldHelpClass}>
-              {companion
-                ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companion.stage} · ${companion.form_key}. ${locale === "id" ? "Ini terpisah dari tahap pertumbuhan tanaman asli." : "This is separate from the real plant growth stage."}`
-                : locale === "id" ? "Companion masih menggunakan tampilan awal sampai Milestone 11 aktif." : "The companion uses its original look until Milestone 11 is active."}
-            </p>
-          </div>
-          {memories.length === 0 ? (
-            <p className="text-xs text-[#57684F]">{locale === "id" ? "Belum ada kenangan perawatan." : "No care memories yet."}</p>
-          ) : memories.map((row) => (
-            <div key={row.event_id} className="rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2 text-xs">
-              <div className="font-semibold text-[#243421]">{memoryTitle(row as { type: string; data: Record<string, unknown> | null })}</div>
-              <div className="text-[#57684F]">{growthDateFormat.format(new Date(row.occurred_at))}</div>
-            </div>
-          ))}
-        </section>
+        <JamkachuMemoryReflection memories={memories} locale={locale} snapshot={featuredSnapshot} />
+        <p className={`${fieldHelpClass} -mt-3 mb-5 px-2`}>
+          {companion
+            ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companion.stage} · ${companion.form_key}. ${locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}`
+            : locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}
+        </p>
         <section className="pm-panel flex flex-col gap-5">
           <div className="flex flex-col gap-1">
             <h2 className="pm-heading text-xs">
@@ -176,6 +171,12 @@ export default async function DiaryPage() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabelClass}>{locale === "id" ? "Snapshot tanaman" : "Plant snapshot"}</span>
+              <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" capture="environment" className={fieldInputClass} />
+              <span className={fieldHelpClass}>{locale === "id" ? "Opsional · JPEG, PNG, atau WebP · maksimal 5 MB" : "Optional · JPEG, PNG, or WebP · up to 5 MB"}</span>
             </label>
 
             <div className="grid grid-cols-2 gap-3">
@@ -248,19 +249,18 @@ export default async function DiaryPage() {
                   .filter((part): part is string => part != null)
                   .join(" · ");
 
-                return (
-                  <div
-                    key={record.id}
-                    className="flex flex-col gap-0.5 rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2 text-xs"
-                  >
-                    <span className="text-[#57684F]">
-                      {dateLabel} ·{" "}
-                      <span className="font-semibold text-[#243421]">{record.stage}</span>
-                    </span>
-                    {details.length > 0 && <span className="text-[#57684F]">{details}</span>}
-                    {record.note && <span className="text-[#3A4A34]">{record.note}</span>}
+                const snapshotUrl = snapshotUrls.get(record.id);
+                return <article key={record.id} className="pm-growth-postcard">
+                  <div className={`pm-growth-photo${snapshotUrl ? " has-photo" : ""}`}>
+                    {snapshotUrl ? <img src={snapshotUrl} alt={locale === "id" ? `Snapshot pertumbuhan ${plant.name} pada ${dateLabel}` : `${plant.name} growth snapshot on ${dateLabel}`} /> : <div aria-label={locale === "id" ? "Tidak ada snapshot" : "No snapshot"}><span>🌱</span><small>{locale === "id" ? "BELUM ADA FOTO" : "NO SNAPSHOT"}</small></div>}
+                    {snapshotUrl && <b>{locale === "id" ? "JEPRET!" : "SNAP!"}</b>}
                   </div>
-                );
+                  <div className="pm-growth-postcard-copy">
+                    <span>{dateLabel} · <strong>{record.stage}</strong></span>
+                    {details.length > 0 && <span>{details}</span>}
+                    {record.note && <q>{record.note}</q>}
+                  </div>
+                </article>;
               })
             )}
           </div>
