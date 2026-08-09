@@ -1299,6 +1299,13 @@ body.env-hot .env-haze { opacity: 1; }
 }
 .npc-farmer.npc-ready { opacity: 1; }
 .npc-ai-tag { position:absolute; left:50%; bottom:calc(100% + 5px); min-width:max-content; padding:4px 6px; border:2px solid var(--color-outline); border-radius:6px; color:#243421; background:var(--color-yellow); box-shadow:0 2px 0 var(--color-outline); font:6px/1.2 var(--font-heading); transform:translateX(-50%); }
+/* The tag is a CHILD of the button, so the scaleX(-1) that turns the sprite
+   around on the leftward leg mirrored the label's TEXT too. live.js keeps
+   .npc-facing-left in sync with every transform write; the counter-flip here
+   composes with the parent's to leave the text upright. Centering is
+   unaffected — scaleX(-1) mirrors about the tag's own centre, which the
+   -50% has already parked on the sprite's midline. */
+.npc-farmer.npc-facing-left .npc-ai-tag { transform:translateX(-50%) scaleX(-1); }
 body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .npc-farmer.npc-falling { pointer-events: none; }
 .npc-farmer.npc-grabbed {

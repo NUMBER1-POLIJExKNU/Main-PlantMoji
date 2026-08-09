@@ -2768,9 +2768,24 @@ function farmerGround() {
   };
 }
 
+/**
+ * Keeps .npc-facing-left in sync with the sprite's horizontal flip.
+ *
+ * The AI-CHAT tag is a CHILD of the button, so the scaleX(-1) that turns the
+ * sprite around on the leftward leg also mirrors the tag's TEXT — half of
+ * every lap the label read backwards. CSS cannot see the parent's animated
+ * transform, so the flip state is mirrored onto a class and the tag
+ * counter-flips there. Call this beside every write of farmer.style.transform
+ * (and before any animation whose keyframes carry a scaleX).
+ */
+function setFarmerFacing(facing) {
+  $("#npc-farmer")?.classList.toggle("npc-facing-left", facing < 0);
+}
+
 async function farmerWalkTo(x, facing, epoch, duration = 10_000) {
   const farmer = $("#npc-farmer");
   if (!farmer) return false;
+  setFarmerFacing(facing); // keyframes below flip the sprite immediately
   farmer.classList.add("npc-walking");
   const from = Number.parseFloat(farmer.style.left) || x;
   const ok = await farmerAnimate(
@@ -2787,6 +2802,7 @@ async function farmerFallAndClimb(ground, epoch) {
   const vine = $("#npc-farmer-vine");
   if (!farmer || !vine || epoch !== farmerMotionEpoch) return;
   farmer.classList.add("npc-falling");
+  setFarmerFacing(-1); // the teeter keyframes below hold scaleX(-1)
   await farmerAnimate([
     { transform: "translateX(0) rotate(0deg) scaleX(-1)" },
     { transform: "translateX(-5px) rotate(-9deg) scaleX(-1)" },
@@ -2795,6 +2811,7 @@ async function farmerFallAndClimb(ground, epoch) {
   ], { duration: 520, easing: "steps(4,end)" }, epoch);
   if (epoch !== farmerMotionEpoch) return;
   showFarmerBubble(appLocale === "id" ? "Hoho… jalannya habis! Tunggu sebentar, Nak." : "Hoho… the path ended! Hold on, my young friend.", 2600, false);
+  setFarmerFacing(1); // the fall/climb keyframes replace transform without scaleX
   await farmerAnimate([
     { left: `${ground.left}px`, top: `${ground.top}px`, transform: "rotate(-16deg)" },
     { left: `${ground.left - 18}px`, top: `${ground.top + 92}px`, transform: "rotate(-4deg)" },
@@ -2872,6 +2889,7 @@ function startFarmerDrag(event) {
   farmer.style.left = `${rect.left}px`;
   farmer.style.top = `${rect.top}px`;
   farmer.style.transform = "none";
+  setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
   farmer.classList.remove("npc-walking", "npc-talking");
   farmer.setPointerCapture?.(event.pointerId);
   farmerDrag = {
@@ -2939,6 +2957,7 @@ async function endFarmerDrag(event) {
   farmer.style.left = `${landingLeft}px`;
   farmer.style.top = `${ground.top}px`;
   farmer.style.transform = "scaleX(1)";
+  setFarmerFacing(1);
   restartFarmerMotion();
 }
 

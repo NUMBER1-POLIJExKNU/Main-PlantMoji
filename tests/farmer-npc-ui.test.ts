@@ -53,6 +53,23 @@ describe("Grandpa Tani living-world UI", () => {
     expect(html).toContain('class="npc-ai-tag"');
     expect(live).toContain("TAP FOR AI CHAT");
   });
+  it("keeps the AI CHAT label upright while the sprite walks left", () => {
+    // The tag is a child of the flipped button, so scaleX(-1) mirrored its
+    // text on the leftward leg of every lap. CSS cannot read the parent's
+    // animated transform, hence the class + counter-flip pair below.
+    expect(css).toMatch(/\.npc-farmer\.npc-facing-left\s+\.npc-ai-tag[\s\S]*?scaleX\(-1\)/);
+    expect(live).toContain("function setFarmerFacing");
+    expect(live).toContain('classList.toggle("npc-facing-left", facing < 0)');
+
+    // Every path that writes a transform must re-sync the flip, or the label
+    // gets stuck mirrored after a fall, a carry, or a direction change.
+    expect(live).toMatch(/setFarmerFacing\(facing\);[\s\S]{0,120}npc-walking/); // walk
+    expect(live).toMatch(/npc-falling"\);\s*\n\s*setFarmerFacing\(-1\)/); // teeter
+    expect(live).toMatch(/setFarmerFacing\(1\);[\s\S]{0,160}rotate\(-16deg\)/); // fall + climb
+    expect(live).toMatch(/transform = "none";\s*\n\s*setFarmerFacing\(1\)/); // grab
+    expect(live).toMatch(/transform = "scaleX\(1\)";\s*\n\s*setFarmerFacing\(1\)/); // landing
+  });
+
   it("lets the farmer be grabbed and returns him to the measured grass floor", () => {
     expect(live).toContain('addEventListener("pointerdown", startFarmerDrag)');
     expect(live).toContain('window.addEventListener("pointermove", moveFarmerDrag');
