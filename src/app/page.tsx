@@ -3,6 +3,9 @@ import Notice from "@/components/notice";
 import { fetchBondState, fetchPlant, fetchTopActiveQuest } from "@/lib/plants";
 import { getHomeMoodMessage } from "@/lib/plant-messages";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
+import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
+import { getRequestLocale } from "@/lib/i18n-server";
+import { getServerSupabase } from "@/lib/supabase/server";
 
 // The plant's live state must always be read fresh from Supabase.
 export const dynamic = "force-dynamic";
@@ -66,12 +69,15 @@ export default async function Home() {
     );
   }
 
-  const [bond, quest, moodMessage] = await Promise.all([
+  const supabase = getServerSupabase();
+  const [bond, quest, moodMessage, snapshot, locale] = await Promise.all([
     fetchBondState(PLANT_ID),
     fetchTopActiveQuest(PLANT_ID),
     // AI-personalized when GEMINI_API_KEY is set (cached per mood change,
     // handoff §24); deterministic template otherwise — never blocks on failure.
     getHomeMoodMessage(result.plant),
+    supabase ? getLatestSensorSnapshot(supabase, PLANT_ID) : null,
+    getRequestLocale(),
   ]);
 
   return (
@@ -80,6 +86,8 @@ export default async function Home() {
       initialBond={bond}
       initialQuest={quest}
       initialMoodMessage={moodMessage}
+      initialSnapshot={snapshot}
+      locale={locale}
     />
   );
 }

@@ -361,6 +361,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               aria-controls={`collection-panel-${entry.id}`}
               onClick={() => {
                 setTab(entry.id);
+                // Reward previews belong to the tab that launched them. They
+                // render above the panels, so explicitly dismiss them before
+                // revealing another collection section.
+                setPreview(null);
                 window.PMSfx?.play("tick");
               }}
               className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"

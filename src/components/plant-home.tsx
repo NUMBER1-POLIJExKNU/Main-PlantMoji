@@ -11,6 +11,9 @@ import BondPanel from "@/components/bond-panel";
 import HomeQuestCard from "@/components/home-quest-card";
 import LevelUpOverlay from "@/components/level-up-overlay";
 import Mascot from "@/components/mascot";
+import HomeEnvironmentGlance from "@/components/home-environment-glance";
+import type { SensorSnapshot } from "@/lib/crop-profiles";
+import type { AppLocale } from "@/lib/i18n";
 
 // Scene tint + badge styling per mood. The scene classes (globals.css) shift
 // the pixel-farm sky/grass palette; the badge keeps its per-mood color chip.
@@ -61,11 +64,15 @@ export default function PlantHome({
   initialBond,
   initialQuest,
   initialMoodMessage,
+  initialSnapshot,
+  locale,
 }: {
   initialPlant: Plant;
   initialBond: BondState | null;
   initialQuest: QuestRow | null;
   initialMoodMessage?: string;
+  initialSnapshot: SensorSnapshot | null;
+  locale: AppLocale;
 }) {
   const [plant, setPlant] = useState(initialPlant);
   const [bond, setBond] = useState(initialBond);
@@ -271,6 +278,8 @@ export default function PlantHome({
       {/* Grass floor — the panels sit on the lawn, glass-style */}
       <div className="pm-grass relative w-full pb-28">
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 px-6 pt-14">
+          <HomeEnvironmentGlance snapshot={initialSnapshot} locale={locale} />
+
           {bond && (
             <BondPanel
               bondLevel={bond.bond_level}

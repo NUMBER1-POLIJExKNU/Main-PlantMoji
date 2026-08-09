@@ -60,4 +60,9 @@ describe("shared PlantMoji application shell", () => {
     expect(notice).toContain('className="pm-panel reno-notice-card"');
     expect(notice).not.toContain("min-h-screen");
   });
+
+  it("dismisses a collection reward preview when switching tabs", () => {
+    const collectionTabs = source("src/components/collection-tabs.tsx");
+    expect(collectionTabs).toMatch(/setTab\(entry\.id\);[\s\S]*?setPreview\(null\);/);
+  });
 });

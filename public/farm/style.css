@@ -20,11 +20,10 @@
     --color-surface: #FFFFFF;
     --color-border: #BCD3B4;
 
-    /* Two-tier typography (spec §2.4): pixel display for game elements only,
-       readable system sans for body copy. VT323 retires from body. */
+    /* Two-tier typography: compact arcade display + readable pixel body. */
     --font-display: 'Press Start 2P', monospace;
     --font-heading: var(--font-display);
-    --font-body: 'VT323', monospace;
+    --font-body: 'Pixelify Sans', sans-serif;
 
     /* Modern Glass UI mixed with Game aesthetics */
     --ui-bg: rgba(255, 255, 255, 0.7);
@@ -41,7 +40,7 @@
 
 body {
     font-family: var(--font-body);
-    font-size: 19px;
+    font-size: 16px;
     background-color: var(--color-sky);
     color: var(--color-text);
     overflow: hidden;

@@ -51,11 +51,11 @@ function ChartTooltip({ mode, active, payload }: ChartTooltipProps) {
   const point = active ? payload?.[0]?.payload : undefined;
   if (!point) return null;
   return (
-    <div className="rounded-lg border-2 border-[#BCD3B4] bg-white px-2.5 py-1.5 text-xs shadow-[0_3px_0_rgba(36,52,33,0.15)]">
-      <p className="font-semibold tabular-nums text-[#243421]">
+    <div className="rounded-lg border-2 border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5 text-xs shadow-[0_3px_0_rgba(36,52,33,0.15)]">
+      <p className="font-semibold tabular-nums text-[var(--color-text)]">
         {mode === "lux" ? `${point.value.toLocaleString("en-US")} lx` : `${point.value}%`}
       </p>
-      <p className="tabular-nums text-[#57684F]">{formatTime(point.t)}</p>
+      <p className="tabular-nums opacity-70">{formatTime(point.t)}</p>
     </div>
   );
 }

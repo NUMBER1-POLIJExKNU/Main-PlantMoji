@@ -32,12 +32,12 @@ export default async function MonitoringPage() {
           : "Live readings from the plant's sensors, refreshed every 10 seconds."}
       />
 
-      <MonitoringLive />
+      <MonitoringLive locale={locale} />
 
       <p className="mt-6 text-center text-xs leading-5 text-[#57684F]">
         {locale === "id"
-          ? "Kelembapan tanah dan lux akan muncul begitu alur baru dari tim perangkat keras mulai mencatatnya (kolom ditambahkan lewat supabase/milestone6-monitoring.sql)."
-          : "Soil moisture and lux appear once the hardware team's new flow starts logging them (columns added by supabase/milestone6-monitoring.sql)."}
+          ? "Cahaya ditampilkan sebagai persentase relatif 0–100%. Lux hanya muncul bila perangkat memiliki konversi lux yang tervalidasi."
+          : "Light is shown as a relative 0–100% value. Lux appears only when the device provides a validated lux conversion."}
       </p>
     </main>
   );

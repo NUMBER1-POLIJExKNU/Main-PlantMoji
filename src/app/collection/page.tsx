@@ -162,7 +162,7 @@ export default async function CollectionPage() {
   // centers this <main> at 720px directly on the sky, and .pm-panel cards
   // inside supply the surfaces.
   return (
-    <main className="w-full">
+    <main className="pm-collection w-full">
       <PageHeader
         icon="🏆"
         eyebrow={locale === "id" ? "Buku penemuan" : "Discovery book"}
