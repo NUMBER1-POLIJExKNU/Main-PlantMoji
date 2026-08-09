@@ -2520,7 +2520,10 @@ function setFarmerMotionPaused(paused) {
   const farmer = $("#npc-farmer");
   farmer?.classList.toggle("npc-talking", paused);
   if (!farmerMotionAnimation) return;
-  try { paused ? farmerMotionAnimation.pause() : farmerMotionAnimation.play(); } catch {}
+  try {
+    if (paused) farmerMotionAnimation.pause();
+    else farmerMotionAnimation.play();
+  } catch {}
 }
 
 function farmerDelay(ms, epoch) {

@@ -92,7 +92,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
+  --font-sans: var(--font-geist-sans), Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-pixel: var(--font-press-start-2p), "Press Start 2P", monospace;
   --font-pixel-body: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
@@ -101,7 +101,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
   font-size: 16px;
 }
 
@@ -137,7 +137,8 @@ button, input, select, textarea { font: inherit; }
   --pm-radius: 16px;
   --pm-shadow: 0 4px 0 rgba(36, 52, 33, 0.15);
   --pm-font-pixel: var(--font-press-start-2p), "Press Start 2P", monospace;
-  --pm-font-body: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
+  --pm-font-game: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
+  --pm-font-body: var(--font-geist-sans), Arial, sans-serif;
 }
 
 html[data-theme="night"] {
@@ -502,7 +503,7 @@ html[data-theme="night"] .text-\[\#7A5B12\] { color: #f1d47a; }
   position: relative;
   background: #ffffff;
   color: #444444;
-  font-family: var(--font-pixelify-sans), "Pixelify Sans", sans-serif;
+  font-family: var(--pm-font-body);
   font-size: 18px;
   line-height: 1.4;
   padding: 12px 20px;

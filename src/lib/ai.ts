@@ -54,6 +54,13 @@ export interface AiMessageInput {
   locale?: AppLocale;
 }
 
+export interface FarmerAiInput {
+  question: string;
+  verifiedFacts: string;
+  fallbackAnswer: string;
+  locale: AppLocale;
+}
+
 // ── Gemini generateContent constants ───────────────────────────────────
 
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
@@ -228,6 +235,51 @@ export async function generateAiMessage(input: AiMessageInput): Promise<string |
   } catch {
     // Network failure, DNS, abort/timeout, invalid JSON — all identical to
     // the caller: no AI message, use the deterministic template.
+    return null;
+  }
+}
+
+/** Optional language-only rewrite for Grandpa Tani. The deterministic
+ * fallback already contains the complete, safe answer; Gemini may only make
+ * that answer sound warmer. Validation remains the caller's responsibility. */
+export async function generateFarmerAiReply(input: FarmerAiInput): Promise<string | null> {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return null;
+    const question = cleanFragment(input.question, 280);
+    const facts = cleanFragment(input.verifiedFacts, 900);
+    const fallback = cleanFragment(input.fallbackAnswer, 500);
+    if (!question || !facts || !fallback) return null;
+    const language = input.locale === "id" ? "Bahasa Indonesia" : "English";
+    const farmerPrompt = [
+      "You are Grandpa Tani, a warm fictional garden-grandpa guide in PlantMoji.",
+      "You must sound like a familiar, patient grandfather beside a student—not like an AI, report, dashboard, or customer-support agent.",
+      "Begin naturally with warmth or recognition. Use a gentle 'Hoho' only when it fits, not mechanically every time.",
+      "Explain one idea, suggest at most one small reversible action, and invite the student to observe again.",
+      "The verified facts and deterministic fallback below are authoritative. You may only rephrase them; never recalculate, contradict, or add facts.",
+      "Never invent sensor values, crop requirements, farming experience, or local credentials.",
+      "Never confuse air humidity with soil moisture. Never prescribe fertilizer, pesticide, chemical dosing, or autonomous hardware action.",
+      "For soil pH intervention, direct the student to a teacher or local farmer and never give a chemical adjustment method.",
+      `Reply in ${language}, plain text, 2-4 short sentences, under 440 characters. No markdown or lists.`,
+      `Student question (not a verified fact): ${question}`,
+      `Verified facts: ${facts}`,
+      `Complete safe fallback answer to warmly rephrase: ${fallback}`,
+    ].join("\n");
+    const response = await fetch(GEMINI_API_URL, {
+      method: "POST",
+      headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: farmerPrompt }] },
+        contents: [{ role: "user", parts: [{ text: "Answer the student's question using only the supplied answer and facts." }] }],
+        generationConfig: { maxOutputTokens: 180, temperature: 0.55 },
+      }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const text = extractText(await response.json());
+    return text && text.length <= 440 ? text : null;
+  } catch {
     return null;
   }
 }
