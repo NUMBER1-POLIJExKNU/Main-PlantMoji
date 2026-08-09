@@ -109,16 +109,20 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
     // never claim "you stayed steady all day" while the day could still sour.
     if (wibHour(now) < 18) return false;
 
-    // Two independent counts — issued in parallel. First: no data, no claim
+    // Three independent reads — issued in parallel. First: no data, no claim
     // (§23) — require at least one device event today so a dead pipeline
     // can't masquerade as a perfectly steady plant. Second: zero
     // PLANT_STATE_CHANGED entries into a non-Happy mood during the daytime
-    // window. currentState is normalized to canonical casing at the trust
-    // boundary (parseDeviceEvent), so an exact 'Happy' compare is safe —
-    // same convention as badge-engine's soil-event count.
+    // window. Third (BUG B fix): the mood the plant was already IN when the
+    // window opened — a plant that entered a problem mood before 06:00 and
+    // simply had no further transitions would otherwise pass the second
+    // check with zero in-window transitions while having suffered all day.
+    // currentState is normalized to canonical casing at the trust boundary
+    // (parseDeviceEvent), so an exact 'Happy' compare is safe — same
+    // convention as badge-engine's soil-event count.
     const windowStartIso = new Date(Date.parse(`${today}T06:00:00+07:00`)).toISOString();
     const windowEndIso = new Date(Date.parse(`${today}T18:00:00+07:00`)).toISOString();
-    const [anyResult, problemResult] = await Promise.all([
+    const [anyResult, problemResult, priorStateResult] = await Promise.all([
       supabase
         .from("device_events")
         .select("event_id", { count: "exact", head: true })
@@ -133,6 +137,15 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
         .neq("data->>currentState", "Happy")
         .gte("occurred_at", windowStartIso)
         .lt("occurred_at", windowEndIso),
+      supabase
+        .from("device_events")
+        .select("data")
+        .eq("plant_id", plantId)
+        .eq("type", "PLANT_STATE_CHANGED")
+        .lte("occurred_at", windowStartIso)
+        .order("occurred_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
     if (anyResult.error) {
       throw new Error(
@@ -144,7 +157,22 @@ async function settleDailyChallenge(supabase: SupabaseClient, plantId: string): 
         `event-router: daily challenge problem-mood count failed: ${problemResult.error.message}`,
       );
     }
-    satisfied = (anyResult.count ?? 0) >= 1 && (problemResult.count ?? 0) === 0;
+    if (priorStateResult.error) {
+      throw new Error(
+        `event-router: daily challenge prior-mood lookup failed: ${priorStateResult.error.message}`,
+      );
+    }
+    // No prior state row means no evidence of a problem mood at window
+    // start (§23: absence of data is not a claim either way) — only an
+    // explicit non-Happy mood disqualifies.
+    const priorMood = (
+      priorStateResult.data as { data?: Record<string, unknown> } | null
+    )?.data?.currentState;
+    const enteredProblemMoodBeforeWindow = typeof priorMood === "string" && priorMood !== "Happy";
+    satisfied =
+      (anyResult.count ?? 0) >= 1 &&
+      (problemResult.count ?? 0) === 0 &&
+      !enteredProblemMoodBeforeWindow;
   }
 
   if (!satisfied) return false;

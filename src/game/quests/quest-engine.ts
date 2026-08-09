@@ -10,7 +10,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlantMood } from "@/types/events";
 import type { QuestEngineResult, QuestRow } from "@/types/game";
-import { getPlantCropProfile } from "@/lib/crop-profile-data";
+import { getLatestSensorSnapshot, getPlantCropProfile } from "@/lib/crop-profile-data";
 import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
 import { QUEST_DEFINITIONS, questsTriggeredBy, type QuestDefinition } from "./quest-definitions";
 
@@ -206,6 +206,27 @@ export async function evaluateQuests(
     if (Number.isFinite(parsed)) stateChangedMs = parsed;
   }
 
+  // Lazily fetched + memoized: only a VERIFYING recovery quest whose window
+  // has actually elapsed needs the plant's latest sensor reading, and at
+  // most once per sweep regardless of how many such quests are live.
+  let sensorCheckPromise: Promise<{ profile: CropProfile; data: Record<string, unknown> }> | null =
+    null;
+  function sensorCheck(): Promise<{ profile: CropProfile; data: Record<string, unknown> }> {
+    if (!sensorCheckPromise) {
+      sensorCheckPromise = (async () => {
+        const [profile, snapshot] = await Promise.all([
+          getPlantCropProfile(supabase, plantId).then((p) => p ?? getCropProfile(null)),
+          getLatestSensorSnapshot(supabase, plantId),
+        ]);
+        const sensorData: Record<string, unknown> = snapshot
+          ? { temperature: snapshot.temperature, humidity: snapshot.humidity, soilPH: snapshot.soilPh }
+          : {};
+        return { profile, data: sensorData };
+      })();
+    }
+    return sensorCheckPromise;
+  }
+
   for (const quest of live) {
     const def = QUEST_DEFINITIONS[quest.quest_key];
     if (!def) continue;
@@ -223,14 +244,30 @@ export async function evaluateQuests(
           verifying_since: null,
         });
       } else if (doneMs <= nowMs) {
-        const completedAt = new Date(doneMs).toISOString();
-        const updated = await transition(supabase, quest.id, "VERIFYING", {
-          status: "COMPLETED",
-          completed_at: completedAt,
-        });
-        if (updated) {
-          result.completed.push(updated);
-          await emitQuestEvent(supabase, updated, "completed", completedAt);
+        // Elapsed time alone is never enough to complete a recovery quest
+        // (handoff §17): mood hysteresis is wider than the quest's own
+        // verify thresholds, so the sensor can sit in a dead zone (e.g.
+        // 27°C — below "enter Overheating" but above verifyTemperatureMax
+        // 26) without a PLANT_STATE_CHANGED event ever firing to re-check
+        // it. The lazy sweep is the only path that can observe this, so it
+        // must consult the latest persisted sensor reading itself before
+        // declaring the recovery verified.
+        const { profile, data } = await sensorCheck();
+        if (sensorBlocksRecovery(def, data, profile)) {
+          await transition(supabase, quest.id, "VERIFYING", {
+            status: "ACTIVE",
+            verifying_since: null,
+          });
+        } else {
+          const completedAt = new Date(doneMs).toISOString();
+          const updated = await transition(supabase, quest.id, "VERIFYING", {
+            status: "COMPLETED",
+            completed_at: completedAt,
+          });
+          if (updated) {
+            result.completed.push(updated);
+            await emitQuestEvent(supabase, updated, "completed", completedAt);
+          }
         }
       }
     } else if (quest.status === "ACTIVE" && def.kind === "maintain" && currentMood === def.triggerMood) {

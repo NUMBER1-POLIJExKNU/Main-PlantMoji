@@ -68,8 +68,11 @@ export interface GrowthInputFields {
 type OptionalNumberResult = { ok: true; value: number | null } | { ok: false };
 
 /** Blank/missing → null (field omitted). Otherwise must be a finite,
- *  strictly positive number within [0, max] — optionally integer-only. */
-function parseOptionalPositive(
+ *  non-negative number within [0, max] — optionally integer-only. 0 is a
+ *  valid, meaningful value (e.g. a just-potted seed has 0 leaves) and must
+ *  NOT be treated as falsy/omitted — only negatives, NaN, and out-of-range
+ *  values are rejected. */
+function parseOptionalNonNegative(
   raw: FormDataEntryValue | null | undefined,
   max: number,
   integerOnly: boolean,
@@ -83,7 +86,7 @@ function parseOptionalPositive(
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) return { ok: false };
   if (integerOnly && !Number.isInteger(parsed)) return { ok: false };
-  if (parsed <= 0 || parsed > max) return { ok: false };
+  if (parsed < 0 || parsed > max) return { ok: false };
 
   return { ok: true, value: parsed };
 }
@@ -93,8 +96,8 @@ function parseOptionalPositive(
  * `addGrowthRecord` server action and its tests — no Supabase access here.
  *
  * - stage: required, must match GROWTH_STAGES exactly.
- * - heightCm: optional, positive number <= 500.
- * - leafCount: optional, positive integer <= 10000.
+ * - heightCm: optional, non-negative number <= 500 (0 is valid).
+ * - leafCount: optional, non-negative integer <= 10000 (0 is valid).
  * - note: optional, <= 200 characters (trimmed).
  */
 export function parseGrowthInput(fields: GrowthInputFields): ParseGrowthInputResult {
@@ -110,14 +113,17 @@ export function parseGrowthInput(fields: GrowthInputFields): ParseGrowthInputRes
     return { ok: false, error: `stage must be one of ${GROWTH_STAGES.join(", ")}` };
   }
 
-  const heightResult = parseOptionalPositive(fields.heightCm, MAX_HEIGHT_CM, false);
+  const heightResult = parseOptionalNonNegative(fields.heightCm, MAX_HEIGHT_CM, false);
   if (!heightResult.ok) {
-    return { ok: false, error: `heightCm must be a positive number <= ${MAX_HEIGHT_CM}` };
+    return { ok: false, error: `heightCm must be zero or a positive number <= ${MAX_HEIGHT_CM}` };
   }
 
-  const leafResult = parseOptionalPositive(fields.leafCount, MAX_LEAF_COUNT, true);
+  const leafResult = parseOptionalNonNegative(fields.leafCount, MAX_LEAF_COUNT, true);
   if (!leafResult.ok) {
-    return { ok: false, error: `leafCount must be a positive integer <= ${MAX_LEAF_COUNT}` };
+    return {
+      ok: false,
+      error: `leafCount must be zero or a positive integer <= ${MAX_LEAF_COUNT}`,
+    };
   }
 
   const rawNote = typeof fields.note === "string" ? fields.note.trim() : "";

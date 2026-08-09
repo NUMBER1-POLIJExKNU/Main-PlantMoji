@@ -67,13 +67,18 @@ describe("parseGrowthInput", () => {
     expect(result.input.leafCount).toBeNull();
   });
 
-  it("rejects a negative or zero height", () => {
+  it("rejects a negative height", () => {
     const negative = parseGrowthInput({ ...baseValid(), heightCm: "-5" });
     expect(negative.ok).toBe(false);
     if (!negative.ok) expect(negative.error).toMatch(/heightCm/);
+  });
 
+  // BUG C: 0 is a semantically valid height (e.g. a just-potted seed) and the
+  // <input min=0> form field allows it — it must not be silently dropped.
+  it("accepts a height of exactly zero", () => {
     const zero = parseGrowthInput({ ...baseValid(), heightCm: "0" });
-    expect(zero.ok).toBe(false);
+    expect(zero.ok).toBe(true);
+    if (zero.ok) expect(zero.input.heightCm).toBe(0);
   });
 
   it("rejects a height above the 500cm cap", () => {
@@ -93,16 +98,21 @@ describe("parseGrowthInput", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("rejects a negative, zero, or non-integer leaf count", () => {
+  it("rejects a negative or non-integer leaf count", () => {
     const negative = parseGrowthInput({ ...baseValid(), leafCount: "-1" });
     expect(negative.ok).toBe(false);
     if (!negative.ok) expect(negative.error).toMatch(/leafCount/);
 
-    const zero = parseGrowthInput({ ...baseValid(), leafCount: "0" });
-    expect(zero.ok).toBe(false);
-
     const fractional = parseGrowthInput({ ...baseValid(), leafCount: "2.5" });
     expect(fractional.ok).toBe(false);
+  });
+
+  // BUG C: a just-potted seed genuinely has 0 leaves — the <input min=0>
+  // form field allows it, so the parser must not drop it as falsy.
+  it("accepts a leaf count of exactly zero", () => {
+    const zero = parseGrowthInput({ ...baseValid(), leafCount: "0" });
+    expect(zero.ok).toBe(true);
+    if (zero.ok) expect(zero.input.leafCount).toBe(0);
   });
 
   it("rejects a leaf count above the 10000 cap", () => {
