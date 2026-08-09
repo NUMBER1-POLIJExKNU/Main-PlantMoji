@@ -4141,6 +4141,19 @@ const GAUGE_NEUTRAL_DOMAIN = {
   ph: { min: 0, max: 14 },
 };
 
+/** Alert decision per tile: the fetched crop profile's band when loaded
+ *  (the SAME band the gauge highlights, so tile status and gauge can never
+ *  disagree), the legacy VITAL_* constants only as the profile-null
+ *  fallback. Alert sides mirror mood semantics: temp = too hot, humidity =
+ *  too dry, pH = outside either side. */
+function vitalAlert(kind, value) {
+  const band = gaugeDomainAndBand(kind, cropProfile).band;
+  if (kind === "temp") return band ? value > band.max : value > VITAL_TEMP_HOT;
+  if (kind === "hum") return band ? value < band.min : value < VITAL_HUM_DRY;
+  if (kind === "ph") return band ? value < band.min || value > band.max : value < VITAL_PH_MIN || value > VITAL_PH_MAX;
+  return false;
+}
+
 /** Gauge domain (full scale) + comfort band for one vital, from the active
  *  crop profile. Domain fields (tolerated / 0–100 / 0–14) are real profile
  *  shape, not invented; the band is the profile's recommended/comfortable
@@ -4279,21 +4292,24 @@ function renderSensors(reading) {
     // >32°C threshold the pressable vitals + mood engine use. Pure state —
     // silent, no copy, removed as soon as readings return to range.
     document.body?.classList.toggle("env-hot", temperature > VITAL_TEMP_HOT);
-    updateHud("temp", temperature, temperature > VITAL_TEMP_HOT ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil ✓" : "Stable ✓"), temperature > VITAL_TEMP_HOT);
+    const tempHot = vitalAlert("temp", temperature);
+    updateHud("temp", temperature, tempHot ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil ✓" : "Stable ✓"), tempHot);
   }
 
   const humidity = Number(reading?.humidity);
   if (reading?.humidity != null && Number.isFinite(humidity)) {
     setText("#env-hum", `${Math.round(humidity)}%`);
     lastVitals.humidity = humidity;
-    updateHud("hum", humidity, humidity < VITAL_HUM_DRY ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), humidity < VITAL_HUM_DRY);
+    const humDry = vitalAlert("hum", humidity);
+    updateHud("hum", humidity, humDry ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), humDry);
   }
 
   const soilPh = Number(reading?.soil_ph);
   if (reading?.soil_ph != null && Number.isFinite(soilPh)) {
     setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
     lastVitals.soilPh = soilPh;
-    updateHud("ph", soilPh, soilPh >= VITAL_PH_MIN && soilPh <= VITAL_PH_MAX ? (appLocale === "id" ? "Dalam rentang ✓" : "In range ✓") : (appLocale === "id" ? "Perlu diperiksa" : "Check needed"), soilPh < VITAL_PH_MIN || soilPh > VITAL_PH_MAX);
+    const phOff = vitalAlert("ph", soilPh);
+    updateHud("ph", soilPh, phOff ? (appLocale === "id" ? "Perlu diperiksa" : "Check needed") : (appLocale === "id" ? "Dalam rentang ✓" : "In range ✓"), phOff);
   }
 
   const light = Number(reading?.light);

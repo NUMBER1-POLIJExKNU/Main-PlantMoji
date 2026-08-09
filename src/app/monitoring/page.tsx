@@ -5,6 +5,9 @@ import type { Metadata } from "next";
 import MonitoringLive from "@/components/monitoring-live";
 import PageHeader from "@/components/page-header";
 import { getRequestLocale } from "@/lib/i18n-server";
+import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
+import { getPlant } from "@/lib/queries";
+import { getServerSupabase } from "@/lib/supabase/server";
 
 // Live data screen — never prerender a stale snapshot.
 export const dynamic = "force-dynamic";
@@ -13,8 +16,35 @@ export const metadata: Metadata = {
   title: "Plant Monitoring — PlantMoji",
 };
 
+const PLANT_ID = "plant-01";
+
+/**
+ * Sensor HUD spec (docs/superpowers/specs/2026-08-09-sensor-hud-stat-cards-design.md):
+ * the monitoring dashboard's comfort band/legend must come from the SAME
+ * source of truth the game engine uses (crop-profiles.ts), threaded through
+ * whatever path already gets this page its data — here that's a server
+ * component prop, exactly like plants/page.tsx already does with
+ * `getCropProfile(plant.crop_profile_key)`. No new endpoint, no hand-typed
+ * numbers. Never throws: any failure (no env, missing table, unknown plant)
+ * resolves to null, and MonitoringLive renders the charts unchanged with no
+ * band/legend, per spec.
+ */
+async function loadActiveCropProfile(plantId: string): Promise<CropProfile | null> {
+  try {
+    const supabase = getServerSupabase();
+    if (!supabase) return null;
+    const result = await getPlant(supabase, plantId);
+    if (result.status !== "ok") return null;
+    return getCropProfile(result.plant.crop_profile_key);
+  } catch (error) {
+    console.error("monitoring: active crop profile lookup failed:", error);
+    return null;
+  }
+}
+
 export default async function MonitoringPage() {
   const locale = await getRequestLocale();
+  const cropProfile = await loadActiveCropProfile(PLANT_ID);
 
   // Farm look: pixel heading on the sky, gauges/chart in .pm-panel cards
   // (the shell centers <main> at its reading measure). MonitoringLive itself
@@ -32,7 +62,7 @@ export default async function MonitoringPage() {
           : "Live readings from the plant's sensors, refreshed every 10 seconds."}
       />
 
-      <MonitoringLive locale={locale} />
+      <MonitoringLive locale={locale} plantId={PLANT_ID} cropProfile={cropProfile} />
 
       <p className="mt-6 text-center text-xs leading-5 text-[#57684F]">
         {locale === "id"

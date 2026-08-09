@@ -10,7 +10,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import type { LightMode, LightPoint } from "@/components/light-chart";
 import type { AppLocale } from "@/lib/i18n";
-import { hasSufficientLight } from "@/lib/light-sensor";
+import { hasSufficientLight, LIGHT_PERCENT_MAX } from "@/lib/light-sensor";
+import type { CropProfile } from "@/lib/crop-profiles";
 
 const REFRESH_MS = 10_000;
 
@@ -72,8 +73,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Supabase belum terhubung. Pembacaan langsung akan muncul setelah pengaturan lingkungan selesai.", error: "API sensor belum dapat dijangkau. PlantMoji mencoba lagi setiap 10 detik." },
-  en: { live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "Supabase is not connected. Live readings will appear after environment setup.", error: "The sensor API cannot be reached. PlantMoji retries every 10 seconds." },
+  id: { live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Supabase belum terhubung. Pembacaan langsung akan muncul setelah pengaturan lingkungan selesai.", error: "API sensor belum dapat dijangkau. PlantMoji mencoba lagi setiap 10 detik.", idealRanges: "Rentang ideal", idealRangesNote: "Ditampilkan sebagai pita hijau pada grafik di bawah." },
+  en: { live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "Supabase is not connected. Live readings will appear after environment setup.", error: "The sensor API cannot be reached. PlantMoji retries every 10 seconds.", idealRanges: "Ideal ranges", idealRangesNote: "Shown as the green band on the chart below." },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string }) {
@@ -86,7 +87,112 @@ function ReadingCard({ icon, label, value, unit, accent, note }: { icon: string;
   );
 }
 
-export default function MonitoringLive({ plantId = "plant-01", locale = "id" }: { plantId?: string; locale?: AppLocale }) {
+interface ComfortRange {
+  min: number;
+  max: number;
+}
+
+interface ComfortRanges {
+  temperature: ComfortRange;
+  humidity: ComfortRange;
+  soilPh: ComfortRange;
+  /** 0–100 calibrated percent scale (milestone15) — never lux. */
+  light: ComfortRange;
+}
+
+/**
+ * Sensor HUD spec (2026-08-09): the comfort band shown behind each chart's
+ * series line, and the range-legend card, must read the SAME thresholds the
+ * quest engine reads off the active crop profile (`@/lib/crop-profiles`) —
+ * never a hand-typed display number, so a profile change moves the engine
+ * and this UI together. Display rule: one clean min–max line per sensor,
+ * using the RECOVER-side threshold on whichever edge the profile defines
+ * enter/recover hysteresis for (quest-engine.ts reads the identical fields
+ * — overheating.recoverAtOrBelow, dryAir.recoverAtOrAbove); the profile's
+ * `recommended` bound fills the edge that has no hysteresis concept.
+ */
+function comfortRangesFromProfile(profile: CropProfile): ComfortRanges {
+  // recommended.{min,max} on every axis — the SAME fields the farm HUD's
+  // gauge band and /plants "Ideal" rows print, so all three surfaces show
+  // one identical range (review fix: no recover-side/recommended mix).
+  return {
+    temperature: {
+      min: profile.temperature.recommended.min,
+      max: profile.temperature.recommended.max,
+    },
+    humidity: {
+      min: profile.airHumidity.recommended.min,
+      max: profile.airHumidity.recommended.max,
+    },
+    soilPh: {
+      min: profile.soilPh.recommended.min,
+      max: profile.soilPh.recommended.max,
+    },
+    light: {
+      min: profile.light.minimumPercentDuringLightingHours,
+      max: LIGHT_PERCENT_MAX,
+    },
+  };
+}
+
+function formatRange({ min, max }: ComfortRange, unit: string): string {
+  return `${min}–${max}${unit}`;
+}
+
+/** Compact card listing all four suitable ranges for the active crop —
+ * renders nothing when `ranges` is null (profile unavailable), per spec. */
+function RangeLegend({
+  displayName,
+  ranges,
+  c,
+  noteVisible,
+}: {
+  displayName: string;
+  ranges: ComfortRanges;
+  c: (typeof COPY)[AppLocale];
+  /** The "green band on the chart" note only when the band actually renders
+   *  (percent mode) — a lux-mode reader must not be sent hunting for it. */
+  noteVisible: boolean;
+}) {
+  const rows = [
+    { icon: "🌡️", label: c.temperature, value: formatRange(ranges.temperature, "°C") },
+    { icon: "💧", label: c.humidity, value: formatRange(ranges.humidity, "%") },
+    { icon: "🧪", label: c.soilPh, value: formatRange(ranges.soilPh, "") },
+    { icon: "☀️", label: c.light, value: formatRange(ranges.light, "%") },
+  ];
+  return (
+    <section className="pm-panel">
+      <div className="flex items-center gap-2.5">
+        <span className="text-xl" aria-hidden="true">🌱</span>
+        <div>
+          <h2 className="pm-heading text-xs">{displayName} · {c.idealRanges}</h2>
+          {noteVisible ? <p className="mt-0.5 text-xs opacity-70">{c.idealRangesNote}</p> : null}
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-2 text-xs sm:flex-col sm:items-start sm:gap-1">
+            <span className="flex items-center gap-1.5 opacity-80"><span aria-hidden="true">{row.icon}</span>{row.label}</span>
+            <span className="tabular-nums font-semibold">{row.value}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function MonitoringLive({
+  plantId = "plant-01",
+  locale = "id",
+  cropProfile = null,
+}: {
+  plantId?: string;
+  locale?: AppLocale;
+  /** The plant's active crop profile (server-fetched — see monitoring/page.tsx),
+   * or null when unavailable. Source of truth for the comfort band + legend;
+   * never invented client-side. */
+  cropProfile?: CropProfile | null;
+}) {
   const [payload, setPayload] = useState<SensorHistoryPayload | null>(null);
   const [state, setState] = useState<FetchState>("loading");
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -162,6 +268,10 @@ export default function MonitoringLive({ plantId = "plant-01", locale = "id" }: 
     return out;
   }, [history, hasLux]);
   const mode: LightMode = hasLux ? "lux" : "percent";
+  const ranges = useMemo(
+    () => (cropProfile ? comfortRangesFromProfile(cropProfile) : null),
+    [cropProfile],
+  );
   const c = COPY[locale];
   const temperature = num(latest?.temperature);
   const humidity = num(latest?.humidity);
@@ -196,10 +306,17 @@ export default function MonitoringLive({ plantId = "plant-01", locale = "id" }: 
         <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" note={light == null ? c.noSensor : hasSufficientLight(light) ? c.sufficient : c.low} />
       </div>
 
+      {ranges && cropProfile && (
+        <RangeLegend displayName={cropProfile.displayName} ranges={ranges} c={c} noteVisible={mode === "percent"} />
+      )}
+
       <section className="pm-panel pm-monitor-chart">
         <div className="pm-monitor-chart-head"><div><span>☀️</span><div><h2>{c.trend}</h2><p>{mode === "lux" ? "Lux" : "0–100%"}</p></div></div></div>
         {points.length > 0 ? (
-          <LightChart points={points} mode={mode} />
+          // The comfort band only overlays the calibrated 0–100% percent
+          // scale (milestone15) — a "lux" chart has no matching profile
+          // range, so no band is passed and LightChart draws unchanged.
+          <LightChart points={points} mode={mode} band={mode === "percent" ? ranges?.light : undefined} />
         ) : (
           <div className="flex h-[260px] items-center justify-center text-sm text-[#57684F]">
             {c.waiting}

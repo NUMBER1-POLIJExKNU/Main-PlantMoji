@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceArea,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -27,6 +28,11 @@ export type LightMode = "lux" | "percent";
 // Farm --color-water — the palette's blue, legible on the white .pm-panel
 // surface and close to the Node-RED original's line color.
 const LINE_BLUE = "#4DA1ED";
+
+// Sensor HUD spec (2026-08-09): shaded comfort-band fill — the same sprout
+// green used for "Optimal" status pills elsewhere in the app (plants/page.tsx
+// STATUS_STYLE.Optimal), so "in range" reads consistently across surfaces.
+const BAND_GREEN = "#A5CE97";
 
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
@@ -63,9 +69,15 @@ function ChartTooltip({ mode, active, payload }: ChartTooltipProps) {
 export default function LightChart({
   points,
   mode,
+  band,
 }: {
   points: LightPoint[];
   mode: LightMode;
+  /** Comfort band (active crop profile's suitable range) drawn as a shaded
+   * horizontal band behind the series line. Omit to render unchanged — the
+   * caller only passes this in "percent" mode, since it's on the calibrated
+   * 0–100% scale and has no lux equivalent. */
+  band?: { min: number; max: number };
 }) {
   // y-axis: 0–2,000 like the design, growing in clean 2,000-steps only when
   // the data exceeds it (quarter ticks stay round multiples of 500).
@@ -118,6 +130,16 @@ export default function LightChart({
             cursor={{ stroke: "currentColor", strokeOpacity: 0.3 }}
             isAnimationActive={false}
           />
+          {band && (
+            <ReferenceArea
+              y1={band.min}
+              y2={band.max}
+              fill={BAND_GREEN}
+              fillOpacity={0.22}
+              stroke="none"
+              ifOverflow="hidden"
+            />
+          )}
           <Line
             type="linear"
             dataKey="value"
