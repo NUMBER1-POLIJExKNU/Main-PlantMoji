@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import QuestCelebration from "@/components/quest-celebration";
+import QuestDonePill from "@/components/quest-done-pill";
 import QuestProgress from "@/components/quest-progress";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
@@ -216,9 +217,16 @@ function HistoryItem({ quest, locale }: { quest: QuestRow; locale: AppLocale }) 
           {quest.status === "COMPLETED" && <span> · +{quest.xp_reward} XP</span>}
         </p>
       </div>
-      <span className="pm-chip shrink-0" style={pill.style}>
-        {pill.label}
-      </span>
+      {quest.status === "COMPLETED" ? (
+        // Only a COMPLETED pill ever reads the just-completed flag (see
+        // quest-progress.tsx's sweep() and .pm-done-pill-stamp in
+        // globals.css) — other statuses never get a stamped entrance.
+        <QuestDonePill questId={quest.id} label={pill.label} style={pill.style} />
+      ) : (
+        <span className="pm-chip shrink-0" style={pill.style}>
+          {pill.label}
+        </span>
+      )}
     </li>
   );
 }

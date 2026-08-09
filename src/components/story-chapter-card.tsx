@@ -8,23 +8,40 @@
 
 import type { ChapterDefinition } from "@/types/game";
 import type { ChapterScene } from "@/game/story/story-dialogue";
+import type { AppLocale } from "@/lib/i18n";
 
 export interface StoryChapterCardProps {
   chapter: ChapterDefinition;
   unlocked: boolean;
   /** Voiced scene for this chapter, or null when locked / no content. */
   scene: ChapterScene | null;
+  /** Locale for this card's own chrome copy (chapter word, lock label,
+   *  unlocked pill). Everything else on `chapter`/`scene` arrives already
+   *  localized from the collection page, but this component owns a few
+   *  small strings directly — same duplicated-inline-copy mechanism as
+   *  collection-tabs.tsx's `copy` map (its parent), since neither can read
+   *  the farm string table at build time. */
+  locale: AppLocale;
 }
 
-export default function StoryChapterCard({ chapter, unlocked, scene }: StoryChapterCardProps) {
+// Mirrors collection-tabs.tsx's `copy.unlocked` / `copy.locked` and the
+// "Bab {n}" convention from public/farm/strings.js's chapter-gate label.
+const COPY: Record<AppLocale, { chapterWord: string; unlocked: string; locked: string }> = {
+  id: { chapterWord: "BAB", unlocked: "Terbuka", locked: "Terkunci" },
+  en: { chapterWord: "CHAPTER", unlocked: "Unlocked", locked: "Locked" },
+};
+
+export default function StoryChapterCard({ chapter, unlocked, scene, locale }: StoryChapterCardProps) {
+  const copy = COPY[locale];
+
   if (!unlocked) {
     return (
       <article className="w-full max-w-sm rounded-2xl bg-white/40 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/30">
         <div className="flex items-center justify-between gap-3">
           <span className="text-[10px] font-bold tracking-widest text-zinc-400 dark:text-zinc-600">
-            CHAPTER {chapter.chapter}
+            {copy.chapterWord} {chapter.chapter}
           </span>
-          <span className="text-sm" role="img" aria-label="Locked">
+          <span className="text-sm" role="img" aria-label={copy.locked}>
             🔒
           </span>
         </div>
@@ -41,10 +58,10 @@ export default function StoryChapterCard({ chapter, unlocked, scene }: StoryChap
     <article className="w-full max-w-sm rounded-2xl bg-white/70 p-5 shadow-sm backdrop-blur dark:bg-zinc-900/60">
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] font-bold tracking-widest text-zinc-400 dark:text-zinc-500">
-          CHAPTER {chapter.chapter}
+          {copy.chapterWord} {chapter.chapter}
         </span>
         <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-800 dark:bg-green-900/60 dark:text-green-200">
-          Unlocked
+          {copy.unlocked}
         </span>
       </div>
       <p className="mt-1 font-semibold text-zinc-900 dark:text-zinc-50">{chapter.title}</p>

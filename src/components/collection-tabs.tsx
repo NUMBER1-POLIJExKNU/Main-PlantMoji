@@ -569,6 +569,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   }}
                   unlocked={chapter.unlocked}
                   scene={chapter.scene}
+                  locale={locale}
                 />
                 {chapter.unlocked && chapter.scene && (
                   <button type="button" className="pm-btn mt-2 w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: chapter.chapter >= 5 ? "🎆" : "🌱", title: chapter.title, line: chapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? chapter.description, particles: ["✨", "📖", "💚"] })}>
