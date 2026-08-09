@@ -55,6 +55,7 @@ const COPY = {
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
     "clock.label": "WAKTU JEMBER · WIB",
+    "guide.title": "CARA BERMAIN", "guide.sense": "1 · SENSE — Lihat empat sensor asli.", "guide.understand": "2 · UNDERSTAND — Dengarkan Jamkachu dan buka Misi.", "guide.act": "3 · ACT — Ubah lingkungan dengan cara kecil dan aman.", "guide.verify": "4 · VERIFY & GROW — Sensor memverifikasi, lalu hadiah tumbuh.", "guide.ai": "AI hanya menjelaskan. Sensor dan aturan game menentukan kebenaran.", "guide.start": "AYO MULAI!",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
     "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Belum ada misi aktif",
@@ -82,6 +83,7 @@ const COPY = {
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
     "clock.label": "JEMBER TIME · WIB",
+    "guide.title": "HOW TO PLAY", "guide.sense": "1 · SENSE — Read the four real sensors.", "guide.understand": "2 · UNDERSTAND — Listen to Jamkachu and open Quests.", "guide.act": "3 · ACT — Make one small, safe environmental change.", "guide.verify": "4 · VERIFY & GROW — Sensors verify it, then rewards grow.", "guide.ai": "AI only explains. Sensors and game rules decide what is true.", "guide.start": "LET'S GROW!",
     "sensor.unavailable": "Indoor sensor not connected",
     "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "No active quest",
@@ -342,6 +344,14 @@ document.querySelectorAll("[data-locale]").forEach((button) => {
   });
 });
 applyLocale();
+
+// One small first-use guide, always reopenable with ?. Imperative dialog
+// state keeps it independent of sensor/network initialization.
+const farmGuide = $("#farm-guide");
+const openFarmGuide = () => typeof farmGuide?.showModal === "function" && farmGuide.showModal();
+$("#farm-guide-open")?.addEventListener("click", openFarmGuide);
+$("#farm-guide-close")?.addEventListener("click", () => { try { localStorage.setItem("plantmoji_guide_seen_v1", "1"); } catch {} farmGuide?.close(); });
+try { if (!localStorage.getItem("plantmoji_guide_seen_v1")) openFarmGuide(); } catch {}
 
 // ── DEV ADDITION: reward-feedback FX (dopamine-friendly, ethically) ─────
 //
@@ -1858,6 +1868,20 @@ function petMascot(part = "head") {
   }
 
   showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
+}
+
+/** Realtime presentation from the separate camera device. Camera events are
+ * advisory/presentation only: no XP, quest, mood, or sensor state is touched. */
+function onCameraGuardianEvent(row) {
+  if (!row || sleepShown || isNightWIB() || fxPlaying || hatchActive) return;
+  if (row.kind === "touch") {
+    quickPetResponse();
+    showTransientBubble(appLocale === "id" ? "Hihi! Geli! Ada yang menyentuh daunku, ya?" : "Hehe! That tickles! Was someone touching my leaf?", PET_BUBBLE_RESTORE_MS);
+  } else if (row.kind === "pest_advice") {
+    const supplied = typeof row.note?.advice === "string" ? row.note.advice.trim().slice(0, 220) : "";
+    const fallback = appLocale === "id" ? "Mungkin ada sesuatu di daun. Yuk periksa bersama guru." : "Something may be on a leaf. Please look closely with a teacher.";
+    showTransientBubble(supplied || fallback, PET_BUBBLE_RESTORE_MS);
+  }
 }
 
 /** Double-tap surprise hop (item 2): one big steps(4) hop + wide-eye pupils
@@ -4907,6 +4931,21 @@ async function main() {
       .subscribe();
   } catch {
     // Chips stay unlabeled — never block the page over a nice-to-have.
+  }
+
+  // Live Guardian fan-out is isolated because milestone19 is optional. A
+  // missing table/realtime publication never affects plants or quests.
+  try {
+    supabase
+      .channel(`farm-camera-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "camera_events", filter: `plant_id=eq.${PLANT_ID}` },
+        (payload) => onCameraGuardianEvent(payload.new),
+      )
+      .subscribe();
+  } catch {
+    // The camera device still reacts locally when persistence is unavailable.
   }
 
   // Shop purchases realtime (milestone18) — isolated channel, same rationale

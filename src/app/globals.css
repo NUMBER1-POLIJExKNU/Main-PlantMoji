@@ -724,6 +724,18 @@ html[data-farm-skin="argopuro-highlands"] .reno-app-shell {
 }
 html[data-farm-skin="argopuro-highlands"] { --route-skin-art: linear-gradient(145deg, transparent 0 76%, rgba(64,94,87,.16) 77% 86%, transparent 87%), linear-gradient(215deg, transparent 0 72%, rgba(100,139,115,.14) 73% 86%, transparent 87%); }
 html[data-farm-skin="argopuro-highlands"] .pm-scene { background-image: linear-gradient(145deg, transparent 0 76%, rgba(64,94,87,.58) 77% 87%, transparent 88%), linear-gradient(215deg, transparent 0 70%, rgba(100,139,115,.5) 71% 86%, transparent 87%), radial-gradient(circle at 50% 30%, var(--scene-glow), var(--scene-sky)); }
+
+.pm-guide-button { position:fixed; right:18px; bottom:18px; z-index:190; width:46px; height:46px; border:3px solid #243421; border-radius:12px; background:#fff4be; color:#243421; box-shadow:0 5px 0 #243421; font:18px var(--font-press-start-2p); cursor:pointer; }
+.pm-guide-dialog { margin:auto; border:0; padding:0; background:transparent; color:#243421; max-width:min(520px,calc(100vw - 28px)); }
+.pm-guide-dialog::backdrop { background:rgba(20,32,23,.68); backdrop-filter:blur(3px); }
+.pm-guide-card { border:4px solid #243421; border-radius:18px; background:#fffdf0; box-shadow:0 9px 0 #243421; padding:24px; }
+.pm-guide-kicker { font:9px var(--font-press-start-2p); color:#397a2b; }
+.pm-guide-card h2 { margin:10px 0 18px; font:22px var(--font-pixelify-sans); }
+.pm-guide-card ol { display:grid; gap:10px; margin:0 0 16px; padding:0; list-style:none; }
+.pm-guide-card li { display:grid; gap:4px; border:2px solid #bcd3b4; border-radius:10px; background:#f4faf1; padding:10px 12px; }
+.pm-guide-card li b { font:9px var(--font-press-start-2p); color:#397a2b; }
+.pm-guide-card li span,.pm-guide-card p { font-size:13px; line-height:1.5; }
+.pm-guide-card .pm-btn { width:100%; margin-top:12px; }
 html[data-farm-skin="argopuro-highlands"] .reno-env-particles { background-image: linear-gradient(90deg, transparent, rgba(255,255,255,.42), transparent); background-size: 340px 90px; opacity: .48; }
 
 /* Night keeps each landmark legible instead of flattening every skin into the

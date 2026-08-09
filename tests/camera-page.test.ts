@@ -2,33 +2,29 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-function source(path: string) {
-  return readFileSync(resolve(process.cwd(), path), "utf8");
-}
+const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("/camera route", () => {
-  it("exists, uses the shared page header, and probes the storage bucket server-side", () => {
+describe("/camera Live Guardian route", () => {
+  it("uses the shared header and exposes AI availability without a storage dependency", () => {
     const page = source("src/app/camera/page.tsx");
     expect(page).toContain("<PageHeader");
-    expect(page).toContain('from("plant-photos")');
-    expect(page).toContain("force-dynamic");
+    expect(page).toContain("aiEnabled={Boolean(process.env.GEMINI_API_KEY)}");
+    expect(page).not.toContain("plant-photos");
   });
 
-  it("captures via file input (no getUserMedia in MVP) and compresses on canvas", () => {
+  it("watches the environment camera and samples deterministic local frames", () => {
     const capture = source("src/components/camera-capture.tsx");
     expect(capture).toContain('"use client"');
-    expect(capture).toContain('accept="image/*"');
-    expect(capture).toContain('capture="environment"');
-    expect(capture).toContain("1280");
-    expect(capture).toContain("0.8");
-    expect(capture).not.toContain("getUserMedia");
+    expect(capture).toContain("navigator.mediaDevices.getUserMedia");
+    expect(capture).toContain('facingMode: { ideal: "environment" }');
+    expect(capture).toContain("nextMotionState");
+    expect(capture).toContain("MOTION_SAMPLE_WIDTH");
   });
 
-  it("shows privacy copy and a retry path, and disables capture when the bucket is missing", () => {
+  it("shows privacy and works in motion-only mode", () => {
     const capture = source("src/components/camera-capture.tsx");
     expect(capture).toContain("privacyPlantOnly");
-    expect(capture).toContain("retryButton");
-    expect(capture).toContain("bucketReady");
-    expect(capture).toContain("notReadyBody");
+    expect(capture).toContain("motionOnly");
+    expect(capture).toContain('fetch("/api/camera-events"');
   });
 });

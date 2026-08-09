@@ -531,6 +531,15 @@
             <button id="quiz-next" class="pixel-btn quiz-next" type="button" hidden>Berikutnya →</button>
         </section>
     </div>
+    <button id="farm-guide-open" class="farm-guide-open" type="button" aria-label="Buka panduan">?</button>
+    <dialog id="farm-guide" class="farm-guide" aria-labelledby="farm-guide-title">
+        <div class="farm-guide-card">
+            <span>🌱 PLANTMOJI GUIDE</span><h2 id="farm-guide-title" data-i18n="guide.title">CARA BERMAIN</h2>
+            <ol><li data-i18n="guide.sense">1 · SENSE — Lihat empat sensor asli.</li><li data-i18n="guide.understand">2 · UNDERSTAND — Dengarkan Jamkachu dan buka Misi.</li><li data-i18n="guide.act">3 · ACT — Ubah lingkungan dengan cara kecil dan aman.</li><li data-i18n="guide.verify">4 · VERIFY & GROW — Sensor memverifikasi, lalu hadiah tumbuh.</li></ol>
+            <p data-i18n="guide.ai">AI hanya menjelaskan. Sensor dan aturan game menentukan kebenaran.</p>
+            <button id="farm-guide-close" class="pixel-btn" type="button" data-i18n="guide.start">AYO MULAI!</button>
+        </div>
+    </dialog>
     <script src="/farm/strings.js"></script>
     <script src="/farm/sfx.js"></script>
     <script src="/farm/demo.js"></script>

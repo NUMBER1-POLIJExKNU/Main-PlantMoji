@@ -306,6 +306,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 16 | *(예약됨 — 아직 파일 없음)* | 컴패니언 진화 단계 (Seed → Sprout → Bud → Bloom → Guardian) — 진행 중, 출시될 때까지 건너뛰기 |
 | 17 | `milestone17-quiz-kind-scoring.sql` | 퀴즈가 더 이상 XP를 깎지 않음 — kind scoring: Daily Quiz 오답/시간초과가 이제 −1이 아니라 0 XP를 지급하여 오답으로 Bond Level이 절대 내려가지 않음 |
 | 18 | `milestone18-seed-shop.sql` | Seed Shop 경제 — `bond_state.seeds` + `seed_rewards` 원장 + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPC, `shop_purchases` realtime. Seeds는 줄어들 수 있음(소비 가능한 화폐); XP/Bond Level은 여전히 절대 감소하지 않음 |
+| 19 | `milestone19-camera-guardian.sql` | Camera AI Live Guardian의 텍스트 이벤트 fan-out. 이미지·영상 Storage는 만들지 않음 |
 
 - [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone18이 더 최신** — 고라이브 전에 아홉 개 모두 확인하세요 (milestone9, 10, 11, 12, 13, 14, 15, 17, 18 — milestone16은 아직 파일이 없습니다, 아래 참고).
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 열여섯 개를 순서대로 다시 실행하세요 (milestone16은 건너뛰기 — 예약됨, 아직 파일 없음).
@@ -314,6 +315,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] Milestone 16은 아직 파일이 없습니다 — 진행 중인 컴패니언 진화 단계 계획을 위해 예약되어 있습니다. 출시될 때까지 마이그레이션 순서에서 건너뛰세요.
 - [ ] Milestone 17은 Milestone 13의 `answer_daily_quiz` RPC를 같은 자리에서 대체합니다 (`create or replace`, 시그니처/반환 형태 동일): 오답이거나 시간초과된 Daily Quiz 답변은 이제 −1이 아니라 정확히 0 XP를 지급하므로 "LEVEL UP!" 직후에 Bond Level이 절대 내려가지 않습니다. 정답 XP는 변경되지 않았습니다.
 - [ ] Milestone 18은 Seed Shop에 필요합니다. 없으면 /shop 라우트는 친절한 "곧 만나요" 상태를 보여주고, 농장 HUD의 Seeds 칩은 숨겨지며, 모든 Seed 지급은 조용한 no-op이 됩니다 — 아무것도 깨지지 않습니다.
+- [ ] Milestone 19는 Camera AI 반응을 다른 Farm 화면에 전달할 때 필요합니다. 없어도 카메라 기기의 로컬 움직임 감지와 Jamkachu 반응은 계속 작동합니다.
 
 #### 1.3 하드웨어 담당자 안내
 
@@ -360,6 +362,12 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 
 **복원력 (4분)**
 - [ ] 네트워크 끊고 새로고침 (또는 프리뷰에서 Supabase 미설정): 페이지가 여전히 렌더링되고, FX는 조용히 축소되며, 정적 데모 모드에서 정직한 "DEMO" 태그가 표시되고, 화면에 오류 텍스트가 없음.
+
+**Camera AI Live Guardian (4분)**
+- [ ] `/camera`에서 카메라 권한 허용 → `Watching` 상태와 실제 식물 영상 표시.
+- [ ] 잎을 가볍게 건드림 → 카메라 기기의 Jamkachu가 즉시 반응하고, milestone19 적용 시 Farm 홈에도 반응이 전달됨. XP·퀘스트·Seeds 변화 없음.
+- [ ] `GEMINI_API_KEY` 없이도 화면에 motion-only 모드가 표시되고 움직임 반응은 그대로 작동함.
+- [ ] 영상은 저장되지 않으며 AI 확인 시 축소 스냅샷 한 장만 메모리에서 전송됨. 사람/얼굴이 프레임에 들어오지 않도록 식물만 비춤.
 
 **접근성 & 화면 (5분)**
 - [ ] Reduced-motion 점검: OS 설정에서 "동작 줄이기"를 켜고 새로고침 — 오브 캐스케이드가 단일 카운트업으로 축소되고 정보 손실이 없음.

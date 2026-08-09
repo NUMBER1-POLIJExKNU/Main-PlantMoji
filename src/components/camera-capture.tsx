@@ -1,181 +1,113 @@
 "use client";
 
-// Camera capture + compression client component (spec §Flow 1–3).
-//
-// MVP capture is <input type="file" capture="environment"> — zero
-// permissions ceremony on school-managed Androids; a live camera-stream
-// viewfinder is roadmap, not MVP. Compression happens on-canvas BEFORE
-// upload (max edge 1280px, JPEG q0.8) because school networks are slow
-// and Storage is metered. The compressed Blob stays in state so a failed
-// upload keeps the photo on-page behind a retry button (spec §Error
-// handling) — no record row exists until the upload succeeds.
-
-import Link from "next/link";
-import { startTransition, useActionState, useRef, useState, type ChangeEvent } from "react";
-import { uploadPlantPhoto, type CameraActionState } from "@/app/camera/actions";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CAMERA_COPY } from "@/app/camera/copy";
 import type { AppLocale } from "@/lib/i18n";
-import { MAX_PHOTO_BYTES } from "@/lib/photo-diary";
+import { DEFAULT_MOTION_CONFIG, MOTION_SAMPLE_HEIGHT, MOTION_SAMPLE_WIDTH, isCameraActiveHour, nextMotionState, rgbaToGrayscale, type MotionState } from "@/lib/motion-detect";
 
-const IDLE_STATE: CameraActionState = {
-  status: "idle",
-  error: null,
-  photoUrl: null,
-  aiComment: null,
-  seedGranted: false,
-};
+type GuardianStatus = "idle" | "watching" | "motion" | "checking" | "sleeping" | "denied";
 
-const MAX_EDGE_PX = 1280;
-const JPEG_QUALITY = 0.8;
-
-/** Downscales to a 1280px max edge JPEG (q0.8). Any failure returns the
- *  original file — the server re-validates size/MIME regardless. */
-async function compressPhoto(file: File): Promise<Blob> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_EDGE_PX / Math.max(bitmap.width, bitmap.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-    const context = canvas.getContext("2d");
-    if (!context) return file;
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const blob = await new Promise<Blob | null>((resolveBlob) =>
-      canvas.toBlob(resolveBlob, "image/jpeg", JPEG_QUALITY),
-    );
-    return blob ?? file;
-  } catch {
-    return file;
-  }
+function hourWib() {
+  try { return Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date())) % 24; }
+  catch { return new Date(Date.now() + 7 * 3_600_000).getUTCHours(); }
 }
 
-export default function CameraCapture({
-  locale,
-  bucketReady,
-}: {
-  locale: AppLocale;
-  bucketReady: boolean;
-}) {
+export default function CameraCapture({ locale, aiEnabled }: { locale: AppLocale; aiEnabled: boolean }) {
   const copy = CAMERA_COPY[locale];
-  const [state, formAction, pending] = useActionState(uploadPlantPhoto, IDLE_STATE);
-  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [clientError, setClientError] = useState<"too_large" | "bad_type" | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const lastScanRef = useRef(0);
+  const motionRef = useRef<MotionState>({ baseline: null, active: false, consecutive: 0, lastEventAt: -DEFAULT_MOTION_CONFIG.cooldownMs });
+  const [status, setStatus] = useState<GuardianStatus>("idle");
+  const [message, setMessage] = useState("");
+  const [events, setEvents] = useState<string[]>([]);
 
-  async function onPick(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setClientError(null);
-    if (!file.type.startsWith("image/")) {
-      setClientError("bad_type");
-      return;
-    }
-    if (file.size > MAX_PHOTO_BYTES) {
-      setClientError("too_large");
-      return;
-    }
-    const blob = await compressPhoto(file);
-    setPhotoBlob(blob);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(blob));
-  }
+  const stop = useCallback(() => {
+    if (timerRef.current !== null) window.clearInterval(timerRef.current);
+    timerRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    motionRef.current = { baseline: null, active: false, consecutive: 0, lastEventAt: -DEFAULT_MOTION_CONFIG.cooldownMs };
+    setStatus("idle");
+  }, []);
 
-  function submit() {
-    if (!photoBlob || pending) return;
-    const data = new FormData();
-    data.append("plantId", "plant-01");
-    data.append("locale", locale);
-    data.append("photo", new File([photoBlob], "photo.jpg", { type: photoBlob.type || "image/jpeg" }));
-    startTransition(() => formAction(data));
-  }
+  const addEvent = useCallback((line: string) => {
+    const time = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+    setEvents((current) => [`${time} · ${line}`, ...current].slice(0, 5));
+  }, [locale]);
 
-  const notReady = !bucketReady || state.status === "not-ready";
-  const errorCopy =
-    clientError === "too_large" || state.error === "too_large"
-      ? copy.tooLarge
-      : clientError === "bad_type" || state.error === "bad_type"
-        ? copy.wrongType
-        : state.status === "error"
-          ? copy.failedUpload
-          : null;
+  const scanFrame = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    setStatus("checking");
+    const scanCanvas = document.createElement("canvas");
+    const scale = Math.min(1, 640 / video.videoWidth);
+    scanCanvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    scanCanvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    scanCanvas.getContext("2d")?.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+    const jpeg = await new Promise<Blob | null>((resolve) => scanCanvas.toBlob(resolve, "image/jpeg", 0.58));
+    if (!jpeg || jpeg.size > 200_000) { setStatus("watching"); return; }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(jpeg);
+      });
+      const response = await fetch("/api/camera-scan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image: dataUrl, locale }) });
+      const result = await response.json() as { advice?: string; verdict?: string };
+      if (response.ok && result.verdict === "possible_pest" && result.advice) { setMessage(result.advice); addEvent(result.advice); }
+    } catch { /* AI is optional; motion watching continues. */ }
+    finally { setStatus("watching"); }
+  }, [addEvent, locale]);
 
+  const onMotion = useCallback(() => {
+    setStatus("motion");
+    setMessage(copy.tickle);
+    addEvent(copy.motion);
+    void fetch("/api/camera-events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "touch", occurredAt: new Date().toISOString() }) }).catch(() => {});
+    window.setTimeout(() => setStatus("watching"), 1100);
+    if (aiEnabled && Date.now() - lastScanRef.current >= 10 * 60_000) { lastScanRef.current = Date.now(); void scanFrame(); }
+  }, [addEvent, aiEnabled, copy.motion, copy.tickle, scanFrame]);
+
+  const start = useCallback(async () => {
+    if (!isCameraActiveHour(hourWib())) { setStatus("sleeping"); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+      setStatus("watching");
+      timerRef.current = window.setInterval(() => {
+        const video = videoRef.current; const canvas = canvasRef.current;
+        if (!video || !canvas || document.hidden || !video.videoWidth) return;
+        if (!isCameraActiveHour(hourWib())) { stop(); setStatus("sleeping"); return; }
+        const context = canvas.getContext("2d", { willReadFrequently: true }); if (!context) return;
+        context.drawImage(video, 0, 0, MOTION_SAMPLE_WIDTH, MOTION_SAMPLE_HEIGHT);
+        const frame = rgbaToGrayscale(context.getImageData(0, 0, MOTION_SAMPLE_WIDTH, MOTION_SAMPLE_HEIGHT).data);
+        const result = nextMotionState(motionRef.current, frame, Date.now()); motionRef.current = result.state;
+        if (result.event === "MOTION_START") onMotion();
+        if (aiEnabled && Date.now() - lastScanRef.current >= 10 * 60_000) { lastScanRef.current = Date.now(); void scanFrame(); }
+      }, 125);
+    } catch { setStatus("denied"); }
+  }, [aiEnabled, onMotion, scanFrame, stop]);
+
+  useEffect(() => stop, [stop]);
+
+  const label = status === "watching" ? copy.watching : status === "motion" ? copy.motion : status === "checking" ? copy.checking : status === "sleeping" ? copy.sleeping : status === "denied" ? copy.denied : "";
   return (
     <section className="pm-panel flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 className="pm-heading text-xs">{copy.privacyTitle}</h2>
-        <p className="text-[11px] leading-4 text-[#57684F]">{copy.privacyPlantOnly}</p>
-        <p className="text-[11px] leading-4 text-[#57684F]">{copy.privacyNoNames}</p>
+      <div className="rounded-xl border-2 border-[#7AAE72] bg-[#EFF8E9] p-3 text-xs leading-5 text-[#31472E]"><p>🔒 {copy.privacy}</p><p>🌿 {copy.privacyPlantOnly}</p></div>
+      <div className="relative aspect-video overflow-hidden rounded-2xl border-4 border-[#31472E] bg-[#172318]">
+        <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
+        <canvas ref={canvasRef} width={MOTION_SAMPLE_WIDTH} height={MOTION_SAMPLE_HEIGHT} className="hidden" />
+        {status !== "watching" && status !== "motion" && status !== "checking" && <div className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-white">{label || "🌿 CAMERA GUARDIAN"}</div>}
+        <div className="absolute left-3 top-3 rounded-lg border-2 border-white/70 bg-[#243421]/85 px-3 py-2 text-[10px] text-white">{status === "motion" ? "✋" : status === "checking" ? "🔍" : "👀"} {label || copy.watching}</div>
+        {message && <div className="absolute bottom-3 left-3 right-3 rounded-xl border-2 border-[#31472E] bg-[#FFFBE6] p-3 text-xs text-[#243421]">🌱 “{message}”</div>}
       </div>
-
-      {notReady ? (
-        <p className="rounded-xl border-2 border-dashed border-[#BCD3B4] bg-[#F4FAF1] px-3 py-2 text-xs text-[#57684F]">
-          <strong className="block">{copy.notReadyTitle}</strong>
-          {copy.notReadyBody}
-        </p>
-      ) : (
-        <>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={onPick}
-          />
-
-          {previewUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- local blob URL preview; next/image cannot optimize object URLs
-            <img
-              src={previewUrl}
-              alt={copy.chooseButton}
-              className="w-full rounded-xl border-2 border-[#DCEAD5]"
-            />
-          )}
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="pm-btn flex-1"
-              disabled={pending}
-              onClick={() => inputRef.current?.click()}
-            >
-              {previewUrl ? copy.retakeButton : copy.chooseButton}
-            </button>
-            {photoBlob && state.status !== "success" && (
-              <button
-                type="button"
-                className="pm-btn pm-btn-primary flex-1"
-                disabled={pending}
-                onClick={submit}
-              >
-                {pending ? copy.uploading : state.status === "error" ? copy.retryButton : copy.submitButton}
-              </button>
-            )}
-          </div>
-
-          {errorCopy && <p className="text-xs text-[#A8552F]">{errorCopy}</p>}
-
-          {state.status === "success" && (
-            <div className="flex flex-col gap-2 rounded-xl border-2 border-[#DCEAD5] bg-[#F4FAF1] px-3 py-2">
-              <p className="pm-heading text-[10px] uppercase">{copy.successTitle}</p>
-              {state.aiComment && (
-                <p className="text-xs text-[#3A4A34]">
-                  <span className="font-semibold">{copy.commentLabel}: </span>
-                  &ldquo;{state.aiComment}&rdquo;
-                </p>
-              )}
-              <p className="text-xs text-[#57684F]">
-                {state.seedGranted ? copy.seedGranted : copy.seedAlready}
-              </p>
-              <Link href="/diary" className="text-xs font-semibold text-[#243421] underline">
-                {copy.viewDiary}
-              </Link>
-            </div>
-          )}
-        </>
-      )}
+      <div className="flex gap-2">
+        {status === "watching" || status === "motion" || status === "checking" ? <button type="button" className="pm-btn flex-1" onClick={stop}>{copy.stop}</button> : <button type="button" className="pm-btn pm-btn-primary flex-1" onClick={() => void start()}>{copy.start}</button>}
+        <span className="grid flex-1 place-items-center rounded-xl border-2 border-[#BCD3B4] px-2 text-center text-[10px]">{aiEnabled ? `✨ ${copy.aiReady}` : `🛡️ ${copy.motionOnly}`}</span>
+      </div>
+      <div><h2 className="pm-heading mb-2 text-[10px]">{copy.recent}</h2><div className="space-y-1 text-xs text-[#57684F]">{events.length ? events.map((event) => <p key={event} className="rounded-lg bg-[#F4FAF1] px-3 py-2">{event}</p>) : <p>{copy.empty}</p>}</div></div>
     </section>
   );
 }
