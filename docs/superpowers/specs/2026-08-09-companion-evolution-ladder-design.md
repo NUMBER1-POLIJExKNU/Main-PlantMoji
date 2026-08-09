@@ -61,9 +61,9 @@ Rules:
 - `STAGE_RANK` is derived from the `COMPANION_STAGES` array, not a second
   hand-written literal.
 
-### 2. Data (backend-owned, milestone15)
+### 2. Data (backend-owned, milestone16)
 
-`supabase/milestone15-evolution-ladder.sql`, additive and re-runnable:
+`supabase/milestone16-evolution-ladder.sql`, additive and re-runnable:
 - Drop & recreate the CHECK constraints on `companion_state.stage` and
   `companion_evolutions.stage` / `from_stage` with the 10 names.
 - Add display-only progress columns to `companion_state`:
@@ -130,7 +130,7 @@ tables are identical (same pattern as the chapter-title parity rule).
 
 ## Error handling
 
-- Missing milestone15 (old DB): constraint violation is impossible because the
+- Missing milestone16 (old DB): constraint violation is impossible because the
   engine only writes new stage names after the migration relaxes the CHECK;
   `evaluateCompanion` treats a CHECK failure like today's insert errors
   (thrown, logged, next tick retries). Missing milestone11 stays a no-op.
@@ -152,6 +152,6 @@ tables are identical (same pattern as the chapter-title parity rule).
 
 ## User actions after merge
 
-- Run `supabase/milestone15-evolution-ladder.sql` in the Supabase SQL editor
+- Run `supabase/milestone16-evolution-ladder.sql` in the Supabase SQL editor
   (after milestone11). Without it, everything keeps working at the old
   5-stage ceiling.

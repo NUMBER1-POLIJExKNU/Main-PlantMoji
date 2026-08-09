@@ -6,7 +6,7 @@
 
 **Architecture:** The ladder's single source of truth lives in `src/types/game.ts` (`COMPANION_LADDER`); the engine (`companion-engine.ts`) derives eligibility and ranks from it and now also persists display-only progress counters; the farm layer mirrors the table in `public/farm/companion-ladder.js` (parity-tested) and renders stages purely from `companion_state` via CSS classes — the browser never decides game truth.
 
-**Tech Stack:** Next.js 16 + TypeScript (engine), Supabase (milestone15 SQL), vanilla ES-module JS + CSS/SVG (farm layer), vitest.
+**Tech Stack:** Next.js 16 + TypeScript (engine), Supabase (milestone16 SQL), vanilla ES-module JS + CSS/SVG (farm layer), vitest.
 
 **Spec:** `docs/superpowers/specs/2026-08-09-companion-evolution-ladder-design.md` — read it first.
 
@@ -16,15 +16,15 @@
 - Thresholds (care / distinct affinities / distinct WIB days): Sprout 1/0/0 · Seedling 2/0/2 · Bud 3/2/0 · Bloom 7/3/2 · Fruit 11/3/4 · Guardian 15/4/5 · Elder 25/4/8 · Radiant 40/4/12 · Legend 60/4/20. Never require 5 affinities anywhere.
 - The Next.js backend owns `companion_*` tables; Node-RED legacy tables are untouched. The farm layer is presentation-only: no XP, no writes, first render never celebrates.
 - All player-facing copy exists in both `en` and `id` (the strings parity vitest fails otherwise). "JAMKACHU" / "PLANT MOJI" are never translated.
-- Missing milestone11 or milestone15 must remain a safe no-op / graceful fallback — never a crash.
+- Missing milestone11 or milestone16 must remain a safe no-op / graceful fallback — never a crash.
 - After every task: `npx vitest run` green before committing. Commit messages follow repo style (`feat:`/`fix:`/`docs:` or plain sentence).
 
 ---
 
-### Task 1: milestone15 migration
+### Task 1: milestone16 migration
 
 **Files:**
-- Create: `supabase/milestone15-evolution-ladder.sql`
+- Create: `supabase/milestone16-evolution-ladder.sql`
 
 **Interfaces:**
 - Produces: relaxed CHECK constraints accepting the 10 stage names; `companion_state.care_count/affinity_count/day_count integer` columns (Task 3 writes them, Task 5 reads them).
@@ -37,7 +37,7 @@ The checks are inline column constraints, so Postgres auto-named them `companion
 - [ ] **Step 2: Write the migration**
 
 ```sql
--- PlantMoji · Milestone 15 — 10-stage companion evolution ladder.
+-- PlantMoji · Milestone 16 — 10-stage companion evolution ladder.
 -- Run after milestone11-tamagotchi.sql. Additive and safe to re-run.
 -- Ladder source of truth: src/types/game.ts COMPANION_LADDER.
 
@@ -70,8 +70,8 @@ alter table public.companion_state add column if not exists day_count integer no
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/milestone15-evolution-ladder.sql
-git commit -m "feat: milestone15 relaxes companion stage checks to the 10-stage ladder"
+git add supabase/milestone16-evolution-ladder.sql
+git commit -m "feat: milestone16 relaxes companion stage checks to the 10-stage ladder"
 ```
 
 ---
@@ -221,7 +221,7 @@ git commit -m "feat: 10-stage companion ladder with derived ranks and eligibilit
 
 **Interfaces:**
 - Consumes: `careAxes()` from Task 2.
-- Produces: `companion_state` rows always carry fresh `care_count`, `affinity_count`, `day_count` after a sweep; `evaluateCompanion` return value includes them. Missing milestone15 columns degrade gracefully (counters skipped, sweep still works).
+- Produces: `companion_state` rows always carry fresh `care_count`, `affinity_count`, `day_count` after a sweep; `evaluateCompanion` return value includes them. Missing milestone16 columns degrade gracefully (counters skipped, sweep still works).
 
 - [ ] **Step 1: Write failing tests** (the existing file already builds a fake Supabase client for `evaluateCompanion` — follow its fixture pattern; the assertions to add:)
 
@@ -234,7 +234,7 @@ it("writes progress counters on a non-evolving sweep", async () => {
   });
 });
 
-it("skips counters when milestone15 is missing", async () => {
+it("skips counters when milestone16 is missing", async () => {
   // fixture: companion_state upsert rejects once with
   // { code: "PGRST204", message: "Could not find the 'care_count' column" }
   // evaluateCompanion must retry without counter fields and not throw.
@@ -269,7 +269,7 @@ async function upsertCompanionState(
     .upsert(payload, { onConflict: "plant_id" });
   if (!error) return;
   if (missingColumn(error)) {
-    // milestone15 not applied yet — retry without the counter columns.
+    // milestone16 not applied yet — retry without the counter columns.
     const { care_count, affinity_count, day_count, ...legacy } = payload;
     const retry = await supabase.from("companion_state")
       .upsert(legacy, { onConflict: "plant_id" });
@@ -402,7 +402,7 @@ companionMax: "Tumbuh penuh — legenda Jember!",
 companionEvolved: (stage) => `Berevolusi menjadi ${stage}!`,
 ```
 
-- [ ] **Step 2: Extend the `companion_state` select** at `live.js:3589` to `select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")` (Task 7's ceremony key needs `cycle`) (old DBs without milestone15 return an error for unknown columns via PostgREST — so wrap exactly like the existing `.catch(() => ({ data: null }))` chain already does; on error retry the legacy three-column select so pre-milestone15 keeps rendering).
+- [ ] **Step 2: Extend the `companion_state` select** at `live.js:3589` to `select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")` (Task 7's ceremony key needs `cycle`) (old DBs without milestone16 return an error for unknown columns via PostgREST — so wrap exactly like the existing `.catch(() => ({ data: null }))` chain already does; on error retry the legacy three-column select so pre-milestone16 keeps rendering).
 
 - [ ] **Step 3: Rewrite `renderCompanion`'s label + progress line** (visual classes stay as-is for now; Task 6 upgrades them)
 
@@ -436,7 +436,7 @@ function renderCompanion(state) {
         state.care_count, req.care, state.day_count, req.days,
       ) ?? "";
     } else {
-      next.textContent = ""; // pre-milestone15: no invented numbers
+      next.textContent = ""; // pre-milestone16: no invented numbers
     }
   }
 }
@@ -618,7 +618,7 @@ git commit -m "feat: companion evolution ceremony with demo hotkey"
 
 - [ ] **Step 2: Reference sweep** — run `grep -rn "Guardian\|'Bloom'\|\"Bloom\"" src tests --include="*.ts" --include="*.tsx"` and for every site that enumerates the 5-stage ladder decide: (a) tables keyed by stage (emotions/dialogue) get entries for the 5 new stages — reuse each file's existing Guardian entry as the template and vary the copy per stage in both locales; (b) logic reading `COMPANION_STAGES` is already correct via Task 2; (c) demo fixtures (`demo-max`, `demo-reset`) that hardcode `"Guardian"` as "max stage" switch to `COMPANION_STAGES.at(-1)`. Update the matching tests the same way.
 
-- [ ] **Step 3: Docs** — runbook §1.2: add `| 15 | milestone15-evolution-ladder.sql | 10-stage companion evolution ladder + progress counters |` (EN), `| 15 | milestone15-evolution-ladder.sql | tangga evolusi companion 10 tahap + penghitung progres |` (ID), `| 15 | milestone15-evolution-ladder.sql | 10단계 컴패니언 진화 사다리 + 진행 카운터 |` (KO); bump "all fourteen"→"all fifteen" / "keempat belas"→"kelima belas" / "열네 개"→"열다섯 개" and "milestone9–milestone14"→"milestone9–milestone15" ("verify all six"→"all seven") in all three sections. README: update the companion/evolution feature bullet to name the 10-stage ladder.
+- [ ] **Step 3: Docs** — runbook §1.2: add `| 16 | milestone16-evolution-ladder.sql | 10-stage companion evolution ladder + progress counters |` (EN), `| 16 | milestone16-evolution-ladder.sql | tangga evolusi companion 10 tahap + penghitung progres |` (ID), `| 16 | milestone16-evolution-ladder.sql | 10단계 컴패니언 진화 사다리 + 진행 카운터 |` (KO). Note: milestone15 is reserved by the parallel light-percentage workstream (`milestone15-light-percentage.sql`) — if its row is not in the runbook table yet, add a placeholder row for it too rather than leaving a numbering gap. Then bump every "run all N files" count, spelled-out number, and "milestone9–milestoneN" range in all three language sections to the highest milestone actually present in the table after your edit. README: update the companion/evolution feature bullet to name the 10-stage ladder.
 
 - [ ] **Step 4: Full QA**
 
@@ -635,4 +635,4 @@ git commit -m "feat: ten-stage evolution across React surfaces, docs, and demo f
 
 ## Post-merge user action
 
-Run `supabase/milestone15-evolution-ladder.sql` in the Supabase SQL editor (after milestone11). Until then the game keeps working at the old 5-stage ceiling with no progress line — by design.
+Run `supabase/milestone16-evolution-ladder.sql` in the Supabase SQL editor (after milestone11). Until then the game keeps working at the old 5-stage ceiling with no progress line — by design.
