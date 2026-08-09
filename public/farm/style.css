@@ -249,8 +249,40 @@ body {
     display: flex;
     justify-content: flex-end;
     align-items: flex-start;
+    gap: 10px;
     z-index: 10;
 }
+
+.jember-clock {
+    min-width: 148px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 14px;
+}
+.jember-clock-icon { font-size: 25px; line-height: 1; }
+.jember-clock-copy { display: grid; gap: 4px; }
+.jember-clock-copy small {
+    color: var(--color-forest);
+    font-family: var(--font-heading);
+    font-size: 7px;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+.jember-clock-copy strong {
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .04em;
+    line-height: 1;
+}
+body.night .jember-clock {
+    background: rgba(34, 45, 65, .94);
+    border-color: #68779c;
+}
+body.night .jember-clock-copy small { color: #b9d9b0; }
+body.night .jember-clock-copy strong { color: #f4f1dc; }
 
 .user-gamification {
     display: flex;
@@ -1604,6 +1636,12 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
    mobile query so desktop/tablet (>430px) is untouched — no class renames,
    no animation changes, only sizing/wrapping tweaks. */
 @media (max-width: 430px) {
+    .hud-top { width: 100%; gap: 6px; flex-wrap: nowrap; }
+    .jember-clock { min-width: 88px; gap: 5px; padding: 10px 8px; border-width: 2px; }
+    .jember-clock-icon { font-size: 19px; }
+    .jember-clock-copy small { display: none; }
+    .jember-clock-copy strong { font-size: 13px; }
+
     /* Bond row (avatar + XP/HP + badges) was one non-wrapping flex row.
        Its fixed-size children (64px avatar, 160px XP bar, nowrap HP text,
        two badges) add up to more than a 360px screen has room for, and
@@ -1751,6 +1789,10 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         right: 8px;
         z-index: 20;
     }
+    .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }
+    .jember-clock-icon { font-size: 20px; }
+    .jember-clock-copy small { font-size: 6px; }
+    .jember-clock-copy strong { font-size: 14px; }
     .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
     .weather-icon { font-size: 22px; }
     .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }

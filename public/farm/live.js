@@ -54,6 +54,7 @@ const COPY = {
     "weather.unavailable": "Prakiraan belum tersedia",
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
+    "clock.label": "WAKTU JEMBER · WIB",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
     "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Belum ada misi aktif",
@@ -80,6 +81,7 @@ const COPY = {
     "weather.unavailable": "Forecast unavailable",
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
+    "clock.label": "JEMBER TIME · WIB",
     "sensor.unavailable": "Indoor sensor not connected",
     "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "No active quest",
@@ -2221,6 +2223,7 @@ const VITAL_HUM_DRY = 40; // < 40 → dry (DryAir threshold)
 const VITAL_HUM_GOOD = 45; // >= 45 → good (recovery threshold)
 const VITAL_PH_MIN = 6.0;
 const VITAL_PH_MAX = 7.0;
+const VITAL_LIGHT_MIN = 30; // Node-RED LDR is 0–100%; 30% is inclusive sufficient
 const VITALS_FALLBACK = {
   tempHot: "Phew, vent please!",
   tempGood: "Perfect temperature!",
@@ -2260,8 +2263,8 @@ function vitalComment(kind) {
   }
   if (kind === "light") {
     const v = lastVitals.light;
-    if (v !== 0 && v !== 1) return null;
-    if (v === 1) return vitalString("lightGood");
+    if (!Number.isFinite(v)) return null;
+    if (v >= VITAL_LIGHT_MIN) return vitalString("lightGood");
     // Night (spec §6.2): dark is normal — gentle night line, no warning.
     return isNightWIB() ? vitalString("lightNight") : vitalString("lightDark");
   }
@@ -3987,9 +3990,37 @@ function wibNow() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
     return { date, hour: Number(get("hour")) % 24, minute: Number(get("minute")) || 0 }; // some engines say "24" at midnight
   } catch {
-    return null;
+    // Fixed UTC+7 fallback keeps a classroom demo useful even in a browser
+    // whose Intl build omitted IANA timezone data. Jember/WIB has no DST.
+    const shifted = new Date(Date.now() + 7 * 60 * 60_000);
+    const year = shifted.getUTCFullYear();
+    const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(shifted.getUTCDate()).padStart(2, "0");
+    return { date: `${year}-${month}-${day}`, hour: shifted.getUTCHours(), minute: shifted.getUTCMinutes() };
   }
 }
+
+/** Visible home clock. This deliberately shares the same WIB source used by
+ * streaks and the day/night world, so the sky, date logic, and displayed time
+ * cannot disagree when the viewer's device is in another timezone. */
+function renderJemberClock() {
+  const now = wibNow();
+  const time = $("#jember-clock-time");
+  const icon = $("#jember-clock-icon");
+  if (!time) return;
+  if (!now) {
+    time.textContent = "--:--";
+    return;
+  }
+  time.textContent = `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`;
+  if (icon) icon.textContent = now.hour >= 18 || now.hour < 6 ? "🌙" : "☀️";
+}
+
+renderJemberClock();
+window.setInterval(renderJemberClock, 30_000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") renderJemberClock();
+});
 
 /** Anchor for streak copy: the flame badge, else the bond panel. */
 function streakAnchorRect() {
