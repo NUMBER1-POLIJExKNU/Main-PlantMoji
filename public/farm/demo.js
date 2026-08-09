@@ -11,7 +11,8 @@
 //   3  → window.PMFx.chapter()    (chapter-gate peak FX)
 //   4  → window.PMFx.pod()        (reward-pod drop FX)
 //   5  → cycle window.setMascotMood through the six moods
-//   0  → QA self-test overlay (Esc closes)
+//   G  → tap the farmer NPC (#npc-farmer) for a grandpa guidance line
+//   0  → QA self-test overlay (Esc closes), now with a hotkey legend
 // plus a small fixed "DEMO" tag bottom-left while the mode is active.
 //
 // Guardrails (spec §4.5): everything here is PRESENTATION TRIGGERING ONLY —
@@ -22,6 +23,15 @@
 // codes defensively against that exact contract and shows a "FX hook not
 // loaded" toast instead of throwing when a hook is missing (e.g. demo.js
 // loaded on a page without live.js, or load order changed).
+//
+// The grandpa hotkey (G) has no PMFx entry — the farmer NPC's guidance line
+// (live.js "Living world" §7, farmerSpeak()) is display-only module-private
+// state, never exposed on window. Rather than reach into live.js, G reuses
+// the NPC's own keyboard-activation path: HTMLElement.click() dispatches a
+// click with detail === 0, exactly what Enter/Space produces on the real
+// <button id="npc-farmer">, so live.js's own listener (cooldown/night/hatch
+// guards included) runs unmodified — same trigger surface a presenter could
+// reach by hand, just bound to a key.
 
 (() => {
   "use strict";
@@ -47,6 +57,16 @@
   const MOODS = ["Happy", "Overheating", "DryAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
   const FX_HOOKS = ["lucky", "levelUp", "chapter", "pod"];
   const RUN_ALL_STEP_MS = 1500;
+  const FARMER_NPC_SELECTOR = "#npc-farmer";
+  const HOTKEY_LEGEND = [
+    ["1", "lucky ×2 stamp"],
+    ["2", "level-up overlay"],
+    ["3", "chapter gate"],
+    ["4", "reward pod"],
+    ["5", "cycle mood"],
+    ["G", "grandpa guidance line"],
+    ["0 / Esc", "this panel"],
+  ];
 
   function prefersReducedMotion() {
     try {
@@ -166,6 +186,25 @@
     }
   }
 
+  /** Tap the farmer NPC via its real keyboard-activation path — see the
+   *  file-header note on why this is the safe trigger for the grandpa
+   *  guidance line instead of a fabricated PMFx entry. Presentation only:
+   *  farmerSpeak() (live.js) grants nothing, ever; a quiet tap (cooldown
+   *  active, or nighttime hides the NPC) is expected and not an error. */
+  function triggerGrandpa() {
+    const farmer = document.querySelector(FARMER_NPC_SELECTOR);
+    if (!(farmer instanceof HTMLElement)) {
+      toast("FX hook not loaded");
+      return;
+    }
+    try {
+      farmer.click();
+      toast("Grandpa tap sent (60s cooldown · silent at night)");
+    } catch {
+      toast("Grandpa tap threw — check console");
+    }
+  }
+
   // ── QA self-test overlay (key 0) ───────────────────────────────────────
 
   let overlayEl = null;
@@ -248,6 +287,16 @@
     title.style.marginBottom = "12px";
     panel.appendChild(title);
 
+    // Hotkey legend — the on-screen help a presenter checks before filming.
+    const legend = document.createElement("div");
+    legend.style.fontSize = "8px";
+    legend.style.lineHeight = "1.9";
+    legend.style.opacity = "0.75";
+    legend.style.marginBottom = "14px";
+    legend.style.whiteSpace = "pre-line";
+    legend.textContent = HOTKEY_LEGEND.map(([key, label]) => `${key} · ${label}`).join("\n");
+    panel.appendChild(legend);
+
     // Audio: engine present? muted? and an audible probe.
     const sfx = window.PMSfx;
     const sfxLoaded = !!sfx;
@@ -285,6 +334,19 @@
       const present = typeof window.PMFx?.[name] === "function";
       panel.appendChild(overlayRow(`PMFx.${name}`, present ? "yes" : "NO"));
     }
+
+    // setMascotMood — backs hotkey 5; had no QA coverage before this pass.
+    panel.appendChild(
+      overlayRow("setMascotMood", typeof window.setMascotMood === "function" ? "yes" : "NO"),
+    );
+    // Grandpa NPC — backs hotkey G. It has no PMFx entry (see file header),
+    // so this is a DOM presence check rather than a typeof check.
+    panel.appendChild(
+      overlayRow(
+        "Grandpa NPC (#npc-farmer)",
+        document.querySelector(FARMER_NPC_SELECTOR) ? "yes" : "NO",
+      ),
+    );
 
     // Environment flags.
     panel.appendChild(overlayRow("Reduced motion", prefersReducedMotion() ? "reduce" : "no-preference"));
@@ -376,6 +438,10 @@
         break;
       case "5":
         cycleMood();
+        break;
+      case "g":
+      case "G":
+        triggerGrandpa();
         break;
       case "0":
         toggleOverlay();
