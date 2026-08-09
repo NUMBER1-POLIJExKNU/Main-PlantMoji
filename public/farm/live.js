@@ -2663,6 +2663,49 @@ function farmerLine() {
   return set[index % set.length];
 }
 
+function randomFarmerLine(lines) {
+  const available = lines.filter((line) => !farmerRecentLines.includes(line));
+  const pool = available.length > 0 ? available : lines;
+  return pool[Math.floor(Math.random() * pool.length)] ?? farmerLine();
+}
+
+function autonomousFarmerLine() {
+  const family = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
+  const localizedFarmer = PM().farmer;
+  const moodLines = Array.isArray(localizedFarmer?.[family]) && localizedFarmer[family].length > 0
+    ? localizedFarmer[family]
+    : FARMER_FALLBACK[family];
+  const idle = localizedFarmer?.idle ?? FARMER_IDLE_FALLBACK[appLocale] ?? FARMER_IDLE_FALLBACK.id;
+  let categories = family === "Happy"
+    ? [{ key: "mood", weight: .35, lines: moodLines }, { key: "companion", weight: .4, lines: idle.companion }, { key: "wisdom", weight: .25, lines: idle.wisdom }]
+    : [{ key: "mood", weight: .55, lines: moodLines }, { key: "companion", weight: .3, lines: idle.companion }, { key: "wisdom", weight: .15, lines: idle.wisdom }];
+  const lastTwo = farmerRecentCategories.slice(-2);
+  if (lastTwo.length === 2 && lastTwo[0] === lastTwo[1]) categories = categories.filter((entry) => entry.key !== lastTwo[0]);
+  const total = categories.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * total;
+  const selected = categories.find((entry) => { roll -= entry.weight; return roll <= 0; }) ?? categories[0];
+  const line = randomFarmerLine(Array.isArray(selected.lines) ? selected.lines : moodLines);
+  farmerRecentLines.push(line);
+  farmerRecentCategories.push(selected.key);
+  if (farmerRecentLines.length > 3) farmerRecentLines.shift();
+  if (farmerRecentCategories.length > 3) farmerRecentCategories.shift();
+  return line;
+}
+
+function farmerCanSpeakAutonomously() {
+  const farmer = $("#npc-farmer");
+  return document.visibilityState === "visible"
+    && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    && !isNightWIB()
+    && !hatchActive
+    && !fxPlaying
+    && fxQueue.length === 0
+    && !farmerBubbleEl
+    && !$("#farmer-chat")?.open
+    && !farmer?.classList.contains("npc-falling")
+    && Date.now() - farmerLastUserActivityAt >= FARMER_ACTIVITY_QUIET_MS;
+}
+
 function clearFarmerBubble() {
   if (farmerBubbleTimer !== null) {
     clearTimeout(farmerBubbleTimer);
@@ -2679,10 +2722,13 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
   clearFarmerBubble();
   if (pauseMotion) setFarmerMotionPaused(true);
   const rect = farmer.getBoundingClientRect();
-  const bubble = document.createElement("div");
+  const bubble = document.createElement("button");
+  bubble.type = "button";
   bubble.className = "npc-bubble";
-  bubble.setAttribute("role", "status");
+  bubble.setAttribute("aria-live", "polite");
+  bubble.setAttribute("aria-label", `${text} ${appLocale === "id" ? "Ketuk untuk berbicara dengan Kakek Tani." : "Tap to talk with Grandpa Tani."}`);
   bubble.textContent = text;
+  bubble.addEventListener("click", openFarmerChat);
   bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
   bubble.style.top = `${Math.round(rect.top - 8)}px`;
   document.body.appendChild(bubble);
@@ -2694,13 +2740,13 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
 /** Show one guidance bubble above grandpa's hat (he pauses mid-stride while
  *  talking — .npc-talking freezes the wander). Returns false when the shared
  *  60s cooldown, the night, or the hatching intro swallowed it. */
-function farmerSpeak() {
+function farmerSpeak(line = farmerLine()) {
   const farmer = $("#npc-farmer");
   if (!farmer || isNightWIB() || hatchActive || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return false;
   const now = Date.now();
   if (now < farmerCooldownUntil) return false;
   farmerCooldownUntil = now + FARMER_COOLDOWN_MS;
-  return showFarmerBubble(farmerLine());
+  return showFarmerBubble(line);
 }
 
 function addFarmerChatMessage(kind, text, marker) {
@@ -2741,11 +2787,12 @@ function prepareFarmerChat() {
 
 function openFarmerChat() {
   const dialog = $("#farmer-chat");
-  if (!(dialog instanceof HTMLDialogElement) || dialog.open || $("#npc-farmer")?.classList.contains("npc-falling")) return;
+  if (!dialog || dialog.hasAttribute("open") || $("#npc-farmer")?.classList.contains("npc-falling")) return;
   clearFarmerBubble();
   prepareFarmerChat();
   setFarmerMotionPaused(true);
-  dialog.showModal();
+  if (typeof dialog.showModal === "function") dialog.showModal();
+  else dialog.setAttribute("open", "");
   $("#farmer-chat-input")?.focus();
   window.PMSfx?.play("tick");
 }
@@ -2806,12 +2853,18 @@ $("#npc-farmer")?.addEventListener("click", (event) => {
   if (event.detail === 0) openFarmerChat();
 });
 
-(function scheduleFarmerTalk() {
-  setTimeout(() => {
-    if (document.visibilityState === "visible") farmerSpeak();
-    scheduleFarmerTalk();
-  }, FARMER_AUTO_MIN_MS + Math.random() * (FARMER_AUTO_MAX_MS - FARMER_AUTO_MIN_MS));
-})();
+document.addEventListener("pointerdown", () => { farmerLastUserActivityAt = Date.now(); }, { capture: true, passive: true });
+document.addEventListener("keydown", () => { farmerLastUserActivityAt = Date.now(); }, { capture: true });
+
+function scheduleFarmerTalk(first = false) {
+  const min = first ? FARMER_FIRST_MIN_MS : FARMER_AUTO_MIN_MS;
+  const max = first ? FARMER_FIRST_MAX_MS : FARMER_AUTO_MAX_MS;
+  window.setTimeout(() => {
+    if (farmerCanSpeakAutonomously()) farmerSpeak(autonomousFarmerLine());
+    scheduleFarmerTalk(false);
+  }, min + Math.random() * (max - min));
+}
+scheduleFarmerTalk(true);
 
 window.addEventListener("resize", scheduleFarmerMotionRestart, { passive: true });
 if (typeof ResizeObserver === "function" && $(".grass-floor")) {
@@ -2950,6 +3003,255 @@ function fxChapterGate(chapter) {
   fxEnqueue(5, (done) => fxChapterGateNow(chapter, done), CHAPTER_GATE_MS);
 }
 
+// ── Evolution ceremony (Pokémon-Style Transformation FX plan, Task 4) ───
+// T5 companion evolution: a phase-driven sequencer (anticipate → suspense →
+// payoff) — a precomputed schedule table, NOT CSS loops. Farm layer stays
+// presentation-only: nothing here writes companion_state — the real stage
+// classes are re-asserted by the next renderCompanion() call, same
+// self-healing contract as PMFx.levelUp()'s decoration preview. Triggered
+// by renderCompanion's rank-increase detection above (fxEvolve) and by the
+// PMFx.evolve() demo preview below.
+
+// Inter-burst waits shrink 14→2 frames (×16.7ms) while the alternation
+// count grows 1→7 (pret/pokecrystal engine/movie/evolution_animation.asm)
+// — the silhouette SHAPE swap between old/new form accelerates into the
+// flash. Hard cuts only, never CSS transitions.
+const EVO_WAITS = [14, 12, 10, 8, 6, 4, 2].map((f) => Math.round(f * 16.7));
+const EVO_SWAP_MS = 50; // ~3 frames per alternation
+
+// Queue fallback cap: MUST outlive the worst-case non-reduced run — Act 1
+// (~1.3s) + Act 2 strobe (~2.3s) + silence beat (0.22s) + hitstop (0.05s) +
+// the FULL 6s kiosk auto-dismiss wait — not just the interactive median (a
+// tap usually ends it much sooner). A shorter cap would let the queue start
+// the NEXT celebration while this one is still legitimately on screen
+// (the same "duration ≥ item's own max time" rule podDrop's cap follows).
+const EVO_SEQUENCE_QUEUE_MS = 10_500;
+
+const EVO_FALLBACK = {
+  noticing: (name) => `What? ${name} is changing…!`,
+  evolved: (name, stage) => `Congratulations! ${name} grew into ${stage}!`,
+};
+
+/** Evolution-ceremony speech-bubble line — quoted like every other spoken
+ *  line in this file (mood templates, sleep bubble, dialogue fetch), and
+ *  cancels a stale petting-bubble restore so it can never stomp mid-scene. */
+function speechBubble(text) {
+  if (!text) return;
+  cancelPetBubble();
+  const bubble = $(".speech-bubble");
+  if (bubble) bubble.textContent = `"${text}"`;
+}
+
+/** Localized {stage} name for the ceremony dialog, from strings.js's
+ *  companionStage table — falls back to the raw stage key. */
+function localizedStage(stage) {
+  return PM().companionStage?.[stage] ?? stage;
+}
+
+let evoTintEl = null;
+
+/** Lazily create (or reuse) the fixed radial stage-tint backdrop — a
+ *  persistent singleton toggled via its `.on` class, same lazy-singleton
+ *  pattern as ensureFxLayer(). */
+function ensureEvoTint() {
+  if (!document.body) return null;
+  if (evoTintEl && evoTintEl.isConnected) return evoTintEl;
+  evoTintEl = document.createElement("div");
+  evoTintEl.className = "evo-tint";
+  evoTintEl.setAttribute("aria-hidden", "true");
+  document.body.appendChild(evoTintEl);
+  return evoTintEl;
+}
+
+/** Single full-screen white pulse — fires at MOST once per ceremony
+ *  (WCAG 2.3.1). Opacity-only WAAPI tween; self-removes via removeLater,
+ *  this file's one source of FX-element cleanup. */
+function flashOnce(ms) {
+  if (!document.body) return;
+  const flash = document.createElement("div");
+  flash.className = "evo-flash";
+  flash.setAttribute("aria-hidden", "true");
+  document.body.appendChild(flash);
+  animateSafe(
+    flash,
+    [{ opacity: 0 }, { opacity: 1, offset: 0.5 }, { opacity: 0 }],
+    { duration: ms, easing: "linear", fill: "forwards" },
+  );
+  removeLater(flash, ms + 50);
+}
+
+/** Resolves on the first tap anywhere, or after `ms` — whichever comes
+ *  first (kiosk safety: the ceremony must never wait on a player who never
+ *  taps). Used for the payoff's tap-to-continue reveal. */
+function dismissOrTimeout(ms) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(finish, ms);
+    function finish() {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener("pointerdown", onTap, { capture: true });
+      clearTimeout(timer);
+      resolve();
+    }
+    function onTap() {
+      finish();
+    }
+    document.addEventListener("pointerdown", onTap, { capture: true });
+  });
+}
+
+/** Star-burst payoff particles: `n` small pixel stars fly out from the
+ *  mascot, two spawned per ~33ms tick, WAAPI outward drift + fade
+ *  (0.5-1.5s), a per-particle hue-rotate for the palette-cycling shimmer.
+ *  Shares this file's global MAX_PARTICLES budget with every other FX. */
+function spawnEvoStars(n) {
+  if (prefersReducedMotion()) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const rect = mascotRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * 0.35;
+  const total = Math.max(0, Math.min(n, MAX_PARTICLES - liveParticles));
+  let spawned = 0;
+  const tick = () => {
+    for (let k = 0; k < 2 && spawned < total; k++, spawned++) {
+      const i = spawned;
+      const star = document.createElement("div");
+      star.className = "fx-star";
+      star.setAttribute("aria-hidden", "true");
+      const size = 8 + Math.floor(Math.random() * 6);
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.left = `${cx}px`;
+      star.style.top = `${cy}px`;
+      star.style.filter = `hue-rotate(${(i * 40) % 360}deg)`;
+      layer.appendChild(star);
+      liveParticles++;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 70 + Math.random() * 130;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+      const duration = 500 + Math.random() * 1000;
+      animateSafe(
+        star,
+        [
+          { transform: "translate(0px, 0px) scale(0.5)", opacity: 1 },
+          { transform: `translate(${dx}px, ${dy}px) scale(1.1)`, opacity: 1, offset: 0.5 },
+          { transform: `translate(${dx * 1.4}px, ${dy * 1.4}px) scale(0.5)`, opacity: 0 },
+        ],
+        { duration, easing: "steps(8, end)", fill: "forwards" },
+      );
+      removeLater(star, duration + 100, true);
+    }
+    if (spawned < total) setTimeout(tick, 33);
+  };
+  tick();
+}
+
+// Current ceremony's tap-to-fast-forward trigger; null while no ceremony is
+// running. Exposed via window.__pmEvoFF() for callers outside this closure.
+let evoFastForward = null;
+window.__pmEvoFF = () => evoFastForward?.();
+
+/** T5 evolution ceremony: dialog beat → accelerating silhouette strobe
+ *  between `oldStage`/`newStage` → one full-screen flash + hitstop + shake
+ *  + reveal (cry + fanfare + star burst) → tap-or-6s dismiss. No cancel
+ *  mechanic: unlike Pokémon's B-button, the evolution already happened
+ *  server-side, so a tap only fast-forwards to the payoff, never reverts.
+ *  Reduced motion: a single 900ms crossfade, no strobe/flash/shake.
+ *  Presentation only — real stage classes re-assert on the next
+ *  renderCompanion(), same self-healing contract as PMFx.levelUp(). */
+async function runEvolutionSequence(oldStage, newStage) {
+  const svg = $(".mascot-svg");
+  const wrap = $(".mascot-wrapper");
+  if (!svg || !wrap) return;
+  const reduce = prefersReducedMotion();
+  let ff = false; // fast-forward flag: a tap jumps the remaining strobe steps
+  const ffTap = () => { ff = true; };
+  evoFastForward = ffTap;
+  document.addEventListener("pointerdown", ffTap, { capture: true });
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, Math.min(ms, 4000)));
+  const setStage = (stage) => {
+    for (const cls of [...svg.classList]) if (cls.startsWith("companion-")) svg.classList.remove(cls);
+    svg.classList.add(`companion-${stage}`);
+  };
+  const tint = ensureEvoTint();
+  let riser = null;
+  try {
+    svg.style.willChange = "filter, transform";
+    // ── ACT 1: anticipate (~1.3-1.8s) — dialog + tint + pulse
+    speechBubble(PM().evo?.noticing?.(currentPlantName()) ?? EVO_FALLBACK.noticing(currentPlantName()));
+    tint?.classList.add("on");
+    if (reduce) {
+      // Safe path: crossfade only — no strobe, no flash, no shake.
+      await sleep(900);
+      svg.classList.add("evo-xfade");
+      await sleep(450);
+      setStage(newStage);
+      await sleep(450);
+      svg.classList.remove("evo-xfade");
+    } else {
+      wrap.classList.add("evo-pulse");
+      riser = window.PMSfx?.evoRiser(6) ?? null;
+      await sleep(1300);
+      // ── ACT 2: suspense — accelerating silhouette strobe (mascot-local)
+      svg.classList.add("evo-sil");
+      for (let i = 0; i < EVO_WAITS.length && !ff; i++) {
+        await sleep(EVO_WAITS[i]);
+        for (let k = 0; k <= i && !ff; k++) {
+          setStage(k % 2 === 0 ? newStage : oldStage);
+          await sleep(EVO_SWAP_MS);
+        }
+      }
+      riser?.stop();
+      riser = null;
+      setStage(newStage);
+      wrap.classList.remove("evo-pulse");
+      // Silence beat: eye and ear stop together right before the sting.
+      await sleep(ff ? 0 : 220);
+      // ── ACT 3: payoff — ONE flash + hitstop + shake + reveal
+      flashOnce(80); // single 80ms full-screen pulse (WCAG 2.3.1)
+      setBreathPaused(true); // hitstop: freeze idle breathing
+      await sleep(50);
+      setBreathPaused(false);
+      svg.classList.remove("evo-sil");
+      wrap.classList.add("evo-shake-lg");
+      svg.classList.add("evo-reveal-bounce");
+      window.PMSfx?.cry();
+      window.PMSfx?.evoFanfare();
+      spawnEvoStars(28);
+    }
+    speechBubble(
+      PM().evo?.evolved?.(currentPlantName(), localizedStage(newStage)) ??
+        EVO_FALLBACK.evolved(currentPlantName(), localizedStage(newStage)),
+    );
+    await dismissOrTimeout(6000); // tap-to-continue, kiosk-safe
+  } finally {
+    document.removeEventListener("pointerdown", ffTap, { capture: true });
+    evoFastForward = null;
+    riser?.stop();
+    svg.style.willChange = "auto";
+    tint?.classList.remove("on");
+    wrap.classList.remove("evo-pulse", "evo-shake-lg");
+    svg.classList.remove("evo-sil", "evo-reveal-bounce", "evo-xfade");
+    // real companion_state re-asserts stage classes on the next data render
+  }
+}
+
+/** Full evolution sequence, called from the celebration queue's runFn. */
+function fxEvolveNow(oldStage, newStage) {
+  return runEvolutionSequence(oldStage, newStage);
+}
+
+/** Enqueue the T5 evolution ceremony (renderCompanion's rank-increase
+ *  trigger, and PMFx.evolve() below). */
+function fxEvolve(oldStage, newStage) {
+  fxEnqueue(5, (done) => { fxEvolveNow(oldStage, newStage).then(done, done); }, EVO_SEQUENCE_QUEUE_MS);
+}
+
+// ── End evolution ceremony ───────────────────────────────────────────────
+
 window.PMFx = {
   /** Gold "LUCKY! ×2" stamp + gold orb burst — mirrors the server-lucky
    *  reveal WITHOUT noteReason/notePresented (pure display). */
@@ -2978,6 +3280,20 @@ window.PMFx = {
    *  presented-XP ledger on purpose (nothing real is being presented). */
   pod() {
     fxEnqueue(3, (done) => podDrop({ quest_key: "KEEP_ME_HAPPY", xp_reward: PMFX_DEMO_XP }, done), POD_AUTO_BURST_MS + 700);
+  },
+  /** T5 evolution ceremony preview: current rendered stage → the next one
+   *  in STAGE_ORDER. Already at the last stage (Guardian)? Wrap the DEMO
+   *  PAIR to Seed→Sprout (not Guardian→Seed, which would read as
+   *  de-evolution) so presenters can always show the full ceremony.
+   *  Presentation only — real stage classes re-assert from the next
+   *  renderCompanion(), same contract as PMFx.levelUp(); this bypasses the
+   *  pm_evo_seen guard on purpose (nothing real is being presented). */
+  evolve() {
+    const idx = STAGE_ORDER.indexOf(currentCompanionStage);
+    const hasNext = idx >= 0 && idx < STAGE_ORDER.length - 1;
+    const oldStage = hasNext ? currentCompanionStage : STAGE_ORDER[0];
+    const newStage = hasNext ? STAGE_ORDER[idx + 1] : STAGE_ORDER[1];
+    fxEvolve(oldStage, newStage);
   },
 };
 
@@ -3166,6 +3482,7 @@ function renderPlant(plant) {
 
 function renderBond(bond, plantName) {
   if (!bond) return;
+  if (plantName) lastPlantName = plantName; // evolution ceremony's dialog name (see currentPlantName())
   const totalXp = Number(bond.total_xp) || 0;
   const level = Number(bond.bond_level) || 1;
   const streakDays = Number(bond.current_streak) || 0;
