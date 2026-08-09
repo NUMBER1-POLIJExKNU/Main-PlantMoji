@@ -71,9 +71,10 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] `3` chapter-gate peak plays
 - [ ] `4` reward-pod drop plays
 - [ ] `5` cycles all six mascot moods (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
+- [ ] `E` plays the full evolution ceremony (~7s): dialog beat → accelerating silhouette strobe → a single full-screen flash (WCAG 2.3.1-safe, fires exactly once) → cry + fanfare reveal; auto-dismisses after 6s if the player never taps. Tapping anywhere mid-sequence fast-forwards straight to the reveal — it never reverts. On a reduced-motion device it plays a 900ms crossfade instead of the strobe/flash/shake.
 - [ ] `0` opens the QA self-test overlay: PMSfx "loaded", sound pref, PM_STRINGS key count, all four PMFx hooks "yes", reduced-motion state, Supabase "configured". Run "RUN ALL FX" once. `Esc` closes.
 - [ ] The "DEMO" tag is visible bottom-left while the mode is active; hotkeys do nothing while a form field has focus.
-- [ ] This table covers only the presenter-stable hotkeys (`1`–`5`, `0`, `Esc`). If more were added today, `public/farm/demo.js`'s header comment has the current full list, and pressing `0` opens the on-screen QA self-test overlay to confirm each FX hook is wired.
+- [ ] This table covers only the presenter-stable hotkeys (`1`–`5`, `E`, `0`, `Esc`). If more were added today, `public/farm/demo.js`'s header comment has the current full list, and pressing `0` opens the on-screen QA self-test overlay to confirm each FX hook is wired.
 
 **Reward pod — both paths (4 min)**
 - [ ] Tap path: pod drops and wiggles → tap it → pop sound + orb cascade + banner.
@@ -196,9 +197,10 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] `3` puncak gerbang bab tampil
 - [ ] `4` jatuhnya pod hadiah tampil
 - [ ] `5` memutar keenam mood maskot (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
+- [ ] `E` memutar upacara evolusi penuh (±7 detik): dialog → siluet berkedip yang makin cepat → satu kilatan layar penuh tunggal (aman WCAG 2.3.1, hanya terjadi sekali) → reveal dengan suara cry + fanfare; otomatis tertutup setelah 6 detik jika pemain tidak menyentuh apa pun. Mengetuk di mana saja saat berlangsung langsung mempercepat ke hasil akhir — tidak pernah kembali. Di perangkat reduced-motion, yang diputar adalah crossfade 900ms, bukan siluet berkedip/kilatan/goyangan.
 - [ ] `0` membuka overlay uji-mandiri QA: PMSfx "loaded", preferensi suara, jumlah kunci PM_STRINGS, empat hook PMFx "yes", status reduced-motion, Supabase "configured". Jalankan "RUN ALL FX" sekali. `Esc` menutup.
 - [ ] Label "DEMO" terlihat di kiri bawah selama mode aktif; hotkey tidak berfungsi saat kolom isian sedang fokus.
-- [ ] Tabel ini hanya mencakup hotkey yang stabil untuk presenter (`1`–`5`, `0`, `Esc`). Jika ada tambahan hari ini, daftar lengkap terkini ada di komentar header `public/farm/demo.js`, dan menekan `0` membuka overlay uji-mandiri QA di layar untuk memastikan setiap hook FX tersambung.
+- [ ] Tabel ini hanya mencakup hotkey yang stabil untuk presenter (`1`–`5`, `E`, `0`, `Esc`). Jika ada tambahan hari ini, daftar lengkap terkini ada di komentar header `public/farm/demo.js`, dan menekan `0` membuka overlay uji-mandiri QA di layar untuk memastikan setiap hook FX tersambung.
 
 **Pod hadiah — dua jalur (4 menit)**
 - [ ] Jalur ketuk: pod jatuh dan bergoyang → ketuk → bunyi pop + kaskade orb + banner.
@@ -321,9 +323,10 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] `3` 챕터 게이트 피크 재생
 - [ ] `4` 보상 포드 드롭 재생
 - [ ] `5` 마스코트 무드 6종 순환 (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
+- [ ] `E` 전체 진화 의식 재생 (약 7초): 대사 비트 → 점점 빨라지는 실루엣 스트로브 → 단 한 번의 전체 화면 플래시(WCAG 2.3.1 안전, 정확히 한 번만 발생) → cry + 팡파르와 함께 공개; 플레이어가 탭하지 않으면 6초 후 자동으로 닫힘. 진행 중 아무 곳이나 탭하면 결과 장면으로 바로 빨리감기됨 — 절대 되돌아가지 않음. reduced-motion 기기에서는 스트로브/플래시/흔들림 대신 900ms 크로스페이드가 재생됩니다.
 - [ ] `0` QA 셀프 테스트 오버레이: PMSfx "loaded", 사운드 설정, PM_STRINGS 키 수, PMFx 훅 4종 모두 "yes", reduced-motion 상태, Supabase "configured". "RUN ALL FX"를 한 번 실행. `Esc`로 닫기.
 - [ ] 모드 활성 중 좌측 하단에 "DEMO" 태그 표시; 입력 필드에 포커스가 있으면 핫키가 동작하지 않음.
-- [ ] 이 표는 발표자용으로 안정적인 핫키(`1`–`5`, `0`, `Esc`)만 다룹니다. 오늘 추가된 것이 있다면 `public/farm/demo.js` 헤더 주석에 최신 전체 목록이 있으며, `0`을 누르면 화면에 QA 셀프 테스트 오버레이가 열려 각 FX 훅이 연결되었는지 확인할 수 있습니다.
+- [ ] 이 표는 발표자용으로 안정적인 핫키(`1`–`5`, `E`, `0`, `Esc`)만 다룹니다. 오늘 추가된 것이 있다면 `public/farm/demo.js` 헤더 주석에 최신 전체 목록이 있으며, `0`을 누르면 화면에 QA 셀프 테스트 오버레이가 열려 각 FX 훅이 연결되었는지 확인할 수 있습니다.
 
 **보상 포드 — 두 경로 모두 (4분)**
 - [ ] 탭 경로: 포드가 떨어져 흔들림 → 탭 → 팝 사운드 + 오브 캐스케이드 + 배너.

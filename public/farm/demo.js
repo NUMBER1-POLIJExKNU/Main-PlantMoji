@@ -11,6 +11,7 @@
 //   3  → window.PMFx.chapter()    (chapter-gate peak FX)
 //   4  → window.PMFx.pod()        (reward-pod drop FX)
 //   5  → cycle window.setMascotMood through the six moods
+//   E  → window.PMFx.evolve()     (evolution ceremony, ~7s, tap = fast-forward)
 //   G  → tap the farmer NPC (#npc-farmer) for a grandpa guidance line
 //   0  → QA self-test overlay (Esc closes), now with a hotkey legend
 // plus a small fixed "DEMO" tag bottom-left while the mode is active.
@@ -19,7 +20,7 @@
 // zero Supabase writes, zero XP, zero localStorage writes, zero network.
 // The real path for filming is the seeded DB; producers are told these keys
 // only replay visuals. window.PMFx is exposed by live.js and is itself
-// presentation-only ({ lucky(), levelUp(), chapter(), pod() }); this script
+// presentation-only ({ lucky(), levelUp(), chapter(), pod(), evolve() }); this script
 // codes defensively against that exact contract and shows a "FX hook not
 // loaded" toast instead of throwing when a hook is missing (e.g. demo.js
 // loaded on a page without live.js, or load order changed).
@@ -64,6 +65,7 @@
     ["3", "chapter gate"],
     ["4", "reward pod"],
     ["5", "cycle mood"],
+    ["E", "evolution ceremony (~7s, tap = fast-forward)"],
     ["G", "grandpa guidance line"],
     ["0 / Esc", "this panel"],
   ];
@@ -321,6 +323,28 @@
     panel.appendChild(overlayRow("Sound pref", mutedText));
     panel.appendChild(overlayRow('Play "blip"', blipText));
 
+    // Evolution ceremony cues (Task 1) — presence-only checks; unlike "blip"
+    // above these are scheduled multi-second sequences, so we don't fire
+    // them from the QA overlay, just confirm the hooks exist.
+    panel.appendChild(
+      overlayRow("PMSfx.evoRiser", sfxLoaded && typeof sfx.evoRiser === "function" ? "yes" : "NO"),
+    );
+    panel.appendChild(
+      overlayRow("PMSfx.evoFanfare", sfxLoaded && typeof sfx.evoFanfare === "function" ? "yes" : "NO"),
+    );
+    panel.appendChild(
+      overlayRow("PMSfx.cry", sfxLoaded && typeof sfx.cry === "function" ? "yes" : "NO"),
+    );
+    // The filming checklist needs to know, on THIS device, which evolution
+    // variant hotkey E will actually play — full ceremony or the reduced-
+    // motion crossfade — without having to press E first.
+    panel.appendChild(
+      overlayRow(
+        "Evo variant (this device)",
+        prefersReducedMotion() ? "reduce → crossfade only" : "no-preference → full ceremony",
+      ),
+    );
+
     // Strings: page locale + leaf-key count of the table.
     const strings = window.PM_STRINGS;
     const locale = document.documentElement.lang || "unknown";
@@ -335,6 +359,12 @@
       panel.appendChild(overlayRow(`PMFx.${name}`, present ? "yes" : "NO"));
     }
 
+    // PMFx.evolve — backs hotkey E. Deliberately NOT part of FX_HOOKS/"RUN
+    // ALL FX": the evolution ceremony is ~7s and would clash with the other
+    // FX being stepped 1.5s apart, so it stays a dedicated, presenter-only key.
+    panel.appendChild(
+      overlayRow("PMFx.evolve", typeof window.PMFx?.evolve === "function" ? "yes" : "NO"),
+    );
     // setMascotMood — backs hotkey 5; had no QA coverage before this pass.
     panel.appendChild(
       overlayRow("setMascotMood", typeof window.setMascotMood === "function" ? "yes" : "NO"),
@@ -438,6 +468,10 @@
         break;
       case "5":
         cycleMood();
+        break;
+      case "e":
+      case "E":
+        fireFx("evolve");
         break;
       case "g":
       case "G":

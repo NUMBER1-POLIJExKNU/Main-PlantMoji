@@ -379,27 +379,19 @@ body {
 }
 
 #env-strip {
-    font-family: var(--font-body);
-    font-size: 15px;
-    text-align: center;
-    padding: 12px 20px;
+    padding: 12px;
     color: var(--color-text);
 }
-
-/* Pressable vital values (plan T19): each reading is a ≥40px-tall tap
-   target (padding-grown, margin-compensated) that makes Jamkachu comment. */
-#env-strip span[role="button"] {
-    display: inline-block;
-    cursor: pointer;
-    padding: 10px 6px;
-    margin: -10px -2px;
-    border-radius: 8px;
-    user-select: none;
-    -webkit-user-select: none;
-}
-#env-strip span[role="button"]:hover,
-#env-strip span[role="button"]:focus-visible { background: var(--color-bg); }
-#env-strip span[role="button"]:active { transform: translateY(1px); }
+.env-hud-title { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 2px 9px; font:8px/1.4 var(--font-heading); color:var(--color-forest); }
+.env-hud-title a { color:var(--color-text-muted); font:11px/1.4 var(--font-body); text-decoration:none; }
+.env-hud-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.env-hud-card { --hud-accent:var(--color-grass); position:relative; min-width:0; min-height:86px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 15px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; }
+.env-hud-card.is-temp { --hud-accent:#ef8d64; }.env-hud-card.is-hum { --hud-accent:#4da1ed; }.env-hud-card.is-light { --hud-accent:#e9b936; }.env-hud-card.is-ph { --hud-accent:#69b957; }
+.env-hud-card > i { display:grid; place-items:center; width:32px; height:32px; border:2px solid var(--color-outline); border-radius:8px; background:color-mix(in srgb,var(--hud-accent) 25%,white); font:18px/1 sans-serif; }
+.env-hud-copy { min-width:0; display:flex; flex-direction:column; }.env-hud-copy small { overflow:hidden; color:var(--color-text-muted); font:6px/1.4 var(--font-heading); white-space:nowrap; text-overflow:ellipsis; }.env-hud-copy strong { margin-top:3px; font:15px/1.25 var(--font-body); }.env-hud-copy em { color:var(--color-forest); font:10px/1.3 var(--font-body); font-style:normal; white-space:nowrap; }
+.env-meter { position:absolute; left:8px; right:8px; bottom:7px; height:6px; overflow:hidden; border:1px solid var(--color-outline); background:#dcead5; }.env-meter b { display:block; width:var(--meter,0%); height:100%; background:var(--hud-accent); transition:width .45s steps(8,end); }
+.env-hud-card.is-alert { animation:none; border-color:#8c5b30; }.env-hud-card.is-alert .env-status { color:#a34d32; }.env-hud-card:hover { transform:translateY(-1px); box-shadow:0 5px 0 var(--color-outline); }.env-hud-card:active { transform:translateY(3px); box-shadow:0 1px 0 var(--color-outline); }.env-hud-card:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
+@media (max-width:620px) { .env-hud-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }.env-hud-card { min-height:82px; } }
 
 /* Actions */
 .actions-panel {
@@ -592,6 +584,62 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.companion-Bud .animated-leaves { transform: scale(1.08); transform-origin: 150px 140px; }
 .mascot-svg.companion-Bloom .animated-leaves { transform: scale(1.13); transform-origin: 150px 140px; filter: saturate(1.15); }
 .mascot-svg.companion-Guardian .animated-leaves { transform: scale(1.18); transform-origin: 150px 140px; filter: saturate(1.3) drop-shadow(0 0 5px #f5c94a); }
+
+/* ── Pokémon-style transformation FX (level-up + evolution ceremony) ──────
+   Discrete-state classes toggled by live.js's phase sequencer (never CSS
+   loops) — hard cuts only, compositor-only properties (filter is a toggle,
+   never tweened; transform/opacity are the only animated values). See
+   docs/superpowers/plans/2026-08-09-pokemon-style-transformation-fx.md. */
+
+/* Solid-white silhouette: raster filter flattens the whole inline SVG incl.
+   strokes. Toggled as a discrete state, never tweened (mobile GPU filter
+   traps). */
+.mascot-svg.evo-sil { filter: brightness(0) invert(1); transition: none !important; }
+/* The strobe's form swaps read through leaf scale — the infinite smoothBreath
+   animation on .animated-leaves would override those transforms and make the
+   silhouette alternation visually inert, so the silhouette state kills it. */
+.mascot-svg.evo-sil .animated-leaves { animation: none !important; }
+
+/* Full-screen flash: opacity-only, fires ONCE per sequence (WCAG 2.3.1).
+   Sits above .mascot-stage (z 5) and .evo-tint (z 4) below; doesn't need to
+   out-rank the quiz modal (z 3000+, style.css's overlay ladder) since the
+   two never fire together. */
+.evo-flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 1200; }
+
+/* Radial stage-tint backdrop behind the mascot (GB whole-screen-palette
+   trick). z-index kept below .mascot-stage's z:5 (this file's existing
+   overlay ladder) so the tint genuinely renders BEHIND the mascot/grass/NPC
+   scene instead of covering it. */
+.evo-tint { position: fixed; inset: 0; pointer-events: none; z-index: 4;
+  background: radial-gradient(circle at 50% 42%, var(--companion-accent, #FFDE6A) 0%, rgba(36,52,33,.92) 70%);
+  transition: opacity .4s ease; }
+.evo-tint.on { opacity: 1; }
+
+/* Anticipation pulse: scale oscillation on the wrapper (transform-only). */
+@keyframes evoPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+.evo-pulse { animation: evoPulse .55s ease-in-out infinite; }
+
+/* Reveal: springy overshoot bounce. */
+@keyframes evoRevealBounce { 0% { transform: scale(1); } 30% { transform: scale(1.15); }
+  55% { transform: scale(.95); } 78% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.evo-reveal-bounce { animation: evoRevealBounce .45s cubic-bezier(.34,1.56,.64,1) 1; }
+
+/* Shake, amplitude by tier (level-up small, evolution large). */
+@keyframes evoShakeSm { 0%,100% { transform: translate(0,0); } 25% { transform: translate(2px,-2px); }
+  50% { transform: translate(-2px,1px); } 75% { transform: translate(1px,2px); } }
+@keyframes evoShakeLg { 0%,100% { transform: translate(0,0); } 20% { transform: translate(8px,-6px); }
+  45% { transform: translate(-7px,5px); } 70% { transform: translate(5px,6px); } 90% { transform: translate(-3px,-2px); } }
+.evo-shake-sm { animation: evoShakeSm .15s ease-out 1; }
+.evo-shake-lg { animation: evoShakeLg .18s ease-out 1; }
+
+/* Photosensitivity / vestibular safety: no strobe, no flash, no shake —
+   crossfade only. */
+@media (prefers-reduced-motion: reduce) {
+  .mascot-svg.evo-sil { filter: none; }
+  .evo-flash, .evo-tint { display: none; }
+  .evo-pulse, .evo-shake-sm, .evo-shake-lg { animation: none; }
+  .mascot-svg.evo-xfade { transition: opacity .9s ease-in-out; opacity: .3; }
+}
 
 .speech-bubble {
     background: var(--color-surface);
@@ -1186,7 +1234,7 @@ body.env-hot .env-haze { opacity: 1; }
     padding: 0;
     border: 0;
     background: transparent;
-    cursor: pointer;
+    cursor: grab;
     pointer-events: auto;
     z-index: 15;
     image-rendering: pixelated;
@@ -1194,11 +1242,18 @@ body.env-hot .env-haze { opacity: 1; }
     transition: opacity 2s ease;
     will-change: left, top, transform;
     opacity: 0;
-    touch-action: manipulation;
+    touch-action: none;
 }
 .npc-farmer.npc-ready { opacity: 1; }
 body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .npc-farmer.npc-falling { pointer-events: none; }
+.npc-farmer.npc-grabbed {
+    cursor: grabbing;
+    z-index: 950;
+    filter: drop-shadow(0 10px 2px rgba(36,52,33,.22));
+    transform: rotate(-4deg) scale(1.08) !important;
+}
+.npc-farmer.npc-landing { pointer-events: none; }
 .npc-farmer::before,
 .npc-farmer::after {
     content: "";

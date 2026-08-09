@@ -47,4 +47,19 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).toContain('bubble.addEventListener("click", openFarmerChat)');
     expect(css).toMatch(/\.npc-bubble[\s\S]*?pointer-events:\s*auto/);
   });
+  it("lets the farmer be grabbed and returns him to the measured grass floor", () => {
+    expect(live).toContain('addEventListener("pointerdown", startFarmerDrag)');
+    expect(live).toContain('window.addEventListener("pointermove", moveFarmerDrag');
+    expect(live).toContain("event.preventDefault()");
+    expect(live).toContain("suppressFarmerClick");
+    expect(live).toContain("Please put me down, my young friend!");
+    expect(live).toContain("Tolong turunkan Kakek, Nak!");
+    expect(live).toContain("Math.hypot");
+    expect(live).toContain("const ground = farmerGround()");
+    expect(live).toContain("Math.min(ground.right, currentLeft)");
+    expect(live).toContain('!farmer.classList.contains("npc-ready")');
+    expect(live).toContain("Math.min(ground.right, startLeft)");
+    expect(css).toMatch(/\.npc-farmer\.npc-grabbed[\s\S]*?cursor:\s*grabbing/);
+    expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
+  });
 });

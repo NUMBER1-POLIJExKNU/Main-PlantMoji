@@ -55,6 +55,7 @@ const COPY = {
     "weather.forecast": "Prakiraan",
     "weather.stale": "data terakhir",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
+    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "KELEMBAPAN UDARA", "env.light": "CAHAYA", "env.ph": "pH TANAH",
     "quest.none": "Belum ada misi aktif",
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
@@ -80,6 +81,7 @@ const COPY = {
     "weather.forecast": "Forecast",
     "weather.stale": "last available data",
     "sensor.unavailable": "Indoor sensor not connected",
+    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMPERATURE", "env.humidity": "AIR HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL pH",
     "quest.none": "No active quest",
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
@@ -207,6 +209,31 @@ let currentCompanionStage = "Seed";
 const DIALOGUE_RECENT_KEY = "pm_dialogue_recent_v1";
 const DIALOGUE_RECENT_LIMIT = 20;
 
+// Stage ladder — today's five companion stages. Hardcoded here until the
+// (not yet shipped) evolution-ladder plan's window.PM_LADDER / PM_NEXT_STAGE
+// replace it; every stage-order lookup in this file (rank comparisons, the
+// evolution ceremony's silhouette swap) derives from this ONE array so the
+// eventual swap-over only touches this one constant.
+const STAGE_ORDER = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"];
+
+// One-time-per-stage guard for the evolution ceremony (Pokémon-Style
+// Transformation FX plan, Task 4): a single localStorage flag naming the
+// last stage the ceremony has already played for, so a duplicate/replayed
+// companion_state row (a flaky realtime reconnect, a poll repeat) can never
+// replay the ~7s sequence twice for the same real evolution.
+const EVO_SEEN_KEY = "pm_evo_seen";
+let prevCompanionStage = null; // null = not yet rendered (first render never celebrates)
+
+// Captured from renderBond's `plantName` arg — the evolution ceremony's
+// dialog (below) needs a display name outside main()'s closure-local
+// `plantName` variable.
+let lastPlantName = null;
+
+/** Display name for ceremony dialog, same fallback as the hatching intro. */
+function currentPlantName() {
+  return lastPlantName || "Jamkachu";
+}
+
 function chooseFreshDialogue(candidates) {
   const lines = [...new Set((Array.isArray(candidates) ? candidates : []).filter((line) => typeof line === "string" && line.trim()))];
   if (!lines.length) return null;
@@ -225,16 +252,31 @@ function chooseFreshDialogue(candidates) {
 
 function renderCompanion(state) {
   if (!state) return; // migration absent: preserve the original mascot
-  const stage = ["Seed", "Sprout", "Bud", "Bloom", "Guardian"].includes(state.stage) ? state.stage : "Seed";
+  const stage = STAGE_ORDER.includes(state.stage) ? state.stage : "Seed";
   currentCompanionStage = stage;
   const form = state.form_key || "balanced";
   const label = $("#companion-stage");
   if (label) label.textContent = `COMPANION · ${stage.toUpperCase()} · ${String(form).toUpperCase()}`;
   const svg = $(".mascot-svg");
   if (svg) {
-    for (const value of ["Seed", "Sprout", "Bud", "Bloom", "Guardian"]) svg.classList.remove(`companion-${value}`);
+    for (const value of STAGE_ORDER) svg.classList.remove(`companion-${value}`);
     svg.classList.add(`companion-${stage}`);
     svg.dataset.companionForm = form;
+  }
+  // Evolution ceremony trigger (evolution-ladder plan's wiring, implemented
+  // early per the transformation-FX plan's deviation notes): a real RANK
+  // INCREASE past the first render fires the T5 ceremony once per stage.
+  // Never fires on the first render, a same-stage repeat, or backward (no
+  // de-evolution exists).
+  const priorStage = prevCompanionStage;
+  prevCompanionStage = stage;
+  if (priorStage !== null && STAGE_ORDER.indexOf(stage) > STAGE_ORDER.indexOf(priorStage)) {
+    let seen = null;
+    try { seen = localStorage.getItem(EVO_SEEN_KEY); } catch {}
+    if (seen !== stage) {
+      try { localStorage.setItem(EVO_SEEN_KEY, stage); } catch {}
+      fxEvolve(priorStage, stage);
+    }
   }
 }
 
@@ -311,6 +353,7 @@ const FX_CSS = `
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
 .fx-confetti, .fx-sparkle, .fx-heart { position: fixed; image-rendering: pixelated; will-change: transform, opacity; }
 .fx-heart { background: var(--color-cheek, #FF9E9E); clip-path: polygon(50% 100%, 0 40%, 0 15%, 25% 0, 50% 20%, 75% 0, 100% 15%, 100% 40%); }
+.fx-star { position: fixed; image-rendering: pixelated; will-change: transform, opacity, filter; background: var(--color-yellow, #FFDE6A); clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%); }
 .fx-note { position: fixed; font-family: var(--font-heading, monospace); font-size: 15px; color: #39456B; text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.55); will-change: transform, opacity; }
 .fx-why-card { position: fixed; max-width: 320px; font-family: var(--font-body, sans-serif); font-size: 13px; line-height: 1.5; color: var(--color-text, #243421); background: var(--color-surface, #fff); border: 3px solid var(--color-border, #BCD3B4); border-radius: 12px; box-shadow: 0 4px 0 rgba(36,52,33,.15); padding: 10px 14px; text-align: center; will-change: transform, opacity; }
 .fx-chip { position: fixed; font-family: var(--font-heading, monospace); font-size: 12px; color: #fff; background: var(--color-grass, #69C455); border: 2px solid var(--color-outline, #2B3A27); box-shadow: 0 3px 0 var(--color-outline, #2B3A27); border-radius: 10px; padding: 5px 10px; white-space: nowrap; will-change: transform, opacity; }
@@ -689,50 +732,75 @@ function fxStreakUp(days) {
   fxEnqueue(2, () => fxStreakUpNow(days), 1200);
 }
 
-/** Level-up celebration: pixel card overlay + confetti burst. Non-blocking
- *  (pointer-events: none) and self-removing. */
+/** T4 level-up re-stage (Pokémon-Style Transformation FX plan, Task 5): a
+ *  180ms hitstop (breathing freeze) then a small shake + `evoChirp` cue
+ *  alongside the existing pixel card overlay + confetti burst — the card
+ *  itself auto-dismisses exactly as before this plan. Deliberately small
+ *  next to the T5 evolution ceremony (runEvolutionSequence): no silhouette,
+ *  no strobe, no full-screen flash — the contrast in weight between the two
+ *  events is the design. Reduced motion: skip the freeze/shake pre-beat,
+ *  keep the card exactly as-is. Non-blocking (pointer-events: none) and
+ *  self-removing. */
 function fxLevelUpNow(level) {
   const layer = ensureFxLayer();
   if (!layer) return;
-  window.PMSfx?.play("fanfare");
-  window.PMSfx?.buzz(30);
-  const overlay = document.createElement("div");
-  overlay.className = "fx-overlay";
-  overlay.setAttribute("role", "status");
-  overlay.setAttribute("aria-live", "polite");
-  const card = document.createElement("div");
-  card.className = "fx-levelup-card";
-  card.innerHTML =
-    `<div class="fx-levelup-title">${PM().fx?.levelUpTitle ?? t("levelUp")}</div>` +
-    `<div class="fx-levelup-sub">${PM().fx?.levelUpSub?.(Number(level) || 0) ?? `${t("bond")} Lv.${Number(level) || 0} — ${t("carePays")}`}</div>`;
-  overlay.appendChild(card);
-  layer.appendChild(overlay);
   const reduce = prefersReducedMotion();
-  animateSafe(
-    card,
-    reduce
-      ? [
-          { opacity: 0 },
-          { opacity: 1, offset: 0.15 },
-          { opacity: 1, offset: 0.8 },
-          { opacity: 0 },
-        ]
-      : [
-          { transform: "scale(0.6)", opacity: 0 },
-          { transform: "scale(1.05)", opacity: 1, offset: 0.18 },
-          { transform: "scale(1)", opacity: 1, offset: 0.3 },
-          { transform: "scale(1)", opacity: 1, offset: 0.82 },
-          { transform: "scale(0.9)", opacity: 0 },
-        ],
-    { duration: 2400, easing: reduce ? "linear" : "steps(24, end)", fill: "forwards" },
-  );
-  removeLater(overlay, 2500);
-  spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.4, 44);
+  const wrap = $(".mascot-wrapper");
+  const popCard = () => {
+    if (!reduce && wrap) {
+      wrap.classList.add("evo-shake-sm");
+      setTimeout(() => wrap.classList.remove("evo-shake-sm"), 200);
+    }
+    window.PMSfx?.play("evoChirp");
+    window.PMSfx?.buzz(30);
+    const overlay = document.createElement("div");
+    overlay.className = "fx-overlay";
+    overlay.setAttribute("role", "status");
+    overlay.setAttribute("aria-live", "polite");
+    const card = document.createElement("div");
+    card.className = "fx-levelup-card";
+    card.innerHTML =
+      `<div class="fx-levelup-title">${PM().fx?.levelUpTitle ?? t("levelUp")}</div>` +
+      `<div class="fx-levelup-sub">${PM().fx?.levelUpSub?.(Number(level) || 0) ?? `${t("bond")} Lv.${Number(level) || 0} — ${t("carePays")}`}</div>`;
+    overlay.appendChild(card);
+    layer.appendChild(overlay);
+    animateSafe(
+      card,
+      reduce
+        ? [
+            { opacity: 0 },
+            { opacity: 1, offset: 0.15 },
+            { opacity: 1, offset: 0.8 },
+            { opacity: 0 },
+          ]
+        : [
+            { transform: "scale(0.6)", opacity: 0 },
+            { transform: "scale(1.05)", opacity: 1, offset: 0.18 },
+            { transform: "scale(1)", opacity: 1, offset: 0.3 },
+            { transform: "scale(1)", opacity: 1, offset: 0.82 },
+            { transform: "scale(0.9)", opacity: 0 },
+          ],
+      { duration: 2400, easing: reduce ? "linear" : "steps(24, end)", fill: "forwards" },
+    );
+    removeLater(overlay, 2500);
+    spawnConfetti(window.innerWidth / 2, window.innerHeight * 0.4, 44);
+  };
+  if (reduce || !wrap) {
+    popCard();
+    return;
+  }
+  setBreathPaused(true);
+  setTimeout(() => {
+    setBreathPaused(false);
+    popCard();
+  }, 180);
 }
 
-/** T4: level-up overlay via the celebration queue. */
+/** T4: level-up overlay via the celebration queue. Duration covers the
+ *  180ms hitstop pre-beat plus the card's own (unchanged) lifetime, so the
+ *  queue never force-advances into the next celebration mid-card. */
 function fxLevelUp(level) {
-  fxEnqueue(4, () => fxLevelUpNow(level), 2500);
+  fxEnqueue(4, () => fxLevelUpNow(level), 2700);
 }
 
 function prettifyKey(key) {
@@ -1508,6 +1576,17 @@ function mascotBounce() {
   );
 }
 
+/** Hitstop: freeze/resume the idle breathing loop. The animation actually
+ *  runs on `.animated-leaves` (a `<g>` inside the SVG, driven by
+ *  `.animated-breath .animated-leaves` in style.css) — not on
+ *  `.mascot-wrapper` itself — so that's the element whose
+ *  animation-play-state we need to toggle for a real freeze. Used by both
+ *  the evolution ceremony (Task 4) and the level-up re-stage (Task 5). */
+function setBreathPaused(paused) {
+  const leaves = $(".mascot-svg .animated-leaves");
+  if (leaves) leaves.style.animationPlayState = paused ? "paused" : "";
+}
+
 // Petting — in-memory fiction only. Every 5th pet inside a rolling 30s
 // window triggers a satiation yawn + 10s rest (never persisted anywhere).
 const PET_FALLBACK_LINES = [
@@ -2177,9 +2256,9 @@ function setupCareInteractions() {
   }
 
   // Pressable vitals (plan T19): pointer + keyboard (role=button spans).
-  const vitalSpans = { "#env-temp": "temp", "#env-hum": "hum", "#env-light": "light", "#env-ph": "ph" };
-  for (const [selector, kind] of Object.entries(vitalSpans)) {
-    const el = $(selector);
+  const vitalCards = { temp: "temp", hum: "hum", light: "light", ph: "ph" };
+  for (const [key, kind] of Object.entries(vitalCards)) {
+    const el = $(`[data-vital="${key}"]`);
     if (!el) continue;
     el.addEventListener("pointerdown", () => onVitalTap(kind));
     el.addEventListener("keydown", (event) => {
@@ -2521,6 +2600,9 @@ let farmerMotionAnimation = null;
 let farmerMotionPaused = false;
 let farmerMotionEpoch = 0;
 let farmerRestartTimer = null;
+let farmerDrag = null;
+let suppressFarmerClick = false;
+let farmerDragPleaTimer = null;
 
 const FARMER_CHAT_COPY = {
   id: {
@@ -2645,7 +2727,12 @@ async function runFarmerMotion() {
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   let ground = farmerGround();
   if (!ground) return;
-  farmer.style.left = `${Math.min(ground.right, ground.left + Math.max(30, (ground.right - ground.left) * .35))}px`;
+  const previousLeft = Number.parseFloat(farmer.style.left);
+  const firstPlacement = !farmer.classList.contains("npc-ready") || !Number.isFinite(previousLeft);
+  const startLeft = firstPlacement
+    ? ground.left + Math.max(30, (ground.right - ground.left) * .35)
+    : previousLeft;
+  farmer.style.left = `${Math.max(ground.left, Math.min(ground.right, startLeft))}px`;
   farmer.style.top = `${ground.top}px`;
   farmer.classList.add("npc-ready");
   if (reduced) return;
@@ -2674,7 +2761,97 @@ function restartFarmerMotion() {
   window.setTimeout(() => void runFarmerMotion(), 80);
 }
 
+function startFarmerDrag(event) {
+  const farmer = event.currentTarget;
+  if (event.button !== 0 || farmerDrag || isNightWIB() || hatchActive
+    || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return;
+  const rect = farmer.getBoundingClientRect();
+  if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
+  farmerRestartTimer = null;
+  farmerMotionEpoch += 1;
+  try { farmerMotionAnimation?.cancel(); } catch {}
+  farmerMotionAnimation = null;
+  clearFarmerBubble();
+  farmer.style.left = `${rect.left}px`;
+  farmer.style.top = `${rect.top}px`;
+  farmer.style.transform = "none";
+  farmer.classList.remove("npc-walking", "npc-talking");
+  farmer.setPointerCapture?.(event.pointerId);
+  farmerDrag = {
+    id: event.pointerId, startX: event.clientX, startY: event.clientY,
+    offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top,
+    moved: false,
+  };
+  farmerDragPleaTimer = window.setTimeout(() => {
+    farmerDragPleaTimer = null;
+    if (!farmerDrag?.moved) return;
+    showFarmerBubble(appLocale === "id"
+      ? "Aduh, Kakek takut! Tolong turunkan Kakek, Nak!"
+      : "Oh my, this is scary! Please put me down, my young friend!", 4200, false);
+  }, 2500);
+}
+
+function moveFarmerDrag(event) {
+  const drag = farmerDrag;
+  const farmer = $("#npc-farmer");
+  if (!drag || !farmer || event.pointerId !== drag.id) return;
+  if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6) return;
+  event.preventDefault();
+  drag.moved = true;
+  farmer.classList.add("npc-grabbed");
+  const width = farmer.offsetWidth || 48;
+  const height = farmer.offsetHeight || 56;
+  farmer.style.left = `${Math.max(0, Math.min(window.innerWidth - width, event.clientX - drag.offsetX))}px`;
+  farmer.style.top = `${Math.max(0, Math.min(window.innerHeight - height, event.clientY - drag.offsetY))}px`;
+  if (farmerBubbleEl) {
+    const left = Number.parseFloat(farmer.style.left) || 0;
+    const top = Number.parseFloat(farmer.style.top) || 0;
+    farmerBubbleEl.style.left = `${Math.round(Math.max(120, Math.min(left + width / 2, window.innerWidth - 120)))}px`;
+    farmerBubbleEl.style.top = `${Math.round(top - 8)}px`;
+  }
+}
+
+async function endFarmerDrag(event) {
+  const drag = farmerDrag;
+  const farmer = $("#npc-farmer");
+  if (!drag || !farmer || event.pointerId !== drag.id) return;
+  farmerDrag = null;
+  if (farmerDragPleaTimer !== null) window.clearTimeout(farmerDragPleaTimer);
+  farmerDragPleaTimer = null;
+  farmer.releasePointerCapture?.(event.pointerId);
+  if (!drag.moved) {
+    restartFarmerMotion();
+    return;
+  }
+  suppressFarmerClick = true;
+  window.setTimeout(() => { suppressFarmerClick = false; }, 0);
+  const ground = farmerGround();
+  if (!ground) { restartFarmerMotion(); return; }
+  const currentLeft = Number.parseFloat(farmer.style.left) || ground.left;
+  const currentTop = Number.parseFloat(farmer.style.top) || ground.top;
+  const landingLeft = Math.max(ground.left, Math.min(ground.right, currentLeft));
+  const epoch = ++farmerMotionEpoch;
+  farmer.classList.remove("npc-grabbed");
+  farmer.classList.add("npc-landing");
+  await farmerAnimate([
+    { left: `${currentLeft}px`, top: `${currentTop}px`, transform: "rotate(0deg) scale(1.08)" },
+    { left: `${landingLeft}px`, top: `${ground.top - 8}px`, transform: "rotate(0deg) scale(.94)", offset: .82 },
+    { left: `${landingLeft}px`, top: `${ground.top}px`, transform: "rotate(0deg) scale(1)" },
+  ], { duration: 520, easing: "cubic-bezier(.2,.8,.25,1)" }, epoch);
+  farmer.classList.remove("npc-landing");
+  farmer.style.left = `${landingLeft}px`;
+  farmer.style.top = `${ground.top}px`;
+  farmer.style.transform = "scaleX(1)";
+  restartFarmerMotion();
+}
+
+function cancelFarmerDrag(event) {
+  if (!farmerDrag || event.pointerId !== farmerDrag.id) return;
+  void endFarmerDrag(event);
+}
+
 function scheduleFarmerMotionRestart() {
+  if (farmerDrag) return;
   if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
   farmerRestartTimer = window.setTimeout(() => {
     farmerRestartTimer = null;
@@ -2733,6 +2910,7 @@ function farmerCanSpeakAutonomously() {
     && !farmerBubbleEl
     && !$("#farmer-chat")?.open
     && !farmer?.classList.contains("npc-falling")
+    && !farmer?.classList.contains("npc-grabbed")
     && Date.now() - farmerLastUserActivityAt >= FARMER_ACTIVITY_QUIET_MS;
 }
 
@@ -2876,11 +3054,19 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
   }
 });
 
-$("#npc-farmer")?.addEventListener("pointerdown", openFarmerChat);
-// Keyboard activation (he is a real <button>): click with detail 0 means
-// Enter/Space — pointer taps already went through pointerdown above.
+$("#npc-farmer")?.addEventListener("pointerdown", startFarmerDrag);
+// Listen on the window while grabbed: pointer capture is not reliable on
+// every embedded/mobile browser once the cursor leaves this tiny sprite.
+window.addEventListener("pointermove", moveFarmerDrag, { passive: false });
+window.addEventListener("pointerup", (event) => void endFarmerDrag(event));
+window.addEventListener("pointercancel", cancelFarmerDrag);
 $("#npc-farmer")?.addEventListener("click", (event) => {
-  if (event.detail === 0) openFarmerChat();
+  if (suppressFarmerClick) {
+    suppressFarmerClick = false;
+    event.preventDefault();
+    return;
+  }
+  openFarmerChat();
 });
 
 document.addEventListener("pointerdown", () => { farmerLastUserActivityAt = Date.now(); }, { capture: true, passive: true });
@@ -3210,6 +3396,10 @@ async function runEvolutionSequence(oldStage, newStage) {
   let riser = null;
   try {
     svg.style.willChange = "filter, transform";
+    // Anticipation must show the PRE-evolution form — renderCompanion already
+    // applied the new stage class before enqueuing, which would spoil the
+    // reveal (and turn the reduced-motion crossfade into a dim-and-undim).
+    setStage(oldStage);
     // ── ACT 1: anticipate (~1.3-1.8s) — dialog + tint + pulse
     speechBubble(PM().evo?.noticing?.(currentPlantName()) ?? EVO_FALLBACK.noticing(currentPlantName()));
     tint?.classList.add("on");
@@ -3252,15 +3442,17 @@ async function runEvolutionSequence(oldStage, newStage) {
       window.PMSfx?.evoFanfare();
       spawnEvoStars(28);
     }
-    speechBubble(
+    const evolvedLine =
       PM().evo?.evolved?.(currentPlantName(), localizedStage(newStage)) ??
-        EVO_FALLBACK.evolved(currentPlantName(), localizedStage(newStage)),
-    );
+      EVO_FALLBACK.evolved(currentPlantName(), localizedStage(newStage));
+    const tapHint = PM().evo?.tapToContinue;
+    speechBubble(tapHint ? `${evolvedLine} · ${tapHint}` : evolvedLine);
     await dismissOrTimeout(6000); // tap-to-continue, kiosk-safe
   } finally {
     document.removeEventListener("pointerdown", ffTap, { capture: true });
     evoFastForward = null;
     riser?.stop();
+    setBreathPaused(false); // ceremony must never leave breathing frozen
     svg.style.willChange = "auto";
     tint?.classList.remove("on");
     wrap.classList.remove("evo-pulse", "evo-shake-lg");
@@ -3870,6 +4062,14 @@ function causalEcho(next) {
 /** Environment strip (#env-strip): compact one-line reading — the old 5-row
  *  vitals panel is gone; detail lives in Plant Status (/monitoring). */
 function renderSensors(reading) {
+  const updateHud = (kind, percent, status, alert) => {
+    const card = $(`[data-vital="${kind}"]`);
+    if (!card) return;
+    card.style.setProperty("--meter", `${Math.max(0, Math.min(100, percent))}%`);
+    card.classList.toggle("is-alert", alert);
+    const label = card.querySelector(".env-status");
+    if (label) label.textContent = status;
+  };
   const temperature = Number(reading?.temperature);
   if (reading?.temperature != null && Number.isFinite(temperature)) {
     setText("#env-temp", `${temperature.toFixed(1)}°C`);
@@ -3878,18 +4078,21 @@ function renderSensors(reading) {
     // >32°C threshold the pressable vitals + mood engine use. Pure state —
     // silent, no copy, removed as soon as readings return to range.
     document.body?.classList.toggle("env-hot", temperature > VITAL_TEMP_HOT);
+    updateHud("temp", ((temperature - 10) / 30) * 100, temperature > VITAL_TEMP_HOT ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil" : "Stable"), temperature > VITAL_TEMP_HOT);
   }
 
   const humidity = Number(reading?.humidity);
   if (reading?.humidity != null && Number.isFinite(humidity)) {
     setText("#env-hum", `${Math.round(humidity)}%`);
     lastVitals.humidity = humidity;
+    updateHud("hum", humidity, humidity < VITAL_HUM_DRY ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup" : "Sufficient"), humidity < VITAL_HUM_DRY);
   }
 
   const soilPh = Number(reading?.soil_ph);
   if (reading?.soil_ph != null && Number.isFinite(soilPh)) {
     setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
     lastVitals.soilPh = soilPh;
+    updateHud("ph", (soilPh / 14) * 100, soilPh >= VITAL_PH_MIN && soilPh <= VITAL_PH_MAX ? (appLocale === "id" ? "Dalam rentang" : "In range") : (appLocale === "id" ? "Perlu diperiksa" : "Check needed"), soilPh < VITAL_PH_MIN || soilPh > VITAL_PH_MAX);
   }
 
   const light = Number(reading?.light);
@@ -3901,6 +4104,7 @@ function renderSensors(reading) {
       "#env-light",
       isNightWIB() && light < 30 ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : `${light}%`,
     );
+    updateHud("light", light, isNightWIB() && light < 30 ? (appLocale === "id" ? "Malam" : "Night") : light < 30 ? (appLocale === "id" ? "Rendah" : "Low") : (appLocale === "id" ? "Cukup" : "Sufficient"), !isNightWIB() && light < 30);
   }
 
   const indoorParts = [];

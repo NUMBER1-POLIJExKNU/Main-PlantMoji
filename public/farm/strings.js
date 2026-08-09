@@ -43,6 +43,20 @@
         SoilAlkaline: "😖",
       },
 
+      // Companion stage display names, keyed by the backend stage name used
+      // in live.js's `companion-<Stage>` classes. Today's 5 stages mirror
+      // live.js's STAGE_ORDER constant (see the "will be replaced by
+      // PM_LADDER" comment there); the evolution-ladder plan will extend
+      // this table to 10 without changing its shape. Consumed by the
+      // transformation-FX ceremony (evo.evolved below) to localize {stage}.
+      companionStage: {
+        Seed: "Seed",
+        Sprout: "Sprout",
+        Bud: "Bud",
+        Bloom: "Bloom",
+        Guardian: "Guardian",
+      },
+
       // Reason-chip labels (Task 14): bond_events reason prefix → friendly label.
       reasons: {
         quest: "Quest complete",
@@ -325,6 +339,17 @@
         luckyStamp: "LUCKY! ×2",
       },
 
+      // Evolution ceremony dialog (Pokémon-Style Transformation FX plan,
+      // Task 2). {name} is the plant's display name; {stage} is a localized
+      // stage name passed in from the companionStage table above — do not
+      // re-declare stage names here. Consumed by live.js's evolution
+      // sequencer (Task 4) and level-up re-stage (Task 5).
+      evo: {
+        noticing: (name) => `What? ${name} is changing…!`,
+        evolved: (name, stage) => `Congratulations! ${name} grew into ${stage}!`,
+        tapToContinue: "Tap to continue",
+      },
+
       // Banner tag shown while presenter/demo mode is active (Task 21) and on
       // the offline static fallback (spec §3 offline row).
       demoTag: "DEMO",
@@ -352,6 +377,16 @@
         Sleepy: "😴",
         SoilAcidic: "🤢",
         SoilAlkaline: "😖",
+      },
+
+      // Nama tahap pertumbuhan companion — lihat catatan companionStage di
+      // pohon en di atas (kunci mengikuti STAGE_ORDER di live.js).
+      companionStage: {
+        Seed: "Benih",
+        Sprout: "Kecambah",
+        Bud: "Kuncup",
+        Bloom: "Mekar",
+        Guardian: "Penjaga",
       },
 
       reasons: {
@@ -603,6 +638,14 @@
         xpGain: (delta) => `+${delta} XP`,
         streakUp: (days) => (days === 1 ? "+1 hari" : `+${days} hari`),
         luckyStamp: "BERUNTUNG! ×2",
+      },
+
+      // Dialog upacara evolusi (rencana Pokémon-Style Transformation FX,
+      // Task 2). Lihat catatan {name}/{stage} di pohon en di atas.
+      evo: {
+        noticing: (name) => `Lho? ${name} mulai berubah…!`,
+        evolved: (name, stage) => `Selamat! ${name} tumbuh menjadi ${stage}!`,
+        tapToContinue: "Ketuk untuk lanjut",
       },
 
       // Presenter/demo tag is a product mark, not copy — stays "DEMO".

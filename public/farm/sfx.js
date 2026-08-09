@@ -17,13 +17,28 @@
 //     toggle()    — flip the preference, update the #sound-toggle button,
 //                   sync same-page listeners; returns the NEW muted state
 //     buzz(ms)    — navigator.vibrate?.(ms); no-op when muted
+//     evoRiser(loops=6) — evolution ceremony's accelerating suspense riser
+//                   (transformation FX plan, Task 1). NOT routed through
+//                   play(): it returns { totalMs, stop() } so the visual
+//                   sequencer can sync its silhouette strobe to the audio
+//                   and fast-forward both together on a tap. Same
+//                   mute/blocked/unlock guardrails as play(); silent no-op
+//                   returns { totalMs: 0, stop(){} }.
+//     evoFanfare() — evolution ceremony's payoff sting: dotted major run
+//                   resolving to a sustained detuned triad (~2.0s incl.
+//                   tail). Dedicated method, not rate-limited — the
+//                   sequencer fires it once per ceremony.
+//     cry()       — the companion's own reveal voice (~0.4s noise chirp +
+//                   triangle glide). Dedicated method, not rate-limited.
 //   }
 //
 // Cues: blip, coin, cascade, pod, jackpot, fanfare, chapter, pet, splash,
 // whoosh, tick, boing, knock, purr, lullaby, hum, breeze, emberCrackle,
-// reliefCool, reliefMist, reliefLight, reliefSoil, stamp — all
-// WebAudio-synthesized square/triangle oscillators (or a white-noise buffer
-// through a filter). Zero external assets, zero network (spec D1).
+// reliefCool, reliefMist, reliefLight, reliefSoil, stamp, evoChirp, evoRiser,
+// evoFanfare, cry — all WebAudio-synthesized square/triangle oscillators (or
+// a white-noise buffer through a filter). Zero external assets, zero
+// network (spec D1). The last three evolution-ceremony cues are also
+// exposed as dedicated PMSfx methods above — see the object literal doc.
 //
 // Sound is default OFF. The preference lives at localStorage["pm_sound"]
 // ("on" = enabled; missing or "off" = muted) and syncs across tabs/pages via
@@ -255,6 +270,144 @@
     });
   }
 
+  // ── Evolution ceremony recipes (transformation FX plan, Task 1) ────────
+  // riserRecipe/fanfareRecipe/cryRecipe are shared by a thin CUES entry
+  // (so `play("evoRiser")` etc. work for console/QA probing, same as every
+  // other cue) AND by dedicated PMSfx.evoRiser/evoFanfare/cry methods below
+  // that bypass play()'s rate limiter — the ceremony sequencer fires each
+  // at most once and evoRiser needs the {totalMs, stop()} handle play()
+  // cannot return.
+
+  // Accelerating root-fifth-octave arpeggio: interval x0.85 per loop, +2
+  // semitones per loop (research: pokecrystal evolution_animation.asm
+  // cadence, adapted to WebAudio). Returns the total scheduled ms so the
+  // visual strobe can sync to it, and stop() to cut every note short on
+  // fast-forward. Ramps always bottom out at 0.0001, never 0 —
+  // exponentialRampToValueAtTime(0, …) throws (MDN).
+  function riserRecipe(c, dest, loops) {
+    let t = c.currentTime;
+    let interval = 0.22;
+    let transpose = 0;
+    const pattern = [0, 7, 12];
+    const startFreq = 261.6;
+    let stopped = false;
+    const nodes = [];
+    for (let loop = 0; loop < loops; loop += 1) {
+      for (const semi of pattern) {
+        const osc = c.createOscillator();
+        const g = c.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(startFreq * Math.pow(2, (semi + transpose) / 12), t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + interval * 0.9);
+        osc.connect(g).connect(dest);
+        osc.start(t);
+        osc.stop(t + interval);
+        nodes.push(osc);
+        t += interval;
+      }
+      interval = Math.max(0.06, interval * 0.85);
+      transpose += 2;
+    }
+    return {
+      totalMs: (t - c.currentTime) * 1000,
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        for (const n of nodes) {
+          try {
+            n.stop();
+          } catch {
+            /* already stopped/ended — ignore */
+          }
+        }
+      },
+    };
+  }
+
+  // Evolution payoff fanfare: dotted major run resolving into a sustained
+  // detuned triad with a long release tail (research: "silence beat before
+  // the reveal sting" + Gen2 evolution fanfare shape). ~2.0s including the
+  // sustain — deliberately bigger than the level-up `fanfare` cue so the
+  // rare event keeps its extra gravity.
+  function fanfareRecipe(c, dest) {
+    const t0 = c.currentTime;
+    const run = [N.C5, N.E5, N.G5, N.C6];
+    const durs = [0.09, 0.09, 0.09, 0.14];
+    let t = t0;
+    for (let i = 0; i < run.length; i += 1) {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(run[i], t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.11, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + durs[i]);
+      osc.connect(g).connect(dest);
+      osc.start(t);
+      osc.stop(t + durs[i] + 0.02);
+      t += durs[i];
+    }
+    // Sustained detuned C-major triad — the "landing" beat under the run.
+    const triad = [
+      { freq: N.C6, detune: -5 },
+      { freq: N.E6, detune: 0 },
+      { freq: N.G6, detune: 6 },
+    ];
+    const sustainDur = 1.55;
+    for (const voice of triad) {
+      const osc = c.createOscillator();
+      const g = c.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(voice.freq, t);
+      osc.detune.setValueAtTime(voice.detune, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.09, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + sustainDur);
+      osc.connect(g).connect(dest);
+      osc.start(t);
+      osc.stop(t + sustainDur + 0.05);
+    }
+  }
+
+  // Companion reveal cry: a soft 60ms noise chirp attack followed by a warm
+  // ~300ms triangle glide 880->660Hz (falling, so it reads as a contented
+  // chirp, not an alarmed screech). ~0.4s total.
+  function cryRecipe(c, dest) {
+    const t0 = c.currentTime;
+    const src = c.createBufferSource();
+    src.buffer = noiseBuffer(c);
+    src.loop = true;
+    const filter = c.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(1500, t0);
+    filter.Q.value = 3;
+    const nGain = c.createGain();
+    nGain.gain.setValueAtTime(0.0001, t0);
+    nGain.gain.linearRampToValueAtTime(0.06, t0 + 0.01);
+    nGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+    src.connect(filter);
+    filter.connect(nGain);
+    nGain.connect(dest);
+    src.start(t0);
+    src.stop(t0 + 0.09);
+
+    const glideStart = t0 + 0.04;
+    const glideDur = 0.3;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(880, glideStart);
+    osc.frequency.exponentialRampToValueAtTime(660, glideStart + glideDur);
+    g.gain.setValueAtTime(0.0001, glideStart);
+    g.gain.linearRampToValueAtTime(0.08, glideStart + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, glideStart + glideDur);
+    osc.connect(g).connect(dest);
+    osc.start(glideStart);
+    osc.stop(glideStart + glideDur + 0.03);
+  }
+
   // ── Cue recipes (plan Task 5; durations in seconds) ────────────────────
 
   const CUES = {
@@ -373,6 +526,18 @@
       tone(c, { freq: 240, stepTo: 190, dur: 0.12, vol: 0.09 });
       noise(c, { dur: 0.03, filter: "lowpass", freq: 1000, vol: 0.12 });
     },
+    // Evolution ceremony cues (transformation FX plan, Task 1). evoChirp is
+    // the level-up sting, played the normal way via play("evoChirp"): a
+    // 3-note rising run, punchier/slower than `cascade` (110ms/note vs
+    // 55ms) so it reads as a small triumphant beat, not a UI blip.
+    evoChirp: (c) => arpeggio(c, [N.C5, N.E5, N.G5], 0.11, { durs: [0.1, 0.1, 0.15] }),
+    // evoRiser/evoFanfare/cry recipes live above (shared with the dedicated
+    // PMSfx.evoRiser/evoFanfare/cry methods); registered here too so
+    // play("evoRiser") / play("evoFanfare") / play("cry") also work for
+    // console probing and the QA overlay, same as every other cue.
+    evoRiser: (c) => riserRecipe(c, c.destination, 6),
+    evoFanfare: (c) => fanfareRecipe(c, c.destination),
+    cry: (c) => cryRecipe(c, c.destination),
   };
 
   const lastPlayedAt = Object.create(null);
@@ -410,6 +575,64 @@
       /* a synthesis failure must never break the page */
     } finally {
       pitchTranspose = 1; // never leak a transpose into the next cue
+    }
+  }
+
+  /** Shared pre-flight for the evolution-ceremony methods that bypass
+   *  play()'s dispatcher (evoRiser/evoFanfare/cry) — the exact same
+   *  guardrails play() applies before touching the audio graph: mute
+   *  short-circuits before any node exists, a blocked/not-yet-unlocked
+   *  context stays silent, and a context the browser suspended (tab
+   *  backgrounded) gets the same resume-and-re-arm treatment play() gives
+   *  it. Returns the running AudioContext, or null when the caller must
+   *  stay silent this call. */
+  function readyContext() {
+    if (readMuted()) return null; // mute short-circuits before ANY node creation
+    if (blocked) return null; // audio policy said no — stay silent
+    const c = ctx;
+    if (!c) return null; // no context yet — the gesture unlock is still pending
+    if (c.state !== "running") {
+      tryResume(c);
+      listenForUnlock();
+      return null;
+    }
+    return c;
+  }
+
+  // Evolution ceremony methods (transformation FX plan, Task 1): the
+  // live.js sequencer fires each of these at most once per ceremony, so —
+  // unlike play() — none of these apply the 1.5s per-cue rate limit.
+  // evoRiser's returned handle is exactly what the sequencer syncs its
+  // silhouette strobe to and calls to fast-forward.
+
+  function evoRiser(loops) {
+    const n = Number.isFinite(loops) && loops > 0 ? Math.floor(loops) : 6;
+    const c = readyContext();
+    if (!c) return { totalMs: 0, stop() {} };
+    try {
+      return riserRecipe(c, c.destination, n);
+    } catch {
+      return { totalMs: 0, stop() {} }; // a synthesis failure must never break the page
+    }
+  }
+
+  function evoFanfare() {
+    const c = readyContext();
+    if (!c) return;
+    try {
+      fanfareRecipe(c, c.destination);
+    } catch {
+      /* a synthesis failure must never break the page */
+    }
+  }
+
+  function cry() {
+    const c = readyContext();
+    if (!c) return;
+    try {
+      cryRecipe(c, c.destination);
+    } catch {
+      /* a synthesis failure must never break the page */
     }
   }
 
@@ -505,5 +728,5 @@
   if (document.body) injectButton();
   else document.addEventListener("DOMContentLoaded", injectButton, { once: true });
 
-  window.PMSfx = { play, muted: readMuted, toggle, buzz };
+  window.PMSfx = { play, muted: readMuted, toggle, buzz, evoRiser, evoFanfare, cry };
 })();
