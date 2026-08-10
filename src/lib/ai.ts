@@ -66,6 +66,16 @@ export interface MemoryReflectionAiInput {
   verifiedMemory: string;
   fallback: string;
   locale: AppLocale;
+  /** Tone-only voice (handoff §13); unknown/missing coerces to "cute". */
+  personality?: PersonalityId;
+  /** Digit-free "how long ago" phrase (jamkachu-memory's memoryTimeAgo) —
+   *  digits outside the verified memory would fail validMemoryReflection. */
+  timeAgo?: string | null;
+  /** Per-memory writing angle (jamkachu-memory's memoryReflectionAngle) so
+   *  two memories never share one sentence shape. */
+  angle?: string;
+  /** Openings of recently generated reflections — banned as new openings. */
+  avoidOpenings?: string[];
 }
 
 
@@ -292,8 +302,9 @@ export async function generateFarmerAiReply(input: FarmerAiInput): Promise<strin
   }
 }
 
-/** Gives one persisted memory a warm Jamkachu voice. The event itself is
- * selected and verified by application code; Gemini only rewrites it. */
+/** Gives one persisted memory a warm Jamkachu voice — written like a diary
+ * entry traded between friends, never a template. The event itself is
+ * selected and verified by application code; Gemini may only speak about it. */
 export async function generateMemoryReflection(input: MemoryReflectionAiInput): Promise<string | null> {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -302,23 +313,35 @@ export async function generateMemoryReflection(input: MemoryReflectionAiInput): 
     const memory = cleanFragment(input.verifiedMemory, 300);
     const fallback = cleanFragment(input.fallback, 400);
     if (!memory || !fallback) return null;
+    const personality = normalizePersonality(input.personality);
+    const timeAgo = cleanFragment(input.timeAgo ?? undefined, 60);
+    const angle = cleanFragment(input.angle, 160);
+    const avoid = (input.avoidOpenings ?? [])
+      .map((opening) => cleanFragment(opening, 60))
+      .filter((opening): opening is string => opening != null)
+      .slice(0, 4);
     const language = input.locale === "id" ? "Bahasa Indonesia" : "English";
     const prompt = [
-      `You are ${name}, a small plant companion in PlantMoji, fondly remembering a real shared moment.`,
-      "Speak in first person with warm nostalgia, affection, and child-friendly natural language. Never sound like an AI, report, or dashboard.",
-      "The verified memory below is the complete truth. Only rephrase it; never add an event, sensor value, date, achievement, or cause.",
-      "Do not give care advice. This is emotional recollection, not analysis.",
-      `Reply in ${language}, plain text, 1-2 short sentences under 300 characters. No markdown, lists, or quotation marks.`,
+      `You are ${name}, a small plant companion writing back in the growth diary you and your caretaker keep together — two friends trading memories, not an app generating a caption.`,
+      `Your personality voice: ${personality} — ${VOICE_DESCRIPTIONS[personality]}.`,
+      "The verified memory below is the complete truth. Only speak about it; never add an event, sensor value, achievement, or cause, and never write any digit that does not already appear in the verified memory.",
+      timeAgo ? `This memory happened ${timeAgo}. You may mention how long ago in words if it feels natural — never in digits.` : null,
+      angle ? `Make this entry feel like ITS OWN memory: build it around ${angle}.` : "Make this entry feel like its own memory, with its own detail and mood.",
+      "The meaning guide below only anchors the facts. Do NOT reuse its wording, its opening, or its sentence rhythm — write the memory in your own fresh words.",
+      avoid.length > 0 ? `Recent diary entries already started with: ${avoid.map((opening) => `"${opening}"`).join(", ")}. Start this one differently.` : null,
+      "Vary freely: you may wonder aloud, tease gently, trail off, or ask your caretaker one small question back.",
+      "Do not give care advice. This is emotional recollection, not analysis. Never sound like an AI, report, or dashboard.",
+      `Reply in ${language}, plain text, 1-3 short sentences under 300 characters. No markdown, lists, or quotation marks.`,
       `Verified memory: ${memory}`,
-      `Safe fallback whose meaning must be preserved: ${fallback}`,
-    ].join("\n");
+      `Meaning guide (facts only — never echo its phrasing): ${fallback}`,
+    ].filter((line): line is string => line != null).join("\n");
     const response = await fetch(GEMINI_API_URL, {
       method: "POST",
       headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: prompt }] },
-        contents: [{ role: "user", parts: [{ text: "Remember this moment warmly using only the supplied memory." }] }],
-        generationConfig: { maxOutputTokens: 120, temperature: 0.55 },
+        contents: [{ role: "user", parts: [{ text: "Write today's diary reply about this one memory, in your own words." }] }],
+        generationConfig: { maxOutputTokens: 140, temperature: 0.95 },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",
