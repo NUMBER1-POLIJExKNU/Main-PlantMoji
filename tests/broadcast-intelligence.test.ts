@@ -27,16 +27,23 @@ describe("broadcast intelligence presentation", () => {
     expect(camera).not.toContain('REWARD CONTROL');
   });
 
-  it("provides honest boot, ending, fullscreen, and verification staging", () => {
+  it("provides honest boot, ending, and fullscreen staging", () => {
     const overlay = read("src/components/broadcast-overlay.tsx");
     const demo = read("public/farm/demo.js");
-    const farm = read("public/farm/index.html");
     expect(overlay).toContain("SAFE AI FALLBACK");
     expect(overlay).toContain("SENSE · UNDERSTAND · ACT");
     expect(demo).toContain("toggleFullscreen");
     expect(demo).toContain('case "x"');
-    expect(farm).toContain('id="quest-verify-console"');
-    expect(farm).toContain("XP TRANSACTION");
-    expect(farm).toContain("LOCKED");
+  });
+
+  it("keeps the ops-console vocabulary OFF the player-facing farm home", () => {
+    // Farm-wave text diet: the CARE VERIFICATION CORE console was removed —
+    // the amber verifying shimmer + "Sensor sedang memeriksa…" tell the
+    // story without engineering vocabulary (XP TRANSACTION / LOCKED),
+    // which player copy must never contain.
+    const farm = read("public/farm/index.html");
+    expect(farm).not.toContain('id="quest-verify-console"');
+    expect(farm).not.toContain("XP TRANSACTION");
+    expect(farm).not.toContain("CARE VERIFICATION CORE");
   });
 });

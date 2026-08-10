@@ -2,11 +2,36 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>PlantMoji - Cozy Pixel Farm</title>
     <!-- Readable pixel body + compact arcade display font. -->
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Pixelify+Sans:wght@400..700&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/farm/style.css">
+    <!-- Farm-wave inline layer (owned with this file; deliberately layered
+         AFTER style.css, which belongs to another stream):
+         1) Tap-reaction faces (live.js showPetExpression): .is-tapface hides
+            whichever mood face is showing, tapface-<key> reveals ONE
+            reaction variant for ~1.2s. Pure presentation — never a reward.
+         2) STATUS JAMKACHU phone grid: the cat avatar was removed, so the
+            48px column the ≤800px grid reserved for it collapses. -->
+    <style>
+        .mascot-svg.is-tapface .mascot-face { display: none; }
+        .mascot-svg.is-tapface.tapface-love [data-face="tap-love"],
+        .mascot-svg.is-tapface.tapface-star [data-face="tap-star"],
+        .mascot-svg.is-tapface.tapface-wink [data-face="tap-wink"],
+        .mascot-svg.is-tapface.tapface-blep [data-face="tap-blep"],
+        .mascot-svg.is-tapface.tapface-surprised [data-face="tap-surprised"],
+        .mascot-svg.is-tapface.tapface-grit [data-face="tap-grit"],
+        .mascot-svg.is-tapface.tapface-teary [data-face="tap-teary"],
+        .mascot-svg.is-tapface.tapface-blink [data-face="tap-blink"],
+        .mascot-svg.is-tapface.tapface-curious [data-face="curious"],
+        .mascot-svg.is-tapface.tapface-proud [data-face="proud"],
+        .mascot-svg.is-tapface.tapface-giggle [data-face="giggle"] { display: block; }
+        @media (max-width: 800px) {
+            .user-gamification { grid-template-columns: minmax(0, 1fr); }
+            .user-gamification .user-details { grid-column: 1; }
+        }
+    </style>
 </head>
 <body>
     <!-- Background Environment (Decorations) -->
@@ -84,14 +109,15 @@
                         <strong id="jember-clock-time">--:--</strong>
                     </span>
                 </div>
+                <!-- Text-diet widget: icon + temperature + one short line.
+                     Provenance (BMKG credit, forecast timestamp) and the
+                     indoor duplicate line moved out — /monitoring keeps the
+                     full detail; the SUHU/UDARA tiles below carry indoor. -->
                 <div class="weather-widget panel-glass">
                     <div class="weather-icon">🌤️</div>
                     <div class="weather-text">
-                        <span class="weather-source"><span data-i18n="weather.outdoor">Luar ruang Jember</span> · <a href="https://data.bmkg.go.id/prakiraan-cuaca/" target="_blank" rel="noreferrer">BMKG</a></span>
                         <span class="temp">--°C</span>
                         <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>
-                        <span class="forecast-time"></span>
-                        <span class="indoor-reading"><span data-i18n="weather.indoor">Ruang tanaman</span>: --°C · --% RH</span>
                     </div>
                 </div>
             </div>
@@ -149,7 +175,7 @@
                 <!-- Mascot -->
                 <div class="mascot-container">
                     <div class="speech-bubble animated-bounce">
-                        "I'm feeling so healthy!<br>Thanks for the care."
+                        "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
                     </div>
                     <div class="mascot-wrapper animated-breath">
                         <svg viewBox="0 0 300 350" class="mascot-svg">
@@ -308,6 +334,63 @@
                                     <path d="M105 43 L126 59 M126 43 L105 59 M154 43 L175 59 M175 43 L154 59" fill="none" stroke="var(--color-outline)" stroke-width="7"/>
                                     <rect x="94" y="67" width="18" height="11" fill="var(--color-cheek)"/><rect x="168" y="67" width="18" height="11" fill="var(--color-cheek)"/>
                                     <rect x="124" y="68" width="34" height="18" fill="var(--color-outline)"/><rect x="132" y="78" width="18" height="8" fill="#ff8383"/>
+                                </g>
+
+                                <!-- Tap-reaction faces (live.js showPetExpression, the
+                                     2026-08-10 expression-variety request): eight extra
+                                     pixel variants shown ~1.2s over ANY mood face via the
+                                     inline tap-face stylesheet in <head> — .is-tapface +
+                                     tapface-<key> on .mascot-svg. Reaction art only:
+                                     display never grants anything. -->
+                                <g class="mascot-face" data-face="tap-love">
+                                    <rect x="106" y="44" width="8" height="8" fill="var(--color-cheek)"/><rect x="116" y="44" width="8" height="8" fill="var(--color-cheek)"/>
+                                    <rect x="104" y="50" width="22" height="8" fill="var(--color-cheek)"/><rect x="108" y="58" width="14" height="5" fill="var(--color-cheek)"/><rect x="112" y="63" width="6" height="4" fill="var(--color-cheek)"/>
+                                    <rect x="156" y="44" width="8" height="8" fill="var(--color-cheek)"/><rect x="166" y="44" width="8" height="8" fill="var(--color-cheek)"/>
+                                    <rect x="154" y="50" width="22" height="8" fill="var(--color-cheek)"/><rect x="158" y="58" width="14" height="5" fill="var(--color-cheek)"/><rect x="162" y="63" width="6" height="4" fill="var(--color-cheek)"/>
+                                    <rect x="126" y="72" width="28" height="14" fill="var(--color-outline)"/><rect x="132" y="79" width="16" height="7" fill="#FF8383"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-star">
+                                    <rect x="113" y="42" width="8" height="22" fill="var(--color-yellow, #FFDE6A)"/><rect x="106" y="49" width="22" height="8" fill="var(--color-yellow, #FFDE6A)"/>
+                                    <rect x="163" y="42" width="8" height="22" fill="var(--color-yellow, #FFDE6A)"/><rect x="156" y="49" width="22" height="8" fill="var(--color-yellow, #FFDE6A)"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="124" y="72" width="32" height="14" fill="var(--color-outline)"/><rect x="130" y="79" width="20" height="7" fill="#FF8383"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-wink">
+                                    <path d="M106 52 Q118 62 130 52" fill="none" stroke="var(--color-outline)" stroke-width="7"/>
+                                    <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/><rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <path d="M124 70 Q140 84 156 70" fill="none" stroke="var(--color-outline)" stroke-width="7"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-blep">
+                                    <rect x="110" y="45" width="15" height="15" fill="var(--color-outline)"/><rect x="112" y="47" width="5" height="5" fill="#FFF"/>
+                                    <rect x="155" y="45" width="15" height="15" fill="var(--color-outline)"/><rect x="157" y="47" width="5" height="5" fill="#FFF"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="126" y="71" width="28" height="7" fill="var(--color-outline)"/>
+                                    <rect x="138" y="78" width="14" height="12" fill="#FF8383"/><rect x="141" y="78" width="2" height="9" fill="#E5697C"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-surprised">
+                                    <rect x="107" y="42" width="19" height="19" fill="var(--color-outline)"/><rect x="112" y="47" width="7" height="7" fill="#FFF"/>
+                                    <rect x="154" y="42" width="19" height="19" fill="var(--color-outline)"/><rect x="159" y="47" width="7" height="7" fill="#FFF"/>
+                                    <rect x="132" y="72" width="16" height="16" fill="var(--color-outline)"/><rect x="136" y="76" width="8" height="8" fill="var(--color-surface, #FFF)"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-grit">
+                                    <rect x="106" y="38" width="18" height="6" fill="var(--color-outline)" transform="rotate(18 115 41)"/>
+                                    <rect x="156" y="38" width="18" height="6" fill="var(--color-outline)" transform="rotate(-18 165 41)"/>
+                                    <rect x="109" y="50" width="16" height="7" fill="var(--color-outline)"/><rect x="155" y="50" width="16" height="7" fill="var(--color-outline)"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="128" y="74" width="24" height="7" fill="var(--color-outline)"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-teary">
+                                    <path d="M106 50 Q118 58 130 50" fill="none" stroke="var(--color-outline)" stroke-width="7"/>
+                                    <path d="M150 50 Q162 58 174 50" fill="none" stroke="var(--color-outline)" stroke-width="7"/>
+                                    <rect x="103" y="58" width="9" height="11" fill="var(--color-water)"/><rect x="105" y="69" width="5" height="6" fill="var(--color-water)"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="130" y="74" width="20" height="7" fill="var(--color-outline)"/>
+                                </g>
+                                <g class="mascot-face" data-face="tap-blink">
+                                    <rect x="108" y="51" width="18" height="6" fill="var(--color-outline)"/><rect x="154" y="51" width="18" height="6" fill="var(--color-outline)"/>
+                                    <rect x="95" y="65" width="15" height="10" fill="var(--color-cheek)"/><rect x="170" y="65" width="15" height="10" fill="var(--color-cheek)"/>
+                                    <rect x="128" y="73" width="24" height="7" fill="var(--color-outline)"/>
                                 </g>
 
                                 <!-- Face (Overheating): slanted brows + sweat drop + deep cheeks -->
@@ -517,52 +600,22 @@
                 <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
                     <span aria-hidden="true">🧠</span>
                     <span class="quiz-bonus-label" data-i18n="hud.bonus">BONUS</span>
-                    <span class="quiz-chip-copy"><strong>QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
+                    <span class="quiz-chip-copy"><strong data-i18n="hud.quiz">QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
                     <span class="quiz-chip-xp">+9 XP</span>
                 </button>
 
                 <!-- Current Quest (fed by the existing quests query) -->
                 <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></div>
-                <div id="quest-verify-console" class="quest-verify-console" hidden><b>CARE VERIFICATION CORE</b><span>&gt; SENSOR EVIDENCE <strong>PENDING</strong></span><span>&gt; DETERMINISTIC RULE <strong>ACTIVE</strong></span><span>&gt; XP TRANSACTION <strong>LOCKED</strong></span></div>
 
-                <!-- Bond / XP / HP / Streak (character state, moved down from hud-top) -->
+                <!-- Bond / XP / HP / Streak (character state, moved down from
+                     hud-top). Identity diet: the old pixel CAT avatar and the
+                     duplicate name line are gone — #char-name under the mascot
+                     is the single name owner; the .username slot now carries
+                     only the bond-level label ("Ikatan Lv.3") above the bar. -->
                 <div class="user-gamification panel-glass">
                     <span class="hud-section-label" data-i18n="hud.status">STATUS JAMKACHU</span>
-                    <div class="avatar">
-                        <svg viewBox="0 0 64 64" class="avatar-img" role="img" aria-label="Pixel cat avatar" shape-rendering="crispEdges">
-                            <!-- Ears -->
-                            <rect x="16" y="4" width="8" height="8" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="3"/>
-                            <rect x="40" y="4" width="8" height="8" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="3"/>
-                            <rect x="12" y="10" width="16" height="10" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="3"/>
-                            <rect x="36" y="10" width="16" height="10" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="3"/>
-                            <rect x="18" y="8" width="4" height="8" fill="var(--color-cheek)"/>
-                            <rect x="42" y="8" width="4" height="8" fill="var(--color-cheek)"/>
-                            <!-- Head -->
-                            <rect x="10" y="18" width="44" height="32" fill="var(--color-soil-light)" stroke="var(--color-outline)" stroke-width="3"/>
-                            <!-- Tabby stripes -->
-                            <rect x="26" y="21" width="4" height="6" fill="var(--color-soil-dark)"/>
-                            <rect x="34" y="21" width="4" height="6" fill="var(--color-soil-dark)"/>
-                            <!-- Eyes -->
-                            <rect x="18" y="30" width="8" height="8" fill="var(--color-outline)"/>
-                            <rect x="20" y="32" width="3" height="3" fill="#FFF"/>
-                            <rect x="38" y="30" width="8" height="8" fill="var(--color-outline)"/>
-                            <rect x="40" y="32" width="3" height="3" fill="#FFF"/>
-                            <!-- Cheeks -->
-                            <rect x="12" y="39" width="6" height="5" fill="var(--color-cheek)"/>
-                            <rect x="46" y="39" width="6" height="5" fill="var(--color-cheek)"/>
-                            <!-- Nose + mouth -->
-                            <rect x="29" y="40" width="6" height="4" fill="var(--color-cheek)"/>
-                            <rect x="26" y="45" width="4" height="3" fill="var(--color-outline)"/>
-                            <rect x="34" y="45" width="4" height="3" fill="var(--color-outline)"/>
-                            <!-- Whiskers -->
-                            <rect x="2" y="36" width="8" height="2" fill="var(--color-outline)"/>
-                            <rect x="3" y="43" width="7" height="2" fill="var(--color-outline)"/>
-                            <rect x="54" y="36" width="8" height="2" fill="var(--color-outline)"/>
-                            <rect x="54" y="43" width="7" height="2" fill="var(--color-outline)"/>
-                        </svg>
-                    </div>
                     <div class="user-details">
-                        <span class="username">Jamkachu</span>
+                        <span class="username">Ikatan Lv.--</span>
                         <div class="xp-row">
                             <div class="xp-bar-wrap"><div class="xp-bar" style="width: 0%;"></div></div>
                             <span id="hp-inline">HP --</span>
@@ -582,18 +635,20 @@
                      Plant Status. Each tile is pressable (plan T19): tap →
                      Jamkachu comments in the speech bubble. #env-temp/-hum/
                      -light/-ph, .env-status and [data-vital] are the SAME
-                     anchors live.js has always written/listened on — the
-                     redesign only adds .env-gauge (10-seg comfort gauge,
-                     built by live.js's ensureGaugeSegments) and .env-range
-                     (explicit "Ideal min–max" line, hidden until the active
-                     crop profile loads from /api/crop-profile). -->
+                     anchors live.js has always written/listened on — plus
+                     .env-gauge (10-seg comfort gauge with the crop profile's
+                     ideal band highlighted, built by live.js's
+                     ensureGaugeSegments). Text diet: the old .env-range
+                     "Ideal min–max" line is gone — the gauge band already
+                     shows it — and each status is a two-word vocabulary
+                     ("Aman" / "Perlu dicek", plus the light tile's night). -->
                 <section id="env-strip" class="panel-glass" aria-label="Current environment">
                     <div class="env-hud-title"><span data-i18n="env.title">KONDISI KEBUN</span><a href="/monitoring" data-i18n="env.details">Lihat detail ›</a></div>
                     <div class="env-hud-grid">
-                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true">🌡️</i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="temp" hidden></span></span></button>
-                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true">💧</i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="hum" hidden></span></span></button>
-                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true">☀️</i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="light" hidden></span></span></button>
-                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true">🧪</i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="ph" hidden></span></span></button>
+                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true">🌡️</i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true">💧</i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true">☀️</i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true">🧪</i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em></span></button>
                     </div>
                     <!-- Honest waiting state (live.js renderSensorsWaiting):
                          shown when the garden is connected but no sensor
@@ -640,9 +695,11 @@
     <div id="daily-quiz-modal" class="quiz-modal" hidden>
         <div class="quiz-backdrop" data-quiz-close></div>
         <section class="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quiz-title" tabindex="-1">
+            <!-- Indicator diet: the timer + "2 / 3" step text carry all the
+                 pacing — the old progress meter bar and phase chips are gone,
+                 and the case intro shows only on question 1 (quiz.js). -->
             <header class="quiz-card-head"><div><span id="quiz-step">1 / 3</span><h2 id="quiz-title">Quiz Jamkachu</h2></div><button id="quiz-close" type="button" aria-label="Tutup">×</button></header>
-            <div class="quiz-case"><strong id="quiz-case-title"></strong><p id="quiz-case-intro"></p><div id="quiz-case-phases"></div></div>
-            <div class="quiz-meter"><i id="quiz-meter-fill"></i></div>
+            <div class="quiz-case"><strong id="quiz-case-title"></strong><p id="quiz-case-intro"></p></div>
             <div class="quiz-timer" aria-label="Waktu tersisa"><i id="quiz-timer-fill"></i><strong id="quiz-timer-text">15</strong></div>
             <p id="quiz-question" class="quiz-question"></p>
             <div id="quiz-choices" class="quiz-choices"></div>
@@ -654,8 +711,7 @@
     <dialog id="farm-guide" class="farm-guide" aria-labelledby="farm-guide-title">
         <div class="farm-guide-card">
             <span>🌱 PLANTMOJI GUIDE</span><h2 id="farm-guide-title" data-i18n="guide.title">CARA BERMAIN</h2>
-            <ol><li data-i18n="guide.sense">1 · SENSE — Lihat empat sensor asli.</li><li data-i18n="guide.understand">2 · UNDERSTAND — Dengarkan Jamkachu dan buka Misi.</li><li data-i18n="guide.act">3 · ACT — Ubah lingkungan dengan cara kecil dan aman.</li><li data-i18n="guide.verify">4 · VERIFY & GROW — Sensor memverifikasi, lalu hadiah tumbuh.</li></ol>
-            <p data-i18n="guide.ai">AI hanya menjelaskan. Sensor dan aturan game menentukan kebenaran.</p>
+            <ol><li data-i18n="guide.sense">1 · Lihat sensor</li><li data-i18n="guide.understand">2 · Dengar Jamkachu</li><li data-i18n="guide.act">3 · Ubah satu hal kecil</li><li data-i18n="guide.verify">4 · Sensor cek, hadiah tumbuh</li></ol>
             <button id="farm-guide-close" class="pixel-btn" type="button" data-i18n="guide.start">AYO MULAI!</button>
         </div>
     </dialog>

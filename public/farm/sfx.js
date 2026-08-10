@@ -32,9 +32,10 @@
 //                   triangle glide). Dedicated method, not rate-limited.
 //   }
 //
-// Cues: blip, coin, cascade, pod, jackpot, fanfare, chapter, pet, splash,
-// whoosh, tick, boing, knock, purr, lullaby, hum, breeze, emberCrackle,
-// reliefCool, reliefMist, reliefLight, reliefSoil, stamp, evoChirp, evoRiser,
+// Cues: blip, tick, error, coin, cascade, pod, jackpot, fanfare, levelup,
+// chapter, pet, splash, whoosh, boing, knock, purr, lullaby, hum, breeze,
+// emberCrackle, reliefCool, reliefMist, reliefLight, reliefSoil, stamp,
+// evoChirp, evoRiser,
 // evoFanfare, cry — all WebAudio-synthesized square/triangle oscillators (or
 // a white-noise buffer through a filter). Zero external assets, zero
 // network (spec D1). The last three evolution-ceremony cues are also
@@ -418,6 +419,10 @@
     // Button micro-juice / soft UI tick: 30–50ms single squares.
     blip: (c) => tone(c, { freq: N.A5, dur: 0.045, vol: 0.05 }),
     tick: (c) => tone(c, { freq: N.G6, dur: 0.03, vol: 0.035 }),
+    error: (c) => {
+      tone(c, { freq: N.E5, stepTo: N.C5, dur: 0.13, type: "square", vol: 0.055 });
+      tone(c, { at: 0.14, freq: N.C5, dur: 0.12, type: "square", vol: 0.045 });
+    },
     // Classic coin: square 988→1319Hz, two hard steps over 90ms.
     coin: (c) => tone(c, { freq: N.B5, stepTo: N.E6, dur: 0.09 }),
     // 3-note rising arpeggio — the verifying→completed hold (Task 12).
@@ -434,6 +439,7 @@
       arpeggio(c, [N.C5, N.C5, N.C5, N.E5, N.G5, N.C6], 0.085, {
         durs: [0.07, 0.07, 0.07, 0.08, 0.08, 0.22],
       }),
+    levelup: (c) => arpeggio(c, [N.C5, N.E5, N.G5, N.C6], 0.08, { durs: [0.07, 0.07, 0.08, 0.2] }),
     // Chapter theme: 2-bar 8-note motif (~1.2s), triangle lead.
     chapter: (c) =>
       arpeggio(c, [N.C5, N.E5, N.G5, N.C6, N.A5, N.G5, N.E5, N.C6], 0.13, {

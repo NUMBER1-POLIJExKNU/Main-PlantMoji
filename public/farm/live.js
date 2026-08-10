@@ -48,18 +48,14 @@ function spawnBadgeTapEffect(rect) {
 const COPY = {
   id: {
     "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebun Saya", "nav.quests": "Misi", "nav.plants": "Eksplor Tanaman", "nav.camera": "Kamera AI", "nav.memories": "Diari Tumbuh", "nav.status": "Pemantauan", "nav.collection": "Koleksi", "nav.shop": "Toko", "nav.reports": "Laporan", "nav.settings": "Pengaturan",
-    "weather.outdoor": "Luar ruang Jember",
-    "weather.indoor": "Ruang tanaman",
     "weather.loading": "Memuat prakiraan...",
     "weather.unavailable": "Prakiraan belum tersedia",
-    "weather.forecast": "Prakiraan",
-    "weather.stale": "data terakhir",
-    "clock.label": "WAKTU JEMBER · WIB", "hud.status": "STATUS JAMKACHU", "hud.mission": "MISI HARI INI", "hud.bonus": "BONUS",
-    "guide.title": "CARA BERMAIN", "guide.sense": "1 · SENSE — Lihat empat sensor asli.", "guide.understand": "2 · UNDERSTAND — Dengarkan Jamkachu dan buka Misi.", "guide.act": "3 · ACT — Ubah lingkungan dengan cara kecil dan aman.", "guide.verify": "4 · VERIFY & GROW — Sensor memverifikasi, lalu hadiah tumbuh.", "guide.ai": "AI hanya menjelaskan. Sensor dan aturan game menentukan kebenaran.", "guide.start": "AYO MULAI!",
-    "sensor.unavailable": "Sensor dalam ruang belum terhubung",
-    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir", "npc.ai": "CHAT AI",
+    "clock.label": "WAKTU JEMBER · WIB", "hud.status": "STATUS JAMKACHU", "hud.mission": "MISI HARI INI", "hud.bonus": "BONUS", "hud.quiz": "QUIZ HARI INI",
+    "guide.title": "CARA BERMAIN", "guide.sense": "1 · Lihat sensor", "guide.understand": "2 · Dengar Jamkachu", "guide.act": "3 · Ubah satu hal kecil", "guide.verify": "4 · Sensor cek, hadiah tumbuh", "guide.start": "AYO MULAI!",
+    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ok": "Aman", "env.check": "Perlu dicek", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Misi muncul saat sensorku merasakan perubahan",
     "quest.verifying": "memverifikasi…",
+    "quest.min": "menit",
     "mood.Happy": "Senang",
     "mood.Overheating": "Kepanasan",
     "mood.TooCold": "Kedinginan",
@@ -68,6 +64,23 @@ const COPY = {
     "mood.Sleepy": "Mengantuk",
     "mood.SoilAcidic": "Tanah Asam",
     "mood.SoilAlkaline": "Tanah Basa",
+    "bubble.Happy": "Aku merasa sehat banget!<br>Terima kasih sudah merawatku.",
+    "bubble.Overheating": "Aku kepanasan...<br>bantu sejukkan aku, ya!",
+    "bubble.TooCold": "Brrr, aku kedinginan...<br>bantu hangatkan aku, ya!",
+    "bubble.DryAir": "Udaranya kering...<br>boleh bantu lembapkan sedikit?",
+    "bubble.HumidAir": "Udaranya pengap...<br>boleh beri aliran udara?",
+    "bubble.Sleepy": "Gelap sekali... aku mengantuk.<br>Boleh tambah cahaya?",
+    "bubble.SoilAcidic": "Tanahku terasa terlalu asam...<br>ajak guru cek pH-nya, ya!",
+    "bubble.SoilAlkaline": "Tanahku terasa terlalu basa...<br>ajak guru cek pH-nya, ya!",
+    "quest.KEEP_ME_HAPPY": "Jaga Aku Tetap Sehat",
+    "quest.STAY_COMFY": "Tetap Nyaman",
+    "quest.COOL_ME_DOWN": "Sejukkan Aku",
+    "quest.WARM_ME_UP": "Hangatkan Aku",
+    "quest.GIVE_ME_MORE_LIGHT": "Beri Aku Cahaya",
+    "quest.HUMIDIFY_MY_AIR": "Lembapkan Udaraku",
+    "quest.DEHUMIDIFY_MY_AIR": "Keringkan Udaraku",
+    "quest.BALANCE_SOIL_ACIDIC": "Seimbangkan Tanahku",
+    "quest.BALANCE_SOIL_ALKALINE": "Seimbangkan Tanahku",
     bright: "Terang",
     dark: "Gelap",
     days: "Hari",
@@ -78,18 +91,14 @@ const COPY = {
   },
   en: {
     "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Quests", "nav.plants": "Crop Explorer", "nav.camera": "Camera AI", "nav.memories": "Growth Diary", "nav.status": "Monitoring", "nav.collection": "Collection", "nav.shop": "Shop", "nav.reports": "Reports", "nav.settings": "Settings",
-    "weather.outdoor": "Jember outdoor",
-    "weather.indoor": "Plant room",
     "weather.loading": "Loading forecast...",
     "weather.unavailable": "Forecast unavailable",
-    "weather.forecast": "Forecast",
-    "weather.stale": "last available data",
-    "clock.label": "JEMBER TIME · WIB", "hud.status": "JAMKACHU STATUS", "hud.mission": "TODAY'S MISSION", "hud.bonus": "BONUS",
-    "guide.title": "HOW TO PLAY", "guide.sense": "1 · SENSE — Read the four real sensors.", "guide.understand": "2 · UNDERSTAND — Listen to Jamkachu and open Quests.", "guide.act": "3 · ACT — Make one small, safe environmental change.", "guide.verify": "4 · VERIFY & GROW — Sensors verify it, then rewards grow.", "guide.ai": "AI only explains. Sensors and game rules decide what is true.", "guide.start": "LET'S GROW!",
-    "sensor.unavailable": "Indoor sensor not connected",
-    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last", "npc.ai": "AI CHAT",
+    "clock.label": "JEMBER TIME · WIB", "hud.status": "JAMKACHU STATUS", "hud.mission": "TODAY'S MISSION", "hud.bonus": "BONUS", "hud.quiz": "TODAY'S QUIZ",
+    "guide.title": "HOW TO PLAY", "guide.sense": "1 · Check the sensors", "guide.understand": "2 · Listen to Jamkachu", "guide.act": "3 · Change one small thing", "guide.verify": "4 · Sensors check, rewards grow", "guide.start": "LET'S GROW!",
+    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ok": "OK", "env.check": "Check", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "Missions appear when my sensors feel a change",
     "quest.verifying": "verifying…",
+    "quest.min": "min",
     "mood.Happy": "Happy",
     "mood.Overheating": "Overheating",
     "mood.TooCold": "Too Cold",
@@ -98,6 +107,23 @@ const COPY = {
     "mood.Sleepy": "Sleepy",
     "mood.SoilAcidic": "Acidic",
     "mood.SoilAlkaline": "Alkaline",
+    "bubble.Happy": "I'm feeling so healthy!<br>Thanks for the care.",
+    "bubble.Overheating": "It's too hot...<br>please cool me down!",
+    "bubble.TooCold": "Brrr, it's too cold...<br>please warm me up!",
+    "bubble.DryAir": "The air feels so dry...<br>a little humidity, please?",
+    "bubble.HumidAir": "The air feels muggy...<br>a little airflow, please?",
+    "bubble.Sleepy": "It's so dark... I'm sleepy.<br>More light, please!",
+    "bubble.SoilAcidic": "My soil feels too acidic...<br>ask a teacher to check its pH!",
+    "bubble.SoilAlkaline": "My soil feels too alkaline...<br>ask a teacher to check its pH!",
+    "quest.KEEP_ME_HAPPY": "Keep Me Happy",
+    "quest.STAY_COMFY": "Stay Comfy",
+    "quest.COOL_ME_DOWN": "Cool Me Down",
+    "quest.WARM_ME_UP": "Warm Me Up",
+    "quest.GIVE_ME_MORE_LIGHT": "Give Me More Light",
+    "quest.HUMIDIFY_MY_AIR": "Humidify My Air",
+    "quest.DEHUMIDIFY_MY_AIR": "Dry My Air",
+    "quest.BALANCE_SOIL_ACIDIC": "Balance My Soil",
+    "quest.BALANCE_SOIL_ALKALINE": "Balance My Soil",
     bright: "Bright",
     dark: "Dark",
     days: "Days",
@@ -124,16 +150,18 @@ const t = (key) => COPY[appLocale][key] ?? COPY.en[key] ?? key;
  *  a missing/failed script tag can never break the page. */
 const PM = () => window.PM_STRINGS || {};
 
-const MOODS = {
-  Happy: { bubble: "\"I'm feeling so healthy!<br>Thanks for the care.\"" },
-  Overheating: { bubble: "\"It's too hot...<br>please cool me down!\"" },
-  TooCold: { bubble: "\"Brrr, it's too cold...<br>please warm me up!\"" },
-  DryAir: { bubble: "\"The air feels so dry...<br>a little humidity please?\"" },
-  HumidAir: { bubble: "\"The air feels so muggy...<br>a little airflow please?\"" },
-  Sleepy: { bubble: "\"So dark... I'm getting sleepy.<br>More light please!\"" },
-  SoilAcidic: { bubble: "\"My soil feels sour...<br>can you check the pH?\"" },
-  SoilAlkaline: { bubble: "\"My soil feels off...<br>can you check the pH?\"" },
+const MOODS = Object.fromEntries(["Happy", "Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "SoilAcidic", "SoilAlkaline"].map((key) => [key, { key }]));
+// Localized speech-bubble template for a mood: the central strings.js table
+// (PM_STRINGS.moodBubbles, en+id parity-tested) first, then the local COPY
+// dictionary — whose en tree is the last-resort English fallback via t().
+const moodBubble = (mood) => {
+  const key = mood?.key ?? "Happy";
+  return `&quot;${PM().moodBubbles?.[key] ?? t(`bubble.${key}`)}&quot;`;
 };
+// Localized quest title for the MISI HARI INI slot + quest-complete banner:
+// strings.js questTitles (id names verbatim from src/lib/i18n.ts
+// QUEST_COPY_ID) first, then the local COPY dictionary's English fallback.
+const questTitle = (questKey) => PM().questTitles?.[questKey] ?? t(`quest.${questKey}`);
 
 // HP is a friendly summary of the plant's CURRENT mood — the only honest
 // health signal we have (no invented numbers). Happy = full HP; needs-care
@@ -153,15 +181,12 @@ const HP_BY_MOOD = {
 // targetMin only on 'maintain' quests — drives the "23/30 min" progress in the
 // home quest slot (renderQuestSlot); recovery quests show a verifying state.
 const QUEST_META = {
-  KEEP_ME_HAPPY: { title: "Keep Me Happy", emoji: "🌱", targetMin: 30 },
-  STAY_COMFY: { title: "Stay Comfy", emoji: "🛋️", targetMin: 120 },
-  COOL_ME_DOWN: { title: "Cool Me Down", emoji: "❄️" },
-  WARM_ME_UP: { title: "Warm Me Up", emoji: "🧣" },
-  GIVE_ME_MORE_LIGHT: { title: "Give Me More Light", emoji: "☀️" },
-  HUMIDIFY_MY_AIR: { title: "Humidify My Air", emoji: "💦" },
-  DEHUMIDIFY_MY_AIR: { title: "Dry My Air", emoji: "🌬️" },
-  BALANCE_SOIL_ACIDIC: { title: "Balance My Soil", emoji: "🧪" },
-  BALANCE_SOIL_ALKALINE: { title: "Balance My Soil", emoji: "🧪" },
+  KEEP_ME_HAPPY: { emoji: "🌱", targetMin: 30 },
+  STAY_COMFY: { emoji: "🛋️", targetMin: 120 },
+  COOL_ME_DOWN: { emoji: "❄️" }, WARM_ME_UP: { emoji: "🧣" },
+  GIVE_ME_MORE_LIGHT: { emoji: "☀️" }, HUMIDIFY_MY_AIR: { emoji: "💦" },
+  DEHUMIDIFY_MY_AIR: { emoji: "🌬️" }, BALANCE_SOIL_ACIDIC: { emoji: "🧪" },
+  BALANCE_SOIL_ALKALINE: { emoji: "🧪" },
 };
 
 // Mood word + emoji shown under the character name (#char-mood). Words come
@@ -203,8 +228,10 @@ function applyMoodPulse(mood) {
 /** Swap Jamkachu's face group + identity line (#char-mood) to the given mood.
  *  Same body, same pot — only the expression changes (spec §2.2). */
 function setMascotMood(state) {
+  clearPetExpression(); // a stale tap-reaction face never outlives a mood change
   const svg = $(".mascot-svg");
   if (svg) {
+    svg.classList.remove("expr-curious", "expr-proud", "expr-giggle");
     for (const cls of Object.values(MOOD_FACE)) svg.classList.remove(cls);
     svg.classList.add(MOOD_FACE[state] ?? "face-happy");
   }
@@ -371,19 +398,21 @@ function renderCompanionNext(stage, state) {
   }
   // Player-facing progress shows what remains, not raw backend counters.
   // Completed requirements disappear; over-complete values never render 5/4.
+  // Text diet: only the NEAREST unmet requirement renders — one clear next
+  // step beats a three-part sentence nobody reads.
   const segments = [];
   const careLeft = Math.max(0, req.care - state.care_count);
   const daysLeft = Math.max(0, req.days - state.day_count);
   const affinityLeft = Number.isFinite(state.affinity_count) ? Math.max(0, req.affinities - state.affinity_count) : 0;
-  if (careLeft > 0) segments.push(appLocale === "id" ? `${careLeft} perawatan lagi` : `${careLeft} more care actions`);
+  if (careLeft > 0) segments.push(appLocale === "id" ? `${careLeft} perawatan lagi` : (careLeft === 1 ? "1 more care action" : `${careLeft} more care actions`));
   if (req.affinities > 0 && Number.isFinite(state.affinity_count)) {
-    if (affinityLeft > 0) segments.push(appLocale === "id" ? `coba ${affinityLeft} jenis perawatan lagi` : `try ${affinityLeft} more care types`);
+    if (affinityLeft > 0) segments.push(appLocale === "id" ? `coba ${affinityLeft} jenis perawatan lagi` : (affinityLeft === 1 ? "try 1 more care type" : `try ${affinityLeft} more care types`));
   }
-  if (daysLeft > 0) segments.push(appLocale === "id" ? `${daysLeft} hari lagi` : `${daysLeft} more days`);
+  if (daysLeft > 0) segments.push(appLocale === "id" ? `${daysLeft} hari lagi` : (daysLeft === 1 ? "1 more day" : `${daysLeft} more days`));
   const parts = segments.filter((part) => typeof part === "string" && part);
   const stageName = PM().companionStage?.[req.stage] ?? req.stage;
   next.textContent = parts.length
-    ? `${appLocale === "id" ? "BERIKUTNYA" : "NEXT"}: ${stageName} · ${parts.join(" · ")}`
+    ? `${appLocale === "id" ? "BERIKUTNYA" : "NEXT"}: ${stageName} · ${parts[0]}`
     : `${appLocale === "id" ? "SIAP BEREVOLUSI" : "READY TO EVOLVE"} → ${stageName}`;
 }
 
@@ -1100,13 +1129,14 @@ function prettifyKey(key) {
 function showQuestBannerNow(quest) {
   const layer = ensureFxLayer();
   if (!layer || !fxBannerStack) return;
-  const meta = QUEST_META[quest.quest_key] ?? { title: prettifyKey(quest.quest_key), emoji: "🌟" };
+  const meta = QUEST_META[quest.quest_key] ?? { emoji: "🌟" };
+  const title = QUEST_META[quest.quest_key] ? questTitle(quest.quest_key) : prettifyKey(quest.quest_key);
   const xp = Number(quest.xp_reward) || 0;
   const banner = document.createElement("div");
   banner.className = "fx-banner";
   banner.innerHTML =
     `<div class="fx-banner-title">${PM().fx?.questComplete ?? `🏆 ${t("questComplete")}`}</div>` +
-    `<div class="fx-banner-detail">${meta.emoji} ${meta.title} · <span class="fx-xp">+${xp} XP</span></div>`;
+    `<div class="fx-banner-detail">${meta.emoji} ${title} · <span class="fx-xp">+${xp} XP</span></div>`;
   while (fxBannerStack.children.length >= 3) fxBannerStack.firstChild.remove();
   fxBannerStack.appendChild(banner);
   const reduce = prefersReducedMotion();
@@ -1723,6 +1753,18 @@ const CARE_KEY_BY_MOOD = {
   SoilAlkaline: "Soil",
 };
 
+// Care copy key → mood-flavored relief cue (sfx.js CUES). Both temperature
+// moods share the cool hiss, both air moods the mist puffs, both soil moods
+// the pH wobble — audio flavor only, zero XP like every press.
+const RELIEF_CUE_BY_CARE = {
+  Overheating: "reliefCool",
+  TooCold: "reliefCool",
+  DryAir: "reliefMist",
+  HumidAir: "reliefMist",
+  Sleepy: "reliefLight",
+  Soil: "reliefSoil",
+};
+
 // English fallbacks — PM_STRINGS.care carries the localized copy.
 const CARE_FALLBACK = {
   Overheating: { label: "Move me to shade 🌳", why: "Find a cooler, shadier spot. The temperature sensor will feel the difference." },
@@ -1803,6 +1845,7 @@ function updateCareUi() {
   const bubble = $(".speech-bubble");
   if (sleepNow) {
     cancelPetBubble(); // a stale pet-line restore must never stomp the sleep bubble
+    clearPetExpression(); // tap-reaction faces yield to the closed-eye sleep face
     gazeReset(); // curious gaze: pupils ease home before the lids close
     if (bubble) bubble.textContent = `"${PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble}"`;
     if (!firstEval) window.PMSfx?.play("pet");
@@ -1810,7 +1853,7 @@ function updateCareUi() {
     // Waking (06:00 flip, or a problem mood overriding sleep): restore the
     // mood's own template line; renderPlant repaints on the next mood diff.
     cancelPetBubble();
-    bubble.innerHTML = (MOODS[careMood] ?? MOODS.Happy).bubble;
+    bubble.innerHTML = moodBubble(MOODS[careMood] ?? MOODS.Happy);
   }
 }
 
@@ -1837,8 +1880,12 @@ function onCareAction() {
   if (key === "Happy") {
     petMascot(); // existing petting reaction — satiation + "pet" cue included
   } else {
-    window.PMSfx?.play("blip");
+    // Mood-flavored relief texture (sfx.js CUES): a cool hiss for heat, mist
+    // puffs for air, rising sunlight for dark, a soil wobble for pH — the
+    // press FEELS like the fix. Same zero-XP press either way.
+    window.PMSfx?.play(RELIEF_CUE_BY_CARE[key] ?? "blip");
     mascotBounce(); // relief reaction
+    showPetExpression(); // the face joins in — reaction, never a reward
     spawnSparkles(rect, 10); // green/gold leaf-sparkle palette
   }
   maybeWhyCard(PM().care?.[key]?.why ?? CARE_FALLBACK[key].why, rect);
@@ -1893,6 +1940,109 @@ let petCooldownUntil = 0;
 let petSatiatedUntil = 0;
 let petTapTimes = [];
 let petLineIndex = 0;
+let petExpressionIndex = 0;
+
+// ── Tap-reaction expression variety (2026-08-10 headline request:
+// "표정 더 다양하게, 터치하면 표정이 달라진다던가") ──────────────────────
+// Every tap answers with a DIFFERENT face. Pool keys are data-face variants
+// in index.html's mascot SVG (love/star/wink/blep/surprised/grit/teary/
+// blink are new pixel-art groups; curious/proud/giggle reuse the shipped
+// micro-expression art) — the inline tap-face stylesheet in index.html maps
+// tapface-<key> classes onto them, layered OVER the deterministic mood
+// face. ≥3 faces per mood: Happy gets the full party set, problem moods
+// stay honest (grateful/teary/determined — never a celebration face over a
+// struggling plant). Cycled by a tap counter so consecutive spam-taps
+// always visibly differ. Pure presentation: zero XP, zero writes, no
+// counters beyond the cycle index.
+const PET_EXPRESSION_POOLS = {
+  Happy: ["love", "star", "wink", "blep", "giggle", "proud"],
+  Overheating: ["surprised", "teary", "grit", "wink"],
+  TooCold: ["grit", "surprised", "teary", "wink"],
+  DryAir: ["teary", "grit", "surprised", "wink"],
+  HumidAir: ["surprised", "grit", "teary", "wink"],
+  Sleepy: ["blink", "surprised", "teary", "curious"],
+  SoilAcidic: ["surprised", "teary", "grit", "curious"],
+  SoilAlkaline: ["grit", "teary", "surprised", "curious"],
+};
+const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood face returns
+const PET_EXPRESSION_CLASSES = [...new Set(Object.values(PET_EXPRESSION_POOLS).flat())].map((face) => `tapface-${face}`);
+let petExpressionTimer = null;
+
+/** Drop any active tap-reaction face — the deterministic mood face under it
+ *  returns instantly. Mood renders and sleep entry call this so a stale
+ *  grin can never sit over fresh truth. */
+function clearPetExpression() {
+  if (petExpressionTimer !== null) {
+    clearTimeout(petExpressionTimer);
+    petExpressionTimer = null;
+  }
+  const svg = $(".mascot-svg");
+  if (svg) svg.classList.remove("is-tapface", ...PET_EXPRESSION_CLASSES);
+}
+
+/** Flash one tap-reaction face, then revert to the mood face. `face` picks
+ *  an explicit variant (drowsy blink, surprise hop); omitted, the per-mood
+ *  pool cycles via the tap counter so consecutive taps always differ.
+ *  Quiet gates: never over night sleep (sleepShown — drowsy taps route
+ *  through the explicit blink), the hatch intro, or the first-day tour.
+ *  Reaction only — grants nothing, ever. */
+function showPetExpression(face, ms = PET_EXPRESSION_MS) {
+  if (sleepShown || hatchActive || tourActive) return; // quiet gates
+  const svg = $(".mascot-svg");
+  if (!svg) return;
+  let selected = face;
+  if (!selected) {
+    const pool = PET_EXPRESSION_POOLS[careMood] ?? PET_EXPRESSION_POOLS.Happy;
+    selected = pool[petExpressionIndex % pool.length];
+    petExpressionIndex += 1;
+  }
+  clearPetExpression(); // restart cleanly so back-to-back taps visibly swap
+  svg.classList.add("is-tapface", `tapface-${selected}`);
+  petExpressionTimer = setTimeout(() => {
+    petExpressionTimer = null;
+    clearPetExpression();
+  }, ms);
+}
+
+// Idle expression variety: every 25–45s (randomized) with no interaction, a
+// brief subtle blink or pupil glance (~0.8s) keeps Jamkachu feeling alive
+// between visits. Skipped ENTIRELY under prefers-reduced-motion (the
+// matchMedia check inside prefersReducedMotion) and behind the same quiet
+// gates as tap reactions. Grants nothing. (`lastPointerAt`, `mascotDown`,
+// and `gazeActive` are declared later in this file — the first timer tick
+// fires long after module evaluation, so the bindings are live by then.)
+const IDLE_EXPRESSION_MIN_MS = 25_000;
+const IDLE_EXPRESSION_MAX_MS = 45_000;
+const IDLE_EXPRESSION_MS = 800;
+
+function maybeIdleExpression() {
+  if (prefersReducedMotion()) return; // matchMedia guard — skip entirely
+  if (document.visibilityState !== "visible") return;
+  if (sleepShown || hatchActive || tourActive || mascotDown) return;
+  if (fxPlaying || fxQueue.length > 0) return; // never compete with a celebration
+  if (Date.now() - lastPointerAt < IDLE_EXPRESSION_MIN_MS) return; // user is around
+  if (petExpressionTimer !== null) return; // a tap reaction is mid-flight
+  if (Math.random() < 0.5) {
+    showPetExpression("blink", IDLE_EXPRESSION_MS);
+  } else if (!gazeActive) {
+    // Glance: small pupil shift-and-return on the curious-gaze pupils.
+    const pupils = $(".mascot-svg .pupils");
+    if (!pupils) return;
+    pupils.style.transform = `translate(${Math.random() < 0.5 ? -2 : 2}px, ${Math.random() < 0.5 ? -1 : 1}px)`;
+    setTimeout(() => {
+      if (gazeActive) return; // the pointer gaze took the pupils meanwhile
+      const el = $(".mascot-svg .pupils");
+      if (el) el.style.transform = "";
+    }, IDLE_EXPRESSION_MS);
+  }
+}
+
+(function scheduleIdleExpression() {
+  setTimeout(() => {
+    maybeIdleExpression();
+    scheduleIdleExpression();
+  }, IDLE_EXPRESSION_MIN_MS + Math.random() * (IDLE_EXPRESSION_MAX_MS - IDLE_EXPRESSION_MIN_MS));
+})();
 
 // ── Tactile interactions (curious gaze / double-tap hop / body-part pokes /
 // mood-aware petting / long-press lean-in / night lullaby stroke) ─────────
@@ -2010,6 +2160,7 @@ function petYawnLine() {
  *  the pacing changes the response's flavor, never its existence. Audio
  *  rides the sfx dispatcher's own rate limit. */
 function quickPetResponse() {
+  showPetExpression();
   const wrapper = $(".mascot-wrapper");
   if (wrapper && !prefersReducedMotion()) {
     animateSafe(
@@ -2029,6 +2180,7 @@ function quickPetResponse() {
 /** Satiated (in-fiction rest) taps: sleepy flavor, still alive — a soft
  *  breath-squash and a floating lullaby note instead of hearts. */
 function drowsyPetResponse() {
+  showPetExpression("blink"); // drowsy flavor: sleepy blink, not the party pool
   const wrapper = $(".mascot-wrapper");
   if (wrapper && !prefersReducedMotion()) {
     animateSafe(
@@ -2092,6 +2244,7 @@ function petMascot(part = "head") {
   }
 
   window.PMSfx?.play("pet");
+  showPetExpression();
   const wrapper = $(".mascot-wrapper");
   if (wrapper && !prefersReducedMotion()) {
     // Mood-aware petting: a not-Happy Jamkachu gets a softer squash.
@@ -2189,6 +2342,7 @@ function onCameraEventInsert(row) {
 function surpriseHop(now) {
   petCooldownUntil = now + PET_COOLDOWN_MS; // hops pace exactly like pets
   window.PMSfx?.play("boing");
+  showPetExpression("surprised", 700); // round-eye gasp face for the hop
   $(".mascot-svg")?.classList.add("eyes-wide");
   setTimeout(() => $(".mascot-svg")?.classList.remove("eyes-wide"), 700);
   const wrapper = $(".mascot-wrapper");
@@ -2715,7 +2869,9 @@ function applyNightUi() {
   const night = now ? now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR : false;
   document.body?.classList.toggle("night", night);
   const farmerTag = $("#npc-farmer .npc-ai-tag");
-  if (farmerTag) farmerTag.textContent = night ? "Zzz.." : (PM().npc?.ai ?? "AI CHAT");
+  // Local COPY dictionary (id "CHAT AI") — strings.js has no npc group, so
+  // the old PM().npc read always fell through to English after updateCareUi.
+  if (farmerTag) farmerTag.textContent = night ? "Zzz.." : t("npc.ai");
   if (!night) {
     if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
     farmerNightSleepTimer = null;
@@ -4209,16 +4365,17 @@ function renderQuestSlot(rows) {
   const slotEl = $("#current-quest");
   const list = Array.isArray(rows) ? rows : [];
   const quest = list.find((row) => row?.status === "ACTIVE") ?? list.find((row) => row?.status === "VERIFYING");
+  // Text diet: the old CARE VERIFICATION CORE console is gone — the amber
+  // shimmer (.verifying) + "Sensor is checking…" line below already tell
+  // the whole story without engineering vocabulary.
   slotEl?.classList.toggle("verifying", quest?.status === "VERIFYING");
-  const verifyConsole = $("#quest-verify-console");
-  if (verifyConsole) verifyConsole.hidden = quest?.status !== "VERIFYING";
   if (!quest) {
     nameEl.textContent = t("quest.none");
     progressEl.textContent = "";
     return;
   }
   const meta = QUEST_META[quest.quest_key];
-  nameEl.textContent = meta ? `${meta.emoji} ${meta.title}` : prettifyKey(quest.quest_key);
+  nameEl.textContent = meta ? `${meta.emoji} ${questTitle(quest.quest_key)}` : prettifyKey(quest.quest_key);
   if (quest.status === "VERIFYING") {
     // Static structure via innerHTML, dynamic copy via textContent (safe).
     progressEl.innerHTML =
@@ -4227,7 +4384,7 @@ function renderQuestSlot(rows) {
     if (textEl) textEl.textContent = PM().verifying?.checking ?? "Sensor is checking…";
   } else if (meta?.targetMin && quest.started_at) {
     const elapsedMin = Math.max(0, Math.floor((Date.now() - Date.parse(quest.started_at)) / 60_000));
-    progressEl.textContent = `${Math.min(elapsedMin, meta.targetMin)}/${meta.targetMin} min`;
+    progressEl.textContent = `${Math.min(elapsedMin, meta.targetMin)}/${meta.targetMin} ${t("quest.min")}`;
   } else {
     progressEl.textContent = "";
   }
@@ -4260,7 +4417,7 @@ function renderPlant(plant) {
     const bubble = $(".speech-bubble");
     // While the sleep presentation is active the sleep line owns the bubble
     // (setMascotMood → updateCareUi just painted it) — never stomp it.
-    if (bubble && !sleepShown) bubble.innerHTML = mood.bubble;
+    if (bubble && !sleepShown) bubble.innerHTML = moodBubble(mood);
     cancelPetBubble(); // a real mood message must never be stomped by a stale pet-line restore
     const dialogueTime = (wibNow()?.hour ?? 12) < 12 ? "morning" : "later";
     fetch(`/api/mood-message?plantId=${encodeURIComponent(PLANT_ID)}&stage=${encodeURIComponent(currentCompanionStage)}&time=${dialogueTime}&locale=${encodeURIComponent(appLocale)}`)
@@ -4290,12 +4447,9 @@ function renderPlant(plant) {
   }
   prevMoodFx = plant.current_state;
   renderHp(plant.current_state);
-  const nameEl = $(".username");
-  if (nameEl && nameEl.dataset.level != null) {
-    nameEl.textContent = `${plant.name} · ${t("bond")} Lv.${nameEl.dataset.level}`;
-  } else if (nameEl) {
-    nameEl.textContent = plant.name;
-  }
+  // (#char-name under the mascot is the single name owner now — the STATUS
+  // JAMKACHU panel's old duplicate name line was removed; renderBond keeps
+  // its bond-level label fresh instead.)
 }
 
 function renderBond(bond, plantName) {
@@ -4318,11 +4472,11 @@ function renderBond(bond, plantName) {
   const leveledUp = !firstRender && level > prevLevel;
   const streakDelta = firstRender ? 0 : streakDays - prevStreak;
 
-  const nameEl = $(".username");
-  if (nameEl) {
-    nameEl.dataset.level = String(bond.bond_level);
-    if (plantName) nameEl.textContent = `${plantName} · ${t("bond")} Lv.${bond.bond_level}`;
-  }
+  // Bond-level label right above the XP bar ("Ikatan Lv.3"): the panel's
+  // single remaining identity line — the plant NAME lives only in
+  // #char-name under the mascot now (no more cat-vs-plant confusion).
+  const levelEl = $(".username");
+  if (levelEl) levelEl.textContent = `${t("bond")} Lv.${bond.bond_level}`;
   setXpBar((totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
   const numEl = ensureCoinNumber();
   if (numEl) {
@@ -4349,6 +4503,12 @@ function renderBond(bond, plantName) {
     // Flame tier grows at 7/14/30 days (Task 15) — text-level, no sprites.
     streak.innerHTML = `<i class="icon">${flameFor(streakDays)}</i> ${streakDays} ${t("days")}`;
     streak.style.display = streakDays > 0 ? "" : "none";
+  }
+  // Ember ignition (sfx wiring): a real streak GAIN that crosses a flame
+  // tier (7/14/30) crackles once. Diff-gated like every celebration — the
+  // first render and poll repeats stay silent.
+  if (!firstRender && streakDelta > 0 && flameFor(streakDays) !== flameFor(prevStreak)) {
+    window.PMSfx?.play("emberCrackle");
   }
 
   // Seed coin balance (milestone18): shown verbatim from bond_state.seeds —
@@ -4582,7 +4742,10 @@ function memoryLineFor(row) {
   const reason = String(data.reason ?? "");
   const M = PM().memories ?? {};
   if (reason.startsWith("badge:")) {
-    const name = prettifyKey(reason.slice("badge:".length));
+    // Localized badge display name (strings.js `badges`, id names verbatim
+    // from BADGE_COPY_ID) — prettifyKey stays the unknown-key fallback.
+    const badgeKey = reason.slice("badge:".length);
+    const name = PM().badges?.[badgeKey] ?? prettifyKey(badgeKey);
     return (M.badge ?? MEMORIES_FALLBACK.badge)(name);
   }
   if (reason.startsWith("chapter:")) {
@@ -4831,25 +4994,9 @@ function renderGauge(kind, value, profile) {
   }
 }
 
-/** Fills/hides one tile's explicit "Ideal min–max" line. Hidden — never an
- *  invented number — whenever the active crop profile hasn't loaded. */
-function renderRangeLine(kind, profile) {
-  const el = $(`.env-range[data-range="${kind}"]`);
-  if (!el) return;
-  if (!profile) {
-    el.hidden = true;
-    el.textContent = "";
-    return;
-  }
-  const ideal = t("env.ideal");
-  const text =
-    kind === "temp" ? `${ideal} ${profile.temperature.recommended.min}–${profile.temperature.recommended.max}°C`
-    : kind === "hum" ? `${ideal} ${profile.airHumidity.recommended.min}–${profile.airHumidity.recommended.max}%`
-    : kind === "light" ? `${ideal} ${profile.light.minimumPercentDuringLightingHours}–100%`
-    : `${ideal} pH ${profile.soilPh.recommended.min}–${profile.soilPh.recommended.max}`;
-  el.textContent = text;
-  el.hidden = false;
-}
+// (Text diet: the explicit "Ideal 18–28°C" range line is gone — the gauge's
+// highlighted band, fed by the same crop profile, already shows the ideal
+// zone without another line of numbers per tile.)
 
 const STALE_READING_MS = 10 * 60_000; // 10 minutes (spec: staleness honesty)
 
@@ -4904,8 +5051,10 @@ function renderSensorsWaiting() {
 }
 
 /** Environment strip (#env-strip): 2×2 game-HUD stat tiles (4×1 on the
- *  ≥801px desktop rail) — big real reading, 10-segment comfort gauge, the
- *  explicit "Ideal min–max" line, and staleness honesty. Detail lives in
+ *  ≥801px desktop rail) — big real reading, 10-segment comfort gauge, and
+ *  staleness honesty. The status vocabulary is deliberately tiny (text
+ *  diet): exactly two states per axis — id "Aman" / "Perlu dicek", en "OK"
+ *  / "Check" — plus the light tile's honest night case. Detail lives in
  *  Plant Status (/monitoring). */
 function renderSensors(reading) {
   lastReading = reading; // replayed by refreshCropProfile() once ranges land
@@ -4923,11 +5072,12 @@ function renderSensors(reading) {
     }
   }
   const staleText = staleLabel(reading?.recorded_at);
+  const statusOk = t("env.ok");
+  const statusCheck = t("env.check");
   const updateHud = (kind, value, status, alert) => {
     const card = $(`[data-vital="${kind}"]`);
     if (!card) return;
     renderGauge(kind, value, cropProfile);
-    renderRangeLine(kind, cropProfile);
     card.classList.toggle("is-alert", alert);
     card.classList.toggle("is-stale", staleText != null);
     const label = card.querySelector(".env-status");
@@ -4942,7 +5092,7 @@ function renderSensors(reading) {
     // silent, no copy, removed as soon as readings return to range.
     document.body?.classList.toggle("env-hot", temperature > VITAL_TEMP_HOT);
     const tempHot = vitalAlert("temp", temperature);
-    updateHud("temp", temperature, tempHot ? (appLocale === "id" ? "Terlalu tinggi" : "Too high") : (appLocale === "id" ? "Stabil ✓" : "Stable ✓"), tempHot);
+    updateHud("temp", temperature, tempHot ? statusCheck : statusOk, tempHot);
   }
 
   const humidity = Number(reading?.humidity);
@@ -4950,7 +5100,7 @@ function renderSensors(reading) {
     setText("#env-hum", `${Math.round(humidity)}%`);
     lastVitals.humidity = humidity;
     const humDry = vitalAlert("hum", humidity);
-    updateHud("hum", humidity, humDry ? (appLocale === "id" ? "Rendah" : "Low") : humidity < VITAL_HUM_GOOD ? (appLocale === "id" ? "Pantau" : "Watch") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), humDry);
+    updateHud("hum", humidity, humDry ? statusCheck : statusOk, humDry);
   }
 
   const soilPh = Number(reading?.soil_ph);
@@ -4958,7 +5108,7 @@ function renderSensors(reading) {
     setText("#env-ph", `pH ${soilPh.toFixed(1)}`);
     lastVitals.soilPh = soilPh;
     const phOff = vitalAlert("ph", soilPh);
-    updateHud("ph", soilPh, phOff ? (appLocale === "id" ? "Perlu diperiksa" : "Check needed") : (appLocale === "id" ? "Dalam rentang ✓" : "In range ✓"), phOff);
+    updateHud("ph", soilPh, phOff ? statusCheck : statusOk, phOff);
   }
 
   const light = Number(reading?.light);
@@ -4970,13 +5120,11 @@ function renderSensors(reading) {
       "#env-light",
       isNightWIB() && light < 30 ? (PM().sleep?.nightLabel ?? SLEEP_FALLBACK.nightLabel) : `${light}%`,
     );
-    updateHud("light", light, isNightWIB() && light < 30 ? (appLocale === "id" ? "Malam ✓" : "Night ✓") : light < 30 ? (appLocale === "id" ? "Rendah" : "Low") : (appLocale === "id" ? "Cukup ✓" : "Sufficient ✓"), !isNightWIB() && light < 30);
+    updateHud("light", light, isNightWIB() && light < 30 ? (appLocale === "id" ? "Malam ✓" : "Night ✓") : light < 30 ? statusCheck : statusOk, !isNightWIB() && light < 30);
   }
 
-  const indoorParts = [];
-  if (reading?.temperature != null && Number.isFinite(temperature)) indoorParts.push(`${temperature.toFixed(1)}°C`);
-  if (reading?.humidity != null && Number.isFinite(humidity)) indoorParts.push(`${Math.round(humidity)}% RH`);
-  if (indoorParts.length > 0) setText(".indoor-reading", `${t("weather.indoor")}: ${indoorParts.join(" · ")}`);
+  // (Text diet: the widget's old indoor-reading line is gone — it merely
+  // duplicated the SUHU/UDARA tiles right below.)
 
   // Reconcile a possibly older plants.current_state with the newest sensor
   // card alerts after all four cards have been evaluated.
@@ -5000,11 +5148,14 @@ function weatherIcon(description) {
   return "🌤️";
 }
 
+/** Weather widget, text-diet edition: icon + temperature + one short
+ *  description line. Provenance (BMKG credit, forecast timestamp) and the
+ *  indoor duplicate line moved out — /monitoring keeps the full detail.
+ *  The stale class still tints the widget when the forecast is old. */
 function renderWeather(context) {
   const widget = $(".weather-widget");
   if (!context?.ok) {
     setText(".weather-text .desc", t("weather.unavailable"));
-    setText(".weather-text .forecast-time", "");
     widget?.classList.add("weather-stale");
     return;
   }
@@ -5012,23 +5163,14 @@ function renderWeather(context) {
     ? (context.forecast.descriptionId ?? context.forecast.descriptionEn)
     : (context.forecast.descriptionEn ?? context.forecast.descriptionId);
   setText(".weather-text .temp", `${Math.round(Number(context.forecast.temperatureC))}°C`);
+  // Jargon-free humidity: "kelembapan 78%" instead of "78% RH".
   const outdoorHumidity = Number(context.forecast.humidityPct);
-  setText(
-    ".weather-text .desc",
-    Number.isFinite(outdoorHumidity) ? `${description} · ${Math.round(outdoorHumidity)}% RH` : description,
-  );
+  const humidityNote = Number.isFinite(outdoorHumidity)
+    ? (appLocale === "id" ? `kelembapan ${Math.round(outdoorHumidity)}%` : `humidity ${Math.round(outdoorHumidity)}%`)
+    : null;
+  setText(".weather-text .desc", humidityNote ? `${description} · ${humidityNote}` : description);
   const icon = $(".weather-icon");
   if (icon) icon.textContent = weatherIcon(description);
-  const forecastDate = new Date(context.forecast.forecastAt);
-  const time = Number.isNaN(forecastDate.getTime())
-    ? ""
-    : new Intl.DateTimeFormat(appLocale === "id" ? "id-ID" : "en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "Asia/Jakarta",
-      }).format(forecastDate);
-  const staleSuffix = context.stale ? ` · ${t("weather.stale")}` : "";
-  setText(".weather-text .forecast-time", time ? `${t("weather.forecast")} ${time} WIB${staleSuffix}` : staleSuffix);
   widget?.classList.toggle("weather-stale", Boolean(context.stale));
 }
 
@@ -5043,13 +5185,15 @@ async function refreshWeather() {
 
 // ── Hatching intro (spec §6.3, one-time) ────────────────────────────────
 // First visit only (localStorage pm_hatched): pot trembles → Jamkachu pops
-// out (confetti + fanfare + name card) → personality/rename card → the four
-// sensors in plain words → finale highlighting the contextual care button
-// and the current quest slot. ENTIRELY presentation: no writes, no XP.
-// Every step is tap-to-advance with a 5s auto-advance; Skip stays visible.
-// Reduced motion: the same cards, no shake/pop/confetti. Runs after the
-// first render settles — with Supabase unconfigured too (default happy
-// character); the flag is set either way.
+// out (confetti + fanfare + name card) → personality/rename card → finale
+// highlighting the contextual care button and the current quest slot.
+// ENTIRELY presentation: no writes, no XP. Text-diet pass: the four
+// per-sensor cards were cut — the first-day tour's step 1 spotlights the
+// same sensor tiles moments later, so nothing is lost, just less reading
+// between the player and the fun. Every step is tap-to-advance with a 5s
+// auto-advance; Skip stays visible. Reduced motion: the same cards, no
+// shake/pop/confetti. Runs after the first render settles — with Supabase
+// unconfigured too (default happy character); the flag is set either way.
 
 const HATCH_KEY = "pm_hatched";
 const HATCH_STEP_MS = 5000;
@@ -5060,12 +5204,6 @@ const HATCH_FALLBACK = {
   hello: "Nice to meet you!",
   personality: "I'm a sunshine-loving little plant — cozy air, bright days, and lots of hanging out with you!",
   rename: "You can change my name in Settings ⚙️",
-  sensors: {
-    temp: { title: "Temperature 🌡️", line: "This little helper feels whether my room is comfy or too hot." },
-    hum: { title: "Air Humidity 💧", line: "This one checks if the air is moist enough for me to breathe easy." },
-    light: { title: "Light ☀️", line: "This one watches whether I'm getting my sunshine." },
-    ph: { title: "Soil pH ⚗️", line: "This one tastes my soil to make sure it feels just right." },
-  },
   finale: "This button always shows what I need!",
 };
 let hatchActive = false;
@@ -5147,11 +5285,6 @@ function runHatchIntro(plantName) {
       card.appendChild(lineEl);
     }
   };
-  const sensorStep = (key) => () => {
-    const sensor = H.sensors?.[key] ?? {};
-    setCard(sensor.title ?? F.sensors[key].title, [sensor.line ?? F.sensors[key].line]);
-  };
-
   const steps = [
     () => {
       // (1) Pot trembles, plant hidden — rumble + "whoosh" cue.
@@ -5192,15 +5325,10 @@ function runHatchIntro(plantName) {
       card.appendChild(big);
       card.appendChild(sub);
     },
-    // (3) Personality + "rename me in Settings" card.
+    // (3) Personality + "rename me in Settings" care hint card.
     () => setCard(null, [H.personality ?? F.personality, H.rename ?? F.rename]),
-    // (4) The four sensors in plain words.
-    sensorStep("temp"),
-    sensorStep("hum"),
-    sensorStep("light"),
-    sensorStep("ph"),
     () => {
-      // (5) Finale: highlight the care button + pulse the quest slot.
+      // (4) Finale: highlight the care button + pulse the quest slot.
       layer.classList.add("hatch-final");
       $("#care-action")?.classList.add("hatch-highlight");
       $("#current-quest")?.classList.add("hatch-highlight");
@@ -5469,7 +5597,6 @@ async function main() {
   }
   if (!config?.url || !config?.key) {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
-    setText(".indoor-reading", t("sensor.unavailable"));
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
@@ -5480,7 +5607,6 @@ async function main() {
     // offline path as an unreachable/misconfigured backend — the page still
     // renders its defaults and the hatching intro still runs.
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
-    setText(".indoor-reading", t("sensor.unavailable"));
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
@@ -5694,6 +5820,5 @@ async function main() {
 main().catch((error) => {
   console.error("PlantMoji farm page failed to initialize", error);
   window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
-  setText(".indoor-reading", t("sensor.unavailable"));
   scheduleHatch(null); // hatching still runs offline (default character)
 });

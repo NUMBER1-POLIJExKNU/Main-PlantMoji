@@ -37,8 +37,10 @@ type StringTable = {
     hello?: unknown;
     personality?: unknown;
     rename?: unknown;
-    sensors?: Record<string, { title?: unknown; line?: unknown }>;
     finale?: unknown;
+    // Text-diet pass: the per-sensor cards were cut — `sensors` must stay
+    // absent (the first-day tour's step 1 covers the tiles instead).
+    sensors?: unknown;
   };
   decor: Record<string, unknown>;
   memories: {
@@ -114,7 +116,6 @@ const VITAL_KEYS = [
   "phOff",
 ];
 const HATCH_TEXT_KEYS = ["skip", "rumble", "hello", "personality", "rename", "finale"] as const;
-const HATCH_SENSOR_KEYS = ["temp", "hum", "light", "ph"];
 const DECOR_NAME_KEYS = ["sticker", "flag", "room", "ribbon", "goldpot", "bffToken"];
 const MEMORY_DAY_KEYS = ["today", "yesterday", "earlier"];
 
@@ -257,17 +258,14 @@ for (const [locale, S] of [
       expectLatinCopy(S.verifying.checking, "verifying.checking");
     });
 
-    it("tells the full hatching intro (spec §6.3)", () => {
+    it("tells the trimmed hatching intro (spec §6.3, text-diet pass)", () => {
       for (const key of HATCH_TEXT_KEYS) expectLatinCopy(S.hatch[key], `hatch.${key}`);
       // The rename card must point at Settings by its gear icon.
       expect(S.hatch.rename as string).toContain("⚙️");
-      expect(Object.keys(S.hatch.sensors ?? {}).sort()).toEqual([...HATCH_SENSOR_KEYS].sort());
-      for (const key of HATCH_SENSOR_KEYS) {
-        const sensor = S.hatch.sensors?.[key];
-        expect(Object.keys(sensor ?? {}).sort(), `hatch.sensors.${key} shape`).toEqual(["line", "title"]);
-        expectLatinCopy(sensor?.title, `hatch.sensors.${key}.title`);
-        expectLatinCopy(sensor?.line, `hatch.sensors.${key}.line`);
-      }
+      // The four per-sensor cards were DELIBERATELY cut (farm-wave text
+      // diet): the first-day tour's step 1 spotlights the same sensor tiles
+      // moments later. Their re-appearance here would re-bloat onboarding.
+      expect(S.hatch.sensors, "hatch.sensors was cut — keep it out").toBeUndefined();
     });
 
     it("names every level decoration and its reveal chip (spec §6.4)", () => {
@@ -390,7 +388,6 @@ describe("Bahasa Indonesia tree is a real translation", () => {
 
   it("hatch copy is a real translation (structure identical, key lines differ)", () => {
     expect(Object.keys(ID.hatch)).toEqual(Object.keys(EN.hatch));
-    expect(Object.keys(ID.hatch.sensors ?? {})).toEqual(Object.keys(EN.hatch.sensors ?? {}));
     expect(ID.hatch.rumble).not.toBe(EN.hatch.rumble);
     expect(ID.hatch.personality).not.toBe(EN.hatch.personality);
     expect(ID.hatch.finale).not.toBe(EN.hatch.finale);

@@ -47,6 +47,56 @@
         SoilAlkaline: "😖",
       },
 
+      // Speech-bubble templates for each mood — rendered via innerHTML (the
+      // <br> is layout; live.js's moodBubble() adds the surrounding quotes).
+      // live.js keeps a COPY-dictionary twin as the last-resort fallback.
+      moodBubbles: {
+        Happy: "I'm feeling so healthy!<br>Thanks for the care.",
+        Overheating: "It's too hot...<br>please cool me down!",
+        TooCold: "Brrr, it's too cold...<br>please warm me up!",
+        DryAir: "The air feels so dry...<br>a little humidity, please?",
+        HumidAir: "The air feels muggy...<br>a little airflow, please?",
+        Sleepy: "It's so dark... I'm sleepy.<br>More light, please!",
+        SoilAcidic: "My soil feels too acidic...<br>ask a teacher to check its pH!",
+        SoilAlkaline: "My soil feels too alkaline...<br>ask a teacher to check its pH!",
+      },
+
+      // Quest display titles for the home "TODAY'S MISSION" slot and the
+      // quest-complete banner. Keys mirror src/game/quests/quest-definitions
+      // .ts; the id twin's names are copied VERBATIM from QUEST_COPY_ID
+      // (src/lib/i18n.ts) so React pages and the farm home always use one
+      // identical name per quest.
+      questTitles: {
+        KEEP_ME_HAPPY: "Keep Me Happy",
+        STAY_COMFY: "Stay Comfy",
+        COOL_ME_DOWN: "Cool Me Down",
+        WARM_ME_UP: "Warm Me Up",
+        GIVE_ME_MORE_LIGHT: "Give Me More Light",
+        HUMIDIFY_MY_AIR: "Humidify My Air",
+        DEHUMIDIFY_MY_AIR: "Dry My Air",
+        BALANCE_SOIL_ACIDIC: "Balance My Soil",
+        BALANCE_SOIL_ALKALINE: "Balance My Soil",
+      },
+
+      // Badge display names for Jamkachu's memory bubbles (spec §6.5) — en
+      // names verbatim from BADGE_DEFINITIONS (src/game/badges), id names
+      // verbatim from BADGE_COPY_ID (src/lib/i18n.ts). Unknown keys fall
+      // back to live.js's prettifyKey.
+      badges: {
+        FIRST_RESCUE: "First Help",
+        LIGHT_MASTER: "Light Helper",
+        LEVEL_5_BOND: "Good Friends",
+        COOL_KEEPER: "Cool Helper",
+        PH_GUARDIAN: "Happy Soil",
+        STREAK_7: "7-Day Care",
+        HUMIDITY_HERO: "Air Helper",
+        MOOD_SCHOLAR: "Mood Finder",
+        CARE_VETERAN: "Quest Star",
+        CHRONICLER: "Plant Writer",
+        STREAK_30: "30-Day Care",
+        LEVEL_10_BOND: "Best Friends",
+      },
+
       // Companion stage display names, keyed by the backend stage name used
       // in live.js's `companion-<Stage>` classes. All 10 stages of the
       // evolution ladder (companion-ladder.js window.PM_LADDER, mirrored
@@ -378,18 +428,14 @@
 
       // Hatching intro (spec §6.3): one-time first-visit sequence, pure
       // presentation — no XP, no writes; the seen-flag lives in localStorage.
+      // Text-diet pass: the four per-sensor cards were cut — the first-day
+      // tour's step 1 spotlights the same tiles right afterwards.
       hatch: {
         skip: "Skip",
         rumble: "Rumble rumble… something is stirring in the pot!",
         hello: "Nice to meet you!",
         personality: "I'm a sunshine-loving little plant — cozy air, bright days, and lots of hanging out with you!",
         rename: "You can change my name in Settings ⚙️",
-        sensors: {
-          temp: { title: "Temperature 🌡️", line: "This little helper feels whether my room is comfy or too hot." },
-          hum: { title: "Air Humidity 💧", line: "This one checks if the air is moist enough for me to breathe easy." },
-          light: { title: "Light ☀️", line: "This one watches whether I'm getting my sunshine." },
-          ph: { title: "Soil pH ⚗️", line: "This one tastes my soil to make sure it feels just right." },
-        },
         finale: "This button always shows what I need!",
       },
 
@@ -521,6 +567,52 @@
         Sleepy: "😴",
         SoilAcidic: "🤢",
         SoilAlkaline: "😖",
+      },
+
+      // Templat gelembung bicara per suasana — dirender lewat innerHTML
+      // (<br> bagian dari tata letak; tanda kutipnya ditambahkan oleh
+      // moodBubble() di live.js).
+      moodBubbles: {
+        Happy: "Aku merasa sehat banget!<br>Terima kasih sudah merawatku.",
+        Overheating: "Aku kepanasan...<br>bantu sejukkan aku, ya!",
+        TooCold: "Brrr, aku kedinginan...<br>bantu hangatkan aku, ya!",
+        DryAir: "Udaranya kering...<br>boleh bantu lembapkan sedikit?",
+        HumidAir: "Udaranya pengap...<br>boleh beri aliran udara?",
+        Sleepy: "Gelap sekali... aku mengantuk.<br>Boleh tambah cahaya?",
+        SoilAcidic: "Tanahku terasa terlalu asam...<br>ajak guru cek pH-nya, ya!",
+        SoilAlkaline: "Tanahku terasa terlalu basa...<br>ajak guru cek pH-nya, ya!",
+      },
+
+      // Judul misi — nama id disalin PERSIS dari QUEST_COPY_ID
+      // (src/lib/i18n.ts) supaya halaman React dan kebun memakai satu nama
+      // yang sama untuk setiap misi.
+      questTitles: {
+        KEEP_ME_HAPPY: "Jaga Aku Tetap Sehat",
+        STAY_COMFY: "Tetap Nyaman",
+        COOL_ME_DOWN: "Sejukkan Aku",
+        WARM_ME_UP: "Hangatkan Aku",
+        GIVE_ME_MORE_LIGHT: "Beri Aku Cahaya",
+        HUMIDIFY_MY_AIR: "Lembapkan Udaraku",
+        DEHUMIDIFY_MY_AIR: "Keringkan Udaraku",
+        BALANCE_SOIL_ACIDIC: "Seimbangkan Tanahku",
+        BALANCE_SOIL_ALKALINE: "Seimbangkan Tanahku",
+      },
+
+      // Nama lencana untuk gelembung kenangan Jamkachu — disalin PERSIS
+      // dari BADGE_COPY_ID (src/lib/i18n.ts).
+      badges: {
+        FIRST_RESCUE: "Pertolongan Pertama",
+        LIGHT_MASTER: "Pembantu Cahaya",
+        LEVEL_5_BOND: "Sahabat Baik",
+        COOL_KEEPER: "Pembantu Sejuk",
+        PH_GUARDIAN: "Tanah Sehat",
+        STREAK_7: "Rawat 7 Hari",
+        HUMIDITY_HERO: "Pembantu Udara",
+        MOOD_SCHOLAR: "Penemu Suasana",
+        CARE_VETERAN: "Bintang Misi",
+        CHRONICLER: "Penulis Tanaman",
+        STREAK_30: "Rawat 30 Hari",
+        LEVEL_10_BOND: "Sahabat Terbaik",
       },
 
       // Nama tahap pertumbuhan companion — lihat catatan companionStage di
@@ -820,19 +912,15 @@
         checking: "Sensor sedang memeriksa…",
       },
 
-      // Intro penetasan (spec §6.3) — bahasa santai khas remaja, tetap sopan.
+      // Intro penetasan (spec §6.3) — bahasa santai khas remaja, tetap
+      // sopan. Empat kartu sensor dipangkas (diet teks): langkah 1 tur hari
+      // pertama langsung menyorot kotak sensor yang sama.
       hatch: {
         skip: "Lewati",
         rumble: "Gruduk gruduk… ada yang bergerak di dalam pot!",
         hello: "Salam kenal ya!",
         personality: "Aku tanaman kecil penyuka matahari — udara nyaman, hari cerah, dan main bareng kamu!",
         rename: "Kamu bisa ganti namaku di Pengaturan ⚙️",
-        sensors: {
-          temp: { title: "Suhu 🌡️", line: "Penolong kecil ini merasakan kamarku lagi nyaman atau kepanasan." },
-          hum: { title: "Kelembapan Udara 💧", line: "Yang ini mengecek udaranya cukup lembap nggak, biar napasku lega." },
-          light: { title: "Cahaya ☀️", line: "Yang ini memperhatikan aku sudah kebagian sinar matahari atau belum." },
-          ph: { title: "pH Tanah ⚗️", line: "Yang ini mencicipi tanahku biar rasanya selalu pas." },
-        },
         finale: "Tombol ini selalu menunjukkan apa yang aku butuhkan!",
       },
 
