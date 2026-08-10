@@ -34,9 +34,6 @@ export interface DemoActionState {
   message: string;
 }
 
-/** Kept as an alias for older imports while the demo panel is upgraded. */
-export type DemoMaxActionState = DemoActionState;
-
 function matchesDemoCode(submitted: string, configured: string): boolean {
   const submittedHash = createHash("sha256").update(submitted).digest();
   const configuredHash = createHash("sha256").update(configured).digest();

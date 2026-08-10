@@ -123,25 +123,6 @@ export const COMPANION_LADDER: readonly {
 export const CARE_AFFINITIES = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
 export type CareAffinity = (typeof CARE_AFFINITIES)[number];
 
-export interface CompanionState {
-  plant_id: string;
-  cycle: number;
-  stage: CompanionStage;
-  form_key: CareAffinity;
-  last_evolved_at: string | null;
-  updated_at: string;
-}
-
-export interface CompanionEvolution {
-  plant_id: string;
-  cycle: number;
-  stage: CompanionStage;
-  from_stage: CompanionStage;
-  form_key: CareAffinity;
-  care_snapshot: Record<string, number>;
-  evolved_at: string;
-}
-
 // ── Companion skins (milestone20) ───────────────────────────────────────
 
 export const COMPANION_SKIN_KEYS = [

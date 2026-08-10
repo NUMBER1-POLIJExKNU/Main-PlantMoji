@@ -2,7 +2,6 @@ import * as tf from "@tensorflow/tfjs";
 
 export const CAMERA_MODEL_URL = "/camera-ai-model/model.json";
 export const CAMERA_MODEL_LABELS = ["Safe Environment", "Foreign Environment"] as const;
-export type CameraModelLabel = typeof CAMERA_MODEL_LABELS[number];
 
 let modelPromise: Promise<tf.LayersModel> | null = null;
 

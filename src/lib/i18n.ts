@@ -10,29 +10,6 @@ export function normalizeLocale(value: unknown): AppLocale {
   return value === "en" ? "en" : DEFAULT_APP_LOCALE;
 }
 
-export const NAV_COPY: Record<AppLocale, Record<string, string>> = {
-  id: {
-    dashboard: "Beranda",
-    plants: "Tanaman",
-    monitoring: "Pemantauan",
-    camera: "Kamera AI",
-    quests: "Misi",
-    collection: "Koleksi",
-    shop: "Toko",
-    settings: "Pengaturan",
-  },
-  en: {
-    dashboard: "Dashboard",
-    plants: "Plants",
-    monitoring: "Monitoring",
-    camera: "Camera AI",
-    quests: "Quests",
-    collection: "Collection",
-    shop: "Shop",
-    settings: "Settings",
-  },
-};
-
 export const MOOD_COPY: Record<AppLocale, Record<PlantMood, string>> = {
   id: {
     Happy: "Sehat",
@@ -185,10 +162,6 @@ export const DAILY_EVENT_COPY_ID: Record<string, { name: string; description: st
     description: "Lahan Jember tumbuh subur di tanah vulkanik tua — aku bangga tumbuh di sini.",
   },
 };
-
-export function questCopy(locale: AppLocale, key: QuestKey, fallback: LocalizedQuestCopy) {
-  return locale === "id" ? QUEST_COPY_ID[key] : fallback;
-}
 
 // ── Companion evolution ladder labels ────────────────────────────────────
 // Localized names for the 10 companion stages (COMPANION_STAGES order) and

@@ -7,7 +7,7 @@
 // replayed Node-RED deliveries can never double-grant (handoff §28).
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AwardXpResult, BondState, QuestRow } from "@/types/game";
+import type { AwardXpResult, BondState } from "@/types/game";
 
 /** jsonb shape returned by public.award_xp (milestone3.sql). */
 interface AwardXpRpcResult {
@@ -53,24 +53,6 @@ export async function awardXp(
     bondLevel: Number(row.bond_level),
     leveledUp: Boolean(row.leveled_up),
   };
-}
-
-/**
- * Awards a completed quest's XP. The reward key is derived from the quest's
- * primary key ('quest:<id>:completion', handoff §28), so a replayed completion
- * event can never grant twice.
- */
-export async function awardQuestCompletion(
-  supabase: SupabaseClient,
-  quest: QuestRow,
-): Promise<AwardXpResult> {
-  return awardXp(
-    supabase,
-    quest.plant_id,
-    `quest:${quest.id}:completion`,
-    quest.xp_reward,
-    quest.quest_key,
-  );
 }
 
 /** Reads the plant's bond progression row, or null if none exists yet. */
