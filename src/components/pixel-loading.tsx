@@ -1,7 +1,7 @@
 import { getRequestLocale } from "@/lib/i18n-server";
 import PixelLoadingToy from "@/components/pixel-loading-toy";
 
-export type PixelLoadingVariant = "home" | "quests" | "plants" | "monitoring" | "collection" | "reports" | "settings" | "diary";
+export type PixelLoadingVariant = "home" | "quests" | "plants" | "monitoring" | "collection" | "reports" | "settings" | "diary" | "shop" | "camera";
 
 export default async function PixelLoading({ variant = "home" }: { variant?: PixelLoadingVariant }) {
   const locale = await getRequestLocale();

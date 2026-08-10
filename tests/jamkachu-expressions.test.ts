@@ -104,7 +104,7 @@ describe("tap handler behavior", () => {
   it("is wired into every tap flavor (full pet, cooldown, drowsy, hop, care press)", () => {
     expect(live).toMatch(/function quickPetResponse\(\) \{\s*\n\s*showPetExpression\(\);/);
     expect(live).toMatch(/function drowsyPetResponse\(\) \{\s*\n\s*showPetExpression\("blink"\)/);
-    expect(live).toMatch(/function surpriseHop\(now\) \{[\s\S]{0,200}?showPetExpression\("surprised"/);
+    expect(live).toMatch(/function surpriseHop\(now\) \{[\s\S]{0,200}?showPetExpression\("giggle"/);
     // petMascot's full pet path reacts too (beyond the quick/drowsy paths).
     const petMascot = live.slice(live.indexOf("function petMascot"), live.indexOf("// ── Camera Live Guardian"));
     expect(petMascot).toContain("showPetExpression()");

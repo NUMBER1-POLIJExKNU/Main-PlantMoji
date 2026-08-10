@@ -17,11 +17,16 @@ describe("mascot tap dopamine contract — no silent taps", () => {
     expect(src).toMatch(/if \(now < petCooldownUntil\) \{\s*\n?\s*quickPetResponse\(\);/);
   });
 
-  it("acknowledgments never touch pacing accounting or the speech bubble", () => {
+  it("acknowledgments never touch pacing accounting; bubbles are transient only", () => {
     const start = src.indexOf("function quickPetResponse");
     const end = src.indexOf("function petMascot");
     expect(start).toBeGreaterThan(-1);
     const helpers = src.slice(start, end > start ? end : undefined);
-    expect(helpers).not.toMatch(/petTapTimes|petSatiatedUntil|petCooldownUntil\s*=|showTransientBubble/);
+    // Pacing state stays owned by the full pet path — acknowledgments may
+    // speak (expression-variety upgrade), but never write the accounting.
+    expect(helpers).not.toMatch(/petTapTimes|petSatiatedUntil|petCooldownUntil\s*=/);
+    // Any bubble an acknowledgment shows must self-restore, so it can never
+    // permanently stomp the mood/memory bubble.
+    expect(helpers).not.toMatch(/showTransientBubble\((?![^;\n]*PET_BUBBLE_RESTORE_MS)/);
   });
 });

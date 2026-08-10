@@ -11,10 +11,10 @@ const script = readFileSync("public/farm/live.js", "utf8");
  *  defense-in-depth catch at the bottom of the file) by the sentinel
  *  comment/line that immediately precedes it, so each assertion below is
  *  scoped to the actual branch instead of matching anywhere in the file. */
-function offlineBlock(anchor: string): string {
+function offlineBlock(anchor: string, span = 500): string {
   const start = script.indexOf(anchor);
   expect(start, `expected to find anchor: ${anchor}`).toBeGreaterThanOrEqual(0);
-  return script.slice(start, start + 500);
+  return script.slice(start, start + span);
 }
 
 /** Slices out the full renderOfflineHome() function body by matching its
@@ -74,9 +74,13 @@ describe("farm home offline/unreachable-Supabase presentation", () => {
     expect(nullClientBlock)
       .toMatch(/if \(!supabase\) {[^]*?renderOfflineHome\(\);[^]*?scheduleHatch\(null\);/);
 
-    // The defense-in-depth catch at the bottom of the file.
-    expect(offlineBlock("main().catch((error) => {"))
-      .toMatch(/renderOfflineHome\(\);[^]*?scheduleHatch\(null\);/);
+    // The defense-in-depth catch at the bottom of the file: it renders the
+    // offline defaults ONLY when the first online paint never happened —
+    // repainting over real data would mask a live distressed plant
+    // (adversarial-review fix), so the guard must come first.
+    const catchBlock = offlineBlock("main().catch((error) => {", 900);
+    expect(catchBlock).toMatch(/if \(firstOnlinePaint\) {[^]*?return;/);
+    expect(catchBlock).toMatch(/renderOfflineHome\(\);[^]*?scheduleHatch\(null\);/);
   });
 
   it('never leaves a raw "--" placeholder as the rendered mood', () => {
