@@ -71,6 +71,10 @@
 .pm-shop-toast.is-error { background: #ffe9e9; }
 html[data-theme="night"] .pm-shop-balance,html[data-theme="night"] .pm-shop-toast { border-color:var(--color-border); color:var(--color-text); background:var(--color-surface); }html[data-theme="night"] .pm-shop-toast.is-error { background:#412827; }html[data-theme="night"] .pm-shop-preview-scene { background:rgba(29,41,37,.78); }
 
+.pm-shop-preview-copy { display:grid; gap:6px; }.pm-shop-preview-copy > strong { font-size:13px; }.pm-shop-preview-copy > .pm-btn { width:100%; margin-top:3px; text-shadow:none; }.pm-shop-preview-status { padding:9px 12px; border:2px solid #fff; border-radius:9px; font-weight:800; text-align:center; }
+/* Product cards select one item; purchase/equip happens only on the shop stage. */
+.pm-shop-card > .pm-btn,.pm-shop-card > .pm-shop-price,.pm-shop-card > .pm-shop-owned,.pm-shop-card > .pm-shop-short { display:none; }
+
 /* Small T2 celebration: a handful of seed emoji popping from the card —
    buying is frequent, keep it light (no full-screen ceremony). */
 .pm-shop-confetti {

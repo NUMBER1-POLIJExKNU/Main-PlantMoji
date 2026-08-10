@@ -15,6 +15,9 @@ import HomeEnvironmentGlance from "@/components/home-environment-glance";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 import type { AppLocale } from "@/lib/i18n";
 import IntelligenceConsole, { TypewriterText } from "@/components/intelligence-console";
+import { useSearchParams } from "next/navigation";
+import FarmerNpc from "@/components/farmer-npc";
+import WhatNow from "@/components/what-now";
 
 // Scene tint + badge styling per mood. The scene classes (globals.css) shift
 // the pixel-farm sky/grass palette; the badge keeps its per-mood color chip.
@@ -75,6 +78,8 @@ export default function PlantHome({
   initialSnapshot: SensorSnapshot | null;
   locale: AppLocale;
 }) {
+  const searchParams = useSearchParams();
+  const presentationMode = searchParams.has("presentation");
   const [plant, setPlant] = useState(initialPlant);
   const [bond, setBond] = useState(initialBond);
   const [quest, setQuest] = useState(initialQuest);
@@ -83,7 +88,7 @@ export default function PlantHome({
     show: false,
     level: 0,
   });
-  const [connection, setConnection] = useState<Connection>(() =>
+  const [_connection, setConnection] = useState<Connection>(() =>
     hasBrowserSupabaseEnv() ? "connecting" : "offline",
   );
   const connectionRef = useRef<Connection>("connecting");
@@ -258,6 +263,7 @@ export default function PlantHome({
         show={levelUp.show}
         onDone={() => setLevelUp((prev) => ({ ...prev, show: false }))}
       />
+      <FarmerNpc isNight={jemberHour >= 18 || jemberHour < 6} locale={locale} />
 
       {/* Sky stage: name, mood badge, speech bubble, mascot */}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-10">
@@ -294,33 +300,15 @@ export default function PlantHome({
           )}
 
           <HomeQuestCard quest={questCardProps(quest, nowMs)} />
-          {quest?.status === "VERIFYING" && <div className="w-full"><IntelligenceConsole title="CARE VERIFICATION CORE" running lines={[
+          <WhatNow locale={locale} mood={plant.current_state} questStatus={quest?.status} />
+          {presentationMode && quest?.status === "VERIFYING" && <div className="w-full"><IntelligenceConsole title="CARE VERIFICATION CORE" running lines={[
             { label: "SENSOR EVIDENCE", value: "OBSERVING", tone: "warn" },
             { label: "QUEST RULE", value: "DETERMINISTIC", tone: "ok" },
             { label: "STABILITY WINDOW", value: "IN PROGRESS" },
             { label: "XP TRANSACTION", value: "LOCKED UNTIL VERIFIED", tone: "warn" },
           ]} /></div>}
 
-          {plant.species && (
-            <p className="pm-grass-text font-pixel-body text-lg">
-              {plant.species}
-              {plant.personality ? ` · ${plant.personality}` : ""}
-            </p>
-          )}
-
-          <div className="pm-grass-text font-pixel-body flex items-center gap-2 text-lg">
-            <span
-              className={`inline-block h-2 w-2 rounded-full ${
-                connection === "live"
-                  ? "bg-green-500"
-                  : connection === "connecting"
-                    ? "animate-pulse bg-amber-400"
-                    : "bg-zinc-400"
-              }`}
-            />
-            {connection === "live" ? "LIVE" : connection === "connecting" ? "Connecting..." : "Offline"}
-            {changedAt && <span>· state changed {changedAt}</span>}
-          </div>
+          {presentationMode && changedAt && <span className="pm-grass-text text-xs">state changed {changedAt}</span>}
         </div>
       </div>
     </main>

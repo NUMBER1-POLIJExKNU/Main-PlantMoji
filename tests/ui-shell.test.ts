@@ -92,12 +92,14 @@ describe("shared PlantMoji application shell", () => {
     expect(reactCss).toContain(".pm-home-clock");
   });
 
-  it("uses a seven-action mobile game dock without widening the viewport", () => {
-    expect(reactCss).toContain("grid-template-columns: repeat(7, minmax(0, 1fr))");
+  it("uses five core actions plus More without widening the mobile viewport", () => {
+    expect(reactCss).toContain("grid-template-columns: repeat(6, minmax(0, 1fr))");
     expect(reactCss).toMatch(/\.reno-nav-links\s*\{[\s\S]*?position:\s*fixed/);
     expect(reactCss).toContain("env(safe-area-inset-bottom)");
     expect(reactCss).toContain("overflow-x: hidden");
     expect(reactCss).toMatch(/\.reno-nav-tool-pocket\s*\{\s*display:\s*none/);
+    expect(reactShell).toContain("reno-more-button");
+    expect(reactShell).toContain("reno-more-sheet");
   });
 
   it("frames React feature routes and uses a shared page header", () => {

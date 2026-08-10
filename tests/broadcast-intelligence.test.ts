@@ -21,10 +21,10 @@ describe("broadcast intelligence presentation", () => {
 
   it("labels local camera privacy and authority limits", () => {
     const camera = read("src/components/camera-guardian.tsx");
-    expect(camera).toContain('VIDEO UPLOAD');
-    expect(camera).toContain('SENSOR AUTHORITY');
-    expect(camera).toContain('REWARD CONTROL');
-    expect(camera).toContain('TENSORFLOW.JS / ON DEVICE');
+    expect(camera).toContain('label: "CAMERA"');
+    expect(camera).toContain('label: "LOCAL MODEL"');
+    expect(camera).toContain('label: "RESULT"');
+    expect(camera).not.toContain('REWARD CONTROL');
   });
 
   it("provides honest boot, ending, fullscreen, and verification staging", () => {

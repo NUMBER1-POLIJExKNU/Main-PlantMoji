@@ -20,6 +20,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
 import { toJamkachuMemory, type MemoryEventRow } from "@/lib/jamkachu-memory";
 import { addGrowthRecord } from "../settings/actions";
+import "./diary.css";
 
 // Always reflect the latest saved values.
 export const dynamic = "force-dynamic";
@@ -133,34 +134,21 @@ export default async function DiaryPage() {
     <main className="mx-auto w-full">
       <PageHeader
         icon="🌱"
-        title={locale === "id" ? "Buku Harian" : "Growth Diary"}
-        description={
-          locale === "id"
-            ? `Catatan pertumbuhan ${plant.name} — ditulis olehmu, bukan sensor.`
-            : `${plant.name}'s growth story — written by you, not the sensors.`
-        }
+        title={locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
       />
 
       <div className="mx-auto w-full max-w-[640px]">
         <JamkachuMemoryReflection memories={memories} locale={locale} snapshot={featuredSnapshot} />
-        <p className={`${fieldHelpClass} -mt-3 mb-5 px-2`}>
-          {companion
-            ? `${locale === "id" ? "Companion virtual" : "Virtual companion"}: ${companionStageLabel(locale, String(companion.stage))} · ${companionFormLabel(locale, String(companion.form_key))}. ${locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}`
-            : locale === "id" ? "Kenangan ini berasal dari riwayat PlantMoji yang tersimpan." : "These memories come from saved PlantMoji history."}
-        </p>
-        <section className="pm-panel flex flex-col gap-5">
+        {companion && <div className="pm-diary-stage-stamp">{companionStageLabel(locale, String(companion.stage))} · {companionFormLabel(locale, String(companion.form_key))}</div>}
+        <section className="pm-diary-notebook flex flex-col gap-5">
           <div className="flex flex-col gap-1">
             <h2 className="pm-heading text-xs">
               {locale === "id" ? "Catatan Pertumbuhan" : "Growth Notes"}
             </h2>
-            <p className={fieldHelpClass}>
-              {locale === "id"
-                ? "Tahap pertumbuhan hanya diperbarui lewat catatan ini — bukan oleh sensor. Sensor belum bisa mengukur pertumbuhan asli, dan ini terpisah dari Bond Level, yang tidak pernah turun."
-                : "Growth stage is updated only through these records — never by sensors. Sensors can't measure real growth, and this is separate from Bond Level, which never decreases."}
-            </p>
+            <p className={fieldHelpClass}>{locale === "id" ? "Foto, ukur, lalu tulis apa yang berubah." : "Photograph, measure, and note what changed."}</p>
           </div>
 
-          <form action={addGrowthRecord} className="flex flex-col gap-4">
+          <form action={addGrowthRecord} className="pm-diary-paper-note flex flex-col gap-4">
             <input type="hidden" name="plantId" value={plant.id} />
 
             <label className="flex flex-col gap-1.5">
@@ -226,7 +214,7 @@ export default async function DiaryPage() {
             </button>
           </form>
 
-          <div className="flex flex-col gap-2 border-t-2 border-dashed border-[#BCD3B4] pt-4">
+          <div className="pm-diary-print-grid">
             {growthRecords.length === 0 ? (
               <p className="text-xs text-[#57684F]">
                 {locale === "id"
@@ -253,7 +241,10 @@ export default async function DiaryPage() {
                 const snapshotUrl = snapshotUrls.get(record.id);
                 return <article key={record.id} className="pm-growth-postcard">
                   <div className={`pm-growth-photo${snapshotUrl ? " has-photo" : ""}`}>
-                    {snapshotUrl ? <img src={snapshotUrl} alt={locale === "id" ? `Snapshot pertumbuhan ${plant.name} pada ${dateLabel}` : `${plant.name} growth snapshot on ${dateLabel}`} /> : <div aria-label={locale === "id" ? "Tidak ada snapshot" : "No snapshot"}><span>🌱</span><small>{locale === "id" ? "BELUM ADA FOTO" : "NO SNAPSHOT"}</small></div>}
+                    {snapshotUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- short-lived signed Supabase Storage URL
+                      <img src={snapshotUrl} alt={locale === "id" ? `Snapshot pertumbuhan ${plant.name} pada ${dateLabel}` : `${plant.name} growth snapshot on ${dateLabel}`} />
+                    ) : <div aria-label={locale === "id" ? "Tidak ada snapshot" : "No snapshot"}><span>🌱</span><small>{locale === "id" ? "BELUM ADA FOTO" : "NO SNAPSHOT"}</small></div>}
                     {snapshotUrl && <b>{locale === "id" ? "JEPRET!" : "SNAP!"}</b>}
                   </div>
                   <div className="pm-growth-postcard-copy">

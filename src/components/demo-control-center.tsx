@@ -11,6 +11,7 @@ import {
   type DemoActionState,
 } from "@/app/settings/actions";
 import type { AppLocale } from "@/lib/i18n";
+import GrowthShowcase from "@/components/growth-showcase";
 
 const INITIAL_STATE: DemoActionState = { status: "idle", message: "" };
 
@@ -111,6 +112,7 @@ export default function DemoControlCenter({
 }) {
   const copy = COPY[locale];
   const [code, setCode] = useState("");
+  const [showGrowth, setShowGrowth] = useState(false);
   const [maxState, maxAction, maxPending] = useActionState(activateDemoMaxMode, INITIAL_STATE);
   const [resetState, resetAction, resetPending] = useActionState(resetDemoMode, INITIAL_STATE);
   const [prepareState, prepareAction, preparePending] = useActionState(prepareDemoLevelUp, INITIAL_STATE);
@@ -184,7 +186,7 @@ export default function DemoControlCenter({
       <section className="rounded-2xl border-2 border-emerald-700 bg-[#10251a] p-3 text-emerald-100 shadow-[0_5px_0_#07120c]">
         <p className="pm-heading text-[8px] text-emerald-300">{copy.director}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Link className="pm-btn px-2 text-[8px]" href="/?demo=1">1 · SENSOR</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/?presentation=1&amp;scene=1&amp;source=demo">START DEMO</Link>
           <Link className="pm-btn px-2 text-[8px]" href="/plants?demo=hot">2 · EXPLAIN</Link>
           <Link className="pm-btn px-2 text-[8px]" href="/camera?demo=1">3 · CAMERA</Link>
           <Link className="pm-btn px-2 text-[8px]" href="/diary?demo=1">4 · MEMORY</Link>
@@ -193,6 +195,7 @@ export default function DemoControlCenter({
           <button type="button" className="pm-btn pm-btn-primary w-full text-[8px]" onClick={openPresentation}>{copy.presentation}</button>
           <button type="button" className="pm-btn w-full text-[8px]" onClick={showEnding}>{copy.ending}</button>
         </div>
+        <button type="button" className="pm-btn mt-2 w-full text-[9px]" onClick={() => setShowGrowth(true)}>🌱 {locale === "id" ? "LIHAT 10 TAHAP PERTUMBUHAN" : "SHOW ALL 10 GROWTH STAGES"}</button>
         <p className="mt-2 font-mono text-[9px] text-emerald-300">SENSOR → UNDERSTAND → ACT → VERIFY → REWARD → GROW</p>
       </section>
 
@@ -231,6 +234,7 @@ export default function DemoControlCenter({
       <ResultMessage state={prepareState} locale={locale} />
       <ResultMessage state={xpState} locale={locale} />
       <ResultMessage state={evolveState} locale={locale} />
+      {showGrowth && <GrowthShowcase locale={locale} onClose={() => setShowGrowth(false)} />}
     </div>
   );
 }

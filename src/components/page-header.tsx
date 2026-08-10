@@ -21,7 +21,7 @@ export default function PageHeader({
       <div className="pm-page-header-copy">
         {eyebrow && <p className="pm-page-eyebrow">{eyebrow}</p>}
         <h1 className="pm-heading pm-page-title">{title}</h1>
-        {description && <p className="pm-page-subtitle">{description}</p>}
+        {description && <span className="sr-only">{description}</span>}
         {meta && <div className="pm-page-meta">{meta}</div>}
       </div>
     </header>

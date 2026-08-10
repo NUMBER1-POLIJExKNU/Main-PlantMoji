@@ -4,7 +4,6 @@
 import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
-import ReportsRecap from "@/components/reports-recap";
 import { fetchPlant, type PlantFetchResult } from "@/lib/plants";
 import { getWeeklyReportNarration } from "@/lib/plant-messages";
 import { computeWeeklyReport } from "@/lib/weekly-report";
@@ -132,6 +131,11 @@ export default async function ReportsPage() {
     plantResult.status === "ok"
       ? await getWeeklyReportNarration(plantResult.plant, report)
       : null;
+  const nextGoal = report.overheatingEvents > 0
+    ? (locale === "id" ? "Kurangi kejadian panas dan jaga tempat tetap teduh." : "Reduce heat events and keep the garden comfortably shaded.")
+    : report.questsCompleted === 0
+      ? (locale === "id" ? "Selesaikan satu misi perawatan bersama Jamkachu." : "Complete one care quest with Jamkachu.")
+      : (locale === "id" ? "Pertahankan kondisi nyaman dan lanjutkan rentetan harian." : "Keep conditions comfortable and continue the daily streak.");
 
   // Sizing/backdrop comes from the farm shell contract: .reno-route-content
   // centers this <main> at 720px directly on the sky, and .pm-panel tiles
@@ -141,7 +145,7 @@ export default async function ReportsPage() {
       <PageHeader
         icon="📊"
         eyebrow={locale === "id" ? "Ringkasan perawatan" : "Care recap"}
-        title={locale === "id" ? "Laporan Mingguan" : "Weekly Report"}
+        title={locale === "id" ? "Laporan" : "Reports"}
         description={locale === "id"
           ? "Lihat pola perawatan dan perkembangan ikatan minggu ini."
           : "See this week's care pattern and bond progress."}
@@ -167,18 +171,7 @@ export default async function ReportsPage() {
         </section>
       )}
 
-      {/* Dopamine plan Task 18: animated recap of numbers this page already
-          computed — no extra queries. There is no per-week XP figure or
-          per-day care breakdown in WeeklyReport, so the recap gets lifetime
-          XP as the closest equivalent and no bestDay (its 🌟 line stays
-          hidden until a future report field provides one). */}
-      <ReportsRecap
-        locale={locale}
-        xpTotal={report.totalXp}
-        questsWeek={report.questsCompleted}
-        streak={report.currentStreak}
-        bestDay={null}
-      />
+      <section className="pm-panel mb-6 grid grid-cols-[auto_1fr] items-center gap-3" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(135deg,#FFF7CF,var(--color-surface))" }}><span className="grid size-12 place-items-center rounded-xl border-[3px] border-[#243421] bg-[#FFDE6A] text-2xl" aria-hidden="true">🎯</span><div><small className="pm-heading block text-[9px] text-[#8A6512]">{locale === "id" ? "TARGET BERIKUTNYA" : "NEXT GOAL"}</small><strong className="mt-1 block text-sm leading-5">{nextGoal}</strong></div></section>
 
       <section aria-label="Weekly stats" className="grid grid-cols-2 gap-3">
         <StatTile

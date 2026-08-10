@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import IntelligenceConsole, { TypewriterText, type IntelligenceLine } from "@/components/intelligence-console";
+import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import type { EnvironmentAnalysis } from "@/lib/environment-analyzer";
 import type { AppLocale } from "@/lib/i18n";
 import type { ExplorerCrop } from "@/lib/jember-crop-catalog";
@@ -35,6 +37,8 @@ function localAdvice(analysis: EnvironmentAnalysis, locale: AppLocale) {
 
 export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {
   const c = COPY[locale];
+  const searchParams = useSearchParams();
+  const presentationMode = searchParams.has("presentation");
   const [data, setData] = useState<ScanPayload | null>(initialSnapshot && initialCrops.length ? { ok: true, source: initialDemoPreset ? "demo" : "sensor", snapshot: initialSnapshot, crops: initialCrops, results: initialResults } : null);
   const [demoMode, setDemoMode] = useState(initialDemoPreset !== null);
   const [selectedKey, setSelectedKey] = useState(initialResults[0]?.cropKey ?? "");
@@ -92,11 +96,22 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
     { label: "DETERMINISTIC RESULT", value: "LOCKED", tone: "ok" },
     { label: "OPTIONAL EXPLANATION", value: explaining ? "REQUESTED" : explanation ? "READY / SAFE FALLBACK" : "STANDBY" },
   ] : [];
+  const processSteps = useMemo<ProcessStep[]>(() => {
+    const complete = Boolean(data && !scanning);
+    return [
+      { key: "sensor", label: "SENSOR", summary: complete ? (data?.source === "demo" ? "DEMO SNAPSHOT RECEIVED" : "LIVE SNAPSHOT RECEIVED") : scanning ? "SNAPSHOT REQUESTED" : undefined, state: complete ? "complete" : scanning ? "running" : "waiting" },
+      { key: "validate", label: "VALIDATE", summary: complete ? "4 DIMENSIONS CHECKED" : undefined, state: complete ? "complete" : "waiting" },
+      { key: "analyze", label: "ANALYZE", summary: complete ? `${data?.crops.length ?? 0} JEMBER CROPS COMPARED` : undefined, state: complete ? "complete" : "waiting" },
+      { key: "explain", label: "EXPLAIN", summary: explanation ? "EDUCATION TEXT READY" : explaining ? "GENERATING EDUCATION TEXT" : undefined, state: explanation ? "complete" : explaining ? "running" : "waiting" },
+      { key: "verify", label: "VERIFY", summary: "ACT, THEN RE-SCAN", state: "waiting" },
+      { key: "reward", label: "REWARD", summary: "QUEST ENGINE ONLY", state: "waiting" },
+    ];
+  }, [data, scanning, explaining, explanation]);
 
   return <section className="pm-crop-explorer mb-6" aria-labelledby="crop-explorer-title">
     <div className="pm-crop-scan-hero"><div className="pm-crop-radar" aria-hidden="true"><span>🌱</span></div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
     <label className="pm-crop-demo-toggle"><input type="checkbox" checked={demoMode} onChange={(event) => { setDemoMode(event.target.checked); setData(null); setError(false); setExplanation(""); }} /> <span>{c.demoMode}</span></label>
-    {(scanning || data) && <div className="m-4"><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
+    {presentationMode && (scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
     {error && <p role="alert" className="mt-4 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] p-3 text-sm">{c.noData}</p>}
     {data && !scanning && <div className="pm-crop-results"><div className="pm-crop-snapshot-head"><strong>✅ {c.ready}</strong>{data.source === "demo" && <b>{c.demoBadge}</b>}</div><div className="pm-crop-snapshot">{Object.entries(PARAMS).map(([key, p]) => { const value = key === "airHumidity" ? data.snapshot.humidity : data.snapshot[key as "temperature" | "light" | "soilPh"]; return <span key={key}><i>{p[0]}</i><small>{locale === "id" ? p[1] : p[2]}</small><strong>{valueWithUnit(key as keyof typeof PARAMS, value ?? null)}</strong></span>; })}</div>
       <div className="pm-crop-section-head"><p className="pm-crop-step">{c.step2}</p><h3>{c.matches}</h3></div><div className="pm-crop-rank-grid">{data.results.map((item, index) => <button type="button" key={item.cropKey} onClick={() => chooseCrop(item.cropKey)} aria-pressed={selected?.cropKey === item.cropKey} className={selected?.cropKey === item.cropKey ? "is-selected" : ""}><span className="pm-crop-rank">#{index + 1}</span><strong>{item.cropName}</strong><span className="pm-crop-score"><b>{item.matchedConditions}/{item.evaluatedConditions}</b> {c.measured}</span><span className="pm-crop-label">{item.label === "excellent" ? c.excellent : item.label === "good" ? c.good : item.label === "partial" ? c.partial : item.label === "challenging" ? c.challenging : c.notEnough}</span>{item.largestMismatch && <small>{c.mainMismatch}: {locale === "id" ? PARAMS[item.largestMismatch.parameter][1] : PARAMS[item.largestMismatch.parameter][2]} {item.largestMismatch.direction === "high" ? "↑" : "↓"}</small>}<em>{item.profileStatus === "active" ? c.active : item.profileStatus === "reference_only" ? c.reference : c.draft}</em>{selected?.cropKey === item.cropKey && <i className="pm-crop-selected">✓ {c.selected}</i>}</button>)}</div>

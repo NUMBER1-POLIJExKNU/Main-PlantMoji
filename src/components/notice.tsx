@@ -8,6 +8,11 @@ export interface NoticeProps {
 }
 
 export default function Notice({ title, lines }: NoticeProps) {
+  const technical = /supabase|postgrest|migration|milestone\d+|\.sql|environment variable|schema|plant-01|docs\//i;
+  const safeTitle = technical.test(title) ? "The garden is resting" : title;
+  const safeLines = lines.some((line) => technical.test(line))
+    ? ["PlantMoji could not load this garden right now.", "Please try again in a moment."]
+    : lines;
   return (
     <main className="reno-notice-page">
       <section className="pm-panel reno-notice-card" role="status">
@@ -15,12 +20,13 @@ export default function Notice({ title, lines }: NoticeProps) {
           🌱
         </span>
         <p className="pm-page-eyebrow">PLANT MOJI</p>
-        <h1 className="pm-heading">{title}</h1>
+        <h1 className="pm-heading">{safeTitle}</h1>
         <div className="reno-notice-lines">
-          {lines.map((line) => (
+          {safeLines.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>
+        <a className="pm-btn pm-btn-primary mt-4" href="">Try again</a>
       </section>
     </main>
   );
