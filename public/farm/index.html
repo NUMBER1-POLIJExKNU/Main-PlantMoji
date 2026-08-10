@@ -39,7 +39,11 @@
         <!-- Sidebar Navigation (de-technicalized labels, spec §2.3) -->
         <aside class="sidebar">
             <div class="brand">
-                <img src="/farm/assets/logo.png" alt="Logo" class="logo-img">
+                <!-- logo-small.png is a 128px derivative of logo.png (which the
+                     design owner keeps byte-identical); this slot renders at
+                     44px, so the raw 1254px/544KB original cost ~520KB of
+                     first paint for no visible difference. -->
+                <img src="/farm/assets/logo-small.png" alt="Logo" class="logo-img">
                 <h1>PLANT<br>MOJI</h1>
             </div>
             <nav class="nav-links">
