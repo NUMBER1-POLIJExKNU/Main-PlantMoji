@@ -152,7 +152,10 @@ describe("shared PlantMoji application shell", () => {
     const controls = source("src/components/demo-control-center.tsx");
     const actions = source("src/app/settings/actions.ts");
     expect(settings).toContain('searchParams).demo === "1"');
-    expect(actions).toContain('const configuredCode = "admin"');
+    // Production requires DEMO_CHEAT_CODE (fail-closed); "admin" is the
+    // dev/filming fallback only — never the production gate.
+    expect(actions).toContain("process.env.DEMO_CHEAT_CODE");
+    expect(actions).toContain('process.env.NODE_ENV === "production" ? null : "admin"');
     expect(controls).toContain("prepareDemoLevelUp");
     expect(controls).toContain("grantDemoXp");
     expect(controls).toContain("evolveDemoCompanion");
