@@ -91,4 +91,27 @@ describe("server-side strawberry mood judgment", () => {
     expect(determinePlantMood({ ...normal, soilPH: 6.51 }, "Happy", profile, true)).toBe("SoilAlkaline");
     expect(determinePlantMood({ ...normal, temperature: 28, soilPH: 5 }, "Happy", profile, true)).toBe("Overheating");
   });
+
+  it("uses the 14°C entry and 16°C recovery cold hysteresis", () => {
+    expect(determinePlantMood({ ...normal, temperature: 15 }, "Happy", profile, true)).toBe("Happy");
+    expect(determinePlantMood({ ...normal, temperature: 14 }, "Happy", profile, true)).toBe("TooCold");
+    expect(determinePlantMood({ ...normal, temperature: 15 }, "TooCold", profile, true)).toBe("TooCold");
+    expect(determinePlantMood({ ...normal, temperature: 16 }, "TooCold", profile, true)).toBe("Happy");
+  });
+
+  it("uses the 60/55% humid-air hysteresis", () => {
+    expect(determinePlantMood({ ...normal, humidity: 60 }, "Happy", profile, true)).toBe("Happy");
+    expect(determinePlantMood({ ...normal, humidity: 61 }, "Happy", profile, true)).toBe("HumidAir");
+    expect(determinePlantMood({ ...normal, humidity: 56 }, "HumidAir", profile, true)).toBe("HumidAir");
+    expect(determinePlantMood({ ...normal, humidity: 55 }, "HumidAir", profile, true)).toBe("Happy");
+  });
+
+  it("keeps the heat→cold→dry→humid→dark→soil priority order", () => {
+    // Cold outranks dry air, daytime darkness, and soil pH.
+    expect(determinePlantMood({ ...normal, temperature: 14, humidity: 30, light: 10, soilPH: 5 }, "Happy", profile, true)).toBe("TooCold");
+    // Heat is checked before cold, so a hot reading never becomes TooCold.
+    expect(determinePlantMood({ ...normal, temperature: 28, humidity: 70 }, "Happy", profile, true)).toBe("Overheating");
+    // Humid air outranks daytime darkness and soil pH.
+    expect(determinePlantMood({ ...normal, humidity: 70, light: 10, soilPH: 5 }, "Happy", profile, true)).toBe("HumidAir");
+  });
 });

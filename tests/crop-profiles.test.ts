@@ -30,6 +30,28 @@ describe("strawberry crop profile", () => {
     expect(profile.airHumidity.dryAir.recoverAtOrAbove).toBe(45);
   });
 
+  it("defines the opposite cold + humid-air bands", () => {
+    expect(profile.temperature.cold.enterAtOrBelow).toBe(14);
+    expect(profile.temperature.cold.recoverAtOrAbove).toBe(16);
+    expect(profile.airHumidity.humidAir.enterAbove).toBe(60);
+    expect(profile.airHumidity.humidAir.recoverAtOrBelow).toBe(55);
+  });
+
+  it("keeps every profile's hysteresis bands internally ordered", () => {
+    for (const key of ["strawberry", "soybean", "cayenne-pepper"] as const) {
+      const p = getCropProfile(key);
+      // Overheating enters higher than it recovers; cold enters lower than it recovers.
+      expect(p.temperature.overheating.enterAtOrAbove).toBeGreaterThan(p.temperature.overheating.recoverAtOrBelow);
+      expect(p.temperature.cold.enterAtOrBelow).toBeLessThan(p.temperature.cold.recoverAtOrAbove);
+      // Cold band sits below the overheating band, with no overlap.
+      expect(p.temperature.cold.recoverAtOrAbove).toBeLessThan(p.temperature.overheating.recoverAtOrBelow);
+      // Dry enters below it recovers; humid enters above it recovers; dry < humid.
+      expect(p.airHumidity.dryAir.enterBelow).toBeLessThan(p.airHumidity.dryAir.recoverAtOrAbove);
+      expect(p.airHumidity.humidAir.enterAbove).toBeGreaterThan(p.airHumidity.humidAir.recoverAtOrBelow);
+      expect(p.airHumidity.dryAir.recoverAtOrAbove).toBeLessThan(p.airHumidity.humidAir.recoverAtOrBelow);
+    }
+  });
+
   it("classifies the requested temperature and humidity advisory boundaries", () => {
     const reading = (temperature: number, humidity: number) =>
       evaluateCropEnvironment({ temperature, humidity, soilPh: 6, light: 60 }, profile);

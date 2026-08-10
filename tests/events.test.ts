@@ -42,6 +42,11 @@ describe("normalizeMood", () => {
     expect(normalizeMood("dry_air")).toBe("DryAir");
     expect(normalizeMood("DRY-AIR")).toBe("DryAir");
     expect(normalizeMood("dryair")).toBe("DryAir");
+    expect(normalizeMood("Too Cold")).toBe("TooCold");
+    expect(normalizeMood("too_cold")).toBe("TooCold");
+    expect(normalizeMood("TOO-COLD")).toBe("TooCold");
+    expect(normalizeMood("Humid Air")).toBe("HumidAir");
+    expect(normalizeMood("humid_air")).toBe("HumidAir");
     expect(normalizeMood("soil acidic")).toBe("SoilAcidic");
     expect(normalizeMood("SOIL ALKALINE")).toBe("SoilAlkaline");
     // The strip regex is global, so surrounding whitespace is removed too.
