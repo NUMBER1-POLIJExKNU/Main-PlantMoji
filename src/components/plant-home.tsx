@@ -14,6 +14,7 @@ import Mascot from "@/components/mascot";
 import HomeEnvironmentGlance from "@/components/home-environment-glance";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 import type { AppLocale } from "@/lib/i18n";
+import IntelligenceConsole, { TypewriterText } from "@/components/intelligence-console";
 
 // Scene tint + badge styling per mood. The scene classes (globals.css) shift
 // the pixel-farm sky/grass palette; the badge keeps its per-mood color chip.
@@ -270,7 +271,7 @@ export default function PlantHome({
         </span>
 
         <div className="mt-auto flex w-full flex-col items-center pt-8">
-          <p className="pm-bubble pm-bounce">“{moodMessage}”</p>
+          <p className="pm-bubble pm-bounce">“<TypewriterText text={moodMessage} speed={22} />”</p>
           <div className="-mb-7 w-60 max-w-[70vw]">
             <Mascot mood={plant.current_state} />
           </div>
@@ -293,6 +294,12 @@ export default function PlantHome({
           )}
 
           <HomeQuestCard quest={questCardProps(quest, nowMs)} />
+          {quest?.status === "VERIFYING" && <div className="w-full"><IntelligenceConsole title="CARE VERIFICATION CORE" running lines={[
+            { label: "SENSOR EVIDENCE", value: "OBSERVING", tone: "warn" },
+            { label: "QUEST RULE", value: "DETERMINISTIC", tone: "ok" },
+            { label: "STABILITY WINDOW", value: "IN PROGRESS" },
+            { label: "XP TRANSACTION", value: "LOCKED UNTIL VERIFIED", tone: "warn" },
+          ]} /></div>}
 
           {plant.species && (
             <p className="pm-grass-text font-pixel-body text-lg">

@@ -14,7 +14,8 @@
 // row — no XP, no Seeds, no quests. Network failure queues nothing: events
 // are ephemeral by design (a missed giggle is not data loss).
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import IntelligenceConsole, { type IntelligenceLine } from "@/components/intelligence-console";
 import { CAMERA_COPY } from "@/app/camera/copy";
 import {
   MOTION_CONFIG,
@@ -368,6 +369,16 @@ export default function CameraGuardian({
     denied: copy.deniedTitle,
     nocamera: copy.noCameraTitle,
   };
+  const visionLines = useMemo<IntelligenceLine[]>(() => [
+    { label: "CAMERA STREAM", value: status === "watching" || status === "motion" || status === "checking" ? "LOCAL / ACTIVE" : status.toUpperCase(), tone: status === "denied" || status === "nocamera" ? "warn" : "ok" },
+    { label: "MOTION ENGINE", value: "DETERMINISTIC FRAME DIFF", tone: "ok" },
+    { label: "MODEL RUNTIME", value: "TENSORFLOW.JS / ON DEVICE", tone: localModelState === "failed" ? "warn" : "ok" },
+    { label: "MODEL INPUT", value: "224 × 224" },
+    { label: "LOCAL CLASSIFICATION", value: localClassification ?? localModelState.toUpperCase(), tone: localClassification === "Foreign Environment" ? "warn" : "ok" },
+    { label: "LIVE VIDEO UPLOAD", value: "DISABLED", tone: "ok" },
+    { label: "SENSOR AUTHORITY", value: "NONE", tone: "warn" },
+    { label: "REWARD CONTROL", value: "DISABLED", tone: "ok" },
+  ], [localClassification, localModelState, status]);
 
   return (
     <section className="pm-cam">
@@ -385,6 +396,7 @@ export default function CameraGuardian({
       <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite">
         {statusLabel[status]}
       </div>
+      <IntelligenceConsole title="LOCAL VISION CORE" lines={visionLines} running={status === "starting" || status === "checking"} compact />
 
       {status === "denied" || status === "nocamera" ? (
         <div className="pm-panel pm-cam-blocked">

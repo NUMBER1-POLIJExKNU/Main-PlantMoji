@@ -3225,11 +3225,32 @@ function addFarmerChatMessage(kind, text, marker) {
   if (!log) return null;
   const message = document.createElement("p");
   message.className = `farmer-chat-message is-${kind}${marker ? ` ${marker}` : ""}`;
-  message.textContent = text;
+  message.textContent = kind === "farmer" ? "" : text;
   log.appendChild(message);
   while (log.children.length > 8) log.firstElementChild?.remove();
   log.scrollTop = log.scrollHeight;
+  if (kind === "farmer") typeFarmerMessage(message, text);
   return message;
+}
+
+function typeFarmerMessage(element, text) {
+  if (!element) return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { element.textContent = text; return; }
+  let index = 0;
+  const timer = window.setInterval(() => {
+    index += 1; element.textContent = text.slice(0, index); element.parentElement.scrollTop = element.parentElement.scrollHeight;
+    if (index >= text.length || !element.isConnected) window.clearInterval(timer);
+  }, 18);
+  element.addEventListener("click", () => { index = text.length; element.textContent = text; window.clearInterval(timer); }, { once: true });
+}
+
+function showFarmerIntelligence(running) {
+  const panel = $("#farmer-chat-system");
+  if (!panel) return;
+  panel.hidden = false;
+  const lines = appLocale === "id" ? ["membaca kondisi tanaman", "memuat sensor terbaru", "memeriksa misi aktif", "mengunci aturan keselamatan", running ? "menyusun jawaban ramah..." : "jawaban aman siap"] : ["reading plant mood", "loading latest sensors", "checking active quest", "locking safety rules", running ? "forming a friendly answer..." : "safe response ready"];
+  panel.innerHTML = `<b>GRANDPA TANI KNOWLEDGE LINK</b>${lines.map((line, index) => `<span style="--delay:${index * 90}ms">&gt; ${line}</span>`).join("")}`;
+  panel.classList.toggle("is-running", running);
 }
 
 function prepareFarmerChat() {
@@ -3261,6 +3282,7 @@ function openFarmerChat() {
   if (!dialog || dialog.hasAttribute("open") || $("#npc-farmer")?.classList.contains("npc-falling")) return;
   clearFarmerBubble();
   prepareFarmerChat();
+  showFarmerIntelligence(false);
   setFarmerMotionPaused(true);
   if (typeof dialog.showModal === "function") dialog.showModal();
   else dialog.setAttribute("open", "");
@@ -3287,6 +3309,7 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
   send.disabled = true;
   addFarmerChatMessage("user", question);
   const thinking = addFarmerChatMessage("farmer", farmerCopy().thinking, "is-thinking");
+  showFarmerIntelligence(true);
   farmerChatController?.abort();
   farmerChatController = new AbortController();
   const timeout = window.setTimeout(() => farmerChatController?.abort(), 6500);
@@ -3305,9 +3328,11 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
       dialog.dataset.demoShown = "true";
     }
     addFarmerChatMessage("farmer", typeof result?.reply === "string" ? result.reply : farmerCopy().network);
+    showFarmerIntelligence(false);
   } catch {
     thinking?.remove();
     if ($("#farmer-chat")?.open) addFarmerChatMessage("farmer", farmerCopy().network);
+    showFarmerIntelligence(false);
   } finally {
     window.clearTimeout(timeout);
     farmerChatController = null;
@@ -3919,6 +3944,8 @@ function renderQuestSlot(rows) {
   const list = Array.isArray(rows) ? rows : [];
   const quest = list.find((row) => row?.status === "ACTIVE") ?? list.find((row) => row?.status === "VERIFYING");
   slotEl?.classList.toggle("verifying", quest?.status === "VERIFYING");
+  const verifyConsole = $("#quest-verify-console");
+  if (verifyConsole) verifyConsole.hidden = quest?.status !== "VERIFYING";
   if (!quest) {
     nameEl.textContent = t("quest.none");
     progressEl.textContent = "";

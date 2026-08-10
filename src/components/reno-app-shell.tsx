@@ -7,6 +7,7 @@ import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
 import type { AppTheme, FarmSkin } from "@/lib/appearance";
 import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
+import BroadcastOverlay from "@/components/broadcast-overlay";
 
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. Keep
@@ -110,6 +111,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
         </div>
       </div>
       <AppGuide locale={locale} />
+      <BroadcastOverlay locale={locale} />
     </div>
   );
 }

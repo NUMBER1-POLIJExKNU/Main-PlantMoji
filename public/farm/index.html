@@ -475,6 +475,7 @@
 
                 <!-- Current Quest (fed by the existing quests query) -->
                 <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></span></div>
+                <div id="quest-verify-console" class="quest-verify-console" hidden><b>CARE VERIFICATION CORE</b><span>&gt; SENSOR EVIDENCE <strong>PENDING</strong></span><span>&gt; DETERMINISTIC RULE <strong>ACTIVE</strong></span><span>&gt; XP TRANSACTION <strong>LOCKED</strong></span></div>
 
                 <!-- Bond / XP / HP / Streak (character state, moved down from hud-top) -->
                 <div class="user-gamification panel-glass">
@@ -571,6 +572,7 @@
             <div><span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span><h2 id="farmer-chat-title">Grandpa Tani</h2></div>
             <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
         </form>
+        <div id="farmer-chat-system" class="farmer-chat-system" aria-live="polite" hidden></div>
         <div id="farmer-chat-log" class="farmer-chat-log" role="log" aria-live="polite"></div>
         <div id="farmer-chat-prompts" class="farmer-chat-prompts"></div>
         <form id="farmer-chat-form" class="farmer-chat-form">
