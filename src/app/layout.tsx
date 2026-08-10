@@ -51,6 +51,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             keeps the same load-before-hydration semantics. */}
         <Script src="/farm/strings.js" strategy="beforeInteractive" />
         <Script src="/farm/sfx.js" strategy="beforeInteractive" />
+        {/* Classroom-demo sandbox (window.PMCheat): client-only, never writes
+            Supabase/hardware. Loads on the farm home AND every React route so
+            the cheat banner and shared sandbox state follow the presenter. */}
+        <Script src="/farm/cheat.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

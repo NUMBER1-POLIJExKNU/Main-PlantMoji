@@ -2196,3 +2196,89 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 .shop-decor-compost { position:absolute; left:38%; bottom:54px; width:48px; height:35px; border:3px solid #243421; background:#7c593c; color:#d8efad; text-align:center; }.shop-decor-compost i { font-style:normal; font-size:22px; }
 .shop-decor-tobacco-barn { position:absolute; left:2%; bottom:58px; width:72px; height:55px; border:3px solid #243421; background:#9a6845; clip-path:polygon(50% 0,100% 28%,100% 100%,0 100%,0 28%); }.shop-decor-tobacco-barn i { position:absolute; left:29px; bottom:0; width:18px; height:31px; background:#493426; }
 .shop-decor-puger-pinwheel { position:absolute; right:20%; bottom:61px; width:8px; height:58px; background:#e7ddd0; border:2px solid #243421; }.shop-decor-puger-pinwheel i { position:absolute; left:-17px; top:-20px; width:38px; height:38px; background:conic-gradient(#ffca55 0 25%,#58b9d1 0 50%,#ef7a74 0 75%,#8fd36f 0); clip-path:polygon(50% 50%,0 15%,40% 38%,50% 0,62% 40%,100% 50%,62% 62%,50% 100%,40% 62%,0 85%); }
+
+/* ── Classroom cheat sandbox panel (public/farm/cheat.js + live.js) ────────
+   Fixed docked editor shown only while the sandbox is active. Client-only,
+   display-driving; it never persists anything to a backend. Sits below the
+   fixed CHEAT MODE banner. */
+#pm-cheat-panel {
+  position: fixed;
+  top: 44px;
+  right: 12px;
+  z-index: 99998;
+  width: 232px;
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 3px solid #C2618A;
+  border-radius: 14px;
+  background: rgba(255, 247, 223, 0.97);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  font: 500 12px/1.3 var(--font-body, system-ui, sans-serif);
+  color: #3a2600;
+}
+#pm-cheat-panel .pm-cheat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-bottom: 8px;
+  border-bottom: 2px dashed #E0B0C6;
+}
+#pm-cheat-panel h3 {
+  margin: 0;
+  font: 700 11px/1.2 var(--font-heading, ui-monospace, monospace);
+  letter-spacing: .04em;
+  color: #8A2B5B;
+}
+#pm-cheat-panel .pm-cheat-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#pm-cheat-panel .pm-cheat-field span { flex: 1; }
+#pm-cheat-panel input[type="number"] {
+  width: 82px;
+  padding: 4px 6px;
+  border: 2px solid #C2618A;
+  border-radius: 8px;
+  background: #fff;
+  color: #3a2600;
+  font: inherit;
+  text-align: right;
+}
+#pm-cheat-panel .pm-cheat-level {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#pm-cheat-panel .pm-cheat-level span { flex: 1; }
+#pm-cheat-panel .pm-cheat-level output {
+  min-width: 30px;
+  padding: 2px 0;
+  text-align: center;
+  font: 700 13px/1 var(--font-heading, ui-monospace, monospace);
+}
+#pm-cheat-panel .pm-cheat-level button {
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  border: 2px solid #8A2B5B;
+  border-radius: 8px;
+  background: #FFD86B;
+  color: #3a2600;
+  font: 700 15px/1 ui-monospace, monospace;
+}
+#pm-cheat-panel .pm-cheat-level button:active { transform: translateY(1px); }
+#pm-cheat-panel .pm-cheat-hint {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #7A5B12;
+}
+@media (max-width: 760px) {
+  #pm-cheat-panel { width: 190px; top: 40px; right: 6px; }
+}
