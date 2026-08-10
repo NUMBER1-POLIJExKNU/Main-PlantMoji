@@ -833,7 +833,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    the default happy group shows whenever no variant class is set. */
 .mascot-face[data-face] { display: none; }
 .mascot-svg.face-hot [data-face="hot"] { display: block; }
+.mascot-svg.face-cold [data-face="cold"] { display: block; }
 .mascot-svg.face-dry [data-face="dry"] { display: block; }
+.mascot-svg.face-humid [data-face="humid"] { display: block; }
 .mascot-svg.face-sleepy [data-face="sleepy"] { display: block; }
 .mascot-svg.face-acidic [data-face="acidic"] { display: block; }
 .mascot-svg.face-alkaline [data-face="alkaline"] { display: block; }
@@ -844,7 +846,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.expr-proud .face-default,
 .mascot-svg.expr-giggle .face-default { display:none; }
 .mascot-svg.face-hot .face-default,
+.mascot-svg.face-cold .face-default,
 .mascot-svg.face-dry .face-default,
+.mascot-svg.face-humid .face-default,
 .mascot-svg.face-sleepy .face-default,
 .mascot-svg.face-acidic .face-default,
 .mascot-svg.face-alkaline .face-default { display: none; }

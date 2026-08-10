@@ -97,10 +97,10 @@ function expectLatinCopy(value: unknown, label: string) {
   );
 }
 
-const MOOD_KEYS = ["Happy", "Overheating", "DryAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
+const MOOD_KEYS = ["Happy", "Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
 const REASON_KEYS = ["quest", "lucky", "badge", "chapter", "streak", "mood", "daily", "growth"];
 // Contextual care button (spec §6.1): both soil moods share the "Soil" entry.
-const CARE_KEYS = ["Overheating", "DryAir", "Sleepy", "Soil", "Happy"];
+const CARE_KEYS = ["Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "Soil", "Happy"];
 const SLEEP_KEYS = ["bubble", "why", "nightLabel", "button"] as const;
 const VITAL_KEYS = [
   "tempHot",

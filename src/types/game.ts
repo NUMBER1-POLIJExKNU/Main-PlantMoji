@@ -25,10 +25,12 @@ export function normalizePersonality(value: unknown): PersonalityId {
 export const QUEST_KEYS = [
   "KEEP_ME_HAPPY",
   "COOL_ME_DOWN",
+  "WARM_ME_UP",
   "GIVE_ME_MORE_LIGHT",
   "BALANCE_SOIL_ACIDIC",
   "BALANCE_SOIL_ALKALINE",
   "HUMIDIFY_MY_AIR",
+  "DEHUMIDIFY_MY_AIR",
   "STAY_COMFY",
 ] as const;
 export type QuestKey = (typeof QUEST_KEYS)[number];
@@ -225,6 +227,8 @@ export interface WeeklyReport {
   healthySeconds: number;
   questsCompleted: number;
   overheatingEvents: number;
+  tooColdEvents: number;
+  humidAirEvents: number;
   bondLevel: number;
   totalXp: number;
   currentStreak: number;

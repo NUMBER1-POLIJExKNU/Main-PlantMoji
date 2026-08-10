@@ -34,6 +34,13 @@ export interface QuestDefinition {
    */
   verifyTemperatureMax?: number;
   /**
+   * recovery only: mirror of verifyTemperatureMax for the cold band. When an
+   * event carries data.temperature below the profile's cold recover point, the
+   * air is still too cold even if another mood outranks the trigger —
+   * verification must not start / must relapse (Warm Me Up).
+   */
+  verifyTemperatureMin?: number;
+  /**
    * recovery only: when an event carries data.soilPH outside [min, max], the
    * soil is NOT balanced even if another mood outranks the trigger —
    * verification must not start / must relapse (handoff §16: "calibrated pH
@@ -47,6 +54,13 @@ export interface QuestDefinition {
    * hysteresis: dry OFF at >= 45% air humidity).
    */
   verifyHumidityMin?: number;
+  /**
+   * recovery only: mirror of verifyHumidityMin for the humid band. When an
+   * event carries data.humidity above the profile's humid-air recover point,
+   * the AIR is still too humid even if another mood outranks the trigger —
+   * verification must not start / must relapse (Dehumidify My Air).
+   */
+  verifyHumidityMax?: number;
 }
 
 export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
@@ -82,6 +96,18 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     requiredSeconds: 300,
     verifyTemperatureMax: 26,
   },
+  WARM_ME_UP: {
+    key: "WARM_ME_UP",
+    title: "Warm Me Up",
+    description:
+      "Brr — I'm too cold! Warm my air gently and keep it stable for 5 minutes. Move me somewhere warmer or away from cold drafts.",
+    emoji: "🧣",
+    xpReward: 30,
+    kind: "recovery",
+    triggerMood: "TooCold",
+    requiredSeconds: 300,
+    verifyTemperatureMin: 16,
+  },
   GIVE_ME_MORE_LIGHT: {
     key: "GIVE_ME_MORE_LIGHT",
     title: "Give Me More Light",
@@ -106,6 +132,20 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     triggerMood: "DryAir",
     requiredSeconds: 300,
     verifyHumidityMin: 45,
+  },
+  // DehumidifyMyAir is the AIR-humidity opposite of Humidify My Air — again
+  // never about the soil (handoff §3: the DHT11 measures air humidity).
+  DEHUMIDIFY_MY_AIR: {
+    key: "DEHUMIDIFY_MY_AIR",
+    title: "Dry My Air",
+    description:
+      "The AIR around my leaves is too humid — my soil is fine, so please don't change its water. Improve airflow, open a window, or move me away from steam and misting, then keep it steady for 5 minutes.",
+    emoji: "🌬️",
+    xpReward: 20,
+    kind: "recovery",
+    triggerMood: "HumidAir",
+    requiredSeconds: 300,
+    verifyHumidityMax: 55,
   },
   // Soil quests coach gentle, everyday care only — NEVER chemical dosing
   // (handoff §16: "Do not have AI prescribe dangerous chemical dosing").

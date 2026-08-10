@@ -27,7 +27,9 @@
       moods: {
         Happy: "Happy",
         Overheating: "Overheating",
+        TooCold: "Too Cold",
         DryAir: "Dry Air",
+        HumidAir: "Humid Air",
         Sleepy: "Sleepy",
         SoilAcidic: "Acidic",
         SoilAlkaline: "Alkaline",
@@ -37,7 +39,9 @@
       moodEmoji: {
         Happy: "😊",
         Overheating: "🥵",
+        TooCold: "🥶",
         DryAir: "😵",
+        HumidAir: "💧",
         Sleepy: "😴",
         SoilAcidic: "🤢",
         SoilAlkaline: "😖",
@@ -142,9 +146,17 @@
           label: "Move me to shade 🌳",
           why: "Find a cooler, shadier spot. The temperature sensor will feel the difference.",
         },
+        TooCold: {
+          label: "Move me somewhere warmer 🧣",
+          why: "Find a warmer spot away from cold drafts, open windows, and AC. The temperature sensor will feel the difference.",
+        },
         DryAir: {
           label: "Move me away from fans & AC 🌬️",
           why: "Fans and AC can dry the air around my leaves. This is about air humidity, not watering my soil; the humidity sensor will check the change.",
+        },
+        HumidAir: {
+          label: "Give me fresh airflow 🪟",
+          why: "Open a window or improve airflow to clear the muggy air around my leaves. This is about air humidity, not watering my soil; the humidity sensor will check the change.",
         },
         Sleepy: {
           label: "Show me some light ☀️",
@@ -210,12 +222,26 @@
           "That's nice… the temperature sensor still says it's hot, though.",
           "A little cooler and I'll be all smiles again.",
         ],
+        TooCold: [
+          "Thanks… a warmer spot would feel even better.",
+          "Your hands are warm… but this room is really cold right now.",
+          "Brrr… somewhere cozier would be lovely.",
+          "That's nice… the temperature sensor still says it's cold, though.",
+          "A little warmer and I'll be all smiles again.",
+        ],
         DryAir: [
           "That feels nice… the air is still pretty dry, though.",
           "Thanks… away from fans and drafts, my air gets cozier.",
           "Sweet of you… moister air would be even sweeter.",
           "The humidity sensor still says the air is very dry.",
           "A calmer, less breezy spot would feel wonderful.",
+        ],
+        HumidAir: [
+          "That feels nice… the air is still pretty muggy, though.",
+          "Thanks… a little fresh airflow would make my air cozier.",
+          "Sweet of you… drier, fresher air would be even sweeter.",
+          "The humidity sensor still says the air is very humid.",
+          "An open window or gentle breeze would feel wonderful.",
         ],
         Sleepy: [
           "Thanks… some light would wake me right up.",
@@ -260,9 +286,17 @@
           "Hoho… this room is toasty. A shadier, cooler spot would do the little one good.",
           "Phew! Even my hat feels warm. Find your friend somewhere cooler, hm?",
         ],
+        TooCold: [
+          "Hoho… this room is nippy. A warmer spot would do the little one good.",
+          "Brr! Even my old bones feel it. Move your friend somewhere warmer, hm?",
+        ],
         DryAir: [
           "Hoho… the air is thirsty-dry. Away from fans and drafts it gets cozier.",
           "My old whiskers feel the dry air too. A calmer corner would help, hm?",
+        ],
+        HumidAir: [
+          "Hoho… the air is heavy and damp. A little fresh airflow would help, hm?",
+          "My old whiskers feel the mugginess too. Crack a window for the little one.",
         ],
         Sleepy: [
           "Hoho… mighty dim in here. Open a curtain — plants love a bright morning.",
@@ -419,7 +453,9 @@
       moods: {
         Happy: "Senang",
         Overheating: "Kepanasan",
+        TooCold: "Kedinginan",
         DryAir: "Udara Kering",
+        HumidAir: "Udara Lembap",
         Sleepy: "Mengantuk",
         SoilAcidic: "Tanah Asam",
         SoilAlkaline: "Tanah Basa",
@@ -429,7 +465,9 @@
       moodEmoji: {
         Happy: "😊",
         Overheating: "🥵",
+        TooCold: "🥶",
         DryAir: "😵",
+        HumidAir: "💧",
         Sleepy: "😴",
         SoilAcidic: "🤢",
         SoilAlkaline: "😖",
@@ -524,9 +562,17 @@
           label: "Pindahkan aku ke tempat teduh 🌳",
           why: "Cari tempat yang lebih sejuk dan teduh ya. Sensor suhu pasti merasakan bedanya.",
         },
+        TooCold: {
+          label: "Pindahkan aku ke tempat lebih hangat 🧣",
+          why: "Cari tempat yang lebih hangat, jauh dari angin dingin, jendela terbuka, dan AC. Sensor suhu pasti merasakan bedanya.",
+        },
         DryAir: {
           label: "Jauhkan aku dari kipas & AC 🌬️",
           why: "Kipas dan AC bisa mengeringkan udara di sekitar daun. Ini tentang kelembapan udara, bukan menyiram tanah; sensor kelembapan akan memeriksa perubahannya.",
+        },
+        HumidAir: {
+          label: "Beri aku aliran udara segar 🪟",
+          why: "Buka jendela atau perbaiki aliran udara untuk mengurangi udara pengap di sekitar daun. Ini tentang kelembapan udara, bukan menyiram tanah; sensor kelembapan akan memeriksa perubahannya.",
         },
         Sleepy: {
           label: "Tunjukkan aku cahaya ☀️",
@@ -582,12 +628,26 @@
           "Enak sih… tapi kata sensor suhu masih panas nih.",
           "Sedikit lebih adem, aku pasti ceria lagi.",
         ],
+        TooCold: [
+          "Makasih… tapi tempat yang lebih hangat pasti lebih enak.",
+          "Tanganmu hangat… tapi ruangan ini lagi dingin banget.",
+          "Brrr… tempat yang lebih hangat pasti nyaman deh.",
+          "Enak sih… tapi kata sensor suhu masih dingin nih.",
+          "Sedikit lebih hangat, aku pasti ceria lagi.",
+        ],
         DryAir: [
           "Enak… tapi udaranya masih terasa kering nih.",
           "Makasih… jauh dari kipas dan angin, udaraku jadi lebih nyaman.",
           "Baik banget… udara yang lebih lembap pasti lebih menyenangkan lagi.",
           "Kata sensor kelembapan, udaranya masih kering banget.",
           "Tempat yang tenang tanpa angin pasti terasa lebih enak.",
+        ],
+        HumidAir: [
+          "Enak… tapi udaranya masih terasa pengap nih.",
+          "Makasih… sedikit aliran udara segar bikin udaraku lebih nyaman.",
+          "Baik banget… udara yang lebih kering dan segar pasti lebih enak lagi.",
+          "Kata sensor kelembapan, udaranya masih lembap banget.",
+          "Jendela terbuka atau angin lembut pasti terasa lebih enak.",
         ],
         Sleepy: [
           "Makasih… sedikit cahaya pasti bikin aku segar lagi.",
@@ -630,9 +690,17 @@
           "Hoho… ruangan ini gerah sekali. Tempat yang lebih teduh dan sejuk pasti enak buat si kecil.",
           "Wah, topi kakek saja terasa panas. Carikan temanmu tempat yang lebih adem, ya?",
         ],
+        TooCold: [
+          "Hoho… ruangan ini dingin sekali. Tempat yang lebih hangat pasti enak buat si kecil.",
+          "Brr! Tulang tua kakek pun terasa dinginnya. Pindahkan temanmu ke tempat yang lebih hangat, ya?",
+        ],
         DryAir: [
           "Hoho… udaranya kering sekali. Jauh dari kipas dan angin, pasti lebih nyaman.",
           "Kumis tua kakek juga terasa kering nih. Pojok yang lebih tenang pasti membantu, ya?",
+        ],
+        HumidAir: [
+          "Hoho… udaranya berat dan lembap. Sedikit aliran udara segar pasti membantu, ya?",
+          "Kumis tua kakek juga terasa pengapnya. Bukakan jendela untuk si kecil, ya.",
         ],
         Sleepy: [
           "Hoho… gelap sekali di sini. Buka tirainya — tanaman suka pagi yang cerah.",

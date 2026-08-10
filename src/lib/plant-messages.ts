@@ -116,6 +116,8 @@ function buildReportSummary(report: WeeklyReport): string {
     `Healthy time this week: ${healthyHoursLabel(report.healthySeconds)}. ` +
     `Quests completed: ${report.questsCompleted}. ` +
     `Overheating events: ${report.overheatingEvents}. ` +
+    `Too-cold events: ${report.tooColdEvents}. ` +
+    `Humid-air events: ${report.humidAirEvents}. ` +
     `Bond level: ${report.bondLevel} (${report.totalXp} total XP). ` +
     `Current streak: ${report.currentStreak} day(s).`
   );

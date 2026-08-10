@@ -78,7 +78,9 @@ The body it sends follows the game side's `src/types/events.ts` `parseDeviceEven
 #### Mood Code Verification
 
 The `primaryState` values produced by v5's "Combine Plant State" (`fn_state`) are
-`"Happy"`, `"Overheating"`, `"DryAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"`, and these **match exactly, spelling included**, the game side's `src/types/events.ts` `PLANT_MOODS` (no spaced variants like `"Dry Air"`).
+`"Happy"`, `"Overheating"`, `"TooCold"`, `"DryAir"`, `"HumidAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"`, and these **match exactly, spelling included**, the game side's `src/types/events.ts` `PLANT_MOODS` (no spaced variants like `"Dry Air"`).
+
+> ⚠️ **Low-temp / high-humidity moods (milestone20):** `TooCold` (low-temperature band, the opposite of `Overheating`) and `HumidAir` (high-humidity band, the opposite of `DryAir`) were added. The bridge's `PLANT_MOODS` list already includes them, but for a real device to actually emit them, **v5's "Combine Plant State" must produce the `primaryState`.** The `REPLACE: Combine Plant State` node (crop-profile-sync-flow.json) now carries the hysteresis bands and the `analysis.tooCold` / `analysis.airHumid` flags — map those flags to the `primaryState` string in your v5 state function using the priority order `overheating → tooCold → dryAir → humidAir → lowLight → soil → healthy`.
 Even so, the bridge's "Build Game Event" normalizes once more using the same rule as the API's `normalizeMood()` (strip whitespace/`_`/`-`, then compare case-insensitively), so the bridge won't break even if the v5 labels change later.
 
 > See §8 for the **second chain** that delivers sensor connectivity status (`SENSOR_OFFLINE` / `SENSOR_ONLINE`) — it taps a different point (the v5 watchdog).
@@ -250,7 +252,9 @@ Body yang dikirim mengikuti kontrak `parseDeviceEvent` dari `src/types/events.ts
 #### Verifikasi Kode Mood
 
 Nilai `primaryState` yang dihasilkan oleh "Combine Plant State" milik v5 (`fn_state`) adalah
-`"Happy"`, `"Overheating"`, `"DryAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"`, dan nilai-nilai ini **cocok persis, termasuk ejaannya**, dengan `PLANT_MOODS` di `src/types/events.ts` sisi game (tidak ada varian dengan spasi seperti `"Dry Air"`).
+`"Happy"`, `"Overheating"`, `"TooCold"`, `"DryAir"`, `"HumidAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"`, dan nilai-nilai ini **cocok persis, termasuk ejaannya**, dengan `PLANT_MOODS` di `src/types/events.ts` sisi game (tidak ada varian dengan spasi seperti `"Dry Air"`).
+
+> ⚠️ **Mood suhu-rendah / lembap-tinggi (milestone20):** `TooCold` (pita suhu rendah, kebalikan `Overheating`) dan `HumidAir` (pita kelembapan tinggi, kebalikan `DryAir`) telah ditambahkan. Daftar `PLANT_MOODS` di bridge sudah memuatnya, tetapi agar perangkat sungguhan memancarkannya, **"Combine Plant State" v5 harus menghasilkan `primaryState`.** Node `REPLACE: Combine Plant State` (crop-profile-sync-flow.json) kini membawa pita histeresis dan flag `analysis.tooCold` / `analysis.airHumid` — petakan flag itu ke string `primaryState` di fungsi state v5 dengan urutan prioritas `overheating → tooCold → dryAir → humidAir → lowLight → soil → healthy`.
 Meski begitu, "Build Game Event" di bridge tetap melakukan normalisasi sekali lagi dengan aturan yang sama seperti `normalizeMood()` di API (menghapus spasi/`_`/`-`, lalu membandingkan tanpa memedulikan huruf besar/kecil), sehingga bridge tidak akan rusak meskipun label v5 berubah di kemudian hari.
 
 > Untuk **chain kedua** yang mengirim status konektivitas sensor (`SENSOR_OFFLINE` / `SENSOR_ONLINE`), lihat §8. Titik tapping-nya berbeda (watchdog v5).
@@ -422,8 +426,10 @@ v5의 통합 디바이스 커맨드(`msg.payload`)를 그대로 받아서:
 #### 무드 코드 확인 결과
 
 v5 "Combine Plant State"(`fn_state`)가 만드는 `primaryState` 값은
-`"Happy"`, `"Overheating"`, `"DryAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"` 이며,
+`"Happy"`, `"Overheating"`, `"TooCold"`, `"DryAir"`, `"HumidAir"`, `"Sleepy"`, `"SoilAcidic"`, `"SoilAlkaline"` 이며,
 게임 쪽 `src/types/events.ts`의 `PLANT_MOODS`와 **철자까지 정확히 일치**합니다 (`"Dry Air"` 같은 띄어쓰기 변형 없음).
+
+> ⚠️ **온도 하한/습도 상한 무드 추가 (milestone20):** `TooCold`(온도가 낮은 밴드, `Overheating`의 반대)와 `HumidAir`(습도가 높은 밴드, `DryAir`의 반대)가 새로 추가되었습니다. 브리지의 `PLANT_MOODS` 목록에는 이미 반영돼 있지만, **실제 디바이스에서 이 무드가 발동하려면 v5 "Combine Plant State"가 `primaryState`를 산출해야 합니다.** `REPLACE: Combine Plant State`(crop-profile-sync-flow.json)에 히스테리시스 밴드와 `analysis.tooCold`/`analysis.airHumid` 플래그를 추가해 두었으니, v5 상태 함수에서 우선순위 `overheating → tooCold → dryAir → humidAir → lowLight → soil → healthy` 순서로 이 플래그를 `primaryState` 문자열로 매핑하세요.
 그래도 브리지의 "Build Game Event"는 API의 `normalizeMood()`와 동일한 규칙(공백/`_`/`-` 제거 후 대소문자 무시 비교)으로 한 번 더 정규화하므로, 나중에 v5 라벨이 바뀌어도 브리지가 깨지지 않습니다.
 
 > 센서 연결 상태(`SENSOR_OFFLINE` / `SENSOR_ONLINE`)를 전달하는 **두 번째 체인**은 §8을 참고하세요. 태핑 지점이 다릅니다 (v5 워치독).

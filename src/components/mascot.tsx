@@ -62,6 +62,33 @@ function OverheatingFace() {
   );
 }
 
+/** TooCold — shivering squint eyes, pale-blue cheeks, chattering mouth, breath puff. */
+function TooColdFace() {
+  const COLD = "#8FD3F4";
+  return (
+    <g>
+      {/* Tense squinting eyes */}
+      <rect x="108" y="48" width="16" height="7" fill={OUTLINE} />
+      <rect x="156" y="48" width="16" height="7" fill={OUTLINE} />
+      {/* Cold pale-blue cheeks */}
+      <rect x="93" y="64" width="18" height="11" fill={COLD} opacity="0.7" />
+      <rect x="169" y="64" width="18" height="11" fill={COLD} opacity="0.7" />
+      {/* Chattering (blocky teeth) mouth */}
+      <rect x="122" y="70" width="36" height="12" fill={OUTLINE} />
+      <rect x="127" y="72" width="6" height="8" fill="#FFF" />
+      <rect x="137" y="72" width="6" height="8" fill="#FFF" />
+      <rect x="147" y="72" width="6" height="8" fill="#FFF" />
+      {/* Frosty breath puff */}
+      <rect x="196" y="60" width="14" height="10" fill="#FFF" opacity="0.85" />
+      <rect x="210" y="56" width="10" height="8" fill="#FFF" opacity="0.6" />
+      <rect x="218" y="52" width="6" height="6" fill="#FFF" opacity="0.4" />
+      {/* Snowflake sparks */}
+      <rect x="74" y="40" width="6" height="6" fill={COLD} />
+      <rect x="222" y="36" width="6" height="6" fill={COLD} />
+    </g>
+  );
+}
+
 /** DryAir — droopy eyes, faded cheeks, wavy (parched) mouth. */
 function DryAirFace() {
   return (
@@ -77,6 +104,31 @@ function DryAirFace() {
       <rect x="129" y="68" width="11" height="6" fill={OUTLINE} />
       <rect x="140" y="72" width="11" height="6" fill={OUTLINE} />
       <rect x="151" y="68" width="11" height="6" fill={OUTLINE} />
+    </g>
+  );
+}
+
+/** HumidAir — heavy-lidded eyes, glistening cheeks, small mouth, hanging droplets. */
+function HumidAirFace() {
+  return (
+    <g>
+      {/* Heavy-lidded eyes (half closed under the damp) */}
+      <rect x="108" y="47" width="17" height="5" fill={OUTLINE} />
+      <rect x="110" y="52" width="13" height="8" fill={OUTLINE} />
+      <rect x="155" y="47" width="17" height="5" fill={OUTLINE} />
+      <rect x="157" y="52" width="13" height="8" fill={OUTLINE} />
+      {/* Glistening (over-moist) cheeks */}
+      <rect x="95" y="66" width="15" height="10" fill={WATER} opacity="0.45" />
+      <rect x="170" y="66" width="15" height="10" fill={WATER} opacity="0.45" />
+      {/* Small unbothered mouth */}
+      <rect x="130" y="72" width="20" height="7" fill={OUTLINE} />
+      {/* Hanging humidity droplets around the head */}
+      <rect x="118" y="24" width="8" height="11" fill={WATER} />
+      <rect x="120" y="20" width="4" height="5" fill={WATER} />
+      <rect x="154" y="26" width="8" height="11" fill={WATER} />
+      <rect x="156" y="22" width="4" height="5" fill={WATER} />
+      <rect x="86" y="52" width="7" height="10" fill={WATER} opacity="0.8" />
+      <rect x="207" y="52" width="7" height="10" fill={WATER} opacity="0.8" />
     </g>
   );
 }
@@ -173,7 +225,9 @@ function Potion({ side, color }: { side: "left" | "right"; color: string }) {
 const FACES: Record<PlantMood, () => ReactElement> = {
   Happy: HappyFace,
   Overheating: OverheatingFace,
+  TooCold: TooColdFace,
   DryAir: DryAirFace,
+  HumidAir: HumidAirFace,
   Sleepy: SleepyFace,
   SoilAcidic: SoilAcidicFace,
   SoilAlkaline: SoilAlkalineFace,
@@ -204,7 +258,9 @@ function MicroExpressions({ mood }: { mood: PlantMood }) {
         <rect x="114" y="61" width="52" height="24" fill={head} />
         {mood === "Happy" && <><rect x="131" y="67" width="18" height="16" fill={OUTLINE} /><rect x="136" y="72" width="8" height="6" fill="#FFF" /></>}
         {mood === "Overheating" && <><rect x="124" y="69" width="32" height="12" fill={OUTLINE} /><rect x="130" y="76" width="20" height="8" fill={CHEEK} /></>}
+        {mood === "TooCold" && <><rect x="124" y="70" width="32" height="10" fill={OUTLINE} /><rect x="129" y="72" width="5" height="6" fill="#FFF" /><rect x="146" y="72" width="5" height="6" fill="#FFF" /></>}
         {mood === "DryAir" && <><rect x="126" y="71" width="28" height="6" fill={OUTLINE} /><rect x="134" y="77" width="12" height="4" fill={OUTLINE} /></>}
+        {mood === "HumidAir" && <><rect x="130" y="72" width="20" height="7" fill={OUTLINE} /></>}
         {mood === "Sleepy" && <><rect x="130" y="68" width="20" height="14" fill={OUTLINE} /><rect x="135" y="72" width="10" height="7" fill={head} /></>}
         {(mood === "SoilAcidic" || mood === "SoilAlkaline") && <><rect x="127" y="70" width="10" height="6" fill={OUTLINE} /><rect x="143" y="70" width="10" height="6" fill={OUTLINE} /></>}
       </g>

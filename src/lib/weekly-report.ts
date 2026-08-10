@@ -246,18 +246,21 @@ export async function computeWeeklyReport(
 
   const events: TimelineEvent[] = [];
   let overheatingEvents = 0;
+  let tooColdEvents = 0;
+  let humidAirEvents = 0;
   for (const row of windowEvents) {
     const atMs = Date.parse(row.occurred_at);
     if (Number.isNaN(atMs)) continue;
     if (row.type === "PLANT_STATE_CHANGED") {
       const mood = normalizeMood(row.data?.currentState);
-      // State ENTRY into Overheating — never per-sensor-sample (handoff §45).
-      // A replayed/repeated row whose previousState was already Overheating
-      // is not an entry (handoff §22); an absent previousState counts as one.
+      // State ENTRY into a problem mood — never per-sensor-sample (handoff §45).
+      // A replayed/repeated row whose previousState was already that mood is
+      // not an entry (handoff §22); an absent previousState counts as one.
       const previousState = row.data?.previousState;
-      const wasOverheating =
-        previousState != null && normalizeMood(previousState) === "Overheating";
-      if (mood === "Overheating" && !wasOverheating) overheatingEvents += 1;
+      const previousMood = previousState != null ? normalizeMood(previousState) : null;
+      if (mood === "Overheating" && previousMood !== "Overheating") overheatingEvents += 1;
+      if (mood === "TooCold" && previousMood !== "TooCold") tooColdEvents += 1;
+      if (mood === "HumidAir" && previousMood !== "HumidAir") humidAirEvents += 1;
       events.push({ atMs, kind: "state", mood });
     } else if (row.type === "SENSOR_OFFLINE") {
       events.push({ atMs, kind: "sensor", online: false });
@@ -282,6 +285,8 @@ export async function computeWeeklyReport(
     healthySeconds,
     questsCompleted,
     overheatingEvents,
+    tooColdEvents,
+    humidAirEvents,
     bondLevel: bond?.bond_level ?? 1,
     totalXp: bond?.total_xp ?? 0,
     currentStreak: bond?.current_streak ?? 0,

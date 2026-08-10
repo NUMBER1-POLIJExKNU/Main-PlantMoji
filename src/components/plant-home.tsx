@@ -20,7 +20,9 @@ import type { AppLocale } from "@/lib/i18n";
 const MOOD_META: Record<PlantMood, { scene: string; badge: string }> = {
   Happy: { scene: "pm-scene-happy", badge: "bg-green-200 text-green-900" },
   Overheating: { scene: "pm-scene-overheating", badge: "bg-red-200 text-red-900" },
+  TooCold: { scene: "pm-scene-toocold", badge: "bg-sky-200 text-sky-900" },
   DryAir: { scene: "pm-scene-dryair", badge: "bg-amber-200 text-amber-900" },
+  HumidAir: { scene: "pm-scene-humidair", badge: "bg-cyan-200 text-cyan-900" },
   Sleepy: { scene: "pm-scene-sleepy", badge: "bg-indigo-200 text-indigo-900" },
   SoilAcidic: { scene: "pm-scene-soilacidic", badge: "bg-orange-200 text-orange-900" },
   SoilAlkaline: { scene: "pm-scene-soilalkaline", badge: "bg-purple-200 text-purple-900" },

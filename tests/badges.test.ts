@@ -62,7 +62,7 @@ describe("BADGE_DEFINITIONS — Phase 12 badges", () => {
     expect(BADGE_DEFINITIONS.MOOD_SCHOLAR).toEqual({
       key: "MOOD_SCHOLAR",
       name: "Mood Finder",
-      description: "Found all 6 plant moods.",
+      description: "Found all 8 plant moods.",
       emoji: "🎓",
     });
   });

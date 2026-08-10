@@ -4,7 +4,7 @@ import type { CompanionStage, PersonalityId } from "@/types/game";
 import type { AppLocale } from "@/lib/i18n";
 
 // Ten sensor-grounded observations × five matching asks per mood = exactly
-// 50 distinct lines per mood, 300 total. Composition keeps the bank easy to
+// 50 distinct lines per mood, 400 total. Composition keeps the bank easy to
 // review and prevents unsafe watering/fertiliser advice from creeping in.
 const PARTS: Record<PlantMood, { observations: string[]; responses: string[] }> = {
   Happy: {
@@ -19,11 +19,23 @@ const PARTS: Record<PlantMood, { observations: string[]; responses: string[] }> 
     ],
     responses: ["please help me find shade.", "could you move me away from heat?", "let’s check for a cooler place.", "please ask someone to help me cool down.", "can we lower the heat around me safely?"],
   },
+  TooCold: {
+    observations: [
+      "The temperature is below my comfortable range", "I am feeling too cold", "My sensor says the air is chilly", "This cold is making me uncomfortable", "I need a break from this chill", "The room has become too cold for me", "I am having a very cold moment", "My temperature reading needs attention", "It is colder than I prefer", "I could use a warmer spot",
+    ],
+    responses: ["please help me find a warmer place.", "could you move me away from cold drafts?", "let’s check for a warmer spot.", "please ask someone to help me warm up.", "can we raise the warmth around me safely?"],
+  },
   DryAir: {
     observations: [
       "The air humidity is below my comfortable range", "The air around me feels dry", "My humidity sensor is asking for attention", "This room air is drier than I prefer", "I am missing comfortable humidity", "The air needs a little humidity check", "My surroundings feel too dry", "The humidity reading is low", "I would feel better in gentler air", "The air is not in my cozy range",
     ],
     responses: ["could we check the room humidity?", "please help make the air less dry.", "let’s ask an adult about safe humidity.", "can we move to air that feels more comfortable?", "please check the air around me again soon."],
+  },
+  HumidAir: {
+    observations: [
+      "The air humidity is above my comfortable range", "The air around me feels soggy", "My humidity sensor is flagging heavy air", "This room air is damper than I prefer", "I am surrounded by too much humidity", "The air needs a little airflow check", "My surroundings feel too muggy", "The humidity reading is high", "I would feel better in fresher air", "The muggy air is not in my cozy range",
+    ],
+    responses: ["could we open up the room's airflow?", "please help the air breathe a little.", "let’s ask an adult about safe airflow.", "can we move to fresher, drier air?", "let’s check the air around me again soon."],
   },
   Sleepy: {
     observations: [
@@ -59,7 +71,7 @@ export type DialogueTime = "morning" | "later";
 const STAGES: readonly CompanionStage[] = COMPANION_STAGES;
 const TIMES: DialogueTime[] = ["morning", "later"];
 
-/** 6 moods × 10 companion stages × 2 time contexts × 10 observations = 1,200. */
+/** 8 moods × 10 companion stages × 2 time contexts × 10 observations = 1,600. */
 export const JAMKACHU_CONTEXT_DIALOGUE: string[] = Object.entries(PARTS).flatMap(([mood, parts]) =>
   STAGES.flatMap((stage) => TIMES.flatMap((time) => parts.observations.map((observation, index) =>
     `${time === "morning" ? "Good morning" : "Here we are again"} — as a ${stage} companion, ${observation.toLowerCase()} (${mood} care ${index + 1}).`,
@@ -119,7 +131,9 @@ const SIMPLE_MOOD_LINES: Record<AppLocale, Record<PlantMood, string[]>> = {
   id: {
     Happy: ["aku nyaman banget hari ini.", "semua terasa pas. Makasih, ya!", "daunku lagi happy.", "aku bisa tumbuh dengan tenang.", "hari ini potku terasa seperti rumah."],
     Overheating: ["panas banget! Ajak aku ke tempat teduh, yuk.", "aku hampir jadi keripik daun. Cari tempat sejuk, ya.", "suhunya ketinggian. Kita pindah dari panas, yuk.", "aku butuh sedikit teduh, teman.", "sensor suhu bilang aku kepanasan."],
+    TooCold: ["dingin banget! Ajak aku ke tempat yang lebih hangat, yuk.", "aku hampir beku nih. Cari tempat hangat, ya.", "suhunya kerendahan. Kita menjauh dari angin dingin, yuk.", "aku butuh sedikit kehangatan, teman.", "sensor suhu bilang aku kedinginan."],
     DryAir: ["udaranya kering. Jauhkan aku dari kipas atau AC, ya.", "daunku kangen udara yang lebih nyaman.", "kelembapan udaranya rendah—bukan berarti tanahku haus, ya.", "boleh cek udara di sekitarku?", "anginnya bikin udara terlalu kering buatku."],
+    HumidAir: ["udaranya terlalu lembap. Bantu udaranya bergerak, ya.", "daunku butuh udara yang lebih segar.", "kelembapan udaranya tinggi—bukan soal tanah, ya.", "boleh cek udara di sekitarku?", "udara yang pengap bikin aku kurang nyaman."],
     Sleepy: ["gelap nih. Carikan cahaya siang yang aman, yuk.", "aku belum bisa makan cahaya kalau segelap ini.", "sensor cahaya lagi bilang gelap.", "boleh buka jalan buat cahaya?", "aku butuh tempat yang sedikit lebih terang."],
     SoilAcidic: ["pH tanahku terlalu rendah. Panggil guru, ya.", "tanahku terlalu asam—jangan tambah bahan sendiri.", "boleh tunjukkan hasil pH ini ke orang dewasa?", "akarku butuh pemeriksaan pH yang aman.", "sensor pH minta bantuan guru."],
     SoilAlkaline: ["pH tanahku terlalu tinggi. Panggil guru, ya.", "tanahku terlalu basa—jangan tambah bahan sendiri.", "boleh tunjukkan hasil pH ini ke orang dewasa?", "akarku butuh pemeriksaan pH yang aman.", "sensor pH minta bantuan guru."],
@@ -127,7 +141,9 @@ const SIMPLE_MOOD_LINES: Record<AppLocale, Record<PlantMood, string[]>> = {
   en: {
     Happy: ["I feel wonderfully cozy today.", "everything feels just right. Thank you!", "my leaves are doing a happy dance.", "I can grow in peace.", "my pot feels like home today."],
     Overheating: ["so hot! Let’s find a shady spot.", "I’m nearly a leaf chip. Cooler place, please!", "the temperature is high. Let’s move away from heat.", "I need a little shade, friend.", "the temperature sensor says I’m too hot."],
+    TooCold: ["so cold! Let’s find a warmer spot.", "I’m nearly a leaf popsicle. Warmer place, please!", "the temperature is low. Let’s move away from cold drafts.", "I need a little warmth, friend.", "the temperature sensor says I’m too cold."],
     DryAir: ["the air is dry. Keep me away from fans or AC.", "my leaves miss gentler air.", "air humidity is low—this does not mean my soil is thirsty.", "could we check the air around me?", "the draft is making my air too dry."],
+    HumidAir: ["the air is muggy. Let’s get some airflow going.", "my leaves miss fresher air.", "air humidity is high—this is not about my soil water.", "could we check the air around me?", "the still, damp air is a bit much for me."],
     Sleepy: ["it’s dark. Let’s find safe daytime light.", "I can’t snack on sunshine in the dark.", "the light sensor says it’s dim.", "could you make a path for the light?", "I need a slightly brighter spot."],
     SoilAcidic: ["my soil pH is low. Please call a teacher.", "my soil is too acidic—don’t add anything by yourself.", "could an adult check this pH result?", "my roots need a safe pH check.", "the pH sensor is asking for a teacher."],
     SoilAlkaline: ["my soil pH is high. Please call a teacher.", "my soil is too alkaline—don’t add anything by yourself.", "could an adult check this pH result?", "my roots need a safe pH check.", "the pH sensor is asking for a teacher."],

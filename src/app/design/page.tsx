@@ -27,7 +27,9 @@ import { MOOD_LABELS, PLANT_MOODS, type PlantMood } from "@/types/events";
 const MOOD_META: Record<PlantMood, { emoji: string; card: string; badge: string }> = {
   Happy: { emoji: "😊", card: "bg-green-50 dark:bg-green-950", badge: "bg-green-200 text-green-900" },
   Overheating: { emoji: "🔥", card: "bg-red-50 dark:bg-red-950", badge: "bg-red-200 text-red-900" },
+  TooCold: { emoji: "🥶", card: "bg-sky-50 dark:bg-sky-950", badge: "bg-sky-200 text-sky-900" },
   DryAir: { emoji: "💨", card: "bg-amber-50 dark:bg-amber-950", badge: "bg-amber-200 text-amber-900" },
+  HumidAir: { emoji: "🌫️", card: "bg-cyan-50 dark:bg-cyan-950", badge: "bg-cyan-200 text-cyan-900" },
   Sleepy: { emoji: "🌙", card: "bg-indigo-50 dark:bg-indigo-950", badge: "bg-indigo-200 text-indigo-900" },
   SoilAcidic: { emoji: "🧪", card: "bg-orange-50 dark:bg-orange-950", badge: "bg-orange-200 text-orange-900" },
   SoilAlkaline: { emoji: "🧪", card: "bg-purple-50 dark:bg-purple-950", badge: "bg-purple-200 text-purple-900" },

@@ -56,7 +56,7 @@
   const COLOR_BORDER = "#BCD3B4";
   const COLOR_PRIMARY = "#5FAE45";
 
-  const MOODS = ["Happy", "Overheating", "DryAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
+  const MOODS = ["Happy", "Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
   const FX_HOOKS = ["lucky", "levelUp", "chapter", "pod"];
   const RUN_ALL_STEP_MS = 1500;
   const FARMER_NPC_SELECTOR = "#npc-farmer";
