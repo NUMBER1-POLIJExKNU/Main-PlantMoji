@@ -63,12 +63,6 @@ export default async function MonitoringPage() {
       />
 
       <MonitoringLive locale={locale} plantId={PLANT_ID} cropProfile={cropProfile} />
-
-      <p className="mt-6 text-center text-xs leading-5 text-[#57684F]">
-        {locale === "id"
-          ? "Cahaya ditampilkan sebagai persentase relatif 0–100%. Lux hanya muncul bila perangkat memiliki konversi lux yang tervalidasi."
-          : "Light is shown as a relative 0–100% value. Lux appears only when the device provides a validated lux conversion."}
-      </p>
     </main>
   );
 }

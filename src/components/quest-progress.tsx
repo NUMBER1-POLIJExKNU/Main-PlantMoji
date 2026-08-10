@@ -161,17 +161,6 @@ export default function QuestProgress({
       >
         {label}
       </p>
-      {/* Verifying shimmer (spec §3): gentle pulsing magnifier while the
-          sensors are watching. motion-safe so reduced-motion users get the
-          static line without the pulse. */}
-      {mode === "verifying" && !confirmed && (
-        <p className="mt-1 flex items-center gap-1.5 text-xs font-medium" style={{ color: "#A97B12" }}>
-          <span className="motion-safe:animate-pulse" role="img" aria-hidden="true">
-            🔍
-          </span>
-          {locale === "id" ? "Sensor sedang memeriksa…" : "Sensor is checking…"}
-        </p>
-      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import {
   FARM_SKIN_CATALOG,
@@ -33,6 +33,8 @@ export default function AppearanceControls({ locale, initialTheme, initialSkin }
   const [skin, setSkin] = useState(initialSkin);
   const [previewSkin, setPreviewSkin] = useState(initialSkin);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerTriggerRef = useRef<HTMLButtonElement>(null);
+  const pickerDialogRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     applyAppearance(theme, skin);
@@ -75,17 +77,29 @@ export default function AppearanceControls({ locale, initialTheme, initialSkin }
 
   useEffect(() => {
     if (!pickerOpen) return;
+    const returnFocusTo = pickerTriggerRef.current;
+    const focusTimer = window.setTimeout(() => pickerDialogRef.current?.querySelector<HTMLElement>("button,a[href]")?.focus(), 0);
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      applyAppearance(theme, skin);
-      setPreviewSkin(skin);
-      setPickerOpen(false);
+      if (event.key === "Escape") {
+        applyAppearance(theme, skin);
+        setPreviewSkin(skin);
+        setPickerOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const controls = Array.from(pickerDialogRef.current?.querySelectorAll<HTMLElement>("button:not(:disabled),a[href]") ?? []);
+      if (controls.length === 0) return;
+      const first = controls[0]; const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKeyDown);
     document.body.style.overflow = "hidden";
     return () => {
+      window.clearTimeout(focusTimer);
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = "";
+      window.setTimeout(() => returnFocusTo?.focus(), 0);
     };
   }, [pickerOpen, skin, theme]);
   const selectedDefinition = FARM_SKIN_CATALOG.find((item) => item.key === skin) ?? FARM_SKIN_CATALOG[0];
@@ -99,14 +113,14 @@ export default function AppearanceControls({ locale, initialTheme, initialSkin }
       </select></label>
       <div className="reno-skin-control">
         <span>{locale === "id" ? "LATAR" : "SKIN"}</span>
-        <button type="button" className="reno-skin-open" onClick={openPicker} aria-haspopup="dialog">
+        <button type="button" className="reno-skin-open" onClick={openPicker} aria-haspopup="dialog" ref={pickerTriggerRef}>
           <span aria-hidden="true">{selectedDefinition.icon}</span>
           <span>{selectedDefinition.name[locale]}</span>
         </button>
       </div>
       {pickerOpen && (
         <div className="reno-skin-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) cancelPicker(); }}>
-          <section className="reno-skin-picker pm-panel" role="dialog" aria-modal="true" aria-labelledby="reno-skin-title">
+          <section className="reno-skin-picker pm-panel" role="dialog" aria-modal="true" aria-labelledby="reno-skin-title" ref={pickerDialogRef}>
             <header className="reno-skin-picker-head">
               <div><p>{locale === "id" ? "DUNIAKU" : "MY WORLD"}</p><h2 id="reno-skin-title">{locale === "id" ? "Pilih latar Jember" : "Choose a Jember skin"}</h2></div>
               <button type="button" onClick={cancelPicker} aria-label={locale === "id" ? "Tutup" : "Close"}>×</button>
