@@ -5584,6 +5584,41 @@ async function loadSupabaseClient(url, key) {
   }
 }
 
+// No Supabase (no env config, config fetch failure, or a null client) means
+// no plant/bond/companion/sensor rows will ever arrive — so this paints the
+// SAME presentable defaults renderPlant/renderBond/renderCompanion would
+// paint from a real Happy row, instead of leaving the static markup's
+// dev-style "--" placeholders on screen forever. Every offline early-return
+// in main() (and the defense-in-depth catch at the bottom of this file)
+// calls this exactly once, right before scheduling the hatch intro.
+function renderOfflineHome() {
+  // Mood word + face + care button/sleep (spec §6) — the one Jamkachu is
+  // shown offline is Happy, never a stale "--".
+  setMascotMood("Happy");
+  renderHp("Happy"); // "HP --" → "HP 100%", same table renderPlant reads
+  const bubble = $(".speech-bubble");
+  // sleepShown was just derived by setMascotMood → updateCareUi; a night
+  // visit already owns the bubble with the sleep line, never stomp it.
+  if (bubble && !sleepShown) bubble.innerHTML = moodBubble(MOODS.Happy);
+  // XP/streak/seeds badges: no real numbers exist offline, so hide them
+  // instead of leaving the static "-- XP" / "-- Days" markup defaults up
+  // forever (mirrors renderBond's zero-streak hide; .badge[hidden] now
+  // actually hides — see style.css).
+  for (const cls of ["coin", "streak", "seeds"]) {
+    const badge = $(`.badge.${cls}`);
+    if (badge) badge.hidden = true;
+  }
+  // Companion stage line: the same localized "<STAGE> · STAGE n/N" text
+  // renderCompanion paints for a real row, seeded with the ladder's first
+  // rung instead of the raw "COMPANION · SEED" markup default. Safe to call
+  // this early — prevCompanionStage is still null, so the evolution
+  // ceremony's rank-increase check can never fire off a fabricated state.
+  renderCompanion({ stage: "Seed" });
+  // Sensor tiles: the same honest localized "waiting…" state a configured-
+  // but-empty backend shows (renderSensorsWaiting), never raw "--".
+  renderSensorsWaiting();
+}
+
 async function main() {
   refreshWeather();
   setInterval(refreshWeather, 30 * 60_000);
@@ -5592,11 +5627,13 @@ async function main() {
     config = await (await fetch("/api/public-config")).json();
   } catch {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+    renderOfflineHome(); // no dev "--" leaks while offline
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
   if (!config?.url || !config?.key) {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+    renderOfflineHome(); // no dev "--" leaks while offline
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
@@ -5607,6 +5644,7 @@ async function main() {
     // offline path as an unreachable/misconfigured backend — the page still
     // renders its defaults and the hatching intro still runs.
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+    renderOfflineHome(); // no dev "--" leaks while offline
     scheduleHatch(null); // hatching still runs offline (default character)
     return;
   }
@@ -5820,5 +5858,6 @@ async function main() {
 main().catch((error) => {
   console.error("PlantMoji farm page failed to initialize", error);
   window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
+  renderOfflineHome(); // same presentable defaults as every early-return path
   scheduleHatch(null); // hatching still runs offline (default character)
 });

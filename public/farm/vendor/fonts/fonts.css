@@ -1,0 +1,38 @@
+/* Self-hosted farm typography — vendored so the page keeps its display,
+   heading, and body fonts after the volunteer team leaves and on flaky
+   school networks (see public/farm/vendor/supabase.js for the same
+   no-runtime-CDN rationale applied to a different dependency).
+
+   Files were extracted from `npm run build`'s next/font output
+   (.next/static/media/*.woff2), matched to their family/weight by
+   reading the @font-face blocks in the matching .next/static/chunks/*.css
+   chunk and picking the "latin" subset (unicode-range starting `U+??`,
+   i.e. U+0000-00FF — CSS unicode-range wildcard shorthand). All three
+   families next/font generates here are variable fonts, so one file per
+   family covers the full weight range this page actually uses; no need
+   to vendor a separate file per weight. Regenerate by re-running
+   `npm run build` and re-copying if the fonts ever change. */
+
+@font-face {
+    font-family: 'Press Start 2P';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('press-start-2p-400.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Pixelify Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('pixelify-sans-400-700.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Geist';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('geist-400-700.woff2') format('woff2');
+}
