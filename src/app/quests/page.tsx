@@ -9,6 +9,7 @@ import PageHeader from "@/components/page-header";
 import QuestCelebration from "@/components/quest-celebration";
 import QuestDonePill from "@/components/quest-done-pill";
 import QuestProgress from "@/components/quest-progress";
+import CheatQuestPanel, { type CheatQuestItem } from "@/components/cheat-quest-panel";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
@@ -18,7 +19,7 @@ import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, type AppLocale } from "@
 import { getRequestLocale } from "@/lib/i18n-server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS } from "@/types/events";
-import { STREAK_TIMEZONE, type QuestRow, type QuestStatus } from "@/types/game";
+import { STREAK_TIMEZONE, type QuestKey, type QuestRow, type QuestStatus } from "@/types/game";
 
 // Quest timing is timestamp-based — always render fresh from Supabase.
 export const dynamic = "force-dynamic";
@@ -287,6 +288,15 @@ export default async function QuestsPage() {
     );
   }
 
+  // Cheat quest board (feature 4): localized titles for every quest so the
+  // presenter can jump stages. Client panel self-hides unless the sandbox is on.
+  const cheatQuests: CheatQuestItem[] = (Object.keys(QUEST_DEFINITIONS) as QuestKey[]).map((key) => ({
+    key,
+    title: locale === "id" ? QUEST_COPY_ID[key].title : QUEST_DEFINITIONS[key].title,
+    emoji: QUEST_DEFINITIONS[key].emoji,
+    xp: QUEST_DEFINITIONS[key].xpReward,
+  }));
+
   // Measure/padding come from the shell contract (.reno-route-content > main).
   return (
     <main className="mx-auto w-full flex-1">
@@ -309,6 +319,8 @@ export default async function QuestsPage() {
           ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol."
           : "Real care, verified by sensors — no tap-to-win."}
       />
+
+      <CheatQuestPanel locale={locale} quests={cheatQuests} />
 
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (
