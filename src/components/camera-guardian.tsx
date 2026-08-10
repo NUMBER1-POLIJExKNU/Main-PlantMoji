@@ -16,6 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import CameraSparkles from "@/components/camera-sparkles";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import { CAMERA_COPY } from "@/app/camera/copy";
 import {
@@ -398,6 +399,7 @@ export default function CameraGuardian({
           >
             <span>{tickle > 0 ? "😆" : localClassification === "Foreign Environment" ? "😮" : "🌱"}</span>
           </div>
+          <CameraSparkles locale={locale} />
         </div>
       )}
 

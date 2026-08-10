@@ -8,6 +8,7 @@
 // Jamkachu reacts on-device even with no migration and no network.
 
 import "./camera.css";
+import "./camera-sparkles.css";
 import CameraGuardian, { type GuardianFeedItem } from "@/components/camera-guardian";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
