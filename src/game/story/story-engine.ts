@@ -8,18 +8,11 @@
 // call actually inserted, so a retried request returns [].
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingTableError } from "@/lib/supabase-errors";
 import { normalizeMood, PLANT_MOODS } from "@/types/events";
 import type { BondEventRow, QuestKey } from "@/types/game";
 import { RECOVERY_QUEST_KEYS } from "../badges/badge-definitions";
 import { CHAPTER_DEFINITIONS, chapterTitle } from "./story-definitions";
-
-/** PostgREST's "table missing from schema cache" — the growth-records
- *  migration hasn't been run in this Supabase project yet. Duplicated from
- *  lib/plants.ts (server-only, can't be imported here), same as lib/growth.ts
- *  and lib/queries.ts. */
-function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
 
 /**
  * Distinct canonical moods ever observed: every `data->>currentState` in the

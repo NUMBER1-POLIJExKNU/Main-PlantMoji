@@ -9,6 +9,7 @@
 // apart from a genuinely missing seed row.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingTableError } from "@/lib/supabase-errors";
 import { normalizeMood, PLANT_MOODS, type PlantMood } from "@/types/events";
 import type { PlantBadgeRow } from "@/types/game";
 import type { Plant } from "@/types/plant";
@@ -39,13 +40,6 @@ export type PlantQueryResult =
   | { status: "not-found" }
   | { status: "no-schema" }
   | { status: "error"; message: string };
-
-/** PostgREST's "table missing from schema cache" — the migrations haven't
- *  been run in this Supabase project yet. Duplicated from lib/plants.ts,
- *  which is server-only and can't be imported here. */
-function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
 
 export async function getPlant(
   supabase: SupabaseClient,

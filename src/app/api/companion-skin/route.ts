@@ -1,4 +1,5 @@
 import { selectSkin } from "@/game/companion/skins";
+import { isCheckViolation, isMissingColumnError, isMissingTableError } from "@/lib/supabase-errors";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 /**
@@ -56,16 +57,7 @@ function allowed(request: Request) {
  *  missing companion_state table (PGRST205), or a pre-milestone20 CHECK
  *  rejecting the new keys (23514). */
 function migrationMissing(error: { code?: string; message: string }): boolean {
-  return (
-    error.code === "42703" ||
-    error.code === "PGRST204" ||
-    error.code === "PGRST205" ||
-    error.code === "23514" ||
-    /could not find the '.+' column/i.test(error.message) ||
-    /column .+ does not exist/i.test(error.message) ||
-    /could not find the table/i.test(error.message) ||
-    /violates check constraint/i.test(error.message)
-  );
+  return isMissingColumnError(error) || isMissingTableError(error) || isCheckViolation(error);
 }
 
 export async function POST(request: Request) {

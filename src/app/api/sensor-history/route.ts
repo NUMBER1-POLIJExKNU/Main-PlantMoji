@@ -1,5 +1,5 @@
 import { getServerSupabase } from "@/lib/supabase/server";
-import { isMissingTableError } from "@/lib/plants";
+import { isMissingColumnError, isMissingTableError } from "@/lib/supabase-errors";
 import { clampMinutes, downsample } from "@/components/sensor-gauge";
 
 /**
@@ -20,11 +20,6 @@ interface HistoryRow {
   recorded_at: string;
   light: number | null;
   light_lux: number | null;
-}
-
-/** Selecting a column that milestone6-monitoring.sql hasn't added yet. */
-function isMissingColumnError(error: { code?: string; message: string }): boolean {
-  return error.code === "42703" || /column .* does not exist/i.test(error.message);
 }
 
 export async function GET(request: Request) {

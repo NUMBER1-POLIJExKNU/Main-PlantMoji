@@ -1,6 +1,9 @@
 import { CAMERA_COPY } from "@/app/camera/copy";
 import { normalizeLocale } from "@/lib/i18n";
 import { analyzePestSnapshot } from "@/lib/pest-advisory";
+// isMissingSchemaError — PostgREST "missing from schema cache", i.e.
+// milestone19 hasn't been run: the shared PGRST202/PGRST205 detector.
+import { isMissingRpcError as isMissingSchemaError } from "@/lib/supabase-errors";
 import { getServerSupabase } from "@/lib/supabase/server";
 
 /**
@@ -21,14 +24,6 @@ const VALID_PLANT = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_IMAGE_BYTES = 200 * 1024;
 const BASE64_RE = /^[A-Za-z0-9+/]+={0,2}$/;
 const MIN_ADVICE_GAP_MS = 10_000;
-
-function isMissingSchemaError(error: { code?: string; message: string }): boolean {
-  return (
-    error.code === "PGRST202" ||
-    error.code === "PGRST205" ||
-    /could not find the (function|table)/i.test(error.message)
-  );
-}
 
 export async function POST(request: Request) {
   let body: Record<string, unknown>;

@@ -1,5 +1,6 @@
 import "server-only";
 import { getServerSupabase } from "./supabase/server";
+import { isMissingTableError } from "./supabase-errors";
 import type { Plant } from "@/types/plant";
 import type { BondState, QuestRow } from "@/types/game";
 
@@ -11,10 +12,10 @@ export type PlantFetchResult =
   | { status: "error"; message: string };
 
 /** PostgREST's "table missing from schema cache" — the migrations haven't
- *  been run in this Supabase project yet. */
-export function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
+ *  been run in this Supabase project yet. The canonical detector now lives
+ *  in lib/supabase-errors.ts (pure, importable everywhere); re-exported here
+ *  so existing importers of this module keep working. */
+export { isMissingTableError };
 
 export async function fetchPlant(plantId: string): Promise<PlantFetchResult> {
   const supabase = getServerSupabase();

@@ -20,6 +20,8 @@
 
 import "server-only";
 
+import { VOICE_DESCRIPTIONS } from "@/game/personality/voices";
+import { cleanFragment, extractText } from "@/lib/gemini-text";
 import { MOOD_LABELS, normalizeMood } from "@/types/events";
 import { normalizePersonality } from "@/types/game";
 import type { PersonalityId, PlantMood } from "@/types/game";
@@ -103,15 +105,9 @@ const BUBBLE_KINDS: ReadonlySet<AiMessageKind> = new Set([
 const MAX_BUBBLE_CHARS = 140;
 const MAX_BUBBLE_TOKENS = 48;
 
-// ── Personality voices (tone only — handoff §13) ────────────────────────
-
-const VOICE_DESCRIPTIONS: Record<PersonalityId, string> = {
-  cute: "sweet, affectionate, and endearing — warm words, gentle excitement",
-  calm: "calm, measured, and factual — short neutral statements, no exclamation",
-  funny: "playful and lightly self-deprecating — one gentle plant joke at most",
-  energetic: "upbeat and enthusiastic — short punchy sentences, lots of energy",
-  shy: "soft-spoken and hesitant — trailing pauses like “um…”, very gentle",
-};
+// Personality voices (tone only — handoff §13) live in
+// "@/game/personality/voices" (VOICE_DESCRIPTIONS), shared with the vision
+// modules that embed the same voice hint in their prompts.
 
 // AI is language only, never truth (handoff §24): the diagnosis/facts are
 // provided in the user message and must not be altered or extended.
@@ -128,15 +124,8 @@ const SYSTEM_PROMPT = [
 
 // ── Fact assembly ───────────────────────────────────────────────────────
 
-/** Trims, strips control characters, and caps length so a stored string can
- *  never bloat or derail the prompt. Returns null when effectively empty. */
-function cleanFragment(value: string | undefined, maxLength = 120): string | null {
-  if (typeof value !== "string") return null;
-   
-  const cleaned = value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
-  if (!cleaned) return null;
-  return cleaned.length > maxLength ? `${cleaned.slice(0, maxLength)}…` : cleaned;
-}
+// cleanFragment (trim, strip control characters, cap length — null when
+// effectively empty) is shared from "@/lib/gemini-text".
 
 /**
  * Builds the verified-facts block for the event, or null when the event's
@@ -215,21 +204,8 @@ function buildUserMessage(input: AiMessageInput, facts: string): string {
 }
 
 // ── Response validation ─────────────────────────────────────────────────
-
-/** Extracts the first non-empty text part from a Gemini response,
- *  tolerating any malformed shape by returning null. */
-function extractText(payload: unknown): string | null {
-  if (typeof payload !== "object" || payload === null) return null;
-  const candidates = (payload as { candidates?: unknown }).candidates;
-  if (!Array.isArray(candidates)) return null;
-  const parts = (candidates[0] as { content?: { parts?: unknown } } | undefined)?.content?.parts;
-  if (!Array.isArray(parts)) return null;
-  for (const part of parts) if (typeof part === "object" && part !== null && typeof (part as { text?: unknown }).text === "string") {
-    const text = (part as { text: string }).text.replace(/\s+/g, " ").trim();
-    if (text) return text;
-  }
-  return null;
-}
+// extractText (defensive candidates[0].content.parts walk, null on any
+// malformed shape) is shared from "@/lib/gemini-text".
 
 // ── Public API ──────────────────────────────────────────────────────────
 

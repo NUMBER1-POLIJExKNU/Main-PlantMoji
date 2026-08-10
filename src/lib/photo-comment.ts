@@ -2,7 +2,9 @@
 // docs/superpowers/specs/2026-08-09-camera-photo-diary-design.md).
 //
 // Mirrors src/lib/ai.ts's contract as a standalone VISION variant (ai.ts is
-// text-only and owned by a concurrent workstream, so it is not imported):
+// text-only and server-only, so it is never imported; the helpers both
+// modules need are shared via the pure "@/lib/gemini-text" and
+// "@/game/personality/voices" instead):
 //   - No GEMINI_API_KEY / network error / timeout (4s) / non-2xx /
 //     malformed / overlong reply  → deterministic sensor template.
 //   - A person visible in the photo → Gemini answers the NO_PLANT sentinel
@@ -22,7 +24,9 @@
 // (same reasoning as src/lib/growth.ts). The only production caller is the
 // manual growth-record flow (addGrowthRecord in src/app/settings/actions.ts).
 
+import { VOICE_DESCRIPTIONS } from "@/game/personality/voices";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
+import { extractText, stripControlChars } from "@/lib/gemini-text";
 import type { AppLocale } from "@/lib/i18n";
 import { memorySeed } from "@/lib/jamkachu-memory";
 import { normalizePersonality, type PersonalityId } from "@/types/game";
@@ -34,16 +38,6 @@ const MAX_COMMENT_CHARS = 300;
 const MAX_TOKENS = 140; // 1-3 short diary sentences (same as generateMemoryReflection)
 /** Exact reply Gemini is instructed to give when a person is visible. */
 const NO_PLANT_SENTINEL = "NO_PLANT";
-
-/** Tone-only voice hints (duplicated from src/lib/ai.ts on purpose — that
- *  module is owned by a concurrent workstream and must not be modified). */
-const VOICE_HINTS: Record<PersonalityId, string> = {
-  cute: "sweet, affectionate, and endearing",
-  calm: "calm, measured, and factual",
-  funny: "playful — one gentle plant joke at most",
-  energetic: "upbeat and enthusiastic",
-  shy: "soft-spoken and hesitant",
-};
 
 export interface PhotoCommentInput {
   plantName: string;
@@ -196,20 +190,9 @@ function photoAngle(recordId: string | undefined): string {
   return ANGLES[recordId ? memorySeed(`angle:${recordId}`) % ANGLES.length : 0];
 }
 
-/** Strips ASCII control characters, mirroring src/lib/ai.ts's cleanFragment
- *  behavior (character-code comparison, not a regex escape literal, so this
- *  source file never embeds raw control bytes). */
-function stripControlChars(value: string): string {
-  let out = "";
-  for (const ch of value) {
-    const code = ch.codePointAt(0) ?? 0;
-    out += code < 32 || code === 127 ? " " : ch;
-  }
-  return out;
-}
-
-/** stripControlChars + whitespace collapse + trim + cap — the prompt-safe
- *  form of any stored string (same job as ai.ts's cleanFragment). */
+/** stripControlChars (shared from "@/lib/gemini-text") + whitespace collapse
+ *  + trim + cap — the prompt-safe form of any stored string (same job as
+ *  gemini-text's cleanFragment, but always-string instead of string|null). */
 function cleanText(value: string, maxLength: number): string {
   return stripControlChars(value).replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
@@ -240,7 +223,7 @@ function buildUserMessage(input: PhotoCommentInput): string {
     .slice(0, 3);
   return [
     `My name is "${name}".`,
-    `My personality voice: ${personality} — ${VOICE_HINTS[personality]}.`,
+    `My personality voice: ${personality} — ${VOICE_DESCRIPTIONS[personality]}.`,
     `Verified sensor readings right now: ${sensorFacts}.`,
     recordFacts.length > 0
       ? `Verified facts my caretaker logged with this entry: ${recordFacts.join(", ")}. You may restate these; never extend them, and never write any digit that is not in them.`
@@ -257,23 +240,6 @@ function buildUserMessage(input: PhotoCommentInput): string {
   ]
     .filter((line): line is string => line != null)
     .join("\n");
-}
-
-/** Extracts the first non-empty text part, tolerating any malformed shape
- *  by returning null (same defensive walk as src/lib/ai.ts). */
-function extractText(payload: unknown): string | null {
-  if (typeof payload !== "object" || payload === null) return null;
-  const candidates = (payload as { candidates?: unknown }).candidates;
-  if (!Array.isArray(candidates)) return null;
-  const parts = (candidates[0] as { content?: { parts?: unknown } } | undefined)?.content?.parts;
-  if (!Array.isArray(parts)) return null;
-  for (const part of parts) {
-    if (typeof part === "object" && part !== null && typeof (part as { text?: unknown }).text === "string") {
-      const text = (part as { text: string }).text.replace(/\s+/g, " ").trim();
-      if (text) return text;
-    }
-  }
-  return null;
 }
 
 /**

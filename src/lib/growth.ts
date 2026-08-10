@@ -21,6 +21,7 @@
 // server-only-ness, and pure helpers stay unit-testable.
 
 import { GROWTH_STAGES, type GrowthStage } from "./queries";
+import { isMissingTableError } from "./supabase-errors";
 
 export { GROWTH_STAGES };
 export type { GrowthStage };
@@ -151,14 +152,6 @@ export function parseGrowthInput(fields: GrowthInputFields): ParseGrowthInputRes
       note: rawNote.length > 0 ? rawNote : null,
     },
   };
-}
-
-/** PostgREST's "table missing from schema cache" — the migration hasn't
- *  been run in this Supabase project yet. Duplicated from lib/plants.ts
- *  (see the header comment above for why this module can't import that
- *  file, or lib/supabase/server, eagerly). */
-function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
 }
 
 /** Past growth records for the timeline, most recent first. Tolerates a

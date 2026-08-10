@@ -30,6 +30,7 @@ import {
 import { isLuckyQuest, luckyRewardKey } from "@/game/random/lucky";
 import { evaluateCompanion } from "@/game/companion/companion-engine";
 import { sweepSeedGrants } from "@/game/economy/seed-engine";
+import { isMissingTableError } from "@/lib/supabase-errors";
 
 /**
  * Game Event Processor (handoff §25): the single orchestration point where a
@@ -41,14 +42,6 @@ import { sweepSeedGrants } from "@/game/economy/seed-engine";
 const rewardKeyFor = (quest: QuestRow) => `quest:${quest.id}:completion`;
 
 const DAY_MS = 86_400_000;
-
-/** PostgREST's "table missing from schema cache" — the migration hasn't been
- *  run in this Supabase project yet. Duplicated from badge-engine.ts (which
- *  duplicates lib/plants.ts) for the same reason: this router stays
- *  self-contained rather than importing server-only helpers. */
-function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
 
 /**
  * Verifies today's daily challenge (if today IS a challenge day for this

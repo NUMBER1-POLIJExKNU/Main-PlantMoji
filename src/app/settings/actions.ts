@@ -20,6 +20,7 @@ import { companionStageLabel, normalizeLocale, type AppLocale } from "@/lib/i18n
 import { getRequestLocale } from "@/lib/i18n-server";
 import { generatePhotoComment } from "@/lib/photo-comment";
 import { normalizeGrowthStage } from "@/lib/queries";
+import { isMissingColumnError } from "@/lib/supabase-errors";
 import { getServerSupabase } from "@/lib/supabase/server";
 import {
   GROWTH_RECORD_XP,
@@ -322,13 +323,15 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
 
 /** milestone19 not applied: `growth_records.ai_comment` is missing — raw
  *  Postgres 42703 or a PostgREST schema-cache miss (PGRST204). Skipped
- *  silently: the record itself is already saved, the reply is optional. */
+ *  silently: the record itself is already saved, the reply is optional.
+ *  The shared isMissingColumnError already covers both codes and both
+ *  message shapes; the explicit code checks stay as this site's pinned
+ *  contract, and any ai_comment mention is its extra safety net. */
 function isMissingAiCommentColumn(error: { code?: string; message: string }): boolean {
   return (
     error.code === "42703" ||
     error.code === "PGRST204" ||
-    /could not find the '.+' column/i.test(error.message) ||
-    /column .+ does not exist/i.test(error.message) ||
+    isMissingColumnError(error) ||
     /ai_comment/i.test(error.message)
   );
 }
