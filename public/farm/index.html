@@ -45,18 +45,18 @@
             <nav class="nav-links">
                 <span class="nav-section-title" data-i18n="nav.play">DUNIAKU</span>
                 <a href="/" class="nav-item active"><i class="icon">🌱</i> <span data-i18n="nav.home">Kebunku</span></a>
-                <a href="/quests" class="nav-item"><i class="icon">💚</i> <span data-i18n="nav.quests">Rawat</span></a>
-                <a href="/plants" class="nav-item"><i class="icon">🗺️</i> <span data-i18n="nav.plants">Jelajah</span></a>
+                <a href="/quests" class="nav-item"><i class="icon">💚</i> <span data-i18n="nav.quests">Misi</span></a>
+                <a href="/plants" class="nav-item"><i class="icon">🗺️</i> <span data-i18n="nav.plants">Eksplor Tanaman</span></a>
                 <a href="/camera" class="nav-item"><i class="icon">📷</i> <span data-i18n="nav.camera">Kamera AI</span></a>
-                <a href="/diary" class="nav-item"><i class="icon">📖</i> <span data-i18n="nav.memories">Kenangan</span></a>
-                <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Harta</span></a>
+                <a href="/diary" class="nav-item"><i class="icon">📖</i> <span data-i18n="nav.memories">Diari Tumbuh</span></a>
+                <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Koleksi</span></a>
                 <a href="/shop" class="nav-item"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></a>
                 <div class="nav-tool-pocket" aria-label="Alat penjaga">
                     <span class="nav-section-title" data-i18n="nav.tools">ALAT</span>
                     <div class="nav-tool-grid">
-                        <a href="/monitoring" class="nav-item nav-tool" title="Sensor"><i class="icon">📡</i><span data-i18n="nav.status">Sensor</span></a>
-                        <a href="/reports" class="nav-item nav-tool" title="Recap"><i class="icon">📜</i><span data-i18n="nav.reports">Rekap</span></a>
-                        <a href="/settings" class="nav-item nav-tool" title="Settings"><i class="icon">🧰</i><span data-i18n="nav.settings">Alat</span></a>
+                        <a href="/monitoring" class="nav-item nav-tool" title="Pemantauan"><i class="icon">📡</i><span data-i18n="nav.status">Pemantauan</span></a>
+                        <a href="/reports" class="nav-item nav-tool" title="Laporan"><i class="icon">📜</i><span data-i18n="nav.reports">Laporan</span></a>
+                        <a href="/settings" class="nav-item nav-tool" title="Pengaturan"><i class="icon">🧰</i><span data-i18n="nav.settings">Pengaturan</span></a>
                     </div>
                 </div>
             </nav>
@@ -131,10 +131,15 @@
 
                 <!-- Farmer grandpa NPC (living world): pixel sprite drawn with
                      box-shadows (::before/::after are the two walk frames),
-                     pure-CSS wander BEHIND the mascot, hidden while body.night.
+                     pure-CSS wander BEHIND the mascot, resting in bed at night.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
                 <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
+                <div class="npc-farmer-bed" aria-hidden="true">
+                    <span class="npc-bed-pillow"></span>
+                    <span class="npc-bed-blanket"></span>
+                    <span class="npc-sleep-zzz"><i>Z</i><i>z</i><i>z</i></span>
+                </div>
                 <div id="npc-farmer-vine" class="npc-farmer-vine" aria-hidden="true"></div>
 
                 <!-- Mascot -->
@@ -480,7 +485,7 @@
                 </button>
 
                 <!-- Current Quest (fed by the existing quests query) -->
-                <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Belum ada misi aktif</span> <span id="cq-progress"></span></span></div>
+                <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></div>
                 <div id="quest-verify-console" class="quest-verify-console" hidden><b>CARE VERIFICATION CORE</b><span>&gt; SENSOR EVIDENCE <strong>PENDING</strong></span><span>&gt; DETERMINISTIC RULE <strong>ACTIVE</strong></span><span>&gt; XP TRANSACTION <strong>LOCKED</strong></span></div>
 
                 <!-- Bond / XP / HP / Streak (character state, moved down from hud-top) -->
@@ -553,6 +558,12 @@
                         <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true">☀️</i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="light" hidden></span></span></button>
                         <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true">🧪</i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em><span class="env-range" data-range="ph" hidden></span></span></button>
                     </div>
+                    <!-- Honest waiting state (live.js renderSensorsWaiting):
+                         shown when the garden is connected but no sensor
+                         reading has ever arrived; renderSensors hides it the
+                         moment real data lands. Text is filled by live.js
+                         (localized), never hardcoded here. -->
+                    <p id="env-waiting-note" class="env-waiting-note" hidden></p>
                 </section>
 
                 <!-- Contextual care action (spec §6.1): ONE mood-driven safe

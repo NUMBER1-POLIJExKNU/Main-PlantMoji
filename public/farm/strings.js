@@ -210,7 +210,7 @@
       pettingYawn: "So cozy… Jamkachu needs a tiny nap now. Zzz…",
 
       // Double-tap surprise hop (tactile interactions): one excited line.
-      petSurprise: "Whee!",
+      petSurprise: "Secret move: LEAF SPRING!",
 
       // Mood-aware comfort petting: when Jamkachu is NOT Happy, petting
       // answers with gratitude plus the real, sensor-backed fix. Only what
@@ -357,6 +357,41 @@
           ph: { title: "Soil pH ⚗️", line: "This one tastes my soil to make sure it feels just right." },
         },
         finale: "This button always shows what I need!",
+      },
+
+      // First-day tour (display-only follow-up to the hatch intro): four
+      // spotlight cards pointing at the REAL interface — sensor HUD, care
+      // button, daily quiz chip, quest slot + ? guide. Pure presentation,
+      // no writes/XP; the seen-flag lives in localStorage (pm_tour_seen_v1).
+      // `senses.waiting` is the honest extra line for step 1 when no sensor
+      // reading has ever arrived.
+      tour: {
+        skip: "Skip",
+        senses: {
+          title: "MY REAL SENSES",
+          line: "These four tiles are my real senses — they feel my room for real!",
+          waiting: "My sensors haven't sent anything yet — the tiles will fill in on their own once my device is connected.",
+        },
+        care: {
+          title: "WHAT I NEED",
+          line: "This button always shows what I need — and it changes with my mood!",
+        },
+        quiz: {
+          title: "DAILY QUIZ",
+          line: "Learn and earn here every day — a fresh farm case is waiting!",
+        },
+        quest: {
+          title: "MISSIONS",
+          line: "When my sensors feel a change, a mission appears here — tap ? anytime for the full story.",
+        },
+      },
+
+      // Honest sensor-waiting state: shown on the env tiles when the garden
+      // IS connected but no sensor reading has ever arrived. Vanishes the
+      // moment renderSensors paints real data — no timers involved.
+      sensorWait: {
+        status: "waiting…",
+        note: "My sensors are still waking up — the numbers will appear here on their own once the device is connected.",
       },
 
       // Level decorations (spec §6.4): names for the pure-presentation
@@ -597,7 +632,7 @@
       pettingYawn: "Nyamannya… Jamkachu mau tidur sebentar dulu ya. Zzz…",
 
       // Lompatan kaget ketuk-dua-kali: satu seruan gembira.
-      petSurprise: "Wiii!",
+      petSurprise: "Jurus rahasia: LOMPAT DAUN!",
 
       // Elusan penenang saat mood tidak Senang — terima kasih + solusi nyata
       // yang didukung sensor. Tidak pernah menyiram/memupuk (sensornya
@@ -731,6 +766,36 @@
           ph: { title: "pH Tanah ⚗️", line: "Yang ini mencicipi tanahku biar rasanya selalu pas." },
         },
         finale: "Tombol ini selalu menunjukkan apa yang aku butuhkan!",
+      },
+
+      // Tur hari pertama (lanjutan intro penetasan, tampilan saja) — lihat
+      // catatan di pohon en. `senses.waiting` = baris jujur saat belum ada
+      // satu pun data sensor yang masuk.
+      tour: {
+        skip: "Lewati",
+        senses: {
+          title: "INDRA ASLIKU",
+          line: "Empat kotak ini indra asliku — mereka benar-benar merasakan kamarku!",
+          waiting: "Sensorku belum mengirim apa-apa — kotaknya akan terisi sendiri begitu perangkatnya terhubung.",
+        },
+        care: {
+          title: "YANG KUBUTUHKAN",
+          line: "Tombol ini selalu menunjukkan yang kubutuhkan — dan berubah mengikuti suasana hatiku!",
+        },
+        quiz: {
+          title: "QUIZ HARIAN",
+          line: "Belajar dan dapat hadiah di sini setiap hari — ada kasus kebun baru menunggumu!",
+        },
+        quest: {
+          title: "MISI",
+          line: "Saat sensorku merasakan perubahan, misi muncul di sini — ketuk ? kapan saja untuk cerita lengkapnya.",
+        },
+      },
+
+      // Keadaan menunggu sensor yang jujur — lihat catatan di pohon en.
+      sensorWait: {
+        status: "menunggu…",
+        note: "Sensorku masih bersiap-siap — angkanya akan muncul sendiri di sini begitu perangkatnya terhubung.",
       },
 
       // Dekorasi level (spec §6.4).

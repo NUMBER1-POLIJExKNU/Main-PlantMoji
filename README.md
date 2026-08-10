@@ -157,6 +157,7 @@ Bond Level represents care and progression. It is intentionally separate from th
 The relationship with Jamkachu continues even after you step away:
 
 - 🐣 **Hatching intro** — one-time first visit (skippable, reduced-motion-safe): the pot trembles, Jamkachu pops out with confetti, and the four sensors are introduced in plain words
+- 🧭 **First-day tour + honest waiting states** — right after hatching, a one-time 4-step spotlight tour (skippable, reduced-motion-safe) walks through mood, quest slot, care button, and sensor tiles; until an Arduino has ever reported, the tiles show an honest "sensors aren't connected yet" state and the empty quest slot explains that quests begin with real sensor data. Display-only: zero writes, zero XP
 - 🌳 **Contextual care button** — replaces the old WATER / FERTILIZE buttons. There is no soil-moisture or nutrient sensor, so those buttons could teach children the *wrong* action (low **air** humidity must never prompt watering the soil). One mood-driven button shows the single safe action — "Move me to shade 🌳", "Show me some light ☀️", "Check my soil with a teacher 🧑‍🏫" — with a why-card tying it to the sensor that will verify it. Zero XP
 - 😴 **Night sleep mode** — 18:00–06:00 WIB (see Plant Mood System above); no streak loss, no guilt copy at night
 - 🏡 **Level decorations** — Bond levels leave visible traces on the mascot stage: Lv.2 pot sticker, Lv.3 flag, Lv.5 room glow, Lv.7 ribbon, Lv.10 golden pot + best-friend token. Pure presentation, re-derived from the bond level on every render

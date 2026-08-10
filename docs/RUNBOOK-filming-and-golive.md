@@ -69,6 +69,9 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 
 ### 2. Pre-filming QA checklist (~40 min, on the ACTUAL demo device + venue network)
 
+**Fresh device (1 min)**
+- [ ] On a brand-new phone/profile the first-day tour plays once right after the hatching intro — let it finish or tap Skip before filming takes (it never replays afterwards).
+
 **Sound (5 min)**
 - [ ] First tap anywhere unlocks audio (sound is default ON after the first gesture). Press any button and confirm a blip.
 - [ ] Toggle mute → reload → open `/quests`: the preference (`localStorage` `pm_sound`) persists and stays in sync across pages. Toggle back ON.
@@ -207,6 +210,9 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 
 ### 2. Daftar periksa QA pra-syuting (±40 menit, di perangkat demo yang SEBENARNYA + jaringan lokasi)
 
+**Perangkat baru (1 menit)**
+- [ ] Di ponsel/profil yang benar-benar baru, tur hari pertama diputar sekali tepat setelah intro menetas — biarkan selesai atau ketuk Lewati sebelum pengambilan gambar (setelah itu tidak pernah diputar ulang).
+
 **Suara (5 menit)**
 - [ ] Ketukan pertama di mana pun membuka audio (suara default ON setelah gestur pertama). Tekan tombol apa pun, pastikan bunyi blip.
 - [ ] Aktifkan mute → muat ulang → buka `/quests`: preferensi (`localStorage` `pm_sound`) bertahan dan sinkron antar halaman. Nyalakan lagi.
@@ -342,6 +348,9 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] 순서가 중요합니다: `milestone9-raw-sensor-ingest.sql`을 먼저 적용하고, Vercel과 Node-RED에 같은 `DEVICE_API_TOKEN`을 설정한 뒤, 플로우를 전환하세요.
 
 ### 2. 촬영 전 QA 체크리스트 (~40분, 실제 데모 기기 + 현장 네트워크에서)
+
+**새 기기 (1분)**
+- [ ] 완전히 새 폰/프로필에서는 부화 인트로 직후 첫날 투어가 한 번 재생됩니다 — 촬영 테이크 전에 끝까지 보거나 Skip을 탭하세요 (이후 다시 재생되지 않습니다).
 
 **사운드 (5분)**
 - [ ] 아무 곳이나 처음 탭하면 오디오가 잠금 해제됩니다 (첫 제스처 후 사운드 기본 ON). 아무 버튼이나 눌러 blip 소리를 확인.

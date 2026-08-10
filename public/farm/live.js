@@ -47,7 +47,7 @@ function spawnBadgeTapEffect(rect) {
 // "JAMKACHU" and "PLANT MOJI" are proper nouns and are never translated.
 const COPY = {
   id: {
-    "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebunku", "nav.quests": "Rawat", "nav.plants": "Jelajah", "nav.camera": "Kamera AI", "nav.memories": "Kenangan", "nav.status": "Sensor", "nav.collection": "Harta", "nav.shop": "Toko", "nav.reports": "Rekap", "nav.settings": "Alat",
+    "nav.play": "DUNIAKU", "nav.tools": "ALAT", "nav.home": "Kebun Saya", "nav.quests": "Misi", "nav.plants": "Eksplor Tanaman", "nav.camera": "Kamera AI", "nav.memories": "Diari Tumbuh", "nav.status": "Pemantauan", "nav.collection": "Koleksi", "nav.shop": "Toko", "nav.reports": "Laporan", "nav.settings": "Pengaturan",
     "weather.outdoor": "Luar ruang Jember",
     "weather.indoor": "Ruang tanaman",
     "weather.loading": "Memuat prakiraan...",
@@ -58,7 +58,7 @@ const COPY = {
     "guide.title": "CARA BERMAIN", "guide.sense": "1 · SENSE — Lihat empat sensor asli.", "guide.understand": "2 · UNDERSTAND — Dengarkan Jamkachu dan buka Misi.", "guide.act": "3 · ACT — Ubah lingkungan dengan cara kecil dan aman.", "guide.verify": "4 · VERIFY & GROW — Sensor memverifikasi, lalu hadiah tumbuh.", "guide.ai": "AI hanya menjelaskan. Sensor dan aturan game menentukan kebenaran.", "guide.start": "AYO MULAI!",
     "sensor.unavailable": "Sensor dalam ruang belum terhubung",
     "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ideal": "Ideal", "env.last": "terakhir", "npc.ai": "CHAT AI",
-    "quest.none": "Belum ada misi aktif",
+    "quest.none": "Misi muncul saat sensorku merasakan perubahan",
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
     "mood.Overheating": "Kepanasan",
@@ -75,7 +75,7 @@ const COPY = {
     questComplete: "Misi selesai!",
   },
   en: {
-    "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Care", "nav.plants": "Explore", "nav.camera": "Camera AI", "nav.memories": "Memories", "nav.status": "Sensors", "nav.collection": "Treasures", "nav.shop": "Shop", "nav.reports": "Recap", "nav.settings": "Tools",
+    "nav.play": "MY WORLD", "nav.tools": "TOOLS", "nav.home": "My Garden", "nav.quests": "Quests", "nav.plants": "Crop Explorer", "nav.camera": "Camera AI", "nav.memories": "Growth Diary", "nav.status": "Monitoring", "nav.collection": "Collection", "nav.shop": "Shop", "nav.reports": "Reports", "nav.settings": "Settings",
     "weather.outdoor": "Jember outdoor",
     "weather.indoor": "Plant room",
     "weather.loading": "Loading forecast...",
@@ -86,7 +86,7 @@ const COPY = {
     "guide.title": "HOW TO PLAY", "guide.sense": "1 · SENSE — Read the four real sensors.", "guide.understand": "2 · UNDERSTAND — Listen to Jamkachu and open Quests.", "guide.act": "3 · ACT — Make one small, safe environmental change.", "guide.verify": "4 · VERIFY & GROW — Sensors verify it, then rewards grow.", "guide.ai": "AI only explains. Sensors and game rules decide what is true.", "guide.start": "LET'S GROW!",
     "sensor.unavailable": "Indoor sensor not connected",
     "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ideal": "Ideal", "env.last": "last", "npc.ai": "AI CHAT",
-    "quest.none": "No active quest",
+    "quest.none": "Missions appear when my sensors feel a change",
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
     "mood.Overheating": "Overheating",
@@ -359,21 +359,22 @@ function renderCompanionNext(stage, state) {
     next.textContent = ""; // pre-milestone16 DB: counters absent — hide
     return;
   }
-  // Only axes the next stage actually requires render (ladder req > 0) — a
-  // Seedling must never see "days 2/0" for Bud's zero-day requirement. The
-  // affinity axis additionally needs its own counter (older DBs / the legacy
-  // three-column fallback select omit affinity_count — skip, never guess).
-  const t = PM().companionNext;
+  // Player-facing progress shows what remains, not raw backend counters.
+  // Completed requirements disappear; over-complete values never render 5/4.
   const segments = [];
-  if (req.care > 0) segments.push(t?.care?.(state.care_count, req.care));
+  const careLeft = Math.max(0, req.care - state.care_count);
+  const daysLeft = Math.max(0, req.days - state.day_count);
+  const affinityLeft = Number.isFinite(state.affinity_count) ? Math.max(0, req.affinities - state.affinity_count) : 0;
+  if (careLeft > 0) segments.push(appLocale === "id" ? `${careLeft} perawatan lagi` : `${careLeft} more care actions`);
   if (req.affinities > 0 && Number.isFinite(state.affinity_count)) {
-    segments.push(t?.affinity?.(state.affinity_count, req.affinities));
+    if (affinityLeft > 0) segments.push(appLocale === "id" ? `coba ${affinityLeft} jenis perawatan lagi` : `try ${affinityLeft} more care types`);
   }
-  if (req.days > 0) segments.push(t?.days?.(state.day_count, req.days));
+  if (daysLeft > 0) segments.push(appLocale === "id" ? `${daysLeft} hari lagi` : `${daysLeft} more days`);
   const parts = segments.filter((part) => typeof part === "string" && part);
   const stageName = PM().companionStage?.[req.stage] ?? req.stage;
-  // No renderable segment (defensive: strings table missing) — hide, as ever.
-  next.textContent = parts.length ? (t?.line?.(stageName, parts.join(" · ")) ?? "") : "";
+  next.textContent = parts.length
+    ? `${appLocale === "id" ? "BERIKUTNYA" : "NEXT"}: ${stageName} · ${parts.join(" · ")}`
+    : `${appLocale === "id" ? "SIAP BEREVOLUSI" : "READY TO EVOLVE"} → ${stageName}`;
 }
 
 function renderCompanion(state) {
@@ -384,8 +385,8 @@ function renderCompanion(state) {
   const label = $("#companion-stage");
   if (label) {
     const stageName = PM().companionStage?.[stage] ?? stage;
-    const formName = PM().companionForm?.[form] ?? form;
-    label.textContent = `${PM().companionWord ?? "COMPANION"} · ${stageName} · ${formName}`;
+    const stageNumber = STAGE_ORDER.indexOf(stage) + 1;
+    label.textContent = `${stageName.toUpperCase()} · ${appLocale === "id" ? "TAHAP" : "STAGE"} ${stageNumber}/${STAGE_ORDER.length}`;
   }
   const svg = $(".mascot-svg");
   if (svg) {
@@ -458,7 +459,18 @@ const farmGuide = $("#farm-guide");
 const openFarmGuide = () => typeof farmGuide?.showModal === "function" && farmGuide.showModal();
 $("#farm-guide-open")?.addEventListener("click", openFarmGuide);
 $("#farm-guide-close")?.addEventListener("click", () => { try { localStorage.setItem("plantmoji_guide_seen_v1", "1"); } catch {} farmGuide?.close(); });
-try { if (!localStorage.getItem("plantmoji_guide_seen_v1")) openFarmGuide(); } catch {}
+// First-day tour coexistence: while the spotlight tour is still owed
+// (pm_tour_seen_v1 absent — see runFirstDayTour), the tour speaks first and
+// its final step points at the ? FAB above, so the modal must not stack on
+// top of it: mark the guide seen instead of auto-opening. Unreadable
+// storage keeps the old fail-closed silence (no auto-open either way).
+try {
+  if (!localStorage.getItem("pm_tour_seen_v1")) {
+    localStorage.setItem("plantmoji_guide_seen_v1", "1");
+  } else if (!localStorage.getItem("plantmoji_guide_seen_v1")) {
+    openFarmGuide();
+  }
+} catch {}
 
 // ── Wardrobe picker (milestone20, display-only) ─────────────────────────
 // Small button under the companion stage label → the same imperative
@@ -1881,7 +1893,7 @@ const LULLABY_MIN_MS = 500;
 const LULLABY_MIN_DIST = 24; // the stroke must actually travel across
 const LULLABY_CARD_COOLDOWN_MS = 60_000; // why-card at most once per minute
 const LULLABY_BREATH_MS = 5000;
-const PET_SURPRISE_FALLBACK = "Whee!";
+const PET_SURPRISE_FALLBACK = "Secret move: LEAF SPRING!";
 const LEAN_IN_FALLBACK = "Mmm… staying close to you is my favorite.";
 const LULLABY_FALLBACK = {
   why: "Your slow, gentle stroke felt like a lullaby 🎵 Jamkachu is sleeping even more soundly.",
@@ -2109,7 +2121,7 @@ const CAMERA_TOUCH_GAP_MS = 10_000;
 
 function onCameraEventInsert(row) {
   if (!row || typeof row !== "object") return;
-  if (sleepShown || hatchActive || isNightWIB() || fxPlaying) return; // never tickle a sleeping/hatching Jamkachu
+  if (sleepShown || hatchActive || tourActive || isNightWIB() || fxPlaying) return; // never tickle a sleeping/hatching/touring Jamkachu
   if (row.kind === "touch") {
     const now = Date.now();
     if (now - lastCameraTouchAt < CAMERA_TOUCH_GAP_MS) return;
@@ -2461,7 +2473,7 @@ function gazeReset() {
 function gazeApply() {
   gazeFrame = null;
   if (!gazePointer) return;
-  if (sleepShown || hatchActive) {
+  if (sleepShown || hatchActive || tourActive) {
     gazeReset();
     return;
   }
@@ -2488,7 +2500,7 @@ function gazeApply() {
 }
 
 function onGazeMove(event) {
-  if (prefersReducedMotion() || sleepShown || hatchActive) return;
+  if (prefersReducedMotion() || sleepShown || hatchActive || tourActive) return;
   gazePointer = { x: event.clientX, y: event.clientY };
   if (gazeFrame === null) gazeFrame = requestAnimationFrame(gazeApply);
 }
@@ -2668,6 +2680,14 @@ function applyNightUi() {
   const now = wibNow();
   const night = now ? now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR : false;
   document.body?.classList.toggle("night", night);
+  const farmerTag = $("#npc-farmer .npc-ai-tag");
+  if (farmerTag) farmerTag.textContent = night ? "Zzz.." : (PM().npc?.ai ?? "AI CHAT");
+  if (!night) {
+    if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
+    farmerNightSleepTimer = null;
+    document.body?.classList.remove("farmer-night-awake");
+    $("#npc-farmer")?.classList.remove("npc-night-awake");
+  }
   const celestial = $(".env-sun");
   if (celestial && now) {
     const hour = now.hour + now.minute / 60;
@@ -2678,7 +2698,7 @@ function applyNightUi() {
     celestial.style.setProperty("--celestial-x", `${8 + clamped * 84}%`);
     celestial.style.setProperty("--celestial-y", `${70 - Math.sin(Math.PI * clamped) * 58}%`);
   }
-  if (night) clearFarmerBubble(); // grandpa is gone at night — mid-line too
+  if (night) clearFarmerBubble(); // grandpa is asleep in bed — end any mid-line chat
   syncFireflies();
 }
 
@@ -2813,7 +2833,7 @@ function idleHappyExpression() {
 function maybeIdleBehavior() {
   if (prefersReducedMotion()) return; // spec: skipped entirely
   if (document.visibilityState !== "visible") return;
-  if (sleepShown || hatchActive || mascotDown) return;
+  if (sleepShown || hatchActive || tourActive || mascotDown) return;
   if (fxPlaying || fxQueue.length > 0) return; // never compete with a celebration
   if (petRestoreTimer !== null || petSavedBubble !== null) return; // bubble busy
   if (Date.now() - lastPointerAt < IDLE_MIN_MS) return; // user is around
@@ -2877,7 +2897,7 @@ function spawnWindLeaves() {
 function maybeWindGust() {
   if (prefersReducedMotion()) return; // spec: skipped entirely
   if (document.visibilityState !== "visible") return;
-  if (fxPlaying || fxQueue.length > 0 || hatchActive) return;
+  if (fxPlaying || fxQueue.length > 0 || hatchActive || tourActive) return;
   document.body?.classList.add("fx-wind");
   setTimeout(() => document.body?.classList.remove("fx-wind"), WIND_GUST_MS);
   const leaves = $(".animated-leaves");
@@ -2984,6 +3004,7 @@ let farmerMotionAnimation = null;
 let farmerMotionPaused = false;
 let farmerMotionEpoch = 0;
 let farmerRestartTimer = null;
+let farmerNightSleepTimer = null;
 let farmerDrag = null;
 let suppressFarmerClick = false;
 let farmerDragPleaTimer = null;
@@ -3180,10 +3201,42 @@ function restartFarmerMotion() {
   window.setTimeout(() => void runFarmerMotion(), 80);
 }
 
+function scheduleFarmerNightSleep() {
+  if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
+  farmerNightSleepTimer = window.setTimeout(() => {
+    farmerNightSleepTimer = null;
+    if (!isNightWIB() || farmerDrag) return;
+    clearFarmerBubble();
+    document.body?.classList.remove("farmer-night-awake");
+    $("#npc-farmer")?.classList.remove("npc-night-awake", "npc-grabbed", "npc-landing");
+    restartFarmerMotion();
+  }, 3000);
+}
+
+function wakeFarmerAtNight() {
+  if (!isNightWIB()) return false;
+  const farmer = $("#npc-farmer");
+  if (!farmer) return false;
+  if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
+  farmerNightSleepTimer = null;
+  const wasSleeping = !farmer.classList.contains("npc-night-awake");
+  const rect = farmer.getBoundingClientRect();
+  document.body?.classList.add("farmer-night-awake");
+  farmer.classList.add("npc-night-awake");
+  if (wasSleeping) {
+    farmer.style.left = `${rect.left}px`;
+    farmer.style.top = `${rect.top}px`;
+    farmer.style.transform = "none";
+    setFarmerFacing(1);
+  }
+  return true;
+}
+
 function startFarmerDrag(event) {
   const farmer = event.currentTarget;
-  if (event.button !== 0 || farmerDrag || isNightWIB() || hatchActive
+  if (event.button !== 0 || farmerDrag || hatchActive || tourActive
     || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return;
+  wakeFarmerAtNight();
   const rect = farmer.getBoundingClientRect();
   if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
   farmerRestartTimer = null;
@@ -3241,6 +3294,7 @@ async function endFarmerDrag(event) {
   farmer.releasePointerCapture?.(event.pointerId);
   if (!drag.moved) {
     restartFarmerMotion();
+    if (isNightWIB()) scheduleFarmerNightSleep();
     return;
   }
   suppressFarmerClick = true;
@@ -3264,6 +3318,7 @@ async function endFarmerDrag(event) {
   farmer.style.transform = "scaleX(1)";
   setFarmerFacing(1);
   restartFarmerMotion();
+  if (isNightWIB()) scheduleFarmerNightSleep();
 }
 
 function cancelFarmerDrag(event) {
@@ -3326,6 +3381,7 @@ function farmerCanSpeakAutonomously() {
     && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
     && !isNightWIB()
     && !hatchActive
+    && !tourActive
     && !fxPlaying
     && fxQueue.length === 0
     && !farmerBubbleEl
@@ -3375,7 +3431,7 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
  *  60s cooldown, the night, or the hatching intro swallowed it. */
 function farmerSpeak(line = farmerLine()) {
   const farmer = $("#npc-farmer");
-  if (!farmer || isNightWIB() || hatchActive || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return false;
+  if (!farmer || isNightWIB() || hatchActive || tourActive || farmer.classList.contains("npc-falling") || $("#farmer-chat")?.open) return false;
   const now = Date.now();
   if (now < farmerCooldownUntil) return false;
   farmerCooldownUntil = now + FARMER_COOLDOWN_MS;
@@ -3513,6 +3569,12 @@ window.addEventListener("pointercancel", cancelFarmerDrag);
 $("#npc-farmer")?.addEventListener("click", (event) => {
   if (suppressFarmerClick) {
     suppressFarmerClick = false;
+    event.preventDefault();
+    return;
+  }
+  if (isNightWIB()) {
+    wakeFarmerAtNight();
+    scheduleFarmerNightSleep();
     event.preventDefault();
     return;
   }
@@ -4508,7 +4570,7 @@ function maybeShowMemory() {
   if (memoryLines.length === 0) return;
   if (careMood !== "Happy" || sleepShown) return; // Happy + awake only
   if (petRestoreTimer !== null || petSavedBubble !== null) return; // bubble busy
-  if (hatchPendingOrActive()) return; // never talk over the hatching intro
+  if (hatchPendingOrActive() || tourActive) return; // never talk over the hatching intro or the tour
   let last = null;
   try {
     last = window.localStorage.getItem(MEMORY_AT_KEY);
@@ -4771,12 +4833,53 @@ function staleLabel(recordedAt) {
   return time ? `${t("env.last")} ${time}` : null;
 }
 
+// Honest sensor-waiting state (strings.js "sensorWait" twin): shown when
+// the backend IS configured but the sensor query returns no row — a fresh
+// install whose device has never sent anything. English fallback matches
+// the HATCH_FALLBACK pattern.
+const SENSOR_WAIT_FALLBACK = {
+  status: "waiting…",
+  note: "My sensors are still waking up — the numbers will appear here on their own once the device is connected.",
+};
+
+/** Gentle waiting state instead of silent "--" dashes: each .env-status
+ *  says a short localized "waiting…" and one child-friendly line under the
+ *  board explains that values will appear on their own. Display-only and
+ *  timer-free: renderSensors hides the note and overwrites every status
+ *  the moment a real reading lands. */
+function renderSensorsWaiting() {
+  if (lastReading != null) return; // real data already painted the tiles
+  const W = PM().sensorWait ?? {};
+  const status = W.status ?? SENSOR_WAIT_FALLBACK.status;
+  for (const label of document.querySelectorAll("#env-strip .env-status")) {
+    label.textContent = status;
+  }
+  const note = $("#env-waiting-note");
+  if (note) {
+    note.textContent = W.note ?? SENSOR_WAIT_FALLBACK.note;
+    note.hidden = false;
+  }
+}
+
 /** Environment strip (#env-strip): 2×2 game-HUD stat tiles (4×1 on the
  *  ≥801px desktop rail) — big real reading, 10-segment comfort gauge, the
  *  explicit "Ideal min–max" line, and staleness honesty. Detail lives in
  *  Plant Status (/monitoring). */
 function renderSensors(reading) {
   lastReading = reading; // replayed by refreshCropProfile() once ranges land
+  // A real reading replaces the waiting state (renderSensorsWaiting): the
+  // note hides here, and any tile still showing the waiting word falls back
+  // to the neutral "--" — the per-field guards below only touch fields the
+  // device reports, so without this reset a never-reported field (e.g. a
+  // probe with no soil pH) would stay frozen on "waiting…" forever.
+  const waitingNote = $("#env-waiting-note");
+  if (waitingNote) waitingNote.hidden = true;
+  const waitingStatus = PM().sensorWait?.status ?? SENSOR_WAIT_FALLBACK.status;
+  for (const label of document.querySelectorAll("#env-strip .env-status")) {
+    if (label.textContent === waitingStatus || label.textContent === SENSOR_WAIT_FALLBACK.status) {
+      label.textContent = "--";
+    }
+  }
   const staleText = staleLabel(reading?.recorded_at);
   const updateHud = (kind, value, status, alert) => {
     const card = $(`[data-vital="${kind}"]`);
@@ -4924,6 +5027,9 @@ const HATCH_FALLBACK = {
   finale: "This button always shows what I need!",
 };
 let hatchActive = false;
+// First-day tour (see runFirstDayTour below): quiets the same systems
+// hatchActive quiets — every suppression gate checks both flags.
+let tourActive = false;
 
 /** True while the intro is running OR still owed to this browser — used by
  *  the memory rotation so a bubble never talks over the hatching. */
@@ -4945,7 +5051,12 @@ function scheduleHatch(plantName) {
   } catch {
     return;
   }
-  if (seen || hatchActive) return;
+  if (seen || hatchActive) {
+    // Hatched on an earlier visit (possibly before the tour existed) — the
+    // first-day tour may still be owed. scheduleTour re-checks its own flag.
+    scheduleTour();
+    return;
+  }
   setTimeout(() => runHatchIntro(plantName), HATCH_SETTLE_MS);
 }
 
@@ -5071,6 +5182,9 @@ function runHatchIntro(plantName) {
     wrapper?.classList.remove("hatch-shake");
     $("#care-action")?.classList.remove("hatch-highlight");
     $("#current-quest")?.classList.remove("hatch-highlight");
+    // Brand-new players roll straight into the first-day tour: pm_hatched
+    // was written up front, so hatchPendingOrActive() no longer blocks it.
+    scheduleTour();
   };
   const advance = () => {
     if (ended) return;
@@ -5084,6 +5198,186 @@ function runHatchIntro(plantName) {
     } catch {}
     if (stepTimer !== null) clearTimeout(stepTimer);
     stepTimer = setTimeout(advance, HATCH_STEP_MS);
+  };
+  layer.addEventListener("pointerdown", (event) => {
+    if (event.target === skip || skip.contains(event.target)) {
+      finish();
+      return;
+    }
+    window.PMSfx?.play("blip");
+    advance();
+  });
+  advance();
+}
+
+// ── First-day tour (display-only, one-time) ─────────────────────────────
+// Closes the gap after the hatch intro: four spotlight cards pointing at
+// the REAL interface — sensor HUD, contextual care button, daily quiz
+// chip, and the quest slot + ? guide FAB. Reuses the hatch card/step
+// engine style (own layer + Skip + tap-to-advance + 5s auto-advance +
+// .hatch-highlight spotlights). ENTIRELY presentation: no network, no
+// XP/seeds, no celebrations — only two localStorage flags. Runs once,
+// gated by pm_tour_seen_v1 (write-first like pm_hatched): right after the
+// hatch intro's finish() for brand-new players, or on page load for
+// players who hatched before this update — never while the hatch intro is
+// pending or active. tourActive (declared beside hatchActive) quiets the
+// same idle/petting/FX/farmer systems for the duration.
+
+const TOUR_KEY = "pm_tour_seen_v1";
+const TOUR_STEP_MS = 5000;
+const TOUR_SETTLE_MS = 900;
+const TOUR_FALLBACK = {
+  skip: "Skip",
+  senses: {
+    title: "MY REAL SENSES",
+    line: "These four tiles are my real senses — they feel my room for real!",
+    waiting: "My sensors haven't sent anything yet — the tiles will fill in on their own once my device is connected.",
+  },
+  care: { title: "WHAT I NEED", line: "This button always shows what I need — and it changes with my mood!" },
+  quiz: { title: "DAILY QUIZ", line: "Learn and earn here every day — a fresh farm case is waiting!" },
+  quest: { title: "MISSIONS", line: "When my sensors feel a change, a mission appears here — tap ? anytime for the full story." },
+};
+// One entry per step; step 4 pairs the quest slot with the ? guide FAB.
+const TOUR_STEP_TARGETS = [
+  ["#env-strip"],
+  ["#care-action"],
+  ["#daily-quiz-open"],
+  ["#current-quest", "#farm-guide-open"],
+];
+
+/** Schedule the one-time tour after the page settles. Never while the
+ *  hatch intro is pending or active — the hatch finish() re-schedules.
+ *  Unreadable storage ⇒ stay silent: without the flag we could not keep
+ *  the tour one-time (same fail-closed rule as pm_hatched). */
+function scheduleTour() {
+  if (hatchPendingOrActive()) return;
+  let seen = null;
+  try {
+    seen = window.localStorage.getItem(TOUR_KEY);
+  } catch {
+    return;
+  }
+  if (seen || tourActive) return;
+  setTimeout(runFirstDayTour, TOUR_SETTLE_MS);
+}
+
+function runFirstDayTour() {
+  if (tourActive || hatchActive || !document.body) return;
+  // The one-time guarantee lives HERE, not at the scheduler call sites:
+  // scheduleHatch can legitimately run twice in one load (main() plus its
+  // .catch fallback), queueing two timers that both passed scheduleTour's
+  // flag check. Re-reading the flag makes the second firing a no-op.
+  try {
+    if (window.localStorage.getItem(TOUR_KEY)) return;
+  } catch {
+    return;
+  }
+  tourActive = true;
+  // One-time either way — flag first, so a mid-tour reload can never
+  // replay it. The guide-seen flag rides along: the final step points the
+  // player at the ? FAB, so the modal must not auto-open on a later visit.
+  try {
+    window.localStorage.setItem(TOUR_KEY, "1");
+    window.localStorage.setItem("plantmoji_guide_seen_v1", "1");
+  } catch {}
+  const T = PM().tour ?? {};
+  const F = TOUR_FALLBACK;
+  const reduce = prefersReducedMotion();
+
+  const layer = document.createElement("div");
+  layer.id = "tour-layer";
+  const card = document.createElement("div");
+  card.className = "hatch-card";
+  const skip = document.createElement("button");
+  skip.type = "button";
+  skip.className = "pixel-btn hatch-skip";
+  skip.textContent = T.skip ?? F.skip;
+  layer.appendChild(card);
+  layer.appendChild(skip);
+  document.body.appendChild(layer);
+
+  /** Same card builder as the hatch intro: pixel title + body lines. */
+  const setCard = (title, lines) => {
+    card.innerHTML = "";
+    if (title) {
+      const titleEl = document.createElement("div");
+      titleEl.className = "hatch-card-title";
+      titleEl.textContent = title;
+      card.appendChild(titleEl);
+    }
+    for (const line of lines ?? []) {
+      const lineEl = document.createElement("div");
+      lineEl.className = "hatch-card-line";
+      lineEl.textContent = line;
+      card.appendChild(lineEl);
+    }
+  };
+  /** Move the .hatch-highlight spotlight(s) onto this step's targets. The
+   *  tour layer's backdrop is fully transparent (style.css), so env-card
+   *  safety alerts (.is-alert) stay visible underneath throughout. */
+  const spotlight = (selectors) => {
+    for (const el of document.querySelectorAll(".hatch-highlight")) el.classList.remove("hatch-highlight");
+    for (const selector of selectors) $(selector)?.classList.add("hatch-highlight");
+    try {
+      $(selectors[0])?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+    } catch {}
+  };
+  const stepCard = (key) => {
+    const group = T[key] ?? {};
+    setCard(group.title ?? F[key].title, [group.line ?? F[key].line]);
+  };
+
+  const steps = [
+    () => {
+      // (1) Sensor HUD. If no reading has ever arrived (lastReading unset),
+      // say so honestly instead of pretending the dashes are data.
+      spotlight(TOUR_STEP_TARGETS[0]);
+      const senses = T.senses ?? {};
+      const lines = [senses.line ?? F.senses.line];
+      if (lastReading == null) lines.push(senses.waiting ?? F.senses.waiting);
+      setCard(senses.title ?? F.senses.title, lines);
+    },
+    () => {
+      // (2) Contextual care button — always shows what I need, mood-driven.
+      spotlight(TOUR_STEP_TARGETS[1]);
+      stepCard("care");
+    },
+    () => {
+      // (3) Daily quiz chip — learn and earn every day.
+      spotlight(TOUR_STEP_TARGETS[2]);
+      stepCard("quiz");
+    },
+    () => {
+      // (4) Quest slot + the ? guide FAB, spotlit together.
+      spotlight(TOUR_STEP_TARGETS[3]);
+      stepCard("quest");
+    },
+  ];
+
+  let index = -1;
+  let stepTimer = null;
+  let ended = false;
+  const finish = () => {
+    if (ended) return;
+    ended = true;
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    tourActive = false;
+    layer.remove();
+    // Undo every spotlight the sequence may have left behind.
+    for (const el of document.querySelectorAll(".hatch-highlight")) el.classList.remove("hatch-highlight");
+  };
+  const advance = () => {
+    if (ended) return;
+    index++;
+    if (index >= steps.length) {
+      finish();
+      return;
+    }
+    try {
+      steps[index]();
+    } catch {}
+    if (stepTimer !== null) clearTimeout(stepTimer);
+    stepTimer = setTimeout(advance, TOUR_STEP_MS);
   };
   layer.addEventListener("pointerdown", (event) => {
     if (event.target === skip || skip.contains(event.target)) {
@@ -5233,6 +5527,10 @@ async function main() {
       renderPlant(plantRes.data);
     }
     if (sensorRes.data) renderSensors(sensorRes.data);
+    // Configured DB, zero rows (maybeSingle: data null, error null) — say
+    // honestly that the sensors haven't sent anything yet. Query errors
+    // keep the previous display instead of a misleading "waiting".
+    else if (!sensorRes.error) renderSensorsWaiting();
     if (questRes.data) trackQuests(questRes.data);
     if (Array.isArray(eventsRes?.data)) noteMemoryRows(eventsRes.data);
     if (companionRes?.data) renderCompanion(companionRes.data);
