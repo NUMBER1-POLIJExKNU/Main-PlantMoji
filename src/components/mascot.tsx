@@ -10,6 +10,7 @@
 
 import type { ReactElement } from "react";
 import { MOOD_LABELS, type PlantMood } from "@/types/events";
+import { COMPANION_STAGES, type CompanionStage } from "@/types/game";
 
 const OUTLINE = "var(--color-outline)";
 const WATER = "var(--color-water)";
@@ -273,10 +274,25 @@ function MicroExpressions({ mood }: { mood: PlantMood }) {
   );
 }
 
-export default function Mascot({ mood }: { mood: PlantMood }) {
+function StageAccents({ stage }: { stage: CompanionStage }) {
+  const rank = COMPANION_STAGES.indexOf(stage);
+  return <g className="pm-stage-accents" aria-hidden="true">
+    {rank >= 2 && <g><rect x="112" y="150" width="26" height="12" rx="6" fill="var(--color-forest)" stroke={OUTLINE} strokeWidth="5"/><rect x="162" y="150" width="26" height="12" rx="6" fill="var(--color-forest)" stroke={OUTLINE} strokeWidth="5"/></g>}
+    {rank === 3 && <circle cx="112" cy="12" r="11" fill="#FFB1C8" stroke={OUTLINE} strokeWidth="5"/>}
+    {rank >= 4 && <g><circle cx="112" cy="8" r="9" fill="#FFF" stroke={OUTLINE} strokeWidth="4"/><circle cx="99" cy="15" r="8" fill="#F7A6C1" stroke={OUTLINE} strokeWidth="4"/><circle cx="125" cy="15" r="8" fill="#F7A6C1" stroke={OUTLINE} strokeWidth="4"/><circle cx="112" cy="23" r="8" fill="#FFDE6A" stroke={OUTLINE} strokeWidth="4"/></g>}
+    {rank >= 5 && <g><circle cx="126" cy="132" r="10" fill="#E4572E" stroke={OUTLINE} strokeWidth="4"/><circle cx="176" cy="135" r="10" fill="#E4572E" stroke={OUTLINE} strokeWidth="4"/><rect x="124" y="117" width="5" height="9" fill="var(--color-forest)"/><rect x="174" y="120" width="5" height="9" fill="var(--color-forest)"/></g>}
+    {rank >= 6 && <g fill="none" stroke="#FFDE6A" strokeWidth="5"><path d="M64 90H35V55"/><path d="M236 90h29V55"/><path d="M48 42l-13 13 13 13"/><path d="M252 42l13 13-13 13"/></g>}
+    {rank >= 7 && <g><rect x="128" y="104" width="14" height="65" rx="6" fill="#6E8F46" stroke={OUTLINE} strokeWidth="4"/><rect x="158" y="96" width="14" height="73" rx="6" fill="#6E8F46" stroke={OUTLINE} strokeWidth="4"/><rect x="105" y="92" width="38" height="11" rx="5" fill="#6E8F46" stroke={OUTLINE} strokeWidth="4"/><rect x="159" y="82" width="38" height="11" rx="5" fill="#6E8F46" stroke={OUTLINE} strokeWidth="4"/></g>}
+    {rank >= 8 && <g fill="none" stroke="#FFF2A8" strokeWidth="6" opacity=".9"><circle cx="150" cy="70" r="88"/><path d="M150-35v24M150 151v24M45 70H21M279 70h-24"/></g>}
+    {rank >= 9 && <g><polygon points="112,14 128,-10 150,10 172,-10 188,14 182,34 118,34" fill="#FFDE6A" stroke={OUTLINE} strokeWidth="6"/><circle cx="128" cy="6" r="5" fill="#E4572E"/><circle cx="150" cy="20" r="5" fill="#4DA1ED"/><circle cx="172" cy="6" r="5" fill="#E4572E"/></g>}
+  </g>;
+}
+
+export default function Mascot({ mood, stage }: { mood: PlantMood; stage?: CompanionStage }) {
   const Face = FACES[mood] ?? HappyFace;
+  const rank = stage ? COMPANION_STAGES.indexOf(stage) : 6;
   return (
-    <div className="pm-mascot" role="img" aria-label={MOOD_LABELS[mood] ?? mood}>
+    <div className={`pm-mascot${stage ? ` pm-mascot-stage pm-stage-${stage.toLowerCase()}` : ""}`} role="img" aria-label={`${MOOD_LABELS[mood] ?? mood}${stage ? ` · ${stage}` : ""}`}>
       <svg viewBox="0 0 300 350" className="h-auto w-full" aria-hidden="true">
         {/* Pot (clay) */}
         <rect x="75" y="220" width="150" height="110" fill="var(--color-soil)" stroke={OUTLINE} strokeWidth="8" />
@@ -284,20 +300,21 @@ export default function Mascot({ mood }: { mood: PlantMood }) {
         <rect x="100" y="240" width="100" height="10" fill="var(--color-soil-dark)" opacity="0.3" />
 
         {/* Stem */}
-        <rect x="140" y="100" width="20" height="90" fill="var(--color-forest)" stroke={OUTLINE} strokeWidth="8" />
+        <rect x="140" y={rank === 0 ? 168 : rank === 1 ? 140 : "100"} width="20" height={rank === 0 ? 22 : rank === 1 ? 50 : 90} fill="var(--color-forest)" stroke={OUTLINE} strokeWidth="8" />
 
         {/* Leaves (sway via globals.css, motion-safe only) */}
-        <g className="pm-leaves">
-          <rect x="70" y="140" width="70" height="25" fill="var(--color-grass)" stroke={OUTLINE} strokeWidth="8" />
-          <rect x="160" y="120" width="70" height="25" fill="var(--color-grass)" stroke={OUTLINE} strokeWidth="8" />
+        <g className="pm-leaves" opacity={rank === 0 ? 0 : 1}>
+          <rect x={rank === 1 ? 103 : 70} y={rank === 1 ? 151 : 140} width={rank === 1 ? 42 : 70} height="25" fill="var(--color-grass)" stroke={OUTLINE} strokeWidth="8" />
+          {rank >= 2 && <rect x="160" y="120" width="70" height="25" fill="var(--color-grass)" stroke={OUTLINE} strokeWidth="8" />}
         </g>
 
         {/* Head */}
-        <rect x="90" y="20" width="120" height="100" fill="var(--color-grass-light)" stroke={OUTLINE} strokeWidth="8" />
+        <rect x={rank === 0 ? 128 : rank === 1 ? 112 : 90} y={rank === 0 ? 145 : rank === 1 ? 92 : 20} width={rank === 0 ? 44 : rank === 1 ? 76 : 120} height={rank === 0 ? 42 : rank === 1 ? 64 : 100} rx={rank < 2 ? 16 : 0} fill="var(--color-grass-light)" stroke={OUTLINE} strokeWidth="8" />
+
+        {stage && rank >= 2 && <StageAccents stage={stage} />}
 
         {/* Per-mood pixel face */}
-        <Face />
-        <MicroExpressions mood={mood} />
+        {rank >= 2 && <><Face /><MicroExpressions mood={mood} /></>}
 
         {/* Soil-pH trouble: a potion bottle appears beside the pot */}
         {mood === "SoilAcidic" && <Potion side="left" color={ACID_POTION} />}

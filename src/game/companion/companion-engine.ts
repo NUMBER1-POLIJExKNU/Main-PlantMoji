@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isCheckViolation, isMissingColumnError, isMissingTableError } from "@/lib/supabase-errors";
 import { COMPANION_LADDER, COMPANION_STAGES } from "@/types/game";
 import type { CareAffinity, CompanionStage, QuestKey } from "@/types/game";
 
@@ -55,25 +56,16 @@ export function eligibleCompanionStage(care: VerifiedCare[]): CompanionStage {
   return "Seed";
 }
 
-function missingTable(error: { code?: string; message: string }) {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
-
-/** milestone16 columns absent — PostgREST schema-cache miss (PGRST204) or raw Postgres 42703. */
-function missingColumn(error: { code?: string; message: string }) {
-  return error.code === "PGRST204" || error.code === "42703" || /could not find the '.+' column/i.test(error.message) || /column .+ does not exist/i.test(error.message);
-}
-
-/** milestone16 stage names rejected by a pre-milestone16 CHECK constraint —
- *  raw Postgres 23514 or the PostgREST-surfaced message. */
-function checkViolation(error: { code?: string; message: string }) {
-  return error.code === "23514" || /violates check constraint/i.test(error.message);
-}
+// Error detectors (missing table / milestone16 columns absent / stage names
+// rejected by a pre-milestone16 CHECK) are the shared ones from
+// lib/supabase-errors.ts — only the predicate bodies moved there; every
+// degradation path below, including the countersUnsupported latch, is
+// unchanged.
 
 /** Display-only progress counters (milestone16). They never gate or grant anything. */
 const COUNTER_COLUMNS = ["care_count", "affinity_count", "day_count"] as const;
 
-/** Sticky per-process memo: once a counters write hits missingColumn() we know
+/** Sticky per-process memo: once a counters write hits isMissingColumnError() we know
  *  milestone16 isn't applied, so later sweeps skip the doomed counters writes
  *  entirely instead of paying a failing round trip + retry on every tick. */
 let countersUnsupported = false;
@@ -98,7 +90,7 @@ async function writeCompanionState(supabase: SupabaseClient, payload: Record<str
   }
   const { error } = await supabase.from("companion_state").upsert(attempt, { onConflict: "plant_id" });
   if (!error) return null;
-  if (attempt === payload && missingColumn(error)) {
+  if (attempt === payload && isMissingColumnError(error)) {
     // milestone16 not applied yet — retry without the display-only counter columns.
     countersUnsupported = true;
     const legacy = { ...payload };
@@ -116,7 +108,7 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
   if (typeof stateQuery.maybeSingle !== "function") return null;
   const stateResult = await stateQuery.maybeSingle();
   if (stateResult.error) {
-    if (missingTable(stateResult.error)) return null;
+    if (isMissingTableError(stateResult.error)) return null;
     throw new Error(`companion: state lookup failed: ${stateResult.error.message}`);
   }
   const state = stateResult.data ?? { plant_id: plantId, cycle: 1, stage: "Seed", form_key: "balanced" };
@@ -141,7 +133,7 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
     // sweep evolved the row after we read it — a demotion is impossible.
     const { error: counterError } = await supabase.from("companion_state").update({ ...counters, updated_at: now.toISOString() }).eq("plant_id", plantId).eq("stage", state.stage);
     if (counterError) {
-      if (missingColumn(counterError)) {
+      if (isMissingColumnError(counterError)) {
         countersUnsupported = true; // pre-milestone16 — stop retrying every tick
         return state;
       }
@@ -162,7 +154,7 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
       // Pre-milestone16 CHECK (milestone11) only allows the legacy five names.
       // Skip the rejected rung and keep walking so legacy DBs still climb
       // Seed→Sprout→Bud→Bloom→Guardian instead of freezing mid-ladder.
-      if (checkViolation(evolutionError)) continue;
+      if (isCheckViolation(evolutionError)) continue;
       throw new Error(`companion: evolution insert failed: ${evolutionError.message}`);
     }
     const { error: eventError } = await supabase.from("bond_events").upsert({ event_id: `companion:${plantId}:${state.cycle}:${stage}`, plant_id: plantId, type: "COMPANION_EVOLVED", occurred_at: evolvedAt, data: { fromStage, stage, formKey, reason: `${care.length} verified care quests` } }, { onConflict: "event_id", ignoreDuplicates: true });
@@ -178,7 +170,7 @@ export async function evaluateCompanion(supabase: SupabaseClient, plantId: strin
     const stage = accepted[i];
     const stateError = await writeCompanionState(supabase, { plant_id: plantId, cycle: state.cycle, stage, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters });
     if (!stateError) return { ...state, stage, form_key: formKey, last_evolved_at: evolvedAt, updated_at: evolvedAt, ...counters };
-    if (!checkViolation(stateError)) return state;
+    if (!isCheckViolation(stateError)) return state;
   }
   // Every rung was rejected (legacy DB at its ceiling) — nothing evolved.
   return state;

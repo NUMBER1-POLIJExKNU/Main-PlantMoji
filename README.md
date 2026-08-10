@@ -157,9 +157,11 @@ Bond Level represents care and progression. It is intentionally separate from th
 The relationship with Jamkachu continues even after you step away:
 
 - 🐣 **Hatching intro** — one-time first visit (skippable, reduced-motion-safe): the pot trembles, Jamkachu pops out with confetti, and the four sensors are introduced in plain words
+- 🧭 **First-day tour + honest waiting states** — right after hatching, a one-time 4-step spotlight tour (skippable, reduced-motion-safe) walks through mood, quest slot, care button, and sensor tiles; until an Arduino has ever reported, the tiles show an honest "sensors aren't connected yet" state and the empty quest slot explains that quests begin with real sensor data. Display-only: zero writes, zero XP
 - 🌳 **Contextual care button** — replaces the old WATER / FERTILIZE buttons. There is no soil-moisture or nutrient sensor, so those buttons could teach children the *wrong* action (low **air** humidity must never prompt watering the soil). One mood-driven button shows the single safe action — "Move me to shade 🌳", "Show me some light ☀️", "Check my soil with a teacher 🧑‍🏫" — with a why-card tying it to the sensor that will verify it. Zero XP
 - 😴 **Night sleep mode** — 18:00–06:00 WIB (see Plant Mood System above); no streak loss, no guilt copy at night
 - 🏡 **Level decorations** — Bond levels leave visible traces on the mascot stage: Lv.2 pot sticker, Lv.3 flag, Lv.5 room glow, Lv.7 ribbon, Lv.10 golden pot + best-friend token. Pure presentation, re-derived from the bond level on every render
+- 👒 **Jember crop skin wardrobe** — seven cosmetic looks for Jamkachu, each a Jember crop, unlocked by Bond Level: Classic Jamkachu (Lv.1, always yours) → Edamame Buddy (Lv.2) → Golden Rice (Lv.4) → Sweet Corn (Lv.6) → Robusta Coffee (Lv.8) → Cacao Pod (Lv.10) → Dragon Fruit (Lv.12). Display-only by design: a skin changes how Jamkachu is drawn and nothing else — it never grants or gates XP, Seeds, quests, evolution, or sensors
 - 💭 **Jamkachu remembers** — template sentences built from recent care history ("Yesterday you helped me cool down!") rotate into the idle speech bubble, at most one per hour. No AI call
 - 🥰 **Petting** — tap the mascot for a bounce, heart pixel, and a personality line. In-fiction only: no counters, no achievements, zero XP
 
@@ -168,7 +170,7 @@ The relationship with Jamkachu continues even after you step away:
 Celebrations are real, quick, and honest — every effect fires only on backend-verified transitions:
 
 - 🎚️ **Celebration queue** — stacked FX (quest + lucky + level-up) play as an ordered sequence with per-tier duration caps, so feedback never blocks information
-- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), default muted until the user enables it, persistent one-tap preference (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
+- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), sound on by default (spec D1) with a persistent one-tap mute (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
 - 🌰 **Tap-to-claim reward pod** — a quest completion drops a seed pod by Jamkachu; tap it to pop the celebration (it auto-bursts after ~8 s so nothing ever stalls)
 - ✨ **XP orb cascade** — awards split into orbs that arc into the XP bar (gold when lucky); reduced-motion collapses to a single count-up
 - 🔍 **Verifying shimmer** — quests being sensor-checked render amber with "Sensor is checking…", then a short anticipation hold before the celebration
@@ -394,8 +396,8 @@ Live screens:
                  forecast stays separate from the indoor sensor
              Reward FX ride the celebration queue: tap-to-claim reward pod,
              XP orb cascade, reason chips, causal echo, Lucky ×2 stamp,
-             chapter gate — with optional 8-bit WebAudio SFX (default muted,
-             one-tap enable). Real backend-verified transitions only; reduced-motion
+             chapter gate — with 8-bit WebAudio SFX (on by default,
+             one-tap mute). Real backend-verified transitions only; reduced-motion
              safe. Append ?demo=1 for presenter hotkeys + a QA self-test
              overlay (presentation-only replays, zero data writes).
 
@@ -524,6 +526,7 @@ supabase/milestone18-seed-shop.sql             Seed economy: seeds balance, ledg
 supabase/milestone18-growth-snapshots.sql      private growth-snapshots Storage bucket (diary postcards)
 supabase/milestone19-photo-diary.sql           legacy photo-diary columns (superseded by Live Guardian)
 supabase/milestone19-camera-guardian.sql       Live Guardian camera_events + realtime (stores no images)
+supabase/milestone20-companion-skins.sql       cosmetic crop-skin key on companion_state (display-only)
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every
@@ -634,7 +637,7 @@ plantmoji/
 │   ├── lib/              i18n + environment analyzer + AI/Supabase helpers
 │   └── types/
 │
-├── supabase/             additive SQL migrations (milestone1 … milestone14)
+├── supabase/             additive SQL migrations (milestone1 … milestone20)
 ├── node-red/             bridge flow + trilingual guide
 ├── docs/                 setup + integration plans + filming/go-live runbook (EN/ID/KO)
 ├── tests/                315 Vitest tests across 31 suites
@@ -688,6 +691,8 @@ plantmoji/
 - [x] Server-only Gemini environment explanations with deterministic fallback
 - [x] Playable Mood, Badge, Story and Wisdom collection rewards
 - [x] Tamagotchi navigation (five game tabs + compact operator Tool Pocket)
+- [x] Mobile navigation fix — every game tab stays reachable and tappable from the phone bottom dock
+- [x] Jember crop skin wardrobe — cosmetic companion skins unlocked by Bond Level (display-only, milestone20)
 - [x] Route-specific interactive pixel loading toys
 - [x] AI-personalized dialogue (optional, template fallback)
 - [x] Seasonal Events

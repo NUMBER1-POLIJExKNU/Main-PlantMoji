@@ -141,6 +141,8 @@ export default function ShopGrid({
 
   const ownedRow = (key: string) => purchases.find((p) => p.item_key === key) ?? null;
   const previewItem = items.find((item) => item.key === previewKey) ?? null;
+  const previewOwned = previewItem ? ownedRow(previewItem.key) : null;
+  const previewAffordable = previewItem ? seeds >= previewItem.price : false;
   const shownItems = items.filter((item) => {
     if (item.category !== category) return false;
     const owned = Boolean(ownedRow(item.key));
@@ -162,7 +164,13 @@ export default function ShopGrid({
         </p>
       )}
 
-      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}`} aria-live="polite"><button type="button" onClick={() => setPreviewKey(null)} aria-label={copy.closePreview}>×</button><div className="pm-shop-preview-scene"><span aria-hidden="true">{previewItem.category === "decor" ? "🌱" : "🪴"}</span><b aria-hidden="true">{previewItem.emoji}</b></div><div><small>{copy.previewing}</small><h2>{previewItem.name}</h2><p>{previewItem.blurb}</p></div></section>}
+      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}`} aria-live="polite">
+        <button type="button" onClick={() => setPreviewKey(null)} aria-label={copy.closePreview}>×</button>
+        <div className="pm-shop-preview-scene"><span aria-hidden="true">{previewItem.category === "decor" ? "🌱" : "🪴"}</span><b aria-hidden="true">{previewItem.emoji}</b></div>
+        <div className="pm-shop-preview-copy"><small>{copy.previewing}</small><h2>{previewItem.name}</h2><p>{previewItem.blurb}</p><strong>🌰 {previewItem.price}</strong>
+          {previewOwned ? (previewItem.category === "decor" ? <span className="pm-shop-preview-status">✓ {copy.owned}</span> : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null} onClick={() => equip(previewItem, !previewOwned.equipped)}>{previewOwned.equipped ? copy.unequip : copy.equip}</button>) : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null || !previewAffordable} onClick={(event) => buy(previewItem, event.currentTarget)}>{previewAffordable ? `${copy.buy} · ${previewItem.price}` : `${previewItem.price - seeds} ${copy.needMore}`}</button>}
+        </div>
+      </section>}
 
       <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
       <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => setFilter(entry)}>{copy.filters[entry]}</button>)}</div>

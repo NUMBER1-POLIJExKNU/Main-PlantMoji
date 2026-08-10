@@ -9,6 +9,19 @@ const css = source("public/farm/style.css");
 const strings = source("public/farm/strings.js");
 
 describe("Grandpa Tani living-world UI", () => {
+  it("puts the same farmer NPC to bed at night instead of hiding him", () => {
+    expect(html).toContain('class="npc-farmer-bed"');
+    expect(html).toContain('class="npc-sleep-zzz"');
+    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
+    expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
+    expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
+    expect(live).toContain("function wakeFarmerAtNight()");
+    expect(live).toContain("function scheduleFarmerNightSleep()");
+    expect(live).toContain("}, 3000);");
+    expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
+  });
+
   it("measures the real grass boundary instead of wandering by viewport width", () => {
     expect(live).toContain('const grass = $(".grass-floor")');
     expect(live).toContain("grass.getBoundingClientRect()");
@@ -119,5 +132,11 @@ describe("Grandpa Tani living-world UI", () => {
     expect(html).toContain('data-face="giggle"');
     expect(live).toContain('careMood !== "Happy"');
     expect(css).toContain(".mascot-svg.expr-giggle");
+  });
+
+  it("uses a characterful double-tap move instead of the placeholder Whee line", () => {
+    expect(strings).toContain('petSurprise: "Secret move: LEAF SPRING!"');
+    expect(strings).toContain('petSurprise: "Jurus rahasia: LOMPAT DAUN!"');
+    expect(live).not.toContain('PET_SURPRISE_FALLBACK = "Whee!"');
   });
 });

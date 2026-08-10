@@ -3,10 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
 import type { AppTheme, FarmSkin } from "@/lib/appearance";
 import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
+import BroadcastOverlay from "@/components/broadcast-overlay";
+import LiveActivityBar from "@/components/live-activity-bar";
 
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. Keep
@@ -15,13 +18,13 @@ const NAV_ITEMS = [
   { key: "home", href: "/", icon: "🌱", id: "Kebun Saya", en: "My Garden" },
   { key: "quests", href: "/quests", icon: "💚", id: "Misi", en: "Quests" },
   { key: "plants", href: "/plants", icon: "🗺️", id: "Eksplor Tanaman", en: "Crop Explorer" },
-  { key: "camera", href: "/camera", icon: "📷", id: "Kamera AI", en: "AI Camera" },
+  { key: "camera", href: "/camera", icon: "📷", id: "Kamera AI", en: "Camera AI" },
   { key: "diary", href: "/diary", icon: "📖", id: "Diari Tumbuh", en: "Growth Diary" },
   { key: "collection", href: "/collection", icon: "💎", id: "Koleksi", en: "Collection" },
   { key: "shop", href: "/shop", icon: "🛒", id: "Toko", en: "Shop" },
 ] as const;
 const TOOL_ITEMS = [
-  { key: "status", href: "/monitoring", icon: "📡", id: "Sensor", en: "Sensors" },
+  { key: "status", href: "/monitoring", icon: "📡", id: "Pemantauan", en: "Monitoring" },
   { key: "reports", href: "/reports", icon: "📜", id: "Laporan", en: "Reports" },
   { key: "settings", href: "/settings", icon: "🧰", id: "Pengaturan", en: "Settings" },
 ] as const;
@@ -35,6 +38,30 @@ function changeAppLocale(nextLocale: AppLocale) {
 export default function RenoAppShell({ children, locale, initialTheme, initialSkin }: { children: React.ReactNode; locale: AppLocale; initialTheme: AppTheme; initialSkin: FarmSkin }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const moreSheetRef = useRef<HTMLElement>(null);
+  const overflowItems = [...NAV_ITEMS.slice(5), ...TOOL_ITEMS];
+  const moreActive = overflowItems.some((item) => pathname.startsWith(item.href));
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const returnFocusTo = moreButtonRef.current;
+    const focusTimer = window.setTimeout(() => moreSheetRef.current?.querySelector<HTMLElement>("button,a[href]")?.focus(), 0);
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setMoreOpen(false); return; }
+      if (event.key !== "Tab") return;
+      const controls = Array.from(moreSheetRef.current?.querySelectorAll<HTMLElement>("button:not(:disabled),a[href]") ?? []);
+      if (controls.length === 0) return;
+      const first = controls[0]; const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", keepFocusInside);
+    return () => { window.clearTimeout(focusTimer); document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", keepFocusInside); window.setTimeout(() => returnFocusTo?.focus(), 0); };
+  }, [moreOpen]);
 
   return (
     <div className="reno-app-shell">
@@ -70,7 +97,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
                   key={item.key}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`reno-nav-item${active ? " active" : ""}`}
+                  className={`reno-nav-item${["collection", "shop"].includes(item.key) ? " reno-nav-overflow" : ""}${active ? " active" : ""}`}
                   onClick={() => window.PMSfx?.play("tick")}
                 >
                   <i>{item.icon}</i>
@@ -78,6 +105,9 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
                 </Link>
               );
             })}
+            <button ref={moreButtonRef} type="button" className={`reno-nav-item reno-more-button${moreActive ? " active" : ""}`} aria-expanded={moreOpen} aria-controls="reno-more-sheet" onClick={() => setMoreOpen((value) => !value)}>
+              <i aria-hidden="true">•••</i><span className="reno-nav-label">{locale === "id" ? "Lainnya" : "More"}</span>
+            </button>
             <div className="reno-nav-tool-pocket">
               <span className="reno-nav-section-title">{locale === "id" ? "ALAT" : "TOOLS"}</span>
               <div className="reno-nav-tool-grid">
@@ -88,6 +118,16 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
               </div>
             </div>
           </nav>
+
+          {moreOpen && <div className="reno-more-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setMoreOpen(false); }}>
+            <section ref={moreSheetRef} id="reno-more-sheet" className="reno-more-sheet" role="dialog" aria-modal="true" aria-label={locale === "id" ? "Menu lainnya" : "More menu"}>
+              <header><strong>{locale === "id" ? "TEMPAT LAIN" : "MORE PLACES"}</strong><button type="button" onClick={() => setMoreOpen(false)} aria-label={locale === "id" ? "Tutup" : "Close"}>×</button></header>
+              <div>{overflowItems.map((item) => {
+                const active = pathname.startsWith(item.href);
+                return <Link key={item.key} href={item.href} aria-current={active ? "page" : undefined} className={active ? "active" : ""} onClick={() => { setMoreOpen(false); window.PMSfx?.play("tick"); }}><i aria-hidden="true">{item.icon}</i><span>{locale === "id" ? item.id : item.en}</span><b aria-hidden="true">›</b></Link>;
+              })}</div>
+            </section>
+          </div>}
 
           <div className="reno-locale-switch" role="group" aria-label="Language / Bahasa">
             {(["id", "en"] as const).map((item) => (
@@ -106,10 +146,12 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
         </aside>
 
         <div className={`reno-route-content ${isHome ? "reno-route-home" : "reno-route-page"}`}>
+          <LiveActivityBar locale={locale} />
           {children}
         </div>
       </div>
       <AppGuide locale={locale} />
+      <BroadcastOverlay locale={locale} />
     </div>
   );
 }

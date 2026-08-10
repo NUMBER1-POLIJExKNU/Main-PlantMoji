@@ -14,6 +14,9 @@
 //   E  → window.PMFx.evolve()     (evolution ceremony, ~7s, tap = fast-forward;
 //                                  repeat presses walk ALL 10 ladder stages)
 //   G  → tap the farmer NPC (#npc-farmer) for a grandpa guidance line
+//   B  → broadcast system boot sequence
+//   X  → broadcast ending card
+//   F  → toggle browser fullscreen
 //   0  → QA self-test overlay (Esc closes), now with a hotkey legend
 // plus a small fixed "DEMO" tag bottom-left while the mode is active.
 //
@@ -67,7 +70,11 @@
     ["4", "reward pod"],
     ["5", "cycle mood"],
     ["E", "evolution ceremony (repeat → next of 10 stages · tap = fast-forward)"],
+    ["K", "cycle companion skin (presentation only · realtime may revert)"],
     ["G", "grandpa guidance line"],
+    ["B", "system boot sequence"],
+    ["X", "broadcast ending card"],
+    ["F", "fullscreen"],
     ["0 / Esc", "this panel"],
   ];
 
@@ -189,6 +196,29 @@
     }
   }
 
+  /** Cycle the milestone20 companion skins on the mascot, presentation
+   *  only: pure class swap mirroring live.js renderCompanion — no POST, no
+   *  persistence, so the next companion_state realtime echo or 15s poll may
+   *  snap back to the player's real skin (expected during a demo). */
+  let skinIndex = -1;
+  function cycleSkins() {
+    const skins = window.PM_SKINS?.skins;
+    const mascot = document.querySelector(".mascot-svg");
+    if (!Array.isArray(skins) || skins.length === 0 || !mascot) {
+      toast("FX hook not loaded");
+      return;
+    }
+    skinIndex = (skinIndex + 1) % skins.length;
+    const skin = skins[skinIndex];
+    try {
+      for (const entry of skins) mascot.classList.remove(`skin-${entry.key}`);
+      mascot.classList.add(`skin-${skin.key}`);
+      toast(`Skin → ${skin.nameEn} (Lv.${skin.unlockLevel})`);
+    } catch {
+      toast(`Skin "${skin.key}" threw — check console`);
+    }
+  }
+
   /** Tap the farmer NPC via its real keyboard-activation path — see the
    *  file-header note on why this is the safe trigger for the grandpa
    *  guidance line instead of a fabricated PMFx entry. Presentation only:
@@ -206,6 +236,30 @@
     } catch {
       toast("Grandpa tap threw — check console");
     }
+  }
+
+  function cinematic(kind) {
+    document.getElementById("pm-demo-cinematic")?.remove();
+    const ending = kind === "ending";
+    const layer = document.createElement("button");
+    layer.id = "pm-demo-cinematic"; layer.type = "button";
+    layer.setAttribute("aria-label", "Close presentation sequence");
+    layer.innerHTML = ending
+      ? `<div><p>&gt; environment sensed</p><p>&gt; meaning understood</p><p>&gt; action verified</p><h2>SENSE · UNDERSTAND · ACT<br>VERIFY · REWARD · GROW</h2><strong>LOCAL KNOWLEDGE + REAL SENSORS + RESPONSIBLE AI</strong><small>PLANTMOJI · JEMBER</small></div>`
+      : `<div><small>PLANTMOJI ENVIRONMENT INTELLIGENCE</small><h2>BOOTING SYSTEM...</h2>${["SENSOR GATEWAY CLIENT","ENVIRONMENT ANALYZER","JEMBER CROP REFERENCES","QUEST VERIFICATION ENGINE","LOCAL CAMERA MODEL","SAFE AI FALLBACK"].map((line, i) => `<p style="--delay:${i * 140}ms"><span>[✓]</span> ${line}</p>`).join("")}<strong>APPLICATION CORE READY · LIVE LINKS CHECK ON SCREEN</strong></div>`;
+    Object.assign(layer.style,{position:"fixed",inset:"0",zIndex:"10020",display:"grid",placeItems:"center",border:"0",padding:"20px",color:"#d8ffe0",background:"radial-gradient(circle,#173323,#07110b 68%)",cursor:"pointer",fontFamily:"ui-monospace,Consolas,monospace"});
+    const panel = layer.firstElementChild; Object.assign(panel.style,{width:"min(680px,92vw)",border:"3px solid #3f7d53",borderRadius:"14px",padding:"28px",background:"rgba(8,20,13,.92)",boxShadow:"0 0 50px rgba(79,238,127,.13),0 8px 0 #030905"});
+    layer.addEventListener("click",()=>layer.remove()); document.body.appendChild(layer);
+    if (!ending) setTimeout(()=>layer.remove(),2600);
+  }
+
+  function toggleFullscreen() { if (document.fullscreenElement) void document.exitFullscreen(); else void document.documentElement.requestFullscreen?.(); }
+
+  function injectBroadcastStatus() {
+    if (document.getElementById("pm-broadcast-live")) return;
+    const el=document.createElement("div"); el.id="pm-broadcast-live";
+    Object.assign(el.style,{position:"fixed",right:"12px",bottom:"12px",zIndex:"9997",border:"2px solid #3f7d53",borderRadius:"7px",padding:"6px 9px",color:"#baffca",background:"rgba(8,20,13,.9)",font:"8px/1.4 ui-monospace,Consolas,monospace",pointerEvents:"none"});
+    const paint=()=>{el.textContent=`● ${window.__pmSupabaseConfigured===true?"LIVE DATA":"OFFLINE DEMO"} · RULE ENGINE READY · AI FALLBACK READY`;}; paint(); setInterval(paint,2000); document.body.appendChild(el);
   }
 
   // ── QA self-test overlay (key 0) ───────────────────────────────────────
@@ -474,10 +528,17 @@
       case "E":
         fireFx("evolve");
         break;
+      case "k":
+      case "K":
+        cycleSkins();
+        break;
       case "g":
       case "G":
         triggerGrandpa();
         break;
+      case "b": case "B": cinematic("boot"); break;
+      case "x": case "X": cinematic("ending"); break;
+      case "f": case "F": toggleFullscreen(); break;
       case "0":
         toggleOverlay();
         break;
@@ -491,6 +552,6 @@
 
   // ── Boot ───────────────────────────────────────────────────────────────
 
-  if (document.body) injectDemoTag();
-  else document.addEventListener("DOMContentLoaded", injectDemoTag, { once: true });
+  if (document.body) { injectDemoTag(); injectBroadcastStatus(); cinematic("boot"); }
+  else document.addEventListener("DOMContentLoaded", () => { injectDemoTag(); injectBroadcastStatus(); cinematic("boot"); }, { once: true });
 })();

@@ -14,6 +14,11 @@ import {
   seedQuestRewardKey,
   seedStreakDayRewardKey,
 } from "@/game/economy/seed-grants";
+// PostgREST "missing from schema cache": milestone18 hasn't been run.
+// PGRST202 = unknown function, PGRST205 = unknown table — the shared
+// detector in lib/supabase-errors.ts, same one used by event-router's and
+// badge-engine's degradation paths.
+import { isMissingRpcError as isMissingSchemaError } from "@/lib/supabase-errors";
 
 export interface AwardSeedsResult {
   /** True when the grant actually landed in THIS call. */
@@ -30,17 +35,6 @@ export interface AwardSeedsResult {
 interface AwardSeedsRpcResult {
   duplicate: boolean;
   seeds: number;
-}
-
-/** PostgREST "missing from schema cache": the migration hasn't been run.
- *  PGRST202 = unknown function, PGRST205 = unknown table — the same
- *  detection idea as isMissingTableError in event-router.ts / badge-engine. */
-function isMissingSchemaError(error: { code?: string; message: string }): boolean {
-  return (
-    error.code === "PGRST202" ||
-    error.code === "PGRST205" ||
-    /could not find the (function|table)/i.test(error.message)
-  );
 }
 
 /**

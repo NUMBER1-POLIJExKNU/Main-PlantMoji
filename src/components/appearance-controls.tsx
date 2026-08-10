@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties } from "react";
+import { usePathname } from "next/navigation";
 import {
   FARM_SKIN_CATALOG,
   APP_SKIN_COOKIE,
@@ -27,6 +28,7 @@ function applyAppearance(theme: AppTheme, skin: FarmSkin) {
 export default function AppearanceControls({ locale, initialTheme, initialSkin }: {
   locale: AppLocale; initialTheme: AppTheme; initialSkin: FarmSkin;
 }) {
+  const pathname = usePathname();
   const [theme, setTheme] = useState(initialTheme);
   const [skin, setSkin] = useState(initialSkin);
   const [previewSkin, setPreviewSkin] = useState(initialSkin);
@@ -89,7 +91,7 @@ export default function AppearanceControls({ locale, initialTheme, initialSkin }
   const selectedDefinition = FARM_SKIN_CATALOG.find((item) => item.key === skin) ?? FARM_SKIN_CATALOG[0];
 
   return (
-    <div className="reno-appearance-controls" aria-label={locale === "id" ? "Tampilan" : "Appearance"}>
+    <div className={`reno-appearance-controls${pathname.startsWith("/settings") ? " is-settings" : ""}`} aria-label={locale === "id" ? "Tampilan" : "Appearance"}>
       <label><span>{locale === "id" ? "WAKTU" : "THEME"}</span><select value={theme} onChange={(event) => changeTheme(event.target.value)}>
         <option value="auto">{locale === "id" ? "Otomatis" : "Auto"}</option>
         <option value="day">{locale === "id" ? "Siang" : "Day"}</option>

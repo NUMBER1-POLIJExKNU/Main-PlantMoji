@@ -7,15 +7,15 @@
     return cookie === "en" || (!cookie && stored === "en") ? "en" : "id";
   };
   const C = {
-    id:{title:"Quiz Jamkachu",ready:n=>`${n}/3 selesai`,done:"3 soal harian selesai!",next:"Berikutnya →",finish:"Lihat hasil",practice:"Lanjut latihan tanpa batas →",
+    id:{title:"Quiz Jamkachu",ready:n=>`${n}/3 selesai`,done:"3 soal harian selesai!",next:"Berikutnya →",finish:"Lihat hasil",practice:"Lanjut latihan (tanpa XP) →",
       again:xp=>xp<0?`Belum tepat — ${xp} XP. Coba lagi!`:"Belum tepat. Coba lagi!",timeout:xp=>xp<0?`Waktu habis — ${xp} XP. Yuk coba lagi!`:"Waktu habis. Yuk coba lagi!",
-      earned:xp=>`Benar! +${xp} XP`,levelUp:"Naik level!",summary:xp=>`Hebat! Ronde ini menghasilkan ${xp} XP.`,
+      earned:xp=>`Benar! +${xp} XP`,practiceEarned:"Benar! Mode latihan — tanpa XP.",levelUp:"Naik level!",summary:xp=>`Hebat! Ronde ini menghasilkan ${xp} XP.`,practiceSummary:"Ronde latihan selesai — tanpa XP, ilmunya tetap milikmu!",
       offline:"Quiz sedang istirahat. Coba lagi sebentar lagi.",offlinePlayer:"Layanan sensor sedang offline — quiz belum bisa memberi XP sekarang.",
       migration:"Quiz belum siap memberi XP saat ini, coba lagi nanti ya. (ops: quiz_migration_required)",
       loading:"Memuat soal…",loadError:"Gagal memuat soal.",retry:"Coba lagi"},
-    en:{title:"Jamkachu Quiz",ready:n=>`${n}/3 complete`,done:"Daily 3 complete!",next:"Next →",finish:"See result",practice:"Keep practicing →",
+    en:{title:"Jamkachu Quiz",ready:n=>`${n}/3 complete`,done:"Daily 3 complete!",next:"Next →",finish:"See result",practice:"Keep practicing (no XP) →",
       again:xp=>xp<0?`Not quite — ${xp} XP. Try again!`:"Not quite. Try again!",timeout:xp=>xp<0?`Time's up — ${xp} XP. Try again!`:"Time's up. Try again!",
-      earned:xp=>`Correct! +${xp} XP`,levelUp:"Level up!",summary:xp=>`Nice! This round earned ${xp} XP.`,
+      earned:xp=>`Correct! +${xp} XP`,practiceEarned:"Correct! Practice mode — no XP.",levelUp:"Level up!",summary:xp=>`Nice! This round earned ${xp} XP.`,practiceSummary:"Practice round complete — no XP, the learning is all yours!",
       offline:"Quiz is taking a tiny break. Try again soon.",offlinePlayer:"Sensor service is offline — quiz can't award XP right now.",
       migration:"Quiz can't award XP right now, please try again later. (ops: quiz_migration_required)",
       loading:"Loading questions…",loadError:"Couldn't load the quiz.",retry:"Try again"}
@@ -44,7 +44,7 @@
     $("#quiz-title").textContent=c.title;$("#quiz-step").textContent=`CASE ${round+1} · ${Math.min(index+1,3)} / 3`;$("#quiz-meter-fill").style.width=`${Math.min(3,done.size)/3*100}%`;
     $("#quiz-case-title").textContent=caseData?.title||"FARM CASE";$("#quiz-case-intro").textContent=caseData?.intro||"";$("#quiz-case-phases").innerHTML=(caseData?.phases||[]).map((phase,i)=>`<span class="${i===index?"active":i<index?"done":""}">${i<index?"✓ ":""}${phase}</span>`).join("");
     $("#quiz-feedback").hidden=true;next.hidden=true;next.dataset.practice="";next.dataset.retry="";
-    if(!q){stopTimer();$("#quiz-question").textContent=c.summary(totalXp());$("#quiz-choices").innerHTML=`<div class="quiz-mastery">${Object.entries(mastery).map(([key,value])=>`<span>${categoryIcon(key)} ${key.replace("_"," ")} · ${value}</span>`).join("")}</div>`;const f=$("#quiz-feedback");f.hidden=false;f.className="quiz-feedback correct";f.textContent="🌟 "+(round===0?c.done:c.summary(totalXp()));next.hidden=false;next.textContent=c.practice;next.dataset.practice="true";return;}
+    if(!q){stopTimer();$("#quiz-question").textContent=round===0?c.summary(totalXp()):c.practiceSummary;$("#quiz-choices").innerHTML=`<div class="quiz-mastery">${Object.entries(mastery).map(([key,value])=>`<span>${categoryIcon(key)} ${key.replace("_"," ")} · ${value}</span>`).join("")}</div>`;const f=$("#quiz-feedback");f.hidden=false;f.className="quiz-feedback correct";f.textContent="🌟 "+(round===0?c.done:c.practiceSummary);next.hidden=false;next.textContent=c.practice;next.dataset.practice="true";return;}
     $("#quiz-question").textContent=q.question;const box=$("#quiz-choices");box.replaceChildren();
     q.choices.forEach((choice,i)=>{const b=document.createElement("button");b.type="button";b.className="quiz-choice";b.textContent=`${String.fromCharCode(65+i)}. ${choice}`;b.disabled=done.has(q.key);b.addEventListener("click",()=>answer(i,b,false));box.appendChild(b);});
     if(done.has(q.key)){stopTimer();const f=$("#quiz-feedback");f.hidden=false;f.className="quiz-feedback correct";f.textContent="✓ "+c.done;showNext();}
@@ -61,7 +61,7 @@
     const f=$("#quiz-feedback");f.hidden=false;
     if(failed||!d||!d.ok){const dead=offlineMode||d?.error==="quiz_migration_required"||d?.error==="quiz_xp_unavailable";f.className="quiz-feedback retry";f.textContent=answerErrorCopy(d);if(dead){stopTimer();}else{document.querySelectorAll(".quiz-choice").forEach(b=>b.disabled=false);startTimer();}busy=false;return;}
     if(d.correct){
-      button?.classList.add("correct");f.className="quiz-feedback correct";f.textContent=`${copy().earned(d.xp_awarded)}${d.leveled_up?" "+copy().levelUp:""} ${d.explanation}`;
+      button?.classList.add("correct");f.className="quiz-feedback correct";f.textContent=`${d.practice?copy().practiceEarned:copy().earned(d.xp_awarded)}${d.leveled_up?" "+copy().levelUp:""} ${d.explanation}`;
       progress=progress.filter(p=>p.question_key!==q.key);progress.push({question_key:q.key,completed_at:new Date().toISOString(),xp_awarded:d.xp_awarded});
       celebrate(d,button,q.category);updateChip();showNext();
     }else{

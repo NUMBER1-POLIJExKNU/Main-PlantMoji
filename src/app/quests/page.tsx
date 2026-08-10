@@ -330,10 +330,9 @@ export default async function QuestsPage() {
 
       <DailyEventBanner event={getDailyEvent(PLANT_ID)} locale={locale} />
 
-      <section aria-label="Quest history" className="mt-8">
-        <h2 className="pm-heading mb-3 text-xs uppercase tracking-wide">
-          {locale === "id" ? "Riwayat" : "History"}
-        </h2>
+      <details className="pm-quest-history-more mt-6">
+        <summary>{locale === "id" ? `BUKA BUKU MISI · ${history.length}` : `OPEN MISSION BOOK · ${history.length}`}</summary>
+        <section aria-label="Quest history" className="mt-3">
         {history.length === 0 ? (
           <p className="pm-panel text-center text-sm" style={{ color: "#777777" }}>
             {locale === "id" ? "Belum ada misi selesai — cerita kita segera dimulai!" : "No completed quests yet — our story starts soon!"}
@@ -348,7 +347,8 @@ export default async function QuestsPage() {
           {history.length > 3 && <details className="pm-quest-history-more mt-3"><summary>{locale === "id" ? `LIHAT ${history.length - 3} RIWAYAT LAINNYA` : `VIEW ${history.length - 3} MORE ADVENTURES`}</summary><ul className="mt-3 flex flex-col gap-2">{history.slice(3).map((quest) => <HistoryItem key={quest.id} quest={quest} locale={locale} />)}</ul></details>}
           </>
         )}
-      </section>
+        </section>
+      </details>
     </main>
   );
 }

@@ -41,6 +41,7 @@ export default function JamkachuMemoryReflection({ memories, locale, snapshot }:
     <section className="pm-panel pm-memory-stage mb-5" aria-labelledby="featured-memory-title">
       <div className="pm-memory-kicker">{locale === "id" ? "KENANGAN PILIHAN" : "FEATURED MEMORY"}</div>
       {snapshot && <figure className="pm-memory-snapshot">
+        {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed Supabase Storage URL */}
         <img src={snapshot.url} alt={locale === "id" ? `Snapshot pertumbuhan Jamkachu, ${snapshot.date}` : `Jamkachu growth snapshot, ${snapshot.date}`} />
         <figcaption><b>{locale === "id" ? "JEPRET! SNAPSHOT TERBARU" : "SNAP! LATEST SNAPSHOT"}</b><span>{snapshot.date} · {snapshot.stage}</span></figcaption>
       </figure>}
@@ -52,9 +53,9 @@ export default function JamkachuMemoryReflection({ memories, locale, snapshot }:
         </div>
       </div>
       {selected && <div className="pm-memory-feature-meta"><strong id="featured-memory-title">{selected.title}</strong><span>{dateFormat.format(new Date(selected.occurredAt))}</span></div>}
-      {memories.length > 0 && <div className="pm-memory-picker" aria-label={locale === "id" ? "Pilih kenangan" : "Choose a memory"}>
+      {memories.length > 0 && <details className="pm-memory-more"><summary>{locale === "id" ? `Lihat kenangan lain (${memories.length})` : `More memories (${memories.length})`}</summary><div className="pm-memory-picker" aria-label={locale === "id" ? "Pilih kenangan" : "Choose a memory"}>
         {memories.map((memory) => <button key={memory.id} type="button" className={memory.id === selected?.id ? "is-selected" : ""} aria-pressed={memory.id === selected?.id} onClick={() => setSelectedId(memory.id)}><strong>{memory.title}</strong><span>{dateFormat.format(new Date(memory.occurredAt))}</span></button>)}
-      </div>}
+      </div></details>}
     </section>
   );
 }

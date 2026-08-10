@@ -127,6 +127,9 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
       <PageHeader icon="🌱" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
       <CropExplorer locale={locale} initialSnapshot={snapshot} initialCrops={explorerCrops} initialResults={compareEnvironmentToCrops(snapshot, explorerCrops)} initialDemoPreset={demoPreset} />
 
+      <details className="pm-crop-reference-tools">
+      <summary>⚙️ {locale === "id" ? "Profil dan referensi tanaman" : "Crop profile and references"}</summary>
+      <div>
       <form action={updateCropProfile} className="pm-panel mb-6">
         <input type="hidden" name="plantId" value={result.plant.id} />
         <label className="block font-bold" htmlFor="cropProfileKey">{copy.profile}</label>
@@ -156,6 +159,8 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
       </section>
       <p className="mt-5 text-sm opacity-70">{copy.ldrNote}{snapshot?.recordedAt ? ` ${copy.latest}: ${snapshot.recordedAt}` : ""}</p>
       <p className="mt-2 text-sm opacity-70">{copy.sources}: {profile.key === "strawberry" ? "Ohio State CEA · UMN Extension · Penn State Extension" : "Kementerian Pertanian · BPS Kabupaten Jember 2025"}</p>
+      </div>
+      </details>
     </main>
   );
 }

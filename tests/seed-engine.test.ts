@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { describe, expect, it } from "vitest";
 import { awardSeeds, sweepSeedGrants } from "@/game/economy/seed-engine";
 import {
   seedBadgeRewardKey,
@@ -7,37 +6,16 @@ import {
   seedQuestRewardKey,
   seedStreakDayRewardKey,
 } from "@/game/economy/seed-grants";
+import {
+  makeSupabase as makeStub,
+  type Responder,
+  type RpcResponder,
+} from "./helpers/supabase-stub";
 
-// ── Table-aware Supabase stub (mirrors tests/settle-sweep.test.ts) ───────
+// ── Table-aware Supabase stub: shared helper, rpc-first signature ────────
 
-interface StubResponse {
-  data: unknown;
-  error: { code?: string; message: string } | null;
-}
-
-type Responder = () => StubResponse;
-
-const CHAIN_METHODS = ["select", "eq", "in", "order", "limit", "maybeSingle"];
-
-function makeSupabase(
-  responders: Record<string, Responder>,
-  rpc: (name: string, args: Record<string, unknown>) => StubResponse,
-) {
-  return {
-    from(table: string) {
-      const stub: Record<string, unknown> = {};
-      for (const method of CHAIN_METHODS) {
-        stub[method] = () => stub;
-      }
-      stub.then = (resolve: (value: StubResponse) => unknown) => {
-        const responder = responders[table] ?? (() => ({ data: [], error: null }));
-        return Promise.resolve(responder()).then(resolve);
-      };
-      return stub;
-    },
-    rpc: vi.fn(async (name: string, args: Record<string, unknown>) => rpc(name, args)),
-  } as unknown as SupabaseClient & { rpc: ReturnType<typeof vi.fn> };
-}
+const makeSupabase = (responders: Record<string, Responder>, rpc: RpcResponder) =>
+  makeStub(responders, [], rpc);
 
 const PLANT = "plant-01";
 const MISSING_FN = { code: "PGRST202", message: "Could not find the function public.award_seeds" };

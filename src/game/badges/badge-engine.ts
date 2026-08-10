@@ -9,17 +9,10 @@
 // and the emission self-heals on the next call.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isMissingTableError } from "@/lib/supabase-errors";
 import type { BadgeKey, BondEventRow, PlantBadgeRow, QuestKey } from "@/types/game";
 import { normalizeMood, PLANT_MOODS, type PlantMood } from "@/types/events";
 import { BADGE_DEFINITIONS, RECOVERY_QUEST_KEYS } from "./badge-definitions";
-
-/** PostgREST's "table missing from schema cache" — the migration hasn't been
- *  run in this Supabase project yet. Duplicated from lib/plants.ts (same
- *  reasoning as its other duplicates in lib/queries.ts / lib/growth.ts): this
- *  engine stays self-contained rather than importing server-only helpers. */
-function isMissingTableError(error: { code?: string; message: string }): boolean {
-  return error.code === "PGRST205" || /could not find the table/i.test(error.message);
-}
 
 /**
  * Evaluates all badge conditions for a plant, persists any earned badges,
@@ -77,9 +70,9 @@ export async function evaluateBadges(
       .in("data->>currentState", ["SoilAcidic", "SoilAlkaline"])
       .gte("occurred_at", sevenDaysAgoIso),
     // MOOD_SCHOLAR inputs: every distinct mood ever observed, mirroring
-    // lib/queries.ts's getSeenMoods (duplicated here rather than imported so
-    // this engine stays self-contained — see the isMissingTableError comment
-    // above) — every distinct PLANT_STATE_CHANGED data->>currentState, plus
+    // lib/queries.ts's getSeenMoods (query duplicated here rather than
+    // imported so this engine stays self-contained) — every distinct
+    // PLANT_STATE_CHANGED data->>currentState, plus
     // the live plants.current_state (covers a fresh seed row predating any
     // event).
     supabase

@@ -2,7 +2,8 @@
 // (spec: docs/superpowers/specs/2026-08-09-camera-live-guardian-design.md).
 //
 // Mirrors src/lib/photo-comment.ts's standalone-vision contract (src/lib/ai.ts
-// is text-only and owned by a concurrent workstream — never import it):
+// is text-only and server-only — never import it; the shared response walk
+// lives in the pure "@/lib/gemini-text"):
 //   - No GEMINI_API_KEY / network error / timeout (4s) / non-2xx / malformed
 //     or overlong reply → { status: "disabled" } — the client stays in
 //     labeled motion-only mode.
@@ -16,6 +17,7 @@
 // nothing (project invariant). The snapshot exists solely inside this
 // request — this module never writes it anywhere.
 
+import { extractText } from "@/lib/gemini-text";
 import type { AppLocale } from "@/lib/i18n";
 
 const GEMINI_MODEL = "gemini-3.5-flash-lite";
@@ -53,23 +55,6 @@ const SYSTEM_PROMPT = [
   "- You are advisory flavor text, never a referee: no diagnoses, no disease names, no chemical or pesticide instructions, no numbers, no rewards.",
   "- Reply in the requested language, plain text only: no lists, no markdown, no quotation marks.",
 ].join("\n");
-
-/** Extracts the first non-empty text part, tolerating any malformed shape
- *  by returning null (same defensive walk as src/lib/photo-comment.ts). */
-function extractText(payload: unknown): string | null {
-  if (typeof payload !== "object" || payload === null) return null;
-  const candidates = (payload as { candidates?: unknown }).candidates;
-  if (!Array.isArray(candidates)) return null;
-  const parts = (candidates[0] as { content?: { parts?: unknown } } | undefined)?.content?.parts;
-  if (!Array.isArray(parts)) return null;
-  for (const part of parts) {
-    if (typeof part === "object" && part !== null && typeof (part as { text?: unknown }).text === "string") {
-      const text = (part as { text: string }).text.replace(/\s+/g, " ").trim();
-      if (text) return text;
-    }
-  }
-  return null;
-}
 
 /**
  * One snapshot in, one advisory outcome out. Never throws. Never blocks

@@ -411,6 +411,7 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     color: #7A5B12;
 }
 #current-quest.verifying #cq-progress { color: #A97B12; }
+.quest-verify-console { display:grid; gap:3px; margin-top:-10px; border:2px solid #a97b12; border-top:0; border-radius:0 0 9px 9px; padding:9px 11px; color:#f7da86; background:#241e0f; font:8px/1.45 ui-monospace,Consolas,monospace; }.quest-verify-console[hidden] { display:none; }.quest-verify-console b { color:#ffe6a0; }.quest-verify-console span { display:flex; justify-content:space-between; gap:8px; }.quest-verify-console strong { color:#fff0bd; }
 .cq-dots span { opacity: 0.25; }
 @media (prefers-reduced-motion: no-preference) {
     .cq-dots span { animation: pm-dot-blink 1.2s steps(1, end) infinite; }
@@ -714,6 +715,105 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg[data-companion-form="soil"] { --companion-accent: #C79A6B; }
 .mascot-svg[data-companion-form="steady"] { --companion-accent: #9BB871; }
 .mascot-svg[data-companion-form="balanced"] { --companion-accent: #F7A6C1; }
+
+/* ── Cosmetic companion skins (milestone20, display-only) ────────────────
+   renderCompanion swaps ONE .skin-<key> class on .mascot-svg from
+   companion_state.skin_key (missing/unknown key → jamkachu, the default
+   look). Each skin re-tokens ONLY the plant palette — --color-grass
+   (leaves), --color-grass-light (head/body), --color-forest (stem,
+   sproutlets, elder branches) — scoped to the mascot SVG, so:
+   · all ten companion-<Stage> scale rungs + cumulative stage-part reveals
+     above keep working (they are class/scale-driven, palette-independent);
+   · the 12 shop-* pot/accessory cosmetics keep their literal hex colors;
+   · pots/soil (--color-soil*), outlines (--color-outline), cheeks and the
+     care-affinity form tint (--companion-accent, which keeps coloring the
+     stage accents and evo backdrop) are untouched — skins recolor the
+     plant, forms keep tinting the evolution backdrop.
+   Hues derive from each skin's catalog accent (companion-skins.js).
+   Static custom-property overrides only: no new animation, reduced-motion
+   safe, and never part of any celebration. */
+.mascot-svg.skin-jamkachu { /* Classic Jamkachu — the default palette, spelled out */
+    --color-grass: #69C455;
+    --color-grass-light: #89D974;
+    --color-forest: #397A2B;
+}
+.mascot-svg.skin-edamame { /* Edamame Buddy — soft olive pod green */
+    --color-grass: #8ABA43;
+    --color-grass-light: #9CCB5D;
+    --color-forest: #5C7A28;
+}
+.mascot-svg.skin-padi { /* Golden Rice — straw-gold head, leaves and stalk */
+    --color-grass: #D9B23E;
+    --color-grass-light: #E8C95A;
+    --color-forest: #8A6E1F;
+}
+.mascot-svg.skin-jagung { /* Sweet Corn — golden cob body in husk-green leaves */
+    --color-grass: #69A94E;
+    --color-grass-light: #F5B93F;
+    --color-forest: #397A2B;
+}
+.mascot-svg.skin-kopi { /* Robusta Coffee — roasted-bean body, dark leaf green */
+    --color-grass: #4E6B33;
+    --color-grass-light: #8A5A3B;
+    --color-forest: #573823;
+}
+.mascot-svg.skin-kakao { /* Cacao Pod — warm pod body, bright cacao leaves */
+    --color-grass: #6B8E3F;
+    --color-grass-light: #B0693C;
+    --color-forest: #5D4425;
+}
+.mascot-svg.skin-buah_naga { /* Dragon Fruit — pink body, vivid scale-green leaves */
+    --color-grass: #58C46B;
+    --color-grass-light: #E85FA2;
+    --color-forest: #3E8A4C;
+}
+
+/* Wardrobe picker (milestone20): small chip under the stage label + a
+   compact dialog reusing the .farm-guide card chrome. Static styles only —
+   no animation loops, reduced-motion safe. */
+.wardrobe-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    margin-top: 9px;
+    padding: 7px 12px;
+    border: 2px solid var(--color-outline);
+    border-radius: 10px;
+    background: var(--color-surface);
+    box-shadow: 0 3px 0 var(--color-outline);
+    color: var(--color-text);
+    font: 8px/1.4 var(--font-heading);
+    cursor: pointer;
+}
+.wardrobe-open:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-outline); }
+.wardrobe-card { max-height: min(560px, 84dvh); overflow-y: auto; }
+.wardrobe-list { display: grid; gap: 7px; margin: 0 0 4px; }
+.wardrobe-skin {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 11px;
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: 600 13px/1.4 var(--font-body);
+    text-align: left;
+    cursor: pointer;
+}
+.wardrobe-skin.is-selected { border-color: var(--color-forest); background: #E8F6E0; }
+.wardrobe-skin.is-locked { cursor: default; opacity: .58; }
+.wardrobe-skin-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wardrobe-skin-state { color: var(--color-forest); font: 7px/1.4 var(--font-heading); white-space: nowrap; }
+.wardrobe-skin.is-locked .wardrobe-skin-state { color: #7B8876; }
+.wardrobe-swatch { width: 22px; height: 22px; border: 2px solid var(--color-outline); border-radius: 7px; background: var(--color-grass-light); }
+/* Locked hint + migration-missing notice share one gentle amber well
+   (same voice as the verifying shimmer — honest state, not alarm). */
+.wardrobe-note { margin: 0 0 10px; padding: 9px 11px; border: 2px dashed #D6A53B; border-radius: 10px; background: #FFF7DF; color: #7A5B12; font-size: 12px; line-height: 1.45; }
+.wardrobe-note[hidden] { display: none; }
 
 /* ── Pokémon-style transformation FX (level-up + evolution ceremony) ──────
    Discrete-state classes toggled by live.js's phase sequencer (never CSS
@@ -1106,6 +1206,34 @@ body.room-warm {
     50% { outline-color: transparent; }
 }
 
+/* ── First-day tour (display-only, one-time) ───────────────────────────
+   Same card/skip components as the hatch intro, but the backdrop stays
+   fully transparent throughout: every step spotlights REAL UI with the
+   shared .hatch-highlight outline, and env-card safety alerts (.is-alert)
+   must stay completely visible underneath. */
+#tour-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1010;
+    background: transparent;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 24px;
+    cursor: pointer;
+}
+
+/* Honest sensor-waiting note under the env board (renderSensorsWaiting):
+   one child-friendly line while the garden has no readings yet. */
+.env-waiting-note {
+    margin: 8px 2px 0;
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-text);
+    opacity: 0.85;
+}
+
 /* ── Living world (grass tufts · dusk sky · fireflies · heat · wind · NPC) ──
    All STATE or ambient charm, never celebration. live.js only toggles body
    classes (night / env-hot / fx-wind) and spawns the JS-budgeted particles;
@@ -1369,7 +1497,7 @@ body.env-hot .env-haze { opacity: 1; }
    a long keyframe loop wanders him along the grass with scaleX direction
    flips and baked-in pauses. z-index 1 keeps him BEHIND the mascot (z 2)
    and above the grass floor (z 0); pointer-events only on his own sprite.
-   Reduced motion: he stands still. Night: he is gone (body.night fade). */
+   Reduced motion: he stands still. At night the same sprite lies in bed. */
 .npc-farmer {
     position: fixed;
     left: 300px;
@@ -1398,7 +1526,58 @@ body.env-hot .env-haze { opacity: 1; }
    unaffected — scaleX(-1) mirrors about the tag's own centre, which the
    -50% has already parked on the sprite's midline. */
 .npc-farmer.npc-facing-left .npc-ai-tag { transform:translateX(-50%) scaleX(-1); }
-body.night .npc-farmer { opacity: 0; pointer-events: none; }
+body.night .npc-farmer.npc-ready {
+    left: auto !important;
+    right: clamp(72px, 9vw, 132px);
+    top: auto !important;
+    bottom: 82px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: rotate(90deg) scale(.82) !important;
+    filter: brightness(.78) saturate(.82);
+    z-index: 241;
+}
+body.night .npc-farmer .npc-ai-tag { bottom:calc(100% + 10px); color:#f8e68e; background:#354463; box-shadow:0 2px 0 #182238; }
+body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; filter:none; cursor:grab; z-index:950; }
+body.night.farmer-night-awake .npc-farmer .npc-ai-tag { display:none; }
+.npc-farmer-bed {
+    position: fixed;
+    right: clamp(22px, 5vw, 78px);
+    bottom: 56px;
+    display: none;
+    width: 142px;
+    height: 62px;
+    border: 4px solid var(--color-outline);
+    border-radius: 5px 5px 2px 2px;
+    background: #8f563b;
+    box-shadow: inset 0 -10px #6f3f2d, 7px 7px 0 rgba(10,20,18,.25);
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 240;
+}
+body.night .npc-farmer-bed { display: block; }
+body.night.farmer-night-awake .npc-farmer-bed { display:none; }
+.npc-bed-pillow { position:absolute; left:8px; top:7px; width:47px; height:27px; border:3px solid var(--color-outline); border-radius:8px; background:#f7edc8; }
+.npc-bed-blanket { position:absolute; right:7px; bottom:8px; width:78px; height:39px; border:3px solid var(--color-outline); background:repeating-linear-gradient(90deg,#4f8764 0 14px,#6da479 14px 28px); box-shadow:inset 0 7px rgba(255,255,255,.12); }
+.npc-sleep-zzz { position:absolute; right:5px; bottom:calc(100% + 8px); display:flex; align-items:flex-end; gap:4px; color:#f8e68e; font:14px/1 var(--font-heading); text-shadow:2px 2px 0 #253349; }
+.npc-sleep-zzz i { display:block; font-style:normal; }
+.npc-sleep-zzz i:nth-child(1) { font-size:18px; }
+.npc-sleep-zzz i:nth-child(3) { font-size:10px; }
+@media (prefers-reduced-motion: no-preference) {
+    .npc-sleep-zzz i { animation:pm-farmer-zzz 2.6s ease-in-out infinite; }
+    .npc-sleep-zzz i:nth-child(2) { animation-delay:.35s; }
+    .npc-sleep-zzz i:nth-child(3) { animation-delay:.7s; }
+}
+@keyframes pm-farmer-zzz {
+    0%,25% { opacity:0; transform:translateY(4px); }
+    45%,75% { opacity:1; transform:translateY(-3px); }
+    100% { opacity:0; transform:translateY(-8px); }
+}
+@media (max-width:600px) {
+    .npc-farmer-bed { right:14px; bottom:102px; transform:scale(.82); transform-origin:right bottom; }
+    body.night .npc-farmer.npc-ready { right:55px; bottom:124px; transform:rotate(90deg) scale(.68) !important; }
+    body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; }
+}
 .npc-farmer.npc-falling { pointer-events: none; }
 .npc-farmer.npc-grabbed {
     cursor: grabbing;
@@ -1546,6 +1725,7 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 .npc-bubble > span { display:block; }.npc-bubble > small { display:block; margin-top:6px; padding-top:5px; border-top:1px dashed var(--color-border); color:var(--color-forest); font:6px/1.4 var(--font-heading); }
 
 /* Grandpa Tani chat: game chrome outside, highly readable body copy inside. */
+.farmer-chat-system { display:grid; gap:3px; margin:9px 14px 0; border:2px solid #315b42; border-radius:9px; padding:9px 10px; color:#aaf5bd; background:#0e1c14; font:9px/1.45 ui-monospace,Consolas,monospace; }.farmer-chat-system[hidden] { display:none; }.farmer-chat-system b { margin-bottom:3px; color:#68e78b; font-size:8px; }.farmer-chat-system span { opacity:0; animation:farmer-console-line .2s steps(2,end) var(--delay) forwards; }.farmer-chat-system.is-running span:last-child { color:#ffda72; animation:farmer-console-line .2s steps(2,end) var(--delay) forwards,pm-dot-blink 1s steps(1,end) infinite; }@keyframes farmer-console-line { to { opacity:1; } }
 .farmer-chat {
     position: fixed;
     z-index: 5000;
@@ -1638,18 +1818,31 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .logo-img { width: 38px; height: 38px; }
     .brand h1 { font-size: 10px; }
+    /* Phone dock (milestone20 nav fix): the old seven-column grid +
+       display:none tool pocket made /reports and /settings COMPLETELY
+       unreachable on phones. The dock is now ONE horizontally scrollable
+       flex row carrying all TEN destinations (7 play + 3 tools), with
+       per-item min widths, scroll snapping and momentum scrolling; the
+       global .nav-links::-webkit-scrollbar rule already hides the bar.
+       Same chrome, same compact height, same safe-area handling. */
     .nav-links {
         position: fixed;
         right: 8px;
         bottom: max(8px, env(safe-area-inset-bottom));
         left: 8px;
         z-index: 100;
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        display: flex;
+        flex-direction: row; /* base .nav-links is a column — the dock is a row */
+        flex-wrap: nowrap;
+        align-items: stretch;
         gap: 2px;
         width: auto;
         padding: 6px;
-        overflow: visible;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
         border: 3px solid var(--color-border);
         border-radius: 16px;
         background: rgba(255, 255, 255, .97);
@@ -1657,10 +1850,13 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         backdrop-filter: blur(10px);
     }
     .nav-item {
-        min-width: 0;
+        flex: 0 0 auto;
+        min-width: 62px;
+        scroll-snap-align: start;
         padding: 7px 2px 6px;
         gap: 3px;
         flex-direction: column;
+        justify-content: center;
         font-size: 7px;
         line-height: 1.25;
         text-align: center;
@@ -1675,8 +1871,20 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .nav-item:hover { transform: translateY(-2px); }
     .nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, .35); }
-    .nav-section-title,
-    .nav-tool-pocket { display: none; }
+    /* Only the tiny section headings disappear on phones. The tool pocket
+       and its grid dissolve as boxes (display: contents) so the Sensor/
+       Rekap/Alat links join the same scrollable dock row as everything
+       else — styled consistently with the ordinary dock items below. */
+    .nav-section-title { display: none; }
+    .nav-tool-pocket { display: contents; }
+    .nav-tool-grid { display: contents; }
+    .nav-item.nav-tool {
+        min-width: 62px;
+        padding: 7px 2px 6px;
+        gap: 3px;
+        font-size: 7px;
+    }
+    .nav-item.nav-tool .icon { font-size: 17px; }
     .locale-switch { width: 94px; margin: 0; padding: 3px; }
     .locale-switch button { min-height: 36px; padding: 6px 4px; font-size: 8px; }
     .game-world {
@@ -1688,6 +1896,16 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         overflow-y: visible;
     }
     .hud-top { justify-content: center; }
+    /* Guide button vs dock (milestone20 nav fix): the fixed ? button
+       (right/bottom 18px, z 190) used to sit exactly ON the dock's
+       right-most cell, eating the Toko/shop tap. Lift it clear: the dock
+       is ~64px tall (6px padding ×2 + 3px border ×2 + ~46px item) and
+       floats at max(8px, safe-area) from the bottom, so 78px + the safe
+       inset keeps a visible gap on notched phones too. */
+    .farm-guide-open {
+        right: 12px;
+        bottom: calc(78px + env(safe-area-inset-bottom));
+    }
 }
 
 /* ── Small-screen fixes (360-430px phones) ───────────────────────────────
@@ -1747,6 +1965,9 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 
     /* Hatch-intro Skip must always be reachable; was ~38px tall. */
     .hatch-skip { min-height: 44px; padding: 12px 16px; }
+
+    /* Wardrobe chip (milestone20) was ~34px tall — same 44px tap rule. */
+    .wardrobe-open { min-height: 44px; padding: 10px 14px; }
 }
 
 @media (max-width: 360px) {
@@ -1812,9 +2033,10 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 
     .home-stack .user-gamification { order:-4; }
     #current-quest { order:-3; }
-    .actions-panel { order:-2; margin-top:-10px; }
-    #env-strip { order:-1; }
-    .quiz-chip { order:0; }
+    #quest-verify-console { order:-2; }
+    .actions-panel { order:-1; margin-top:-10px; }
+    #env-strip { order:0; }
+    .quiz-chip { order:1; }
     .home-divider { display: none; }
 
     .user-gamification {

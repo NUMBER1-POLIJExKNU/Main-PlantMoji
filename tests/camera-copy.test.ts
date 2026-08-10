@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { CAMERA_COPY } from "@/app/camera/copy";
+import { readFileSync } from "node:fs";
+
+const guardian = readFileSync("src/components/camera-guardian.tsx", "utf8");
+const cameraCss = readFileSync("src/app/camera/camera.css", "utf8");
 
 // en/id parity + the load-bearing privacy and degradation promises of the
 // Live Guardian copy (spec §/camera page). The typed Record already pins
@@ -32,15 +36,22 @@ describe("CAMERA_COPY (Live Guardian)", () => {
     expect(CAMERA_COPY.id.privacyLine2).toContain("tanpa disimpan");
   });
 
-  it("names the exact migration in the operator note (graceful-degradation contract)", () => {
+  it("uses a compact camera label instead of promotional privacy copy", () => {
+    expect(CAMERA_COPY.en.privacyTitle).toBe("Camera privacy");
+    expect(CAMERA_COPY.id.privacyTitle).toBe("Privasi kamera");
+  });
+
+  it("keeps operator implementation details out of player-facing copy", () => {
     for (const locale of ["en", "id"] as const) {
-      expect(CAMERA_COPY[locale].guardianOfflineNote).toContain("milestone19-camera-guardian.sql");
+      expect(CAMERA_COPY[locale].guardianOfflineNote).not.toContain("milestone");
+      expect(CAMERA_COPY[locale].guardianOfflineNote).not.toContain("Supabase");
     }
   });
 
-  it("labels motion-only mode honestly when the AI half is off", () => {
-    expect(CAMERA_COPY.en.motionOnlyLabel).toContain("GEMINI_API_KEY");
-    expect(CAMERA_COPY.id.motionOnlyLabel).toContain("GEMINI_API_KEY");
+  it("labels limited watch mode without exposing environment configuration", () => {
+    expect(CAMERA_COPY.en.motionOnlyLabel).toContain("movement");
+    expect(CAMERA_COPY.id.motionOnlyLabel).toContain("gerakan");
+    expect(CAMERA_COPY.en.motionOnlyLabel).not.toContain("API_KEY");
   });
 
   it("keeps the status chips scannable (emoji-led, spec: 👀 / ✋ / 🔍)", () => {
@@ -49,5 +60,22 @@ describe("CAMERA_COPY (Live Guardian)", () => {
       expect(CAMERA_COPY[locale].statusMotion).toContain("✋");
       expect(CAMERA_COPY[locale].statusChecking).toContain("🔍");
     }
+  });
+
+  it("keeps the event history secondary to the live camera", () => {
+    expect(guardian).toContain('<details className="pm-cam-moments">');
+    expect(guardian).toContain("<b>{feed.length}</b>");
+  });
+
+  it("does not repeat the live classification in a second status card", () => {
+    expect(guardian).not.toContain("pm-cam-model");
+    expect(guardian).not.toContain("JAMKACHU WATCH");
+    expect(guardian).toContain("pm-cam-result");
+  });
+
+  it("raises camera-facing status type in presentation mode", () => {
+    expect(guardian).toContain('presentationMode ? " is-presentation"');
+    expect(cameraCss).toContain(".pm-cam.is-presentation .pm-cam-chip{font-size:16px}");
+    expect(cameraCss).toContain(".pm-cam.is-presentation .pm-cam-result strong{font-size:20px}");
   });
 });

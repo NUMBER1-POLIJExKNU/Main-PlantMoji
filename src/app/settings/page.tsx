@@ -5,6 +5,8 @@ import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
+import ReplayGuideButton from "@/components/replay-guide-button";
+import HowToPlayMap from "@/components/how-to-play-map";
 import { BADGE_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { getBondState } from "@/game/progression/xp-engine";
@@ -166,7 +168,7 @@ export default async function SettingsPage({
         <div>
           <p className="text-sm font-bold text-[#243421]">{plant.name}</p>
           <p className="text-xs text-[#57684F]">
-            {plant.species ?? (locale === "id" ? "Spesies tidak diketahui" : "Unknown species")} · {PLANT_ID}
+            {plant.species ?? (locale === "id" ? "Spesies tidak diketahui" : "Unknown species")}
           </p>
         </div>
       </section>
@@ -231,7 +233,7 @@ export default async function SettingsPage({
         </span>
         <div>
           <p className="text-sm font-bold text-[#243421]">
-            {locale === "id" ? "Buku Harian" : "Growth Diary"}
+            {locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
           </p>
           <p className="text-xs text-[#57684F]">
             {locale === "id"
@@ -240,6 +242,25 @@ export default async function SettingsPage({
           </p>
         </div>
       </Link>
+      <HowToPlayMap locale={locale} />
+      <ReplayGuideButton locale={locale} />
+
+      {!showDemo && (
+        <Link
+          href="/settings?demo=1"
+          className="mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-[14px] border-[3px] border-[#E8C46B] bg-[#FFF7DF] px-5 py-4 text-center shadow-[0_4px_0_rgba(36,52,33,0.15)] transition-transform hover:-translate-y-0.5"
+        >
+          <span className="text-2xl" aria-hidden="true">🎬</span>
+          <span>
+            <strong className="pm-heading block text-[10px] text-[#7A5B12]">
+              {locale === "id" ? "BUKA MODE PRESENTASI" : "OPEN PRESENTATION MODE"}
+            </strong>
+            <small className="mt-1 block text-[11px] text-[#7A5B12]">
+              {locale === "id" ? "Kontrol demo untuk pengambilan gambar" : "Camera-ready demo controls"}
+            </small>
+          </span>
+        </Link>
+      )}
 
       {/* Presenter tooling keeps its amber tint but wears the same pixel
           frame as every farm card (3px border + chunky shadow ledge). */}

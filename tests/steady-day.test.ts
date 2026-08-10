@@ -15,6 +15,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runGameTick } from "@/game/events/event-router";
 import { dailyChallengeRewardKey } from "@/game/random/daily-events";
 import { dayString } from "@/game/progression/streak-engine";
+import {
+  isCountQuery,
+  makeSupabase,
+  type RecordedCall,
+  type Responder,
+} from "./helpers/supabase-stub";
 
 const mocks = vi.hoisted(() => ({
   getServerSupabase: vi.fn(),
@@ -49,62 +55,9 @@ vi.mock("@/game/random/daily-events", async (importOriginal) => ({
   getDailyEvent: mocks.getDailyEvent,
 }));
 
-// ── Table-aware Supabase stub (same shape as tests/settle-sweep.test.ts) ──
+// ── Table-aware Supabase stub: shared helper (./helpers/supabase-stub) ───
+// File-specific chain predicates for the STEADY_DAY device_events routing:
 
-interface StubResponse {
-  data: unknown;
-  error: null;
-  count?: number | null;
-}
-
-interface RecordedCall {
-  table: string;
-  method: string;
-  args: unknown[];
-}
-
-type Responder = (chainCalls: RecordedCall[]) => StubResponse;
-
-const CHAIN_METHODS = [
-  "select",
-  "eq",
-  "neq",
-  "in",
-  "gte",
-  "lt",
-  "lte",
-  "order",
-  "limit",
-  "upsert",
-  "maybeSingle",
-];
-
-function makeSupabase(responders: Record<string, Responder>, log: RecordedCall[]) {
-  return {
-    from(table: string) {
-      const chainCalls: RecordedCall[] = [];
-      const stub: Record<string, unknown> = {};
-      for (const method of CHAIN_METHODS) {
-        stub[method] = (...args: unknown[]) => {
-          const call = { table, method, args };
-          chainCalls.push(call);
-          log.push(call);
-          return stub;
-        };
-      }
-      stub.then = (resolve: (value: StubResponse) => unknown) => {
-        const responder = responders[table] ?? (() => ({ data: [], error: null }));
-        return Promise.resolve(responder(chainCalls)).then(resolve);
-      };
-      return stub;
-    },
-  };
-}
-
-const isCountQuery = (calls: RecordedCall[]) =>
-  calls.some(
-    (c) => c.method === "select" && (c.args[1] as { count?: string } | undefined)?.count,
-  );
 const hasTypeFilter = (calls: RecordedCall[]) =>
   calls.some((c) => c.method === "eq" && c.args[0] === "type");
 const isPriorStateLookup = (calls: RecordedCall[]) =>

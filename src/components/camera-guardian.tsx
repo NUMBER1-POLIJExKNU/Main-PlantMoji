@@ -14,7 +14,9 @@
 // row — no XP, no Seeds, no quests. Network failure queues nothing: events
 // are ephemeral by design (a missed giggle is not data loss).
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import { CAMERA_COPY } from "@/app/camera/copy";
 import {
   MOTION_CONFIG,
@@ -69,7 +71,8 @@ export default function CameraGuardian({
   initialEvents: GuardianFeedItem[];
 }) {
   const copy = CAMERA_COPY[locale];
-  const mirrorCopy = CAMERA_COPY[locale === "id" ? "en" : "id"]; // bilingual banner
+  const searchParams = useSearchParams();
+  const presentationMode = searchParams.has("presentation") || searchParams.has("demo");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -328,7 +331,8 @@ export default function CameraGuardian({
   }, []);
 
   // Existing Teachable Machine model from PROGRAM/CAMERA AI. Runs entirely
-  // in this browser; no frame is uploaded. It is an advisory label only.
+  // in this browser; no frame is uploaded. Authority contract:
+  // Model classification only · not sensor truth.
   useEffect(() => {
     let cancelled = false;
     let running = false;
@@ -368,60 +372,47 @@ export default function CameraGuardian({
     denied: copy.deniedTitle,
     nocamera: copy.noCameraTitle,
   };
+  const visionSteps = useMemo<ProcessStep[]>(() => [
+    { key: "camera", label: "CAMERA", summary: status === "watching" || status === "motion" || status === "checking" ? "READY" : status.toUpperCase(), state: status === "denied" || status === "nocamera" ? "error" : status === "starting" ? "running" : "complete" },
+    { key: "model", label: "LOCAL MODEL", summary: localModelState === "ready" ? "READY" : localModelState.toUpperCase(), state: localModelState === "ready" ? "complete" : localModelState === "failed" ? "fallback" : "running" },
+    { key: "result", label: "RESULT", summary: localClassification ?? "WAITING", state: localClassification ? "complete" : "waiting" },
+  ], [localClassification, localModelState, status]);
 
   return (
-    <section className="pm-cam">
-      {/* Prominent bilingual privacy banner (spec §/camera page). */}
-      <div className="pm-panel pm-cam-privacy" role="note">
-        <strong>{copy.privacyTitle}</strong>
-        <p>
-          {copy.privacyLine1} {copy.privacyLine2}
-        </p>
-        <p className="pm-cam-privacy-alt">
-          {mirrorCopy.privacyLine1} {mirrorCopy.privacyLine2}
-        </p>
-      </div>
-
-      <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite">
-        {statusLabel[status]}
-      </div>
-
+    <section className={`pm-cam${presentationMode ? " is-presentation" : ""}`}>
       {status === "denied" || status === "nocamera" ? (
         <div className="pm-panel pm-cam-blocked">
           <h2>{status === "denied" ? copy.deniedTitle : copy.noCameraTitle}</h2>
           <p>{status === "denied" ? copy.deniedBody : copy.noCameraBody}</p>
+          <button type="button" className="pm-btn pm-btn-primary mt-4" onClick={() => window.location.reload()}>{locale === "id" ? "COBA LAGI" : "TRY AGAIN"}</button>
         </div>
       ) : (
         <div className="pm-cam-stage">
           <video ref={videoRef} className="pm-cam-video" muted playsInline aria-label={copy.title} />
+          <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite">{statusLabel[status]}</div>
+          <div className={`pm-cam-result is-${localClassification === "Foreign Environment" ? "foreign" : "safe"}`}><small>{locale === "id" ? "PENJAGA KEBUN" : "GARDEN GUARDIAN"}</small><strong>{localModelState === "loading" ? (locale === "id" ? "Jamkachu sedang melihat…" : "Jamkachu is looking…") : localModelState === "failed" ? (locale === "id" ? "Pengamatan gerak aktif" : "Motion watch is active") : localClassification ?? (locale === "id" ? "Lingkungan aman" : "Safe Environment")}</strong></div>
           <div
             key={tickle}
-            className={`pm-cam-jamkachu${tickle > 0 ? " is-tickled" : ""}`}
+            className={`pm-cam-jamkachu${tickle > 0 ? " is-tickled" : ""}${localClassification === "Foreign Environment" ? " is-alert" : ""}`}
             aria-hidden="true"
           >
-            <span>{tickle > 0 ? "😆" : "🌱"}</span>
+            <span>{tickle > 0 ? "😆" : localClassification === "Foreign Environment" ? "😮" : "🌱"}</span>
           </div>
         </div>
       )}
 
-      {!guardianReady && <p className="pm-cam-note">{copy.guardianOfflineNote}</p>}
-      {scanDisabled && <p className="pm-cam-note">{copy.motionOnlyLabel}</p>}
-      <div className={`pm-cam-model is-${localClassification === "Foreign Environment" ? "foreign" : "safe"}`} role="status">
-        <span aria-hidden="true">{localClassification === "Foreign Environment" ? "⚠️" : "🧠"}</span>
-        <div>
-          <strong>{locale === "id" ? "MODEL AI LOKAL" : "LOCAL AI MODEL"}</strong>
-          <p>{localModelState === "loading" ? (locale === "id" ? "Memuat model Teachable Machine…" : "Loading Teachable Machine model…") : localModelState === "failed" ? (locale === "id" ? "Model tidak tersedia · deteksi gerakan tetap aktif" : "Model unavailable · motion detection still works") : localClassification}</p>
-          <small>{locale === "id" ? "Klasifikasi model saja · bukan fakta sensor" : "Model classification only · not sensor truth"}</small>
-        </div>
-      </div>
+      {presentationMode && <ProcessRail steps={visionSteps} label="Camera AI status" />}
+      {presentationMode && !guardianReady && <p className="pm-cam-note">{copy.guardianOfflineNote}</p>}
+      {presentationMode && scanDisabled && <p className="pm-cam-note">{copy.motionOnlyLabel}</p>}
+      <details className="pm-cam-privacy" role="note"><summary>🔒 {copy.privacyTitle}</summary><div><p>{copy.privacyLine1} {copy.privacyLine2}</p></div></details>
       {scanNote && (
         <p className="pm-cam-note" role="status">
           {scanNote}
         </p>
       )}
 
-      <section aria-label={copy.eventsTitle}>
-        <h2 className="pm-heading text-sm">{copy.eventsTitle}</h2>
+      <details className="pm-cam-moments">
+        <summary><span>🕘 {copy.eventsTitle}</span><b>{feed.length}</b></summary>
         {feed.length === 0 ? (
           <p className="pm-cam-empty">{copy.eventsEmpty}</p>
         ) : (
@@ -435,7 +426,7 @@ export default function CameraGuardian({
             ))}
           </ul>
         )}
-      </section>
+      </details>
 
       {/* Off-DOM work canvases: the 64×48 diff input and the one scan snapshot. */}
       <canvas ref={sampleCanvasRef} width={MOTION_CONFIG.width} height={MOTION_CONFIG.height} hidden />

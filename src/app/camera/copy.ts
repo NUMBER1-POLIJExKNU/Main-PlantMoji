@@ -42,7 +42,7 @@ export const CAMERA_COPY: Record<AppLocale, CameraCopy> = {
     title: "Camera AI",
     description:
       "Mount this screen facing the real plant — Jamkachu feels touches instantly and keeps a gentle pest watch.",
-    privacyTitle: "Privacy promise",
+    privacyTitle: "Camera privacy",
     privacyLine1: "The video never leaves this device.",
     privacyLine2:
       "Only one small snapshot is checked at the moment of analysis — and it is never stored.",
@@ -52,9 +52,9 @@ export const CAMERA_COPY: Record<AppLocale, CameraCopy> = {
     statusChecking: "🔍 Checking…",
     statusSuspended: "🌙 Night rest (18:00–06:00 WIB) — Jamkachu is sleeping",
     statusHidden: "⏸️ Paused — bring this tab back to keep watching",
-    motionOnlyLabel: "Motion-only mode — pest checks are off (no GEMINI_API_KEY set)",
+    motionOnlyLabel: "Jamkachu can watch movement, but close-up garden checks are resting.",
     guardianOfflineNote:
-      "Reactions stay on this screen only for now. (ops: run supabase/milestone19-camera-guardian.sql to fan the giggle out to the farm)",
+      "Reactions stay on this screen for now; the camera watch still works normally.",
     eventsTitle: "Recent moments",
     eventTouch: "Something brushed the plant — Jamkachu giggled!",
     eventPest: "Pest watch",
@@ -71,7 +71,7 @@ export const CAMERA_COPY: Record<AppLocale, CameraCopy> = {
     title: "Kamera AI",
     description:
       "Pasang layar ini menghadap tanaman asli — Jamkachu merasakan sentuhan seketika dan ikut mengawasi hama.",
-    privacyTitle: "Janji privasi",
+    privacyTitle: "Privasi kamera",
     privacyLine1: "Video tidak pernah keluar dari perangkat ini.",
     privacyLine2:
       "Hanya satu cuplikan kecil yang diperiksa saat analisis — dan tanpa disimpan.",
@@ -81,9 +81,9 @@ export const CAMERA_COPY: Record<AppLocale, CameraCopy> = {
     statusChecking: "🔍 Memeriksa…",
     statusSuspended: "🌙 Istirahat malam (18.00–06.00 WIB) — Jamkachu sedang tidur",
     statusHidden: "⏸️ Jeda — buka kembali tab ini untuk terus mengawasi",
-    motionOnlyLabel: "Mode gerakan saja — pemeriksaan hama mati (GEMINI_API_KEY belum diatur)",
+    motionOnlyLabel: "Jamkachu dapat mengawasi gerakan, tetapi pemeriksaan kebun lebih dekat sedang beristirahat.",
     guardianOfflineNote:
-      "Untuk sekarang reaksinya hanya di layar ini. (ops: run supabase/milestone19-camera-guardian.sql untuk meneruskan kikikan ke layar kebun)",
+      "Untuk sekarang reaksinya tetap di layar ini; pengawasan kamera tetap berjalan seperti biasa.",
     eventsTitle: "Momen terbaru",
     eventTouch: "Ada yang menyentuh tanaman — Jamkachu terkikik!",
     eventPest: "Pengawas hama",

@@ -122,6 +122,21 @@
         label: "Seeds",
       },
 
+      // Wardrobe (milestone20): cosmetic Jember-crop companion skins,
+      // unlocked by bond level, display-only — skins never grant or gate
+      // anything. `lockedAt` renders the compact "Lv N" lock badge, `hint`
+      // answers a tap on a locked skin (no urgency, no countdowns), and
+      // `migrationMissing` is the gentle in-panel notice shown when the
+      // milestone20 migration has not been applied yet.
+      wardrobe: {
+        title: "JAMKACHU'S WARDROBE",
+        open: "Outfits",
+        current: "Wearing",
+        lockedAt: (level) => `Lv ${level}`,
+        hint: (level) => `Unlocks at Bond Lv ${level} — keep caring and it's yours!`,
+        migrationMissing: "The wardrobe isn't set up in this garden yet — Jamkachu keeps the classic look for now.",
+      },
+
       // Camera Live Guardian (milestone19): farm-side reactions to
       // camera_events realtime rows. Presentation only — never rewards.
       cameraGuardian: {
@@ -207,7 +222,7 @@
       pettingYawn: "So cozy… Jamkachu needs a tiny nap now. Zzz…",
 
       // Double-tap surprise hop (tactile interactions): one excited line.
-      petSurprise: "Whee!",
+      petSurprise: "Secret move: LEAF SPRING!",
 
       // Mood-aware comfort petting: when Jamkachu is NOT Happy, petting
       // answers with gratitude plus the real, sensor-backed fix. Only what
@@ -378,6 +393,41 @@
         finale: "This button always shows what I need!",
       },
 
+      // First-day tour (display-only follow-up to the hatch intro): four
+      // spotlight cards pointing at the REAL interface — sensor HUD, care
+      // button, daily quiz chip, quest slot + ? guide. Pure presentation,
+      // no writes/XP; the seen-flag lives in localStorage (pm_tour_seen_v1).
+      // `senses.waiting` is the honest extra line for step 1 when no sensor
+      // reading has ever arrived.
+      tour: {
+        skip: "Skip",
+        senses: {
+          title: "MY REAL SENSES",
+          line: "These four tiles are my real senses — they feel my room for real!",
+          waiting: "My sensors haven't sent anything yet — the tiles will fill in on their own once my device is connected.",
+        },
+        care: {
+          title: "WHAT I NEED",
+          line: "This button always shows what I need — and it changes with my mood!",
+        },
+        quiz: {
+          title: "DAILY QUIZ",
+          line: "Learn and earn here every day — a fresh farm case is waiting!",
+        },
+        quest: {
+          title: "MISSIONS",
+          line: "When my sensors feel a change, a mission appears here — tap ? anytime for the full story.",
+        },
+      },
+
+      // Honest sensor-waiting state: shown on the env tiles when the garden
+      // IS connected but no sensor reading has ever arrived. Vanishes the
+      // moment renderSensors paints real data — no timers involved.
+      sensorWait: {
+        status: "waiting…",
+        note: "My sensors are still waking up — the numbers will appear here on their own once the device is connected.",
+      },
+
       // Level decorations (spec §6.4): names for the pure-presentation
       // keepsakes each bond level leaves behind, plus the T3 reveal chip.
       decor: {
@@ -541,6 +591,19 @@
         label: "Benih",
       },
 
+      // Lemari kostum (milestone20): tampilan panen Jember kosmetik, terbuka
+      // lewat level ikatan, murni tampilan — kostum tidak pernah memberi
+      // atau mengunci apa pun. Kunci "Lv N" dan petunjuknya tanpa nada
+      // buru-buru (spec §4.3).
+      wardrobe: {
+        title: "LEMARI KOSTUM JAMKACHU",
+        open: "Kostum",
+        current: "Dipakai",
+        lockedAt: (level) => `Lv ${level}`,
+        hint: (level) => `Terbuka di Ikatan Lv ${level} — terus rawat ya, nanti jadi milikmu!`,
+        migrationMissing: "Lemari kostum belum siap di kebun ini — Jamkachu tetap tampil klasik dulu ya.",
+      },
+
       // Camera Live Guardian (milestone19): reaksi kebun untuk baris
       // realtime camera_events. Hanya presentasi — tidak pernah hadiah.
       cameraGuardian: {
@@ -615,7 +678,7 @@
       pettingYawn: "Nyamannya… Jamkachu mau tidur sebentar dulu ya. Zzz…",
 
       // Lompatan kaget ketuk-dua-kali: satu seruan gembira.
-      petSurprise: "Wiii!",
+      petSurprise: "Jurus rahasia: LOMPAT DAUN!",
 
       // Elusan penenang saat mood tidak Senang — terima kasih + solusi nyata
       // yang didukung sensor. Tidak pernah menyiram/memupuk (sensornya
@@ -771,6 +834,36 @@
           ph: { title: "pH Tanah ⚗️", line: "Yang ini mencicipi tanahku biar rasanya selalu pas." },
         },
         finale: "Tombol ini selalu menunjukkan apa yang aku butuhkan!",
+      },
+
+      // Tur hari pertama (lanjutan intro penetasan, tampilan saja) — lihat
+      // catatan di pohon en. `senses.waiting` = baris jujur saat belum ada
+      // satu pun data sensor yang masuk.
+      tour: {
+        skip: "Lewati",
+        senses: {
+          title: "INDRA ASLIKU",
+          line: "Empat kotak ini indra asliku — mereka benar-benar merasakan kamarku!",
+          waiting: "Sensorku belum mengirim apa-apa — kotaknya akan terisi sendiri begitu perangkatnya terhubung.",
+        },
+        care: {
+          title: "YANG KUBUTUHKAN",
+          line: "Tombol ini selalu menunjukkan yang kubutuhkan — dan berubah mengikuti suasana hatiku!",
+        },
+        quiz: {
+          title: "QUIZ HARIAN",
+          line: "Belajar dan dapat hadiah di sini setiap hari — ada kasus kebun baru menunggumu!",
+        },
+        quest: {
+          title: "MISI",
+          line: "Saat sensorku merasakan perubahan, misi muncul di sini — ketuk ? kapan saja untuk cerita lengkapnya.",
+        },
+      },
+
+      // Keadaan menunggu sensor yang jujur — lihat catatan di pohon en.
+      sensorWait: {
+        status: "menunggu…",
+        note: "Sensorku masih bersiap-siap — angkanya akan muncul sendiri di sini begitu perangkatnya terhubung.",
       },
 
       // Dekorasi level (spec §6.4).

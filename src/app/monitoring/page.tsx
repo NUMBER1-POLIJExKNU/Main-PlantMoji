@@ -56,7 +56,7 @@ export default async function MonitoringPage() {
       <PageHeader
         icon="📈"
         eyebrow={locale === "id" ? "Sensor langsung" : "Live sensors"}
-        title={locale === "id" ? "Dashboard Tanaman" : "Plant Dashboard"}
+        title={locale === "id" ? "Pemantauan" : "Monitoring"}
         description={locale === "id"
           ? "Pembacaan langsung dari sensor tanaman, diperbarui setiap 10 detik."
           : "Live readings from the plant's sensors, refreshed every 10 seconds."}

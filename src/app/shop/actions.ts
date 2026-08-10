@@ -8,6 +8,9 @@
 
 import { revalidatePath } from "next/cache";
 import { normalizeLocale } from "@/lib/i18n";
+// isMissingSchemaError — the purchase_item/equip_item RPCs (milestone18) are
+// missing from PostgREST's schema cache: the shared PGRST202/PGRST205 detector.
+import { isMissingRpcError as isMissingSchemaError } from "@/lib/supabase-errors";
 import { getServerSupabase } from "@/lib/supabase/server";
 import {
   SHOP_UI_COPY,
@@ -24,14 +27,6 @@ export interface ShopActionResult {
   message: string;
   /** Authoritative balance returned by the RPC, or null when unknown. */
   seeds: number | null;
-}
-
-function isMissingSchemaError(error: { code?: string; message: string }): boolean {
-  return (
-    error.code === "PGRST202" ||
-    error.code === "PGRST205" ||
-    /could not find the (function|table)/i.test(error.message)
-  );
 }
 
 function failure(code: PurchaseErrorCode, locale: "en" | "id", seeds: number | null = null): ShopActionResult {

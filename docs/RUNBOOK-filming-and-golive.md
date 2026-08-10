@@ -48,9 +48,11 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 | 18 | `milestone18-seed-shop.sql` | Seed Shop economy — `bond_state.seeds` + `seed_rewards` ledger + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPCs, realtime on `shop_purchases`. Seeds MAY decrease (spendable currency); XP/Bond Level still never decrease |
 | 19 | `milestone19-photo-diary.sql` | `plant-photos` Storage bucket + `growth_records.photo_url`/`ai_comment` — **required before the Camera photo diary can save photos**; without it `/camera` shows an operator "coming soon" note and the diary renders without thumbnails **(superseded — `/camera` is now the Live Guardian; this migration remains only for old diary thumbnails / the future growth album)** |
 | 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` table (kind `touch`/`pest_advice`, jsonb note) + realtime — **required before a real-leaf touch can make Jamkachu giggle on the farm screen**; without it `/camera` still watches and reacts locally with an operator note. Creates NO storage bucket: the guardian never stores what it sees |
+| 20 | `milestone20-companion-skins.sql` | cosmetic Jember-crop skin wardrobe — adds `companion_state.skin_key` (default `jamkachu`) + a catalog CHECK (edamame, padi, jagung, kopi, kakao, buah_naga) — **required before a chosen crop skin can be saved**; without it choosing a skin degrades gracefully (the app reports the missing migration and Jamkachu keeps the Classic look) — nothing crashes. DISPLAY-ONLY: a skin never grants or gates XP, Seeds, quests, evolution, or sensors |
 
-- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone19 are newer** — verify milestone9 through milestone19 before go-live, including milestone16.
+- [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone20 are newer** — verify milestone9 through milestone20 before go-live, including milestone16.
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all migration files again in order.
+- [ ] **Shortcut for 16–20:** `supabase/bundle-milestone16-20.sql` concatenates milestone16 through milestone20 (byte-identical, order preserved, re-runnable) — one paste in the SQL Editor instead of seven.
 - [ ] Milestone 10 seeds Jember profiles as `draft` / `reference_only` with strawberry pre-approved; **milestone12 then adds soybean + cayenne pepper to the approved set for automatic mood/quest decisions** (tobacco and under-sensored crops stay unavailable). Read `docs/CROP-PROFILE-CATALOG-jember.md` before activating any other crop.
 - [ ] Milestone 13 is required for the Farm Case Quiz chip to award XP. Without it the quiz still renders and can be answered, but the app returns `quiz_migration_required` instead of granting XP.
 - [ ] Milestone 16 upgrades the companion to ten stages and adds display-only progress counters. Run it after milestone11; it never grants XP or completes quests.
@@ -58,6 +60,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] Milestone 18 is required for the Seed Shop. Without it the /shop route shows a friendly "coming soon" state, the farm HUD hides the Seeds chip, and every seed grant is a silent no-op — nothing breaks.
 - [ ] (superseded) Milestone 19 is required for the Camera photo diary. Without it `/camera` renders a "coming soon" operator note with the camera input disabled — nothing crashes. The +1 Seed first-photo-of-the-day grant additionally needs milestone18; without milestone18 the photo still saves and the grant is skipped silently. AI comments need `GEMINI_API_KEY` in Vercel — without it every photo gets the deterministic sensor-template comment (fully functional).
 - [ ] Milestone 19 (`milestone19-camera-guardian.sql`) is required for the Live Guardian fan-out. Without it `/camera` still watches, the on-device mini Jamkachu still giggles instantly, and an operator note explains that reactions stay local — nothing crashes. Pest advisories additionally need `GEMINI_API_KEY` in Vercel; without it the page runs in labeled motion-only mode. No camera signal ever grants XP or Seeds — reactions are presentation only.
+- [ ] Milestone 20 (`milestone20-companion-skins.sql`) is required before a chosen Jember crop skin can persist. Run it after milestone11 (it adds a column to `companion_state`). Without it choosing a skin degrades gracefully and Jamkachu keeps the Classic look — nothing crashes. Skins are cosmetic only: they never grant or gate XP, Seeds, quests, evolution, or sensors, and unlocking is read from the existing Bond Level — never written.
 
 #### 1.3 Hardware teammate — where to point them
 
@@ -66,6 +69,9 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] Order matters: apply `milestone9-raw-sensor-ingest.sql` first, set the same `DEVICE_API_TOKEN` in Vercel and in Node-RED, then switch the flow.
 
 ### 2. Pre-filming QA checklist (~40 min, on the ACTUAL demo device + venue network)
+
+**Fresh device (1 min)**
+- [ ] On a brand-new phone/profile the first-day tour plays once right after the hatching intro — let it finish or tap Skip before filming takes (it never replays afterwards).
 
 **Sound (5 min)**
 - [ ] First tap anywhere unlocks audio (sound is default ON after the first gesture). Press any button and confirm a blip.
@@ -78,6 +84,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 - [ ] `4` reward-pod drop plays
 - [ ] `5` cycles all six mascot moods (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
 - [ ] `E` plays the full evolution ceremony (~7s): dialog beat → accelerating silhouette strobe → a single full-screen flash (WCAG 2.3.1-safe, fires exactly once) → cry + fanfare reveal; auto-dismisses after 6s if the player never taps. Tapping anywhere mid-sequence fast-forwards straight to the reveal — it never reverts. On a reduced-motion device it plays a 900ms crossfade instead of the strobe/flash/shake.
+- [ ] `B` replays the system boot sequence; `X` shows the broadcast ending card; `F` toggles fullscreen. These are presentation-only and never write data.
 - [ ] `0` opens the QA self-test overlay: PMSfx "loaded", sound pref, PM_STRINGS key count, all four PMFx hooks "yes", reduced-motion state, Supabase "configured". Run "RUN ALL FX" once. `Esc` closes.
 - [ ] The "DEMO" tag is visible bottom-left while the mode is active; hotkeys do nothing while a form field has focus.
 - [ ] This table covers only the presenter-stable hotkeys (`1`–`5`, `E`, `0`, `Esc`). If more were added today, `public/farm/demo.js`'s header comment has the current full list, and pressing `0` opens the on-screen QA self-test overlay to confirm each FX hook is wired.
@@ -183,9 +190,11 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 | 18 | `milestone18-seed-shop.sql` | ekonomi Toko Benih — `bond_state.seeds` + ledger `seed_rewards` + `shop_purchases` + RPC `award_seeds`/`purchase_item`/`equip_item`, realtime pada `shop_purchases`. Benih BOLEH berkurang (mata uang yang bisa dibelanjakan); XP/Bond Level tetap tidak pernah turun |
 | 19 | `milestone19-photo-diary.sql` | bucket Storage `plant-photos` + kolom `growth_records.photo_url`/`ai_comment` — **wajib sebelum Camera photo diary bisa menyimpan foto**; tanpanya `/camera` menampilkan catatan operator "hampir siap" dan diary tampil tanpa thumbnail **(digantikan — `/camera` kini Live Guardian; migrasi ini tinggal untuk thumbnail diary lama / growth album di masa depan)** |
 | 19 | `milestone19-camera-guardian.sql` | tabel `camera_events` Live Guardian (kind `touch`/`pest_advice`, note jsonb) + realtime — **wajib sebelum sentuhan daun asli bisa membuat Jamkachu terkikik di layar kebun**; tanpanya `/camera` tetap mengawasi dan bereaksi lokal dengan catatan operator. TANPA bucket Storage: penjaga tidak pernah menyimpan yang dilihatnya |
+| 20 | `milestone20-companion-skins.sql` | lemari skin tanaman Jember kosmetik — menambah `companion_state.skin_key` (default `jamkachu`) + CHECK katalog (edamame, padi, jagung, kopi, kakao, buah_naga) — **wajib sebelum pilihan skin bisa tersimpan**; tanpanya pemilihan skin mundur dengan anggun (aplikasi melaporkan migrasi yang belum dijalankan dan Jamkachu tetap tampil Klasik) — tidak ada yang crash. HANYA-TAMPILAN: skin tidak pernah memberi atau mengunci XP, Benih, quest, evolusi, atau sensor |
 
-- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone19 yang lebih baru** — pastikan milestone9 sampai milestone19 sebelum go-live, termasuk milestone16.
+- [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone20 yang lebih baru** — pastikan milestone9 sampai milestone20 sebelum go-live, termasuk milestone16.
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi semua file migrasi sesuai urutan.
+- [ ] **Jalan pintas untuk 16–20:** `supabase/bundle-milestone16-20.sql` menggabungkan milestone16 sampai milestone20 (identik byte, urutan terjaga, aman dijalankan ulang) — satu kali tempel di SQL Editor, bukan tujuh.
 - [ ] Milestone 10 mengisi profil Jember sebagai `draft` / `reference_only` dengan stroberi sudah disetujui; **milestone12 kemudian menambahkan kedelai + cabai rawit ke daftar yang disetujui untuk keputusan mood/quest otomatis** (tembakau dan tanaman tanpa sensor lengkap tetap tidak tersedia). Baca `docs/CROP-PROFILE-CATALOG-jember.md` sebelum mengaktifkan tanaman lain.
 - [ ] Milestone 13 wajib agar chip Farm Case Quiz bisa memberi XP — tanpanya, quiz tetap tampil dan bisa dijawab, tapi aplikasi mengembalikan `quiz_migration_required`, bukan memberi XP.
 - [ ] Milestone 16 meningkatkan companion menjadi sepuluh tahap dan menambah penghitung progres khusus tampilan. Jalankan setelah milestone11; migrasi ini tidak memberi XP atau menyelesaikan misi.
@@ -193,6 +202,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] Milestone 18 diperlukan untuk Toko Benih. Tanpanya, rute /shop menampilkan status "segera hadir" yang ramah, chip Benih di HUD kebun disembunyikan, dan semua hadiah Benih menjadi no-op senyap — tidak ada yang rusak.
 - [ ] (digantikan) Milestone 19 wajib untuk Camera photo diary. Tanpanya `/camera` menampilkan catatan operator dengan input kamera dinonaktifkan — tidak ada yang crash. Hadiah +1 Benih foto-pertama-hari-ini juga membutuhkan milestone18; tanpa milestone18 foto tetap tersimpan dan hadiahnya dilewati diam-diam. Komentar AI membutuhkan `GEMINI_API_KEY` di Vercel — tanpanya setiap foto mendapat komentar template sensor deterministik (tetap berfungsi penuh).
 - [ ] Milestone 19 (`milestone19-camera-guardian.sql`) wajib untuk penyebaran Live Guardian. Tanpanya `/camera` tetap mengawasi, mini Jamkachu di perangkat tetap terkikik seketika, dan catatan operator menjelaskan bahwa reaksi hanya lokal — tidak ada yang crash. Saran hama juga membutuhkan `GEMINI_API_KEY` di Vercel; tanpanya halaman berjalan dalam mode gerakan-saja yang diberi label. Tidak ada sinyal kamera yang pernah memberi XP atau Benih — reaksi hanyalah presentasi.
+- [ ] Milestone 20 (`milestone20-companion-skins.sql`) wajib sebelum pilihan skin tanaman Jember bisa tersimpan. Jalankan setelah milestone11 (migrasi ini menambah kolom pada `companion_state`). Tanpanya pemilihan skin mundur dengan anggun dan Jamkachu tetap memakai tampilan Klasik — tidak ada yang crash. Skin hanyalah kosmetik: tidak pernah memberi atau mengunci XP, Benih, quest, evolusi, atau sensor, dan status terbuka hanya dibaca dari Bond Level yang ada — tidak pernah ditulis.
 
 #### 1.3 Rekan hardware — arahkan ke sini
 
@@ -201,6 +211,9 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] Urutan penting: terapkan `milestone9-raw-sensor-ingest.sql` dulu, samakan `DEVICE_API_TOKEN` di Vercel dan Node-RED, baru pindahkan flow.
 
 ### 2. Daftar periksa QA pra-syuting (±40 menit, di perangkat demo yang SEBENARNYA + jaringan lokasi)
+
+**Perangkat baru (1 menit)**
+- [ ] Di ponsel/profil yang benar-benar baru, tur hari pertama diputar sekali tepat setelah intro menetas — biarkan selesai atau ketuk Lewati sebelum pengambilan gambar (setelah itu tidak pernah diputar ulang).
 
 **Suara (5 menit)**
 - [ ] Ketukan pertama di mana pun membuka audio (suara default ON setelah gestur pertama). Tekan tombol apa pun, pastikan bunyi blip.
@@ -213,6 +226,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 - [ ] `4` jatuhnya pod hadiah tampil
 - [ ] `5` memutar keenam mood maskot (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
 - [ ] `E` memutar upacara evolusi penuh (±7 detik): dialog → siluet berkedip yang makin cepat → satu kilatan layar penuh tunggal (aman WCAG 2.3.1, hanya terjadi sekali) → reveal dengan suara cry + fanfare; otomatis tertutup setelah 6 detik jika pemain tidak menyentuh apa pun. Mengetuk di mana saja saat berlangsung langsung mempercepat ke hasil akhir — tidak pernah kembali. Di perangkat reduced-motion, yang diputar adalah crossfade 900ms, bukan siluet berkedip/kilatan/goyangan.
+- [ ] `B` memutar boot sistem; `X` menampilkan kartu penutup siaran; `F` mengganti layar penuh. Semua hanya presentasi dan tidak menulis data.
 - [ ] `0` membuka overlay uji-mandiri QA: PMSfx "loaded", preferensi suara, jumlah kunci PM_STRINGS, empat hook PMFx "yes", status reduced-motion, Supabase "configured". Jalankan "RUN ALL FX" sekali. `Esc` menutup.
 - [ ] Label "DEMO" terlihat di kiri bawah selama mode aktif; hotkey tidak berfungsi saat kolom isian sedang fokus.
 - [ ] Tabel ini hanya mencakup hotkey yang stabil untuk presenter (`1`–`5`, `E`, `0`, `Esc`). Jika ada tambahan hari ini, daftar lengkap terkini ada di komentar header `public/farm/demo.js`, dan menekan `0` membuka overlay uji-mandiri QA di layar untuk memastikan setiap hook FX tersambung.
@@ -317,15 +331,18 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 | 17 | `milestone17-quiz-kind-scoring.sql` | 퀴즈가 더 이상 XP를 깎지 않음 — kind scoring: Daily Quiz 오답/시간초과가 이제 −1이 아니라 0 XP를 지급하여 오답으로 Bond Level이 절대 내려가지 않음 |
 | 18 | `milestone18-seed-shop.sql` | Seed Shop 경제 — `bond_state.seeds` + `seed_rewards` 원장 + `shop_purchases` + `award_seeds`/`purchase_item`/`equip_item` RPC, `shop_purchases` realtime. Seeds는 줄어들 수 있음(소비 가능한 화폐); XP/Bond Level은 여전히 절대 감소하지 않음 |
 | 19 | `milestone19-camera-guardian.sql` | Live Guardian `camera_events` 테이블 (kind `touch`/`pest_advice`, note jsonb) + realtime — **진짜 잎을 만졌을 때 농장 화면의 Jamkachu가 웃으려면 필수**; 없어도 `/camera`는 로컬로 계속 감시·반응하며 운영자 안내를 표시합니다. Storage 버킷 없음: 가디언은 본 것을 절대 저장하지 않습니다 |
+| 20 | `milestone20-companion-skins.sql` | 코스메틱 Jember 작물 스킨 옷장 — `companion_state.skin_key` 컬럼(기본 `jamkachu`) + 카탈로그 CHECK(edamame, padi, jagung, kopi, kakao, buah_naga) 추가 — **선택한 스킨을 저장하려면 필수**; 없어도 스킨 선택은 우아하게 물러나고(앱이 마이그레이션 누락을 알리고 Jamkachu는 클래식 모습 유지) — 아무것도 깨지지 않습니다. 표시 전용: 스킨은 XP·Seeds·퀘스트·진화·센서를 절대 주거나 막지 않습니다 |
 
-- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone19가 더 최신** — milestone16을 포함해 milestone9부터 milestone19까지 고라이브 전에 확인하세요.
+- [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone20이 더 최신** — milestone16을 포함해 milestone9부터 milestone20까지 고라이브 전에 확인하세요.
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 모든 마이그레이션 파일을 순서대로 다시 실행하세요.
+- [ ] **16–20 지름길:** `supabase/bundle-milestone16-20.sql`이 milestone16부터 milestone20까지를 하나로 합쳐 놓았습니다 (바이트 동일, 순서 유지, 재실행 안전) — SQL Editor에 일곱 번 대신 한 번만 붙여넣으면 됩니다.
 - [ ] Milestone 10은 Jember 프로필을 `draft` / `reference_only`로 시드하며 딸기는 처음부터 승인되어 있습니다; **milestone12가 콩(soybean)+카옌 고추를 자동 무드/퀘스트 판단 승인 목록에 추가**합니다 (담배와 센서가 부족한 작물은 계속 사용 불가). 다른 작물을 활성화하기 전에 `docs/CROP-PROFILE-CATALOG-jember.md`를 읽으세요.
 - [ ] Milestone 13은 Farm Case Quiz 칩이 XP를 지급하는 데 필수입니다 — 없으면 퀴즈는 표시되고 답할 수 있지만, 앱은 XP 대신 `quiz_migration_required`를 반환합니다.
 - [ ] Milestone 16은 컴패니언을 10단계로 확장하고 표시 전용 진행 카운터를 추가합니다. milestone11 다음에 실행하세요. XP를 지급하거나 퀘스트를 완료하지는 않습니다.
 - [ ] Milestone 17은 Milestone 13의 `answer_daily_quiz` RPC를 같은 자리에서 대체합니다 (`create or replace`, 시그니처/반환 형태 동일): 오답이거나 시간초과된 Daily Quiz 답변은 이제 −1이 아니라 정확히 0 XP를 지급하므로 "LEVEL UP!" 직후에 Bond Level이 절대 내려가지 않습니다. 정답 XP는 변경되지 않았습니다.
 - [ ] Milestone 18은 Seed Shop에 필요합니다. 없으면 /shop 라우트는 친절한 "곧 만나요" 상태를 보여주고, 농장 HUD의 Seeds 칩은 숨겨지며, 모든 Seed 지급은 조용한 no-op이 됩니다 — 아무것도 깨지지 않습니다.
 - [ ] Milestone 19(`milestone19-camera-guardian.sql`)는 Live Guardian 팬아웃에 필요합니다. 없어도 `/camera`는 계속 감시하고 기기 내 미니 Jamkachu는 즉시 웃으며, 운영자 안내가 반응이 로컬에만 머문다고 설명합니다 — 아무것도 깨지지 않습니다. 해충 안내는 Vercel의 `GEMINI_API_KEY`가 추가로 필요하며, 없으면 라벨이 붙은 모션 전용 모드로 동작합니다. 어떤 카메라 신호도 XP나 Seeds를 주지 않습니다 — 반응은 오직 표현입니다.
+- [ ] Milestone 20(`milestone20-companion-skins.sql`)은 선택한 Jember 작물 스킨을 저장하는 데 필요합니다. milestone11 다음에 실행하세요(`companion_state`에 컬럼을 추가). 없어도 스킨 선택은 우아하게 물러나며 Jamkachu는 클래식 모습을 유지합니다 — 아무것도 깨지지 않습니다. 스킨은 코스메틱 전용입니다: XP·Seeds·퀘스트·진화·센서를 절대 주거나 막지 않으며, 잠금 해제는 기존 Bond Level을 읽기만 하고 절대 쓰지 않습니다.
 
 #### 1.3 하드웨어 담당자 안내
 
@@ -334,6 +351,9 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] 순서가 중요합니다: `milestone9-raw-sensor-ingest.sql`을 먼저 적용하고, Vercel과 Node-RED에 같은 `DEVICE_API_TOKEN`을 설정한 뒤, 플로우를 전환하세요.
 
 ### 2. 촬영 전 QA 체크리스트 (~40분, 실제 데모 기기 + 현장 네트워크에서)
+
+**새 기기 (1분)**
+- [ ] 완전히 새 폰/프로필에서는 부화 인트로 직후 첫날 투어가 한 번 재생됩니다 — 촬영 테이크 전에 끝까지 보거나 Skip을 탭하세요 (이후 다시 재생되지 않습니다).
 
 **사운드 (5분)**
 - [ ] 아무 곳이나 처음 탭하면 오디오가 잠금 해제됩니다 (첫 제스처 후 사운드 기본 ON). 아무 버튼이나 눌러 blip 소리를 확인.
@@ -346,6 +366,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 - [ ] `4` 보상 포드 드롭 재생
 - [ ] `5` 마스코트 무드 6종 순환 (Happy → Overheating → DryAir → Sleepy → SoilAcidic → SoilAlkaline)
 - [ ] `E` 전체 진화 의식 재생 (약 7초): 대사 비트 → 점점 빨라지는 실루엣 스트로브 → 단 한 번의 전체 화면 플래시(WCAG 2.3.1 안전, 정확히 한 번만 발생) → cry + 팡파르와 함께 공개; 플레이어가 탭하지 않으면 6초 후 자동으로 닫힘. 진행 중 아무 곳이나 탭하면 결과 장면으로 바로 빨리감기됨 — 절대 되돌아가지 않음. reduced-motion 기기에서는 스트로브/플래시/흔들림 대신 900ms 크로스페이드가 재생됩니다.
+- [ ] `B`는 시스템 부팅 연출, `X`는 방송용 엔딩 카드, `F`는 전체화면을 전환합니다. 모두 연출 전용이며 데이터를 쓰지 않습니다.
 - [ ] `0` QA 셀프 테스트 오버레이: PMSfx "loaded", 사운드 설정, PM_STRINGS 키 수, PMFx 훅 4종 모두 "yes", reduced-motion 상태, Supabase "configured". "RUN ALL FX"를 한 번 실행. `Esc`로 닫기.
 - [ ] 모드 활성 중 좌측 하단에 "DEMO" 태그 표시; 입력 필드에 포커스가 있으면 핫키가 동작하지 않음.
 - [ ] 이 표는 발표자용으로 안정적인 핫키(`1`–`5`, `E`, `0`, `Esc`)만 다룹니다. 오늘 추가된 것이 있다면 `public/farm/demo.js` 헤더 주석에 최신 전체 목록이 있으며, `0`을 누르면 화면에 QA 셀프 테스트 오버레이가 열려 각 FX 훅이 연결되었는지 확인할 수 있습니다.
