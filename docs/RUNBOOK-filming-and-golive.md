@@ -52,6 +52,7 @@ There is **no `milestone2.sql`** — `milestone1.sql` covers that ground. Exact 
 
 - [ ] On the team's existing Supabase project, **milestone1–milestone8 are typically already applied** (the running game depends on them). **milestone9–milestone20 are newer** — verify milestone9 through milestone20 before go-live, including milestone16.
 - [ ] Re-running is safe: every file is guarded (`create ... if not exists`, `add column if not exists`, drop-and-recreate policies). When in doubt, run all migration files again in order.
+- [ ] **Shortcut for 16–20:** `supabase/bundle-milestone16-20.sql` concatenates milestone16 through milestone20 (byte-identical, order preserved, re-runnable) — one paste in the SQL Editor instead of seven.
 - [ ] Milestone 10 seeds Jember profiles as `draft` / `reference_only` with strawberry pre-approved; **milestone12 then adds soybean + cayenne pepper to the approved set for automatic mood/quest decisions** (tobacco and under-sensored crops stay unavailable). Read `docs/CROP-PROFILE-CATALOG-jember.md` before activating any other crop.
 - [ ] Milestone 13 is required for the Farm Case Quiz chip to award XP. Without it the quiz still renders and can be answered, but the app returns `quiz_migration_required` instead of granting XP.
 - [ ] Milestone 16 upgrades the companion to ten stages and adds display-only progress counters. Run it after milestone11; it never grants XP or completes quests.
@@ -193,6 +194,7 @@ Vercel → Project → **Settings → Environment Variables**. Isi untuk **Produ
 
 - [ ] Pada proyek Supabase tim yang sudah berjalan, **milestone1–milestone8 biasanya sudah diterapkan** (game yang berjalan bergantung padanya). **milestone9–milestone20 yang lebih baru** — pastikan milestone9 sampai milestone20 sebelum go-live, termasuk milestone16.
 - [ ] Menjalankan ulang aman: setiap file dijaga (`create ... if not exists`, `add column if not exists`, policy drop-lalu-buat-ulang). Jika ragu, jalankan lagi semua file migrasi sesuai urutan.
+- [ ] **Jalan pintas untuk 16–20:** `supabase/bundle-milestone16-20.sql` menggabungkan milestone16 sampai milestone20 (identik byte, urutan terjaga, aman dijalankan ulang) — satu kali tempel di SQL Editor, bukan tujuh.
 - [ ] Milestone 10 mengisi profil Jember sebagai `draft` / `reference_only` dengan stroberi sudah disetujui; **milestone12 kemudian menambahkan kedelai + cabai rawit ke daftar yang disetujui untuk keputusan mood/quest otomatis** (tembakau dan tanaman tanpa sensor lengkap tetap tidak tersedia). Baca `docs/CROP-PROFILE-CATALOG-jember.md` sebelum mengaktifkan tanaman lain.
 - [ ] Milestone 13 wajib agar chip Farm Case Quiz bisa memberi XP — tanpanya, quiz tetap tampil dan bisa dijawab, tapi aplikasi mengembalikan `quiz_migration_required`, bukan memberi XP.
 - [ ] Milestone 16 meningkatkan companion menjadi sepuluh tahap dan menambah penghitung progres khusus tampilan. Jalankan setelah milestone11; migrasi ini tidak memberi XP atau menyelesaikan misi.
@@ -333,6 +335,7 @@ Vercel → Project → **Settings → Environment Variables**. **Production**에
 
 - [ ] 팀이 이미 운영 중인 Supabase 프로젝트라면 **milestone1–milestone8은 보통 이미 적용되어 있습니다** (돌아가는 게임이 이에 의존). **milestone9–milestone20이 더 최신** — milestone16을 포함해 milestone9부터 milestone20까지 고라이브 전에 확인하세요.
 - [ ] 재실행은 안전합니다: 모든 파일이 가드 처리되어 있습니다 (`create ... if not exists`, `add column if not exists`, 정책 drop 후 재생성). 확실하지 않으면 모든 마이그레이션 파일을 순서대로 다시 실행하세요.
+- [ ] **16–20 지름길:** `supabase/bundle-milestone16-20.sql`이 milestone16부터 milestone20까지를 하나로 합쳐 놓았습니다 (바이트 동일, 순서 유지, 재실행 안전) — SQL Editor에 일곱 번 대신 한 번만 붙여넣으면 됩니다.
 - [ ] Milestone 10은 Jember 프로필을 `draft` / `reference_only`로 시드하며 딸기는 처음부터 승인되어 있습니다; **milestone12가 콩(soybean)+카옌 고추를 자동 무드/퀘스트 판단 승인 목록에 추가**합니다 (담배와 센서가 부족한 작물은 계속 사용 불가). 다른 작물을 활성화하기 전에 `docs/CROP-PROFILE-CATALOG-jember.md`를 읽으세요.
 - [ ] Milestone 13은 Farm Case Quiz 칩이 XP를 지급하는 데 필수입니다 — 없으면 퀴즈는 표시되고 답할 수 있지만, 앱은 XP 대신 `quiz_migration_required`를 반환합니다.
 - [ ] Milestone 16은 컴패니언을 10단계로 확장하고 표시 전용 진행 카운터를 추가합니다. milestone11 다음에 실행하세요. XP를 지급하거나 퀘스트를 완료하지는 않습니다.
