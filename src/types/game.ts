@@ -142,6 +142,37 @@ export interface CompanionEvolution {
   evolved_at: string;
 }
 
+// ── Companion skins (milestone20) ───────────────────────────────────────
+
+export const COMPANION_SKIN_KEYS = [
+  "jamkachu", "edamame", "padi", "jagung", "kopi", "kakao", "buah_naga",
+] as const;
+export type CompanionSkinKey = (typeof COMPANION_SKIN_KEYS)[number];
+
+/** Cosmetic Jember-crop skins for Jamkachu, unlocked by bond level.
+ *  DISPLAY-ONLY: a skin changes how the companion is drawn and nothing else —
+ *  it never grants or gates XP, seeds, quests, evolution, or sensors.
+ *  Mirrored in supabase/milestone20-companion-skins.sql's CHECK constraint.
+ *  Ordered by ascending unlockLevel; "jamkachu" is the always-unlocked default. */
+export const COMPANION_SKINS: readonly {
+  key: CompanionSkinKey; unlockLevel: number; nameEn: string; nameId: string; accent: string;
+}[] = [
+  { key: "jamkachu", unlockLevel: 1, nameEn: "Classic Jamkachu", nameId: "Jamkachu Klasik", accent: "#89D974" },
+  { key: "edamame", unlockLevel: 2, nameEn: "Edamame Buddy", nameId: "Sobat Edamame", accent: "#9CCB5D" },
+  { key: "padi", unlockLevel: 4, nameEn: "Golden Rice", nameId: "Padi Emas", accent: "#E8C95A" },
+  { key: "jagung", unlockLevel: 6, nameEn: "Sweet Corn", nameId: "Jagung Manis", accent: "#F5B93F" },
+  { key: "kopi", unlockLevel: 8, nameEn: "Robusta Coffee", nameId: "Kopi Robusta", accent: "#8A5A3B" },
+  { key: "kakao", unlockLevel: 10, nameEn: "Cacao Pod", nameId: "Buah Kakao", accent: "#B0693C" },
+  { key: "buah_naga", unlockLevel: 12, nameEn: "Dragon Fruit", nameId: "Buah Naga", accent: "#E85FA2" },
+];
+
+export function normalizeCompanionSkin(value: unknown): CompanionSkinKey {
+  const compact = typeof value === "string" ? value.trim().toLowerCase() : "";
+  return (COMPANION_SKIN_KEYS as readonly string[]).includes(compact)
+    ? (compact as CompanionSkinKey)
+    : "jamkachu";
+}
+
 // ── Streak (handoff §21) ────────────────────────────────────────────────
 
 /** Calendar days are counted in the demo location's timezone (Jember, WIB). */

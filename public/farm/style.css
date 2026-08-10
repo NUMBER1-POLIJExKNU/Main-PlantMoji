@@ -716,6 +716,105 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg[data-companion-form="steady"] { --companion-accent: #9BB871; }
 .mascot-svg[data-companion-form="balanced"] { --companion-accent: #F7A6C1; }
 
+/* ── Cosmetic companion skins (milestone20, display-only) ────────────────
+   renderCompanion swaps ONE .skin-<key> class on .mascot-svg from
+   companion_state.skin_key (missing/unknown key → jamkachu, the default
+   look). Each skin re-tokens ONLY the plant palette — --color-grass
+   (leaves), --color-grass-light (head/body), --color-forest (stem,
+   sproutlets, elder branches) — scoped to the mascot SVG, so:
+   · all ten companion-<Stage> scale rungs + cumulative stage-part reveals
+     above keep working (they are class/scale-driven, palette-independent);
+   · the 12 shop-* pot/accessory cosmetics keep their literal hex colors;
+   · pots/soil (--color-soil*), outlines (--color-outline), cheeks and the
+     care-affinity form tint (--companion-accent, which keeps coloring the
+     stage accents and evo backdrop) are untouched — skins recolor the
+     plant, forms keep tinting the evolution backdrop.
+   Hues derive from each skin's catalog accent (companion-skins.js).
+   Static custom-property overrides only: no new animation, reduced-motion
+   safe, and never part of any celebration. */
+.mascot-svg.skin-jamkachu { /* Classic Jamkachu — the default palette, spelled out */
+    --color-grass: #69C455;
+    --color-grass-light: #89D974;
+    --color-forest: #397A2B;
+}
+.mascot-svg.skin-edamame { /* Edamame Buddy — soft olive pod green */
+    --color-grass: #8ABA43;
+    --color-grass-light: #9CCB5D;
+    --color-forest: #5C7A28;
+}
+.mascot-svg.skin-padi { /* Golden Rice — straw-gold head, leaves and stalk */
+    --color-grass: #D9B23E;
+    --color-grass-light: #E8C95A;
+    --color-forest: #8A6E1F;
+}
+.mascot-svg.skin-jagung { /* Sweet Corn — golden cob body in husk-green leaves */
+    --color-grass: #69A94E;
+    --color-grass-light: #F5B93F;
+    --color-forest: #397A2B;
+}
+.mascot-svg.skin-kopi { /* Robusta Coffee — roasted-bean body, dark leaf green */
+    --color-grass: #4E6B33;
+    --color-grass-light: #8A5A3B;
+    --color-forest: #573823;
+}
+.mascot-svg.skin-kakao { /* Cacao Pod — warm pod body, bright cacao leaves */
+    --color-grass: #6B8E3F;
+    --color-grass-light: #B0693C;
+    --color-forest: #5D4425;
+}
+.mascot-svg.skin-buah_naga { /* Dragon Fruit — pink body, vivid scale-green leaves */
+    --color-grass: #58C46B;
+    --color-grass-light: #E85FA2;
+    --color-forest: #3E8A4C;
+}
+
+/* Wardrobe picker (milestone20): small chip under the stage label + a
+   compact dialog reusing the .farm-guide card chrome. Static styles only —
+   no animation loops, reduced-motion safe. */
+.wardrobe-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    margin-top: 9px;
+    padding: 7px 12px;
+    border: 2px solid var(--color-outline);
+    border-radius: 10px;
+    background: var(--color-surface);
+    box-shadow: 0 3px 0 var(--color-outline);
+    color: var(--color-text);
+    font: 8px/1.4 var(--font-heading);
+    cursor: pointer;
+}
+.wardrobe-open:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-outline); }
+.wardrobe-card { max-height: min(560px, 84dvh); overflow-y: auto; }
+.wardrobe-list { display: grid; gap: 7px; margin: 0 0 4px; }
+.wardrobe-skin {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 11px;
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font: 600 13px/1.4 var(--font-body);
+    text-align: left;
+    cursor: pointer;
+}
+.wardrobe-skin.is-selected { border-color: var(--color-forest); background: #E8F6E0; }
+.wardrobe-skin.is-locked { cursor: default; opacity: .58; }
+.wardrobe-skin-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wardrobe-skin-state { color: var(--color-forest); font: 7px/1.4 var(--font-heading); white-space: nowrap; }
+.wardrobe-skin.is-locked .wardrobe-skin-state { color: #7B8876; }
+.wardrobe-swatch { width: 22px; height: 22px; border: 2px solid var(--color-outline); border-radius: 7px; background: var(--color-grass-light); }
+/* Locked hint + migration-missing notice share one gentle amber well
+   (same voice as the verifying shimmer — honest state, not alarm). */
+.wardrobe-note { margin: 0 0 10px; padding: 9px 11px; border: 2px dashed #D6A53B; border-radius: 10px; background: #FFF7DF; color: #7A5B12; font-size: 12px; line-height: 1.45; }
+.wardrobe-note[hidden] { display: none; }
+
 /* ── Pokémon-style transformation FX (level-up + evolution ceremony) ──────
    Discrete-state classes toggled by live.js's phase sequencer (never CSS
    loops) — hard cuts only, compositor-only properties (filter is a toggle,
@@ -1636,18 +1735,31 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .logo-img { width: 38px; height: 38px; }
     .brand h1 { font-size: 10px; }
+    /* Phone dock (milestone20 nav fix): the old seven-column grid +
+       display:none tool pocket made /reports and /settings COMPLETELY
+       unreachable on phones. The dock is now ONE horizontally scrollable
+       flex row carrying all TEN destinations (7 play + 3 tools), with
+       per-item min widths, scroll snapping and momentum scrolling; the
+       global .nav-links::-webkit-scrollbar rule already hides the bar.
+       Same chrome, same compact height, same safe-area handling. */
     .nav-links {
         position: fixed;
         right: 8px;
         bottom: max(8px, env(safe-area-inset-bottom));
         left: 8px;
         z-index: 100;
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
+        display: flex;
+        flex-direction: row; /* base .nav-links is a column — the dock is a row */
+        flex-wrap: nowrap;
+        align-items: stretch;
         gap: 2px;
         width: auto;
         padding: 6px;
-        overflow: visible;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
         border: 3px solid var(--color-border);
         border-radius: 16px;
         background: rgba(255, 255, 255, .97);
@@ -1655,10 +1767,13 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         backdrop-filter: blur(10px);
     }
     .nav-item {
-        min-width: 0;
+        flex: 0 0 auto;
+        min-width: 62px;
+        scroll-snap-align: start;
         padding: 7px 2px 6px;
         gap: 3px;
         flex-direction: column;
+        justify-content: center;
         font-size: 7px;
         line-height: 1.25;
         text-align: center;
@@ -1673,8 +1788,20 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     }
     .nav-item:hover { transform: translateY(-2px); }
     .nav-item.active { box-shadow: 0 4px 8px rgba(105, 196, 85, .35); }
-    .nav-section-title,
-    .nav-tool-pocket { display: none; }
+    /* Only the tiny section headings disappear on phones. The tool pocket
+       and its grid dissolve as boxes (display: contents) so the Sensor/
+       Rekap/Alat links join the same scrollable dock row as everything
+       else — styled consistently with the ordinary dock items below. */
+    .nav-section-title { display: none; }
+    .nav-tool-pocket { display: contents; }
+    .nav-tool-grid { display: contents; }
+    .nav-item.nav-tool {
+        min-width: 62px;
+        padding: 7px 2px 6px;
+        gap: 3px;
+        font-size: 7px;
+    }
+    .nav-item.nav-tool .icon { font-size: 17px; }
     .locale-switch { width: 94px; margin: 0; padding: 3px; }
     .locale-switch button { min-height: 36px; padding: 6px 4px; font-size: 8px; }
     .game-world {
@@ -1686,6 +1813,16 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
         overflow-y: visible;
     }
     .hud-top { justify-content: center; }
+    /* Guide button vs dock (milestone20 nav fix): the fixed ? button
+       (right/bottom 18px, z 190) used to sit exactly ON the dock's
+       right-most cell, eating the Toko/shop tap. Lift it clear: the dock
+       is ~64px tall (6px padding ×2 + 3px border ×2 + ~46px item) and
+       floats at max(8px, safe-area) from the bottom, so 78px + the safe
+       inset keeps a visible gap on notched phones too. */
+    .farm-guide-open {
+        right: 12px;
+        bottom: calc(78px + env(safe-area-inset-bottom));
+    }
 }
 
 /* ── Small-screen fixes (360-430px phones) ───────────────────────────────
@@ -1745,6 +1882,9 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
 
     /* Hatch-intro Skip must always be reachable; was ~38px tall. */
     .hatch-skip { min-height: 44px; padding: 12px 16px; }
+
+    /* Wardrobe chip (milestone20) was ~34px tall — same 44px tap rule. */
+    .wardrobe-open { min-height: 44px; padding: 10px 14px; }
 }
 
 @media (max-width: 360px) {

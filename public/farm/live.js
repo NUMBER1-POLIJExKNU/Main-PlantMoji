@@ -280,6 +280,46 @@ function currentPlantName() {
   return lastPlantName || "Jamkachu";
 }
 
+// ── Cosmetic companion skins (milestone20, display-only) ────────────────
+// Jember-crop looks unlocked by bond level: renderCompanion swaps ONE
+// skin-<key> palette class on .mascot-svg from companion_state.skin_key,
+// and the wardrobe panel (below the farm guide wiring) writes the choice
+// via /api/companion-skin. Skins never grant or gate XP, seeds, quests,
+// evolution, or sensors — pure presentation, never a celebration.
+let currentSkinKey = "jamkachu";
+// Latest bond_state.bond_level seen by renderBond — the wardrobe lock
+// states read it. Starts at 1 (worst case a skin briefly shows locked
+// until the first bond render; the server re-checks every pick anyway).
+let lastBondLevel = 1;
+
+/** Catalog-normalize a companion_state.skin_key: unknown keys, a missing
+ *  milestone20 column (undefined), and a missing catalog script all resolve
+ *  to the default "jamkachu" — a pre-milestone20 DB renders exactly as
+ *  before the milestone existed. */
+function normalizeSkinKey(key) {
+  const skins = window.PM_SKINS?.skins;
+  return Array.isArray(skins) && skins.some((skin) => skin?.key === key) ? key : "jamkachu";
+}
+
+/** Idempotently swap the skin-<key> palette class on .mascot-svg — same
+ *  remove-then-add pattern as renderCompanion's companion-<Stage> swap. */
+function applySkinClass(key) {
+  const next = normalizeSkinKey(key);
+  const changed = next !== currentSkinKey;
+  currentSkinKey = next;
+  const svg = $(".mascot-svg");
+  if (svg) {
+    for (const cls of [...svg.classList]) {
+      if (cls.startsWith("skin-")) svg.classList.remove(cls);
+    }
+    svg.classList.add(`skin-${next}`);
+  }
+  // Only a REAL change repaints an open wardrobe list (selection marker) —
+  // the 15s poll re-confirming the same skin must not rebuild the buttons
+  // under the user's finger.
+  if (changed) refreshWardrobeIfOpen();
+}
+
 function chooseFreshDialogue(candidates) {
   const lines = [...new Set((Array.isArray(candidates) ? candidates : []).filter((line) => typeof line === "string" && line.trim()))];
   if (!lines.length) return null;
@@ -353,6 +393,10 @@ function renderCompanion(state) {
     svg.classList.add(`companion-${stage}`);
     svg.dataset.companionForm = form;
   }
+  // Cosmetic skin (milestone20): swap the skin-<key> palette class from
+  // companion_state.skin_key. An undefined skin_key (pre-milestone20 DB or
+  // the legacy column fallback select) behaves exactly like "jamkachu".
+  applySkinClass(state.skin_key);
   renderCompanionNext(stage, state);
   evoDemoStage = null; // real data render: the E-hotkey preview cursor resets
   // Evolution ceremony trigger (evolution-ladder plan, Task 7): a real RANK
@@ -415,6 +459,124 @@ const openFarmGuide = () => typeof farmGuide?.showModal === "function" && farmGu
 $("#farm-guide-open")?.addEventListener("click", openFarmGuide);
 $("#farm-guide-close")?.addEventListener("click", () => { try { localStorage.setItem("plantmoji_guide_seen_v1", "1"); } catch {} farmGuide?.close(); });
 try { if (!localStorage.getItem("plantmoji_guide_seen_v1")) openFarmGuide(); } catch {}
+
+// ── Wardrobe picker (milestone20, display-only) ─────────────────────────
+// Small button under the companion stage label → the same imperative
+// <dialog> pattern as the farm guide above, listing every window.PM_SKINS
+// catalog skin with a color swatch, its localized name, and a lock state
+// derived from the latest bond level (lastBondLevel, stashed by renderBond).
+// Picking an unlocked skin POSTs /api/companion-skin, which writes
+// companion_state.skin_key and NOTHING else — no XP, no seeds, no quests,
+// and deliberately no celebration FX on selection (state, not reward).
+// Every player-facing string comes from strings.js's "wardrobe" group (en +
+// id); the only literal fallback is the locale-neutral "Lv N" badge.
+const wardrobePanel = $("#wardrobe-panel");
+
+/** strings.js "wardrobe" group, guarded like every PM() read. */
+const wardrobeText = () => PM().wardrobe ?? {};
+
+function showWardrobeNote(text) {
+  const note = $("#wardrobe-note");
+  if (!note) return;
+  note.hidden = !text;
+  note.textContent = text ?? "";
+}
+
+function renderWardrobeList() {
+  const list = $("#wardrobe-list");
+  if (!list) return;
+  // Defensive catalog read — a missing companion-skins.js tag simply leaves
+  // the panel empty rather than breaking the page (same contract as PM()).
+  const skins = window.PM_SKINS?.skins ?? [];
+  list.textContent = "";
+  for (const skin of skins) {
+    if (!skin || typeof skin.key !== "string") continue;
+    const unlockLevel = Number(skin.unlockLevel) || 1;
+    const locked = unlockLevel > lastBondLevel;
+    const selected = skin.key === currentSkinKey;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "wardrobe-skin";
+    button.dataset.skin = skin.key;
+    button.classList.toggle("is-selected", selected);
+    button.classList.toggle("is-locked", locked);
+    button.setAttribute("aria-pressed", String(selected));
+    const swatch = document.createElement("i");
+    swatch.className = "wardrobe-swatch";
+    swatch.setAttribute("aria-hidden", "true");
+    if (typeof skin.accent === "string") swatch.style.background = skin.accent;
+    const name = document.createElement("span");
+    name.className = "wardrobe-skin-name";
+    name.textContent = (appLocale === "id" ? skin.nameId : skin.nameEn) ?? skin.key;
+    const state = document.createElement("span");
+    state.className = "wardrobe-skin-state";
+    state.textContent = locked
+      ? `🔒 ${wardrobeText().lockedAt?.(unlockLevel) ?? `Lv ${unlockLevel}`}`
+      : selected
+        ? `✓ ${wardrobeText().current ?? ""}`.trim()
+        : "";
+    button.append(swatch, name, state);
+    button.addEventListener("click", () => onWardrobeSkinTap(skin, locked, selected));
+    list.appendChild(button);
+  }
+}
+
+function onWardrobeSkinTap(skin, locked, selected) {
+  const unlockLevel = Number(skin.unlockLevel) || 1;
+  if (locked) {
+    // Locked tap: inline "unlocks at Lv N" hint only — no request, and no
+    // countdown/urgency framing (spec §4.3), just where the road leads.
+    showWardrobeNote(wardrobeText().hint?.(unlockLevel) ?? `Lv ${unlockLevel}`);
+    return;
+  }
+  showWardrobeNote(null);
+  if (selected) return; // already wearing it — nothing to write
+  // Same fetch pattern as the /api/game-tick tick below: fire, parse,
+  // tolerate every failure (offline keeps the current skin, silently).
+  fetch("/api/companion-skin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ plantId: PLANT_ID, skinKey: skin.key }),
+  })
+    .then((res) => res.json().catch(() => null))
+    .then((data) => {
+      if (data?.ok === true) {
+        // Apply the class immediately (state, not celebration — no FX);
+        // the companion_state realtime echo re-confirms the same class.
+        applySkinClass(data.skinKey ?? skin.key);
+      } else if (data?.error === "migration_missing") {
+        // milestone20 migration absent: gentle bilingual notice, no crash.
+        showWardrobeNote(wardrobeText().migrationMissing ?? "");
+      } else if (data?.error === "locked") {
+        // Server truth outranks a stale local bond level.
+        showWardrobeNote(wardrobeText().hint?.(unlockLevel) ?? `Lv ${unlockLevel}`);
+      }
+    })
+    .catch(() => {});
+}
+
+/** Repaint an OPEN wardrobe (skin echo / bond level-up); closed = no-op. */
+function refreshWardrobeIfOpen() {
+  if (wardrobePanel?.open) renderWardrobeList();
+}
+
+function openWardrobe() {
+  if (typeof wardrobePanel?.showModal !== "function") return;
+  showWardrobeNote(null);
+  renderWardrobeList();
+  wardrobePanel.showModal();
+}
+
+// Localize the static wardrobe chrome once at load (the list itself is
+// rebuilt on every open with live lock/selection state).
+{
+  const openLabel = $("#wardrobe-open-label");
+  const title = $("#wardrobe-title");
+  if (openLabel && wardrobeText().open) openLabel.textContent = wardrobeText().open;
+  if (title && wardrobeText().title) title.textContent = wardrobeText().title;
+  $("#wardrobe-open")?.addEventListener("click", openWardrobe);
+  $("#wardrobe-close")?.addEventListener("click", () => wardrobePanel?.close());
+}
 
 // ── DEV ADDITION: reward-feedback FX (dopamine-friendly, ethically) ─────
 //
@@ -4038,6 +4200,11 @@ function renderBond(bond, plantName) {
   const totalXp = Number(bond.total_xp) || 0;
   const level = Number(bond.bond_level) || 1;
   const streakDays = Number(bond.current_streak) || 0;
+  // Wardrobe lock states (milestone20) read the latest REAL bond level —
+  // display-only, the server re-checks every skin pick against bond_state.
+  const bondLevelChanged = level !== lastBondLevel;
+  lastBondLevel = level;
+  if (bondLevelChanged) refreshWardrobeIfOpen();
   // DEV ADDITION (reward FX): diff against the previous render. All prev*
   // start null, so the FIRST render only records state — no celebration for
   // merely loading the page. Deltas <= 0 (poll repeats, demo resets) never
@@ -5023,22 +5190,35 @@ async function main() {
         .then((res) => res)
         .catch(() => ({ data: null })),
       // Companion state incl. milestone16 progress counters (+ cycle for the
-      // ceremony's once-per-stage key). Pre-milestone16 DBs reject the
-      // unknown columns via PostgREST — retry the legacy three-column select
-      // so old databases keep rendering (the progress line just hides).
+      // ceremony's once-per-stage key) and the milestone20 cosmetic skin_key.
+      // Enumerated unknown columns reject via PostgREST, so the chain steps
+      // down one migration at a time: full (m20 skin) → counters-only (m16,
+      // skin_key absent → jamkachu) → the legacy three-column select — old
+      // databases keep rendering (the progress line just hides). skin_key is
+      // therefore only ever requested in the tolerant first step.
       supabase
         .from("companion_state")
-        .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")
+        .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count, skin_key")
         .eq("plant_id", PLANT_ID)
         .maybeSingle()
         .then((res) =>
           res?.error
             ? supabase
                 .from("companion_state")
-                .select("stage, form_key, updated_at")
+                .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")
                 .eq("plant_id", PLANT_ID)
                 .maybeSingle()
-                .then((legacy) => (legacy?.error ? { data: null } : legacy))
+                .then((m16) =>
+                  m16?.error
+                    ? supabase
+                        .from("companion_state")
+                        .select("stage, form_key, updated_at")
+                        .eq("plant_id", PLANT_ID)
+                        .maybeSingle()
+                        .then((legacy) => (legacy?.error ? { data: null } : legacy))
+                        .catch(() => ({ data: null }))
+                    : m16,
+                )
                 .catch(() => ({ data: null }))
             : res,
         )

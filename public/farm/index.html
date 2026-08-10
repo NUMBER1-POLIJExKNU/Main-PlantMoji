@@ -459,6 +459,12 @@
                              counters; stays empty (and :empty-hidden) when the
                              milestone16 counters are missing. -->
                         <div id="companion-next" class="companion-next"></div>
+                        <!-- Wardrobe (milestone20): cosmetic Jember-crop skin
+                             picker. live.js localizes the label (strings.js
+                             "wardrobe" group) and fills the #wardrobe-panel
+                             dialog below from window.PM_SKINS + bond level.
+                             Display-only — a skin is state, never a reward. -->
+                        <button id="wardrobe-open" class="wardrobe-open" type="button" aria-haspopup="dialog"><span aria-hidden="true">👕</span> <span id="wardrobe-open-label">Kostum</span></button>
                     </div>
                 </div>
             </div>
@@ -605,8 +611,23 @@
             <button id="farm-guide-close" class="pixel-btn" type="button" data-i18n="guide.start">AYO MULAI!</button>
         </div>
     </dialog>
+    <!-- Wardrobe panel (milestone20): compact skin picker reusing the guide
+         modal chrome. live.js localizes the title and builds the list from
+         window.PM_SKINS (swatch + localized name + "Lv N" lock state) with
+         the latest bond level; #wardrobe-note carries the locked hint and
+         the gentle migration-missing notice. Cosmetic only — no XP, no
+         seeds, no celebration on selection. "OK" is locale-neutral. -->
+    <dialog id="wardrobe-panel" class="farm-guide wardrobe-panel" aria-labelledby="wardrobe-title">
+        <div class="farm-guide-card wardrobe-card">
+            <span>👕 JAMKACHU</span><h2 id="wardrobe-title">LEMARI KOSTUM</h2>
+            <p id="wardrobe-note" class="wardrobe-note" hidden></p>
+            <div id="wardrobe-list" class="wardrobe-list"></div>
+            <button id="wardrobe-close" class="pixel-btn" type="button">OK</button>
+        </div>
+    </dialog>
     <script src="/farm/strings.js"></script>
     <script src="/farm/companion-ladder.js"></script>
+    <script src="/farm/companion-skins.js"></script>
     <script src="/farm/sfx.js"></script>
     <script src="/farm/demo.js"></script>
     <script src="/farm/quiz.js"></script>

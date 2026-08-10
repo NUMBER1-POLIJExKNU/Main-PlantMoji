@@ -118,6 +118,21 @@
         label: "Seeds",
       },
 
+      // Wardrobe (milestone20): cosmetic Jember-crop companion skins,
+      // unlocked by bond level, display-only — skins never grant or gate
+      // anything. `lockedAt` renders the compact "Lv N" lock badge, `hint`
+      // answers a tap on a locked skin (no urgency, no countdowns), and
+      // `migrationMissing` is the gentle in-panel notice shown when the
+      // milestone20 migration has not been applied yet.
+      wardrobe: {
+        title: "JAMKACHU'S WARDROBE",
+        open: "Outfits",
+        current: "Wearing",
+        lockedAt: (level) => `Lv ${level}`,
+        hint: (level) => `Unlocks at Bond Lv ${level} — keep caring and it's yours!`,
+        migrationMissing: "The wardrobe isn't set up in this garden yet — Jamkachu keeps the classic look for now.",
+      },
+
       // Camera Live Guardian (milestone19): farm-side reactions to
       // camera_events realtime rows. Presentation only — never rewards.
       cameraGuardian: {
@@ -501,6 +516,19 @@
 
       seedShop: {
         label: "Benih",
+      },
+
+      // Lemari kostum (milestone20): tampilan panen Jember kosmetik, terbuka
+      // lewat level ikatan, murni tampilan — kostum tidak pernah memberi
+      // atau mengunci apa pun. Kunci "Lv N" dan petunjuknya tanpa nada
+      // buru-buru (spec §4.3).
+      wardrobe: {
+        title: "LEMARI KOSTUM JAMKACHU",
+        open: "Kostum",
+        current: "Dipakai",
+        lockedAt: (level) => `Lv ${level}`,
+        hint: (level) => `Terbuka di Ikatan Lv ${level} — terus rawat ya, nanti jadi milikmu!`,
+        migrationMissing: "Lemari kostum belum siap di kebun ini — Jamkachu tetap tampil klasik dulu ya.",
       },
 
       // Camera Live Guardian (milestone19): reaksi kebun untuk baris
