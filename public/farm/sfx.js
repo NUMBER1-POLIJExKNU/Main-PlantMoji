@@ -40,8 +40,9 @@
 // network (spec D1). The last three evolution-ceremony cues are also
 // exposed as dedicated PMSfx methods above — see the object literal doc.
 //
-// Sound is default OFF. The preference lives at localStorage["pm_sound"]
-// ("on" = enabled; missing or "off" = muted) and syncs across tabs/pages via
+// Sound is default ON (spec D1). The preference lives at
+// localStorage["pm_sound"] ("off" = muted; "on" or missing = enabled — an
+// explicit user choice is always respected) and syncs across tabs/pages via
 // storage events. The AudioContext is created + resumed on the FIRST
 // pointerdown (capture phase, once); if the browser keeps it suspended
 // across several real gestures WITHOUT ever having run, the speaker toggle
@@ -71,7 +72,10 @@
 
   function readMuted() {
     try {
-      return localStorage.getItem(STORAGE_KEY) !== "on";
+      // Only an explicit "off" mutes (spec D1: sound defaults ON). A saved
+      // "on"/"off" choice is always respected; a missing key means the user
+      // never chose, so the D1 default applies.
+      return localStorage.getItem(STORAGE_KEY) === "off";
     } catch {
       return false; // storage unavailable → default ON, nothing persists
     }

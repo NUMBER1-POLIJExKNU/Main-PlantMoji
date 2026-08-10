@@ -44,6 +44,14 @@ export async function POST(request: Request) {
   if(!question) return Response.json({ok:false,error:"not_todays_question"},{status:400});
   const locale=normalizeLocale(body.locale);
   const localized=dailyQuiz(plantId,locale,seed).find(q=>q.key===questionKey)!;
+  // Practice rounds (>=1) are pure learning: correctness is computed here, no
+  // answer_daily_quiz RPC, no XP, no seeds, no badge/chapter evaluation. Only
+  // round 0 (the daily 3) ever pays out. A wrong practice answer reveals the
+  // solution immediately via the client's existing completed+correctIndex path.
+  if(round>=1){
+    const correct=answerIndex===question.correctIndex;
+    return Response.json({ok:true,practice:true,correct,xp_awarded:0,explanation:localized.explanation,hint:quizHint(localized.category,locale),...(correct?{}:{attempts:2,completed:true,correctIndex:localized.correctIndex,correctAnswer:localized.choices[localized.correctIndex]})});
+  }
   const supabase=getServerSupabase();
   if(!supabase) return Response.json({ok:false,error:"quiz_xp_unavailable"},{status:503});
   const {data,error}=await supabase.rpc("answer_daily_quiz",{p_plant_id:plantId,p_quiz_date:quizDate,p_round_no:round,p_question_key:questionKey,p_answer_index:answerIndex,p_correct:answerIndex===question.correctIndex});

@@ -169,7 +169,7 @@ The relationship with Jamkachu continues even after you step away:
 Celebrations are real, quick, and honest — every effect fires only on backend-verified transitions:
 
 - 🎚️ **Celebration queue** — stacked FX (quest + lucky + level-up) play as an ordered sequence with per-tier duration caps, so feedback never blocks information
-- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), default muted until the user enables it, persistent one-tap preference (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
+- 🔊 **8-bit SFX** — synthesized live with WebAudio (zero audio files), sound on by default (spec D1) with a persistent one-tap mute (`localStorage` `pm_sound`) synced across pages; haptics follow the same preference
 - 🌰 **Tap-to-claim reward pod** — a quest completion drops a seed pod by Jamkachu; tap it to pop the celebration (it auto-bursts after ~8 s so nothing ever stalls)
 - ✨ **XP orb cascade** — awards split into orbs that arc into the XP bar (gold when lucky); reduced-motion collapses to a single count-up
 - 🔍 **Verifying shimmer** — quests being sensor-checked render amber with "Sensor is checking…", then a short anticipation hold before the celebration
@@ -395,8 +395,8 @@ Live screens:
                  forecast stays separate from the indoor sensor
              Reward FX ride the celebration queue: tap-to-claim reward pod,
              XP orb cascade, reason chips, causal echo, Lucky ×2 stamp,
-             chapter gate — with optional 8-bit WebAudio SFX (default muted,
-             one-tap enable). Real backend-verified transitions only; reduced-motion
+             chapter gate — with 8-bit WebAudio SFX (on by default,
+             one-tap mute). Real backend-verified transitions only; reduced-motion
              safe. Append ?demo=1 for presenter hotkeys + a QA self-test
              overlay (presentation-only replays, zero data writes).
 
