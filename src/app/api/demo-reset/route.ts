@@ -6,9 +6,10 @@ import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
  * scenario (KBS documentary retakes) can be re-shot without hand-editing the
  * database.
  *
- * Auth matches /api/device-events: when DEVICE_API_TOKEN is set, the same
- * Bearer token is required; when unset, the endpoint is open (team-internal
- * project — the team chose zero-friction filming retakes over auth).
+ * Auth matches /api/device-events: the token is enforced only when set —
+ * zero-friction by EXPLICIT USER DECISION (2026-08-10, team-internal
+ * project). Do NOT re-add a fail-closed production branch without asking
+ * the user first; they rejected that gate once already.
  *
  * Reset scope (rows for the given plant only):
  *   cleared — xp_rewards, bond_events, plant_badges, quests, device_events
@@ -22,7 +23,7 @@ import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
 
 export async function POST(request: Request) {
   // Optional token, same rule as /api/device-events: enforced only when set.
-  const requiredToken = process.env.DEVICE_API_TOKEN;
+  const requiredToken = process.env.DEVICE_API_TOKEN?.trim();
   if (requiredToken) {
     const auth = request.headers.get("authorization");
     if (auth !== `Bearer ${requiredToken}`) {
