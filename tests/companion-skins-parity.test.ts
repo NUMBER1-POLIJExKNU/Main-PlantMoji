@@ -107,6 +107,16 @@ describe("milestone20 skin surfaces track COMPANION_SKIN_KEYS", () => {
     expect(new Set(sqlKeys)).toEqual(new Set(COMPANION_SKIN_KEYS));
   });
 
+  it("demo.js keeps the K hotkey that cycles skins for filming (presentation only)", () => {
+    const demo = readFileSync(path.resolve(here, "../public/farm/demo.js"), "utf8");
+    expect(demo).toContain('case "k":');
+    expect(demo).toContain("function cycleSkins()");
+    // Presentation-only: the demo cycler must never POST the selection.
+    expect(demo).not.toContain("/api/companion-skin");
+    // And the presenter help panel must advertise it.
+    expect(demo).toMatch(/\["K",\s*"cycle companion skin/);
+  });
+
   it("farm CSS defines a .mascot-svg.skin-<key> palette block for every catalog key", () => {
     // style.css spells the default jamkachu palette out as an explicit
     // .skin-jamkachu block (rather than leaving the default look to the

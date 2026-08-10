@@ -70,6 +70,7 @@
     ["4", "reward pod"],
     ["5", "cycle mood"],
     ["E", "evolution ceremony (repeat → next of 10 stages · tap = fast-forward)"],
+    ["K", "cycle companion skin (presentation only · realtime may revert)"],
     ["G", "grandpa guidance line"],
     ["B", "system boot sequence"],
     ["X", "broadcast ending card"],
@@ -192,6 +193,29 @@
       toast(`Mood → ${mood}`);
     } catch {
       toast(`Mood "${mood}" threw — check console`);
+    }
+  }
+
+  /** Cycle the milestone20 companion skins on the mascot, presentation
+   *  only: pure class swap mirroring live.js renderCompanion — no POST, no
+   *  persistence, so the next companion_state realtime echo or 15s poll may
+   *  snap back to the player's real skin (expected during a demo). */
+  let skinIndex = -1;
+  function cycleSkins() {
+    const skins = window.PM_SKINS?.skins;
+    const mascot = document.querySelector(".mascot-svg");
+    if (!Array.isArray(skins) || skins.length === 0 || !mascot) {
+      toast("FX hook not loaded");
+      return;
+    }
+    skinIndex = (skinIndex + 1) % skins.length;
+    const skin = skins[skinIndex];
+    try {
+      for (const entry of skins) mascot.classList.remove(`skin-${entry.key}`);
+      mascot.classList.add(`skin-${skin.key}`);
+      toast(`Skin → ${skin.nameEn} (Lv.${skin.unlockLevel})`);
+    } catch {
+      toast(`Skin "${skin.key}" threw — check console`);
     }
   }
 
@@ -503,6 +527,10 @@
       case "e":
       case "E":
         fireFx("evolve");
+        break;
+      case "k":
+      case "K":
+        cycleSkins();
         break;
       case "g":
       case "G":

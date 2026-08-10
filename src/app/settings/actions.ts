@@ -14,8 +14,11 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { applyDemoMaxState } from "@/game/demo/demo-max";
 import { resetDemoProgress } from "@/game/demo/demo-reset";
 import { advanceDemoCompanion, awardDemoLevelUp, prepareNextLevelDemo } from "@/game/demo/presenter";
+import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { parseGrowthInput } from "@/lib/growth";
 import { companionStageLabel, normalizeLocale, type AppLocale } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/i18n-server";
+import { generatePhotoComment } from "@/lib/photo-comment";
 import { normalizeGrowthStage } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import {
@@ -174,10 +177,15 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   }
   const recordId = randomUUID();
   let photoPath: string | null = null;
+  // Photo bytes are read ONCE and reused for both the storage upload and the
+  // base64 payload of Jamkachu's diary reply below.
+  let photoBytes: ArrayBuffer | null = null;
   if (acceptedPhoto) {
+    const bytes = await acceptedPhoto.arrayBuffer();
+    photoBytes = bytes;
     const extension = acceptedPhoto.type === "image/png" ? "png" : acceptedPhoto.type === "image/webp" ? "webp" : "jpg";
     photoPath = `${plantId}/${recordId}.${extension}`;
-    const { error: uploadError } = await supabase.storage.from("growth-snapshots").upload(photoPath, await acceptedPhoto.arrayBuffer(), { contentType: acceptedPhoto.type, upsert: false });
+    const { error: uploadError } = await supabase.storage.from("growth-snapshots").upload(photoPath, bytes, { contentType: acceptedPhoto.type, upsert: false });
     if (uploadError) {
       console.error(`addGrowthRecord(${plantId}) snapshot upload failed:`, uploadError.message);
       photoPath = null; // the written growth fact must not depend on photo storage
@@ -226,9 +234,86 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
     console.error(`addGrowthRecord(${plantId}) growth_stage update failed:`, updateError.message);
   }
 
+  // Jamkachu's diary reply (display-only flavor text — never parsed for game
+  // decisions): only when a photo was accepted and the record insert
+  // succeeded. Runs BEFORE the /diary revalidate so the reply is already on
+  // the record when the page re-renders, and the whole block is best-effort —
+  // no failure here (AI timeout, missing milestone19 column, any query error)
+  // may fail the submitted growth record. generatePhotoComment itself never
+  // throws and never blocks longer than ~4s.
+  if (acceptedPhoto && photoBytes) {
+    try {
+      const locale = await getRequestLocale();
+      const { data: plantRow } = await supabase
+        .from("plants")
+        .select("name, personality")
+        .eq("id", plantId)
+        .maybeSingle();
+      const snapshot = await getLatestSensorSnapshot(supabase, plantId);
+      // Openings of recent replies, handed to the AI as "start differently".
+      // Any error (including a missing ai_comment column) just means no
+      // variety hint — tolerated as an empty list.
+      let recentComments: string[] = [];
+      try {
+        const { data: recentRows, error: recentError } = await supabase
+          .from("growth_records")
+          .select("ai_comment")
+          .eq("plant_id", plantId)
+          .not("ai_comment", "is", null)
+          .order("recorded_at", { ascending: false })
+          .limit(3);
+        if (!recentError && Array.isArray(recentRows)) {
+          recentComments = recentRows
+            .map((row) => (typeof row.ai_comment === "string" ? row.ai_comment : ""))
+            .filter((comment) => comment.length > 0);
+        }
+      } catch {
+        recentComments = [];
+      }
+
+      const { comment } = await generatePhotoComment({
+        plantName: typeof plantRow?.name === "string" && plantRow.name.trim() ? plantRow.name : "Jamkachu",
+        personality: normalizePersonality(plantRow?.personality),
+        snapshot,
+        locale,
+        imageBase64: Buffer.from(photoBytes).toString("base64"),
+        imageMimeType: acceptedPhoto.type,
+        recordId,
+        stage,
+        note,
+        heightCm,
+        leafCount,
+        recentComments,
+      });
+
+      const { error: commentError } = await supabase
+        .from("growth_records")
+        .update({ ai_comment: comment })
+        .eq("id", recordId);
+      if (commentError && !isMissingAiCommentColumn(commentError)) {
+        console.error(`addGrowthRecord(${plantId}) ai_comment update failed:`, commentError.message);
+      }
+    } catch (error) {
+      console.error(`addGrowthRecord(${plantId}) diary reply failed:`, error);
+    }
+  }
+
   // The add-record form now lives on /diary (Growth Records moved out of
   // Settings) — revalidate that route instead of /settings.
   revalidatePath("/diary");
+}
+
+/** milestone19 not applied: `growth_records.ai_comment` is missing — raw
+ *  Postgres 42703 or a PostgREST schema-cache miss (PGRST204). Skipped
+ *  silently: the record itself is already saved, the reply is optional. */
+function isMissingAiCommentColumn(error: { code?: string; message: string }): boolean {
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /could not find the '.+' column/i.test(error.message) ||
+    /column .+ does not exist/i.test(error.message) ||
+    /ai_comment/i.test(error.message)
+  );
 }
 
 /**
