@@ -15,9 +15,8 @@
     NOT cleared: growth_records (real-world growth log) and sensor_readings
     (Node-RED's table).
 
-    The endpoint is destructive, so it only works when the server has
-    DEVICE_API_TOKEN set in .env.local — and this script must send the same
-    value via -Token. Without the env var the server answers 403.
+    Auth matches the server: if DEVICE_API_TOKEN is set in .env.local, pass
+    the same value via -Token; if the server has no token, omit -Token.
 
 .PARAMETER BaseUrl
     Dev server base URL. Default: http://localhost:3000
@@ -26,13 +25,13 @@
     Plant to reset. Default: plant-01
 
 .PARAMETER Token
-    The server's DEVICE_API_TOKEN value. Required.
+    The server's DEVICE_API_TOKEN value. Only needed if the server sets one.
 
 .PARAMETER Force
     Skip the confirmation prompt (for scripted retakes between takes).
 
 .EXAMPLE
-    pwsh -File scripts/demo-reset.ps1 -Token my-secret-token
+    pwsh -File scripts/demo-reset.ps1
 
 .EXAMPLE
     pwsh -File scripts/demo-reset.ps1 -Token my-secret-token -PlantId plant-01 -Force
@@ -41,7 +40,7 @@
 param(
     [string]$BaseUrl = "http://localhost:3000",
     [string]$PlantId = "plant-01",
-    [Parameter(Mandatory)][string]$Token,
+    [string]$Token = "",
     [switch]$Force
 )
 
@@ -54,7 +53,8 @@ if (-not $Force) {
 }
 
 $body = @{ plantId = $PlantId } | ConvertTo-Json
-$headers = @{ Authorization = "Bearer $Token" }
+$headers = @{}
+if ($Token) { $headers.Authorization = "Bearer $Token" }
 
 try {
     $statusCode = 0
@@ -70,11 +70,8 @@ catch {
 if ($statusCode -ne 200 -or $resp.ok -ne $true) {
     $respText = if ($null -ne $resp) { $resp | ConvertTo-Json -Compress -Depth 5 } else { "<empty body>" }
     Write-Host ("ERROR: reset failed (HTTP {0}): {1}" -f $statusCode, $respText) -ForegroundColor Red
-    if ($statusCode -eq 403) {
-        Write-Host "The server has no DEVICE_API_TOKEN - add it to .env.local and restart the dev server." -ForegroundColor Yellow
-    }
-    elseif ($statusCode -eq 401) {
-        Write-Host "Token mismatch - pass the exact value of the server's DEVICE_API_TOKEN." -ForegroundColor Yellow
+    if ($statusCode -eq 401) {
+        Write-Host "Token mismatch - pass the exact value of the server's DEVICE_API_TOKEN (or omit -Token if the server has none)." -ForegroundColor Yellow
     }
     exit 1
 }

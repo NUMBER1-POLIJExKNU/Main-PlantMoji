@@ -470,9 +470,9 @@ SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
 # without auth (local prototype mode).
 DEVICE_API_TOKEN=
 
-# Optional — the Demo Control Center on /settings?demo=1. Use 8+ characters
-# and keep it server-side. The same code can reset the story or unlock the
-# full Lv.10 demo.
+# Optional — the Demo Control Center on /settings?demo=1. Defaults to "admin"
+# when unset (team-internal project). The same code can reset the story or
+# unlock the full Lv.10 demo.
 DEMO_CHEAT_CODE=
 
 # Optional — BMKG village code. Defaults to Tegalgede, Sumbersari, Jember.
@@ -486,9 +486,9 @@ GEMINI_API_KEY=
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
-For a presentation, set `DEMO_CHEAT_CODE` in Vercel, redeploy, then open
-**`/settings?demo=1`** (the Demo Control Center is hidden from the normal
-student UX) and enter the code. **Unlock everything** creates a replay-safe
+For a presentation, open **`/settings?demo=1`** (the Demo Control Center is
+hidden from the normal student UX) and enter the code — `admin` unless
+`DEMO_CHEAT_CODE` overrides it. **Unlock everything** creates a replay-safe
 Lv.10 showcase with every mood, badge, story chapter, and quest type.
 **Reset to start** restores Lv.1 / 0 XP and clears game progress for another
 rehearsal. Neither action changes sensor readings, growth records, crop

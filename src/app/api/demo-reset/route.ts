@@ -6,10 +6,9 @@ import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
  * scenario (KBS documentary retakes) can be re-shot without hand-editing the
  * database.
  *
- * Destructive and reachable on a public URL, so auth is MANDATORY: unlike
- * /api/device-events (token optional for the local prototype), this endpoint
- * refuses to run at all when DEVICE_API_TOKEN is not configured — there is no
- * unauthenticated mode.
+ * Auth matches /api/device-events: when DEVICE_API_TOKEN is set, the same
+ * Bearer token is required; when unset, the endpoint is open (team-internal
+ * project — the team chose zero-friction filming retakes over auth).
  *
  * Reset scope (rows for the given plant only):
  *   cleared — xp_rewards, bond_events, plant_badges, quests, device_events
@@ -22,18 +21,13 @@ import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
  */
 
 export async function POST(request: Request) {
-  // Hard auth gate: a destructive endpoint must never run open. If the token
-  // is not configured, the whole feature is disabled.
+  // Optional token, same rule as /api/device-events: enforced only when set.
   const requiredToken = process.env.DEVICE_API_TOKEN;
-  if (!requiredToken) {
-    return Response.json(
-      { error: "demo-reset disabled: set DEVICE_API_TOKEN" },
-      { status: 403 },
-    );
-  }
-  const auth = request.headers.get("authorization");
-  if (auth !== `Bearer ${requiredToken}`) {
-    return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  if (requiredToken) {
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${requiredToken}`) {
+      return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    }
   }
 
   // Body: { plantId } — optional, defaults to the seeded demo plant.

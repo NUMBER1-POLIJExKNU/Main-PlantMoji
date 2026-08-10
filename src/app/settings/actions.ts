@@ -45,29 +45,15 @@ function demoLocale(formData: FormData): AppLocale {
   return normalizeLocale(formData.get("locale"));
 }
 
-/** Demo gate code. On a public deployment DEMO_CHEAT_CODE (8+ chars, see
- *  .env.local.example) is mandatory — unset or too short means the demo
- *  panel is disabled outright, the same fail-closed stance as
- *  /api/demo-reset. Outside production the "admin" filming convenience
- *  stays so localhost rehearsals need no env setup. */
-function configuredDemoCode(): string | null {
-  const fromEnv = process.env.DEMO_CHEAT_CODE?.trim();
-  if (fromEnv && fromEnv.length >= 8) return fromEnv;
-  return process.env.NODE_ENV === "production" ? null : "admin";
+/** Demo gate code. Team-internal project by deliberate choice: the code is
+ *  "admin" everywhere (including production) unless DEMO_CHEAT_CODE
+ *  overrides it, so filming and rehearsals need zero env setup. */
+function configuredDemoCode(): string {
+  return process.env.DEMO_CHEAT_CODE?.trim() || "admin";
 }
 
 function validateDemoCode(formData: FormData, locale: AppLocale): string | DemoActionState {
   const configuredCode = configuredDemoCode();
-  if (!configuredCode) {
-    return {
-      status: "error",
-      message:
-        locale === "id"
-          ? "Kode demo belum dikonfigurasi di deployment ini (atur DEMO_CHEAT_CODE)."
-          : "The demo code is not configured on this deployment (set DEMO_CHEAT_CODE).",
-    };
-  }
-
   const rawCode = formData.get("demoCode");
   const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
   if (!submittedCode || !matchesDemoCode(submittedCode, configuredCode)) {
