@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Pixelify_Sans, Press_Start_2P } from "next/font/google";
 import Script from "next/script";
 import RenoAppShell from "@/components/reno-app-shell";
@@ -29,6 +29,14 @@ const pixelifySans = Pixelify_Sans({
 export const metadata: Metadata = {
   title: "PlantMoji",
   description: "Sensor-verified plant companion — real plant care as a game",
+};
+
+// viewport-fit=cover is required for env(safe-area-inset-*) to return
+// non-zero on iPhones — the mobile dock/sheet/FAB offsets depend on it.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
