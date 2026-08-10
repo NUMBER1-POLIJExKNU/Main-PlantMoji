@@ -14,7 +14,9 @@ export const MOOD_COPY: Record<AppLocale, Record<PlantMood, string>> = {
   id: {
     Happy: "Sehat",
     Overheating: "Terlalu Panas",
+    TooCold: "Terlalu Dingin",
     DryAir: "Udara Kering",
+    HumidAir: "Udara Lembap",
     Sleepy: "Kurang Cahaya",
     SoilAcidic: "Tanah Terlalu Asam",
     SoilAlkaline: "Tanah Terlalu Basa",
@@ -22,7 +24,9 @@ export const MOOD_COPY: Record<AppLocale, Record<PlantMood, string>> = {
   en: {
     Happy: "Happy",
     Overheating: "Overheating",
+    TooCold: "Too Cold",
     DryAir: "Dry Air",
+    HumidAir: "Humid Air",
     Sleepy: "Too Dark",
     SoilAcidic: "Soil Too Acidic",
     SoilAlkaline: "Soil Too Alkaline",
@@ -40,10 +44,20 @@ export const MOOD_EDUCATION_ID: Record<PlantMood, { title: string; why: string; 
     why: "Udara yang terlalu panas membuat daun kehilangan air lebih cepat dan memperlambat fotosintesis.",
     action: "Beri naungan, jauhkan dari kaca panas, atau tambah aliran udara, lalu tunggu verifikasi sensor.",
   },
+  TooCold: {
+    title: "Terlalu Dingin untuk Tumbuh",
+    why: "Udara yang terlalu dingin memperlambat metabolisme tanaman: akar sulit menyerap air dan hara, dan fotosintesis hampir berhenti.",
+    action: "Pindahkan ke tempat yang lebih hangat, jauhkan dari angin dingin atau AC, lalu tunggu verifikasi sensor.",
+  },
   DryAir: {
     title: "Udara Kering, Bukan Tanah Kering",
     why: "Kelembapan udara rendah menarik air keluar dari daun, walaupun tanah masih cukup basah.",
     action: "Lembapkan udara di sekitar daun atau jauhkan pot dari kipas dan AC. Jangan otomatis menyiram tanah.",
+  },
+  HumidAir: {
+    title: "Udara Lembap, Bukan Soal Tanah",
+    why: "Kelembapan udara terlalu tinggi membuat daun sulit menguapkan air, dan udara pengap yang diam mengundang jamur.",
+    action: "Perbaiki aliran udara, buka jendela, atau jauhkan pot dari uap dan kabut air. Jangan mengubah penyiraman tanah.",
   },
   Sleepy: {
     title: "Tanpa Cahaya, Tanpa Makanan",
@@ -84,6 +98,11 @@ export const QUEST_COPY_ID: Record<QuestKey, LocalizedQuestCopy> = {
     description: "Udaraku terlalu panas. Sejukkan dan jaga tetap stabil selama 5 menit.",
     why: "Udara yang lebih sejuk mengurangi kehilangan air dari daun dan membantu fotosintesis berjalan kembali.",
   },
+  WARM_ME_UP: {
+    title: "Hangatkan Aku",
+    description: "Udaraku terlalu dingin. Hangatkan dan jaga tetap stabil selama 5 menit.",
+    why: "Udara yang lebih hangat membangunkan metabolisme tanaman sehingga akar kembali menyerap air dan fotosintesis berjalan lagi.",
+  },
   GIVE_ME_MORE_LIGHT: {
     title: "Beri Aku Cahaya",
     description: "Tempatku terlalu gelap. Nyalakan kembali cahaya dan jaga selama 5 menit.",
@@ -93,6 +112,11 @@ export const QUEST_COPY_ID: Record<QuestKey, LocalizedQuestCopy> = {
     title: "Lembapkan Udaraku",
     description: "Udara di sekitar daun terlalu kering. Lembapkan udara, bukan tanah, lalu jaga selama 5 menit.",
     why: "Kelembapan udara yang cukup memperlambat hilangnya air dari daun. Misi ini bukan perintah untuk menyiram tanah.",
+  },
+  DEHUMIDIFY_MY_AIR: {
+    title: "Keringkan Udaraku",
+    description: "Udara di sekitar daun terlalu lembap. Perbaiki aliran udara, bukan tanah, lalu jaga selama 5 menit.",
+    why: "Aliran udara yang baik menurunkan kelembapan berlebih sehingga daun bisa bernapas dan jamur tak mudah tumbuh. Misi ini bukan soal menyiram tanah.",
   },
   BALANCE_SOIL_ACIDIC: {
     title: "Seimbangkan Tanahku",
@@ -117,7 +141,7 @@ export const BADGE_COPY_ID: Record<BadgeKey, { name: string; description: string
   PH_GUARDIAN: { name: "Tanah Sehat", description: "Menjaga tanah sehat selama 7 hari." },
   STREAK_7: { name: "Rawat 7 Hari", description: "Merawat tanaman 7 hari berturut-turut." },
   HUMIDITY_HERO: { name: "Pembantu Udara", description: "Mengatasi udara kering 5 kali." },
-  MOOD_SCHOLAR: { name: "Penemu Suasana", description: "Menemukan semua 6 suasana tanaman." },
+  MOOD_SCHOLAR: { name: "Penemu Suasana", description: "Menemukan semua 8 suasana tanaman." },
   CARE_VETERAN: { name: "Bintang Misi", description: "Menyelesaikan 25 misi." },
   CHRONICLER: { name: "Penulis Tanaman", description: "Menulis 5 catatan pertumbuhan." },
   STREAK_30: { name: "Rawat 30 Hari", description: "Merawat tanaman 30 hari berturut-turut." },

@@ -60,7 +60,7 @@ export const BADGE_DEFINITIONS: Record<BadgeKey, BadgeDefinition> = {
   MOOD_SCHOLAR: {
     key: "MOOD_SCHOLAR",
     name: "Mood Finder",
-    description: "Found all 6 plant moods.",
+    description: "Found all 8 plant moods.",
     emoji: "🎓",
   },
   CARE_VETERAN: {

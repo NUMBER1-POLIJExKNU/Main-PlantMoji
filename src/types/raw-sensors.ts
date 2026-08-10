@@ -137,7 +137,10 @@ export function isCropLightingHours(date: Date, profile: CropProfile): boolean {
 
 /**
  * Server-side equivalent of Node-RED's former Combine Plant State function.
- * Priority is heat → dry air → daytime darkness → soil pH → healthy.
+ * Priority is heat → cold → dry air → humid air → daytime darkness → soil pH
+ * → healthy. Heat/cold are mutually exclusive temperature bands, as are
+ * dry/humid air; each uses hysteresis so the state does not flicker at the
+ * threshold (enter on the outer bound, recover only past the inner one).
  */
 export function determinePlantMood(
   reading: Pick<RawSensorReading, "temperature" | "humidity" | "soilPH" | "light">,
@@ -152,11 +155,23 @@ export function determinePlantMood(
       : reading.temperature >= profile.temperature.overheating.enterAtOrAbove;
   if (overheating) return "Overheating";
 
+  const tooCold =
+    currentMood === "TooCold"
+      ? reading.temperature < profile.temperature.cold.recoverAtOrAbove
+      : reading.temperature <= profile.temperature.cold.enterAtOrBelow;
+  if (tooCold) return "TooCold";
+
   const dryAir =
     currentMood === "DryAir"
       ? reading.humidity < profile.airHumidity.dryAir.recoverAtOrAbove
       : reading.humidity < profile.airHumidity.dryAir.enterBelow;
   if (dryAir) return "DryAir";
+
+  const humidAir =
+    currentMood === "HumidAir"
+      ? reading.humidity > profile.airHumidity.humidAir.recoverAtOrBelow
+      : reading.humidity > profile.airHumidity.humidAir.enterAbove;
+  if (humidAir) return "HumidAir";
   if (duringLightingHours && !hasSufficientLight(reading.light)) {
     return "Sleepy";
   }

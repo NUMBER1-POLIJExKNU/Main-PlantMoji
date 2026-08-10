@@ -31,7 +31,11 @@ function fail(context: string, message: string): never {
  *     [min, max] ("calibrated pH returns to normal range and remains stable"), OR
  *   * def.verifyHumidityMin is set and data.humidity is a finite number below
  *     it (handoff §5.2 dry-air hysteresis: dry OFF at >= 45% — anything drier
- *     means the air has NOT recovered).
+ *     means the air has NOT recovered), OR
+ *   * def.verifyTemperatureMin is set and data.temperature is a finite number
+ *     below the profile's cold recover point (still too cold), OR
+ *   * def.verifyHumidityMax is set and data.humidity is a finite number above
+ *     the profile's humid-air recover point (air still too humid).
  * Each clause reads its live threshold from the plant's crop profile; the
  * QuestDefinition field is the opt-in flag carrying the handoff demo value.
  * Exported for tests only — the engine is the sole runtime caller.
@@ -54,6 +58,17 @@ export function sensorBlocksRecovery(
     }
   }
 
+  if (def.verifyTemperatureMin !== undefined) {
+    const temperature = data.temperature;
+    if (
+      typeof temperature === "number" &&
+      Number.isFinite(temperature) &&
+      temperature < profile.temperature.cold.recoverAtOrAbove
+    ) {
+      return true;
+    }
+  }
+
   if (def.verifyPhRange !== undefined) {
     const soilPH = data.soilPH;
     if (
@@ -71,6 +86,17 @@ export function sensorBlocksRecovery(
       typeof humidity === "number" &&
       Number.isFinite(humidity) &&
       humidity < profile.airHumidity.dryAir.recoverAtOrAbove
+    ) {
+      return true;
+    }
+  }
+
+  if (def.verifyHumidityMax !== undefined) {
+    const humidity = data.humidity;
+    if (
+      typeof humidity === "number" &&
+      Number.isFinite(humidity) &&
+      humidity > profile.airHumidity.humidAir.recoverAtOrBelow
     ) {
       return true;
     }

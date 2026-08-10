@@ -195,6 +195,20 @@ export default async function ReportsPage() {
           accent="#F08A6B"
         />
         <StatTile
+          emoji="🥶"
+          label={locale === "id" ? "Kejadian kedinginan" : "Too-cold events"}
+          value={String(report.tooColdEvents)}
+          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
+          accent="#7FB8D6"
+        />
+        <StatTile
+          emoji="🌫️"
+          label={locale === "id" ? "Kejadian udara lembap" : "Humid-air events"}
+          value={String(report.humidAirEvents)}
+          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
+          accent="#6FA89C"
+        />
+        <StatTile
           emoji="🤝"
           label={locale === "id" ? "Level ikatan" : "Bond level"}
           value={`Lv.${report.bondLevel}`}

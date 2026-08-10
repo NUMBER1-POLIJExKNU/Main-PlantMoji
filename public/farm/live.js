@@ -62,7 +62,9 @@ const COPY = {
     "quest.verifying": "memverifikasi…",
     "mood.Happy": "Senang",
     "mood.Overheating": "Kepanasan",
+    "mood.TooCold": "Kedinginan",
     "mood.DryAir": "Udara Kering",
+    "mood.HumidAir": "Udara Lembap",
     "mood.Sleepy": "Mengantuk",
     "mood.SoilAcidic": "Tanah Asam",
     "mood.SoilAlkaline": "Tanah Basa",
@@ -90,7 +92,9 @@ const COPY = {
     "quest.verifying": "verifying…",
     "mood.Happy": "Happy",
     "mood.Overheating": "Overheating",
+    "mood.TooCold": "Too Cold",
     "mood.DryAir": "Dry Air",
+    "mood.HumidAir": "Humid Air",
     "mood.Sleepy": "Sleepy",
     "mood.SoilAcidic": "Acidic",
     "mood.SoilAlkaline": "Alkaline",
@@ -123,7 +127,9 @@ const PM = () => window.PM_STRINGS || {};
 const MOODS = {
   Happy: { bubble: "\"I'm feeling so healthy!<br>Thanks for the care.\"" },
   Overheating: { bubble: "\"It's too hot...<br>please cool me down!\"" },
+  TooCold: { bubble: "\"Brrr, it's too cold...<br>please warm me up!\"" },
   DryAir: { bubble: "\"The air feels so dry...<br>a little humidity please?\"" },
+  HumidAir: { bubble: "\"The air feels so muggy...<br>a little airflow please?\"" },
   Sleepy: { bubble: "\"So dark... I'm getting sleepy.<br>More light please!\"" },
   SoilAcidic: { bubble: "\"My soil feels sour...<br>can you check the pH?\"" },
   SoilAlkaline: { bubble: "\"My soil feels off...<br>can you check the pH?\"" },
@@ -135,8 +141,10 @@ const MOODS = {
 const HP_BY_MOOD = {
   Happy: 100,
   DryAir: 70,
+  HumidAir: 70,
   Sleepy: 70,
   Overheating: 55,
+  TooCold: 55,
   SoilAcidic: 55,
   SoilAlkaline: 55,
 };
@@ -148,26 +156,28 @@ const QUEST_META = {
   KEEP_ME_HAPPY: { title: "Keep Me Happy", emoji: "🌱", targetMin: 30 },
   STAY_COMFY: { title: "Stay Comfy", emoji: "🛋️", targetMin: 120 },
   COOL_ME_DOWN: { title: "Cool Me Down", emoji: "❄️" },
+  WARM_ME_UP: { title: "Warm Me Up", emoji: "🧣" },
   GIVE_ME_MORE_LIGHT: { title: "Give Me More Light", emoji: "☀️" },
   HUMIDIFY_MY_AIR: { title: "Humidify My Air", emoji: "💦" },
+  DEHUMIDIFY_MY_AIR: { title: "Dry My Air", emoji: "🌬️" },
   BALANCE_SOIL_ACIDIC: { title: "Balance My Soil", emoji: "🧪" },
   BALANCE_SOIL_ALKALINE: { title: "Balance My Soil", emoji: "🧪" },
 };
 
 // Mood word + emoji shown under the character name (#char-mood). Words come
 // from PM_STRINGS.moods when available; these are the verbatim fallbacks.
-const MOOD_WORDS = { Happy: "Happy", Overheating: "Overheating", DryAir: "Dry Air", Sleepy: "Sleepy", SoilAcidic: "Acidic", SoilAlkaline: "Alkaline" };
-const MOOD_EMOJI = { Happy: "😊", Overheating: "🥵", DryAir: "😵", Sleepy: "😴", SoilAcidic: "🤢", SoilAlkaline: "😖" };
+const MOOD_WORDS = { Happy: "Happy", Overheating: "Overheating", TooCold: "Too Cold", DryAir: "Dry Air", HumidAir: "Humid Air", Sleepy: "Sleepy", SoilAcidic: "Acidic", SoilAlkaline: "Alkaline" };
+const MOOD_EMOJI = { Happy: "😊", Overheating: "🥵", TooCold: "🥶", DryAir: "😵", HumidAir: "💧", Sleepy: "😴", SoilAcidic: "🤢", SoilAlkaline: "😖" };
 // Mood state → face-swap class on .mascot-svg ("face-happy" has no CSS rule
 // on purpose: with no variant class matched, the default happy group shows).
-const MOOD_FACE = { Happy: "face-happy", Overheating: "face-hot", DryAir: "face-dry", Sleepy: "face-sleepy", SoilAcidic: "face-acidic", SoilAlkaline: "face-alkaline" };
+const MOOD_FACE = { Happy: "face-happy", Overheating: "face-hot", TooCold: "face-cold", DryAir: "face-dry", HumidAir: "face-humid", Sleepy: "face-sleepy", SoilAcidic: "face-acidic", SoilAlkaline: "face-alkaline" };
 
 // Sensor HUD stat-tile pulse (2026-08-09 spec): which env-hud-card a problem
 // mood pulses, and in what color. This is the SAME mood state the mascot
 // face above reads — never a client-side re-derivation from raw thresholds
 // — so the tile and the face can never disagree about what's wrong.
-const MOOD_TILE_KIND = { Overheating: "temp", DryAir: "hum", Sleepy: "light", SoilAcidic: "ph", SoilAlkaline: "ph" };
-const MOOD_TILE_COLOR = { Overheating: "#e2643c", DryAir: "#e2a23c", Sleepy: "#6f6ac2", SoilAcidic: "#8fae3f", SoilAlkaline: "#c2618a" };
+const MOOD_TILE_KIND = { Overheating: "temp", TooCold: "temp", DryAir: "hum", HumidAir: "hum", Sleepy: "light", SoilAcidic: "ph", SoilAlkaline: "ph" };
+const MOOD_TILE_COLOR = { Overheating: "#e2643c", TooCold: "#7fb8d6", DryAir: "#e2a23c", HumidAir: "#6fa89c", Sleepy: "#6f6ac2", SoilAcidic: "#8fae3f", SoilAlkaline: "#c2618a" };
 
 /** Pulses the one env-hud-card matching `mood` (mascot's real mood) in that
  *  mood's color; clears the pulse from every other tile. Happy (or any mood
@@ -1705,7 +1715,9 @@ let lastWhyCardAt = 0;
 const CARE_KEY_BY_MOOD = {
   Happy: "Happy",
   Overheating: "Overheating",
+  TooCold: "TooCold",
   DryAir: "DryAir",
+  HumidAir: "HumidAir",
   Sleepy: "Sleepy",
   SoilAcidic: "Soil",
   SoilAlkaline: "Soil",
@@ -1714,7 +1726,9 @@ const CARE_KEY_BY_MOOD = {
 // English fallbacks — PM_STRINGS.care carries the localized copy.
 const CARE_FALLBACK = {
   Overheating: { label: "Move me to shade 🌳", why: "Find a cooler, shadier spot. The temperature sensor will feel the difference." },
+  TooCold: { label: "Move me somewhere warmer 🧣", why: "Find a warmer spot away from cold drafts, open windows, and AC. The temperature sensor will feel the difference." },
   DryAir: { label: "Move me away from fans & AC 🌬️", why: "Fans and AC can dry the air around my leaves. This is about air humidity, not watering my soil; the humidity sensor will check the change." },
+  HumidAir: { label: "Give me fresh airflow 🪟", why: "Open a window or improve airflow to clear the muggy air around my leaves. This is about air humidity, not my soil water; the humidity sensor will check the change." },
   Sleepy: { label: "Show me some light ☀️", why: "Open the curtains or move me near a window. The light sensor will see it." },
   Soil: { label: "Check my soil with a teacher 🧑‍🏫", why: "Soil pH needs an adult's help. Never add anything to the pot by yourself." },
   Happy: { label: "Pet me — or write my diary 📖", why: "I'm feeling great! Want to remember today? Write a line in my Growth Diary." },
@@ -1915,12 +1929,26 @@ const PET_COMFORT_FALLBACK = {
     "That's nice… the temperature sensor still says it's hot, though.",
     "A little cooler and I'll be all smiles again.",
   ],
+  TooCold: [
+    "Thanks… a warmer spot would feel even better.",
+    "Your hands are warm… but this room is really cold right now.",
+    "Brrr… somewhere cozier would be lovely.",
+    "That's nice… the temperature sensor still says it's cold, though.",
+    "A little warmer and I'll be all smiles again.",
+  ],
   DryAir: [
     "That feels nice… the air is still pretty dry, though.",
     "Thanks… away from fans and drafts, my air gets cozier.",
     "Sweet of you… moister air would be even sweeter.",
     "The humidity sensor still says the air is very dry.",
     "A calmer, less breezy spot would feel wonderful.",
+  ],
+  HumidAir: [
+    "That feels nice… the air is still pretty muggy, though.",
+    "Thanks… a little fresh airflow would make my air cozier.",
+    "Sweet of you… drier, fresher air would be even sweeter.",
+    "The humidity sensor still says the air is very humid.",
+    "An open window or gentle breeze would feel wonderful.",
   ],
   Sleepy: [
     "Thanks… some light would wake me right up.",
@@ -2515,15 +2543,19 @@ function onGazeMove(event) {
 
 const VITAL_TAP_COOLDOWN_MS = 2000;
 const VITAL_TEMP_HOT = 32; // > 32 → hot (Overheating threshold)
+const VITAL_TEMP_COLD = 14; // < 14 → cold (TooCold threshold)
 const VITAL_HUM_DRY = 40; // < 40 → dry (DryAir threshold)
 const VITAL_HUM_GOOD = 45; // >= 45 → good (recovery threshold)
+const VITAL_HUM_HUMID = 60; // > 60 → humid (HumidAir threshold)
 const VITAL_PH_MIN = 6.0;
 const VITAL_PH_MAX = 7.0;
 const VITAL_LIGHT_MIN = 30; // Node-RED LDR is 0–100%; 30% is inclusive sufficient
 const VITALS_FALLBACK = {
   tempHot: "Phew, vent please!",
+  tempCold: "Brrr, warm me up!",
   tempGood: "Perfect temperature!",
   humDry: "Air feels dry",
+  humHumid: "Air feels muggy",
   humGood: "The air feels lovely!",
   lightDark: "Pretty dark here",
   lightGood: "Sunbathing time!",
@@ -2547,6 +2579,7 @@ function vitalComment(kind) {
     const v = lastVitals.temperature;
     if (v == null) return null;
     if (v > VITAL_TEMP_HOT) return vitalString("tempHot");
+    if (v < VITAL_TEMP_COLD) return vitalString("tempCold");
     if (v >= ECHO_TEMP_MIN && v <= ECHO_TEMP_MAX) return vitalString("tempGood");
     return null;
   }
@@ -2554,6 +2587,7 @@ function vitalComment(kind) {
     const v = lastVitals.humidity;
     if (v == null) return null;
     if (v < VITAL_HUM_DRY) return vitalString("humDry");
+    if (v > VITAL_HUM_HUMID) return vitalString("humHumid");
     if (v >= VITAL_HUM_GOOD) return vitalString("humGood");
     return null;
   }
@@ -2948,9 +2982,17 @@ const FARMER_FALLBACK = {
     "Hoho… this room is toasty. A shadier, cooler spot would do the little one good.",
     "Phew! Even my hat feels warm. Find your friend somewhere cooler, hm?",
   ],
+  TooCold: [
+    "Hoho… this room is nippy. A warmer spot would do the little one good.",
+    "Brr! Even my old bones feel it. Move your friend somewhere warmer, hm?",
+  ],
   DryAir: [
     "Hoho… the air is thirsty-dry. Away from fans and drafts it gets cozier.",
     "My old whiskers feel the dry air too. A calmer corner would help, hm?",
+  ],
+  HumidAir: [
+    "Hoho… the air is heavy and damp. A little fresh airflow would help, hm?",
+    "My old whiskers feel the mugginess too. Crack a window for the little one.",
   ],
   Sleepy: [
     "Hoho… mighty dim in here. Open a curtain — plants love a bright morning.",

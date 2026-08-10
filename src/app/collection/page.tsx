@@ -34,7 +34,9 @@ const PLANT_ID = "plant-01";
 const MOOD_EMOJI: Record<PlantMood, string> = {
   Happy: "😊",
   Overheating: "🔥",
+  TooCold: "🥶",
   DryAir: "💨",
+  HumidAir: "🌫️",
   Sleepy: "🌙",
   SoilAcidic: "🧪",
   SoilAlkaline: "🧪",

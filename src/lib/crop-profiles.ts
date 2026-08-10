@@ -14,10 +14,17 @@ export interface CropProfile {
     recommended: { min: number; max: number };
     tolerated: { min: number; max: number };
     overheating: { enterAtOrAbove: number; recoverAtOrBelow: number };
+    /** Mirror of `overheating` for the low end (handoff §5.1 opposite band):
+     *  enter TooCold at or below `enterAtOrBelow`, recover at or above the
+     *  (higher) `recoverAtOrAbove` — the gap is the hysteresis dead zone. */
+    cold: { enterAtOrBelow: number; recoverAtOrAbove: number };
   };
   airHumidity: {
     recommended: { min: number; max: number };
     dryAir: { enterBelow: number; recoverAtOrAbove: number };
+    /** Mirror of `dryAir` for the high end: enter HumidAir above
+     *  `enterAbove`, recover at or below the (lower) `recoverAtOrBelow`. */
+    humidAir: { enterAbove: number; recoverAtOrBelow: number };
   };
   soilPh: { recommended: { min: number; max: number } };
   light: {
@@ -40,10 +47,12 @@ const strawberry: CropProfile = {
     recommended: { min: 20, max: 24 },
     tolerated: { min: 15, max: 27 },
     overheating: { enterAtOrAbove: 28, recoverAtOrBelow: 26 },
+    cold: { enterAtOrBelow: 14, recoverAtOrAbove: 16 },
   },
   airHumidity: {
     recommended: { min: 40, max: 60 },
     dryAir: { enterBelow: 40, recoverAtOrAbove: 45 },
+    humidAir: { enterAbove: 60, recoverAtOrBelow: 55 },
   },
   soilPh: { recommended: { min: 5.5, max: 6.5 } },
   light: {
@@ -58,8 +67,8 @@ const soybean: CropProfile = {
   varietyLabel: "Jember classroom candidate · variety unknown",
   guidanceNote: "Container advisory based on Indonesian land-suitability guidance; local variety calibration may differ.",
   timezone: CROP_PROFILE_TIMEZONE,
-  temperature: { recommended: { min: 23, max: 25 }, tolerated: { min: 18, max: 32 }, overheating: { enterAtOrAbove: 33, recoverAtOrBelow: 30 } },
-  airHumidity: { recommended: { min: 24, max: 80 }, dryAir: { enterBelow: 24, recoverAtOrAbove: 29 } },
+  temperature: { recommended: { min: 23, max: 25 }, tolerated: { min: 18, max: 32 }, overheating: { enterAtOrAbove: 33, recoverAtOrBelow: 30 }, cold: { enterAtOrBelow: 17, recoverAtOrAbove: 20 } },
+  airHumidity: { recommended: { min: 24, max: 80 }, dryAir: { enterBelow: 24, recoverAtOrAbove: 29 }, humidAir: { enterAbove: 80, recoverAtOrBelow: 75 } },
   soilPh: { recommended: { min: 5.5, max: 7.5 } },
   light: { sensorType: "percentage-ldr", minimumPercentDuringLightingHours: LIGHT_SUFFICIENT_PERCENT, lightingHours: { start: 6, end: 18 } },
 };
@@ -69,8 +78,8 @@ const cayennePepper: CropProfile = {
   varietyLabel: "Jember classroom candidate · variety unknown",
   guidanceNote: "Classroom-pot advisory based on Indonesian cultivation guidance; local variety calibration may differ.",
   timezone: CROP_PROFILE_TIMEZONE,
-  temperature: { recommended: { min: 18, max: 30 }, tolerated: { min: 18, max: 30 }, overheating: { enterAtOrAbove: 31, recoverAtOrBelow: 29 } },
-  airHumidity: { recommended: { min: 60, max: 80 }, dryAir: { enterBelow: 60, recoverAtOrAbove: 65 } },
+  temperature: { recommended: { min: 18, max: 30 }, tolerated: { min: 18, max: 30 }, overheating: { enterAtOrAbove: 31, recoverAtOrBelow: 29 }, cold: { enterAtOrBelow: 17, recoverAtOrAbove: 19 } },
+  airHumidity: { recommended: { min: 60, max: 80 }, dryAir: { enterBelow: 60, recoverAtOrAbove: 65 }, humidAir: { enterAbove: 80, recoverAtOrBelow: 75 } },
   soilPh: { recommended: { min: 6, max: 7 } },
   light: { sensorType: "percentage-ldr", minimumPercentDuringLightingHours: LIGHT_SUFFICIENT_PERCENT, lightingHours: { start: 6, end: 18 } },
 };

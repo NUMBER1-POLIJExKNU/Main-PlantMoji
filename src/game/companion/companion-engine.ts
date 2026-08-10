@@ -13,8 +13,8 @@ const STAGE_RANK = Object.fromEntries(
 ) as Record<CompanionStage, number>;
 
 export function affinityForQuest(key: QuestKey): Exclude<CareAffinity, "balanced"> {
-  if (key === "COOL_ME_DOWN") return "cool";
-  if (key === "HUMIDIFY_MY_AIR") return "air";
+  if (key === "COOL_ME_DOWN" || key === "WARM_ME_UP") return "cool";
+  if (key === "HUMIDIFY_MY_AIR" || key === "DEHUMIDIFY_MY_AIR") return "air";
   if (key === "GIVE_ME_MORE_LIGHT") return "light";
   if (key === "BALANCE_SOIL_ACIDIC" || key === "BALANCE_SOIL_ALKALINE") return "soil";
   return "steady";

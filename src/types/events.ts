@@ -4,7 +4,9 @@
 export const PLANT_MOODS = [
   "Happy",
   "Overheating",
+  "TooCold",
   "DryAir",
+  "HumidAir",
   "Sleepy",
   "SoilAcidic",
   "SoilAlkaline",
@@ -16,7 +18,9 @@ export type PlantMood = (typeof PLANT_MOODS)[number];
 export const MOOD_LABELS: Record<PlantMood, string> = {
   Happy: "Happy",
   Overheating: "Overheating",
+  TooCold: "Too Cold",
   DryAir: "Dry Air",
+  HumidAir: "Humid Air",
   Sleepy: "Sleepy",
   SoilAcidic: "Soil Acidic",
   SoilAlkaline: "Soil Alkaline",

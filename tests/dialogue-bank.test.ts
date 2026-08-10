@@ -3,19 +3,19 @@ import { JAMKACHU_CONTEXT_DIALOGUE, JAMKACHU_DIALOGUE, JAMKACHU_DIALOGUE_COUNT, 
 import { PLANT_MOODS } from "@/types/events";
 
 describe("Jamkachu dialogue bank", () => {
-  it("contains exactly 300 unique, mood-balanced lines", () => {
+  it("contains exactly 400 unique, mood-balanced lines", () => {
     const all = Object.values(JAMKACHU_DIALOGUE).flat();
-    expect(JAMKACHU_DIALOGUE_COUNT).toBe(300);
-    expect(new Set(all).size).toBe(300);
+    expect(JAMKACHU_DIALOGUE_COUNT).toBe(400);
+    expect(new Set(all).size).toBe(400);
     for (const mood of PLANT_MOODS) expect(JAMKACHU_DIALOGUE[mood]).toHaveLength(50);
   });
 
-  it("provides the 1,800-line composition across the 10-stage ladder", () => {
-    // 6 moods × 10 companion stages × 2 time contexts × 10 observations.
-    expect(JAMKACHU_CONTEXT_DIALOGUE).toHaveLength(1200);
+  it("provides the 2,300-line composition across the 10-stage ladder", () => {
+    // 8 moods × 10 companion stages × 2 time contexts × 10 observations.
+    expect(JAMKACHU_CONTEXT_DIALOGUE).toHaveLength(1600);
     expect(Object.values(JAMKACHU_EVENT_DIALOGUE).flat()).toHaveLength(300);
-    expect(JAMKACHU_TOTAL_DIALOGUE_COUNT).toBe(1800);
-    expect(new Set([...Object.values(JAMKACHU_DIALOGUE).flat(), ...JAMKACHU_CONTEXT_DIALOGUE, ...Object.values(JAMKACHU_EVENT_DIALOGUE).flat()]).size).toBe(1800);
+    expect(JAMKACHU_TOTAL_DIALOGUE_COUNT).toBe(2300);
+    expect(new Set([...Object.values(JAMKACHU_DIALOGUE).flat(), ...JAMKACHU_CONTEXT_DIALOGUE, ...Object.values(JAMKACHU_EVENT_DIALOGUE).flat()]).size).toBe(2300);
   });
 
   it("speaks contextual lines for the new ladder stages", () => {

@@ -35,12 +35,26 @@ export const WHY_CARDS: Record<PlantMood, WhyCard> = {
     action:
       "Add shade, move the plant away from hot glass, or improve airflow — then let the sensor confirm the air actually cooled and stayed cool.",
   },
+  TooCold: {
+    title: "Too Cold to Grow",
+    why:
+      "Below the profile's cold threshold, a plant's metabolism slows to a crawl: roots take up water and nutrients sluggishly, photosynthesis nearly stalls, and prolonged chill can damage cells. Growth pauses until the air warms back up.",
+    action:
+      "Move the plant somewhere warmer, away from cold drafts, open windows, or air-conditioning — then let the sensor confirm the air actually warmed and stayed warm.",
+  },
   DryAir: {
     title: "Thirsty Air, Not Thirsty Soil",
     why:
       "This mood is about AIR humidity, never soil moisture. Dry air creates a high vapor pressure deficit (VPD) that pulls water out of the leaves faster than normal, so a plant can be stressed even when its soil is moist.",
     action:
       "Raise the humidity around the leaves: mist gently, group plants together, or move the pot away from fans, heaters, and air-conditioning drafts.",
+  },
+  HumidAir: {
+    title: "Soggy Air Invites Trouble",
+    why:
+      "This mood is about AIR humidity, never soil moisture. When the air is too humid the vapor pressure deficit (VPD) is very low, so leaves can barely transpire — water and calcium move slowly, and the still, damp air around the leaves invites mold and fungal disease.",
+    action:
+      "Lower the humidity around the leaves: improve airflow, open a window, space plants apart, or move the pot away from steam, misting, and unventilated corners — do not change the soil watering.",
   },
   Sleepy: {
     title: "No Light, No Lunch",
@@ -71,10 +85,14 @@ export const QUEST_WHY: Record<QuestKey, string> = {
     "Holding every reading in range for 30 straight minutes proves the environment is genuinely stable — plants grow on steady conditions, not on one lucky sample.",
   COOL_ME_DOWN:
     "Cooling the air lets the leaves stop emergency water loss and reopen their pores, so water transport and photosynthesis can restart.",
+  WARM_ME_UP:
+    "Warming the air back into range wakes the plant's metabolism: roots resume taking up water and nutrients, and photosynthesis can restart instead of stalling in the cold.",
   GIVE_ME_MORE_LIGHT:
     "Light is the energy source of photosynthesis — restoring it lets the plant make food again instead of idling on its reserves.",
   HUMIDIFY_MY_AIR:
     "Moistening the air around the leaves lowers the vapor pressure deficit (VPD), so water stops being pulled out of the leaves faster than the roots can replace it — it is the air that needs humidity here, not the soil.",
+  DEHUMIDIFY_MY_AIR:
+    "Drying the air around the leaves raises the vapor pressure deficit (VPD) back into a healthy range, so the leaves can transpire again and the still, damp conditions that invite mold clear up — it is the air that needs drying here, not the soil.",
   STAY_COMFY:
     "Two unbroken hours in the comfort zone lets the plant settle into stable homeostasis, spending its energy on growth instead of constantly readjusting to swinging conditions.",
   BALANCE_SOIL_ACIDIC:
