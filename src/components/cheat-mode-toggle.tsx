@@ -8,19 +8,7 @@
 
 import { useEffect, useState } from "react";
 import type { AppLocale } from "@/lib/i18n";
-
-interface PMCheatApi {
-  isActive: () => boolean;
-  activate: (seed: unknown) => void;
-  deactivate: () => void;
-  onChange: (cb: () => void) => () => void;
-}
-
-declare global {
-  interface Window {
-    PMCheat?: PMCheatApi;
-  }
-}
+import "@/lib/pm-cheat"; // window.PMCheat global typing
 
 export interface CheatSeed {
   level?: number;

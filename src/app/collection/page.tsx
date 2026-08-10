@@ -24,6 +24,7 @@ import { getRequestLocale } from "@/lib/i18n-server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS, PLANT_MOODS, type PlantMood } from "@/types/events";
 import { STREAK_TIMEZONE, normalizePersonality } from "@/types/game";
+import { cookies } from "next/headers";
 
 // Discovery state changes with live events — always render fresh.
 export const dynamic = "force-dynamic";
@@ -44,6 +45,10 @@ const MOOD_EMOJI: Record<PlantMood, string> = {
 
 export default async function CollectionPage() {
   const locale = await getRequestLocale();
+  // Cheat sandbox (feature 5): reveal every mood / badge / chapter for a demo.
+  // Set client-side by public/farm/cheat.js; gates a fuller view only, never a
+  // write. Real discovery state in Supabase is untouched.
+  const cheat = (await cookies()).get("pm_cheat")?.value === "1";
   const unlockDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
     month: "short",
     day: "numeric",
@@ -98,7 +103,7 @@ export default async function CollectionPage() {
   }
 
   const moods: MoodCollectionItem[] = PLANT_MOODS.map((mood) => {
-    const discovered = seenMoods.includes(mood);
+    const discovered = cheat || seenMoods.includes(mood);
     return {
       mood,
       label: locale === "id" ? MOOD_COPY.id[mood] : MOOD_LABELS[mood],
@@ -135,12 +140,14 @@ export default async function CollectionPage() {
           ? Number.isNaN(unlockedMs)
             ? "" // unlocked but with an unparsable date — still shows as unlocked
             : unlockDateFormat.format(new Date(unlockedMs))
-          : null,
+          : cheat
+            ? "✓" // cheat sandbox reveal — shown as unlocked, no real unlock date
+            : null,
     };
   });
 
   const chapters: StoryCollectionItem[] = CHAPTER_DEFINITIONS.map((definition) => {
-    const unlocked = definition.chapter <= currentChapter;
+    const unlocked = cheat || definition.chapter <= currentChapter;
     // Locked chapters never compute their scene — keeps future story
     // spoiler-free on the wire.
     const scene = unlocked ? getChapterScene(definition.chapter, personality, plantName) : null;

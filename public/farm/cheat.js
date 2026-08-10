@@ -59,6 +59,18 @@
     } catch (e) {}
   }
 
+  // Server-rendered React pages (collection/shop/quests) can only reveal
+  // locked content they were asked to send, so mirror the active flag into a
+  // cookie those pages read. Still client-set and demo-only — the cookie
+  // gates a fuller *view*, never a database write.
+  function setCookie(on) {
+    try {
+      document.cookie = on
+        ? "pm_cheat=1;path=/;max-age=86400;samesite=lax"
+        : "pm_cheat=;path=/;max-age=0;samesite=lax";
+    } catch (e) {}
+  }
+
   function emit() {
     try {
       window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
@@ -113,6 +125,7 @@
     /** Enter the sandbox, cloning `seed` (real-state snapshot) as the start. */
     activate: function (seed) {
       write(defaultState(seed));
+      setCookie(true);
       mountBanner();
       emit();
     },
@@ -120,6 +133,7 @@
     /** Leave the sandbox — wipes all cheat values; app returns to normal. */
     deactivate: function () {
       try { window.localStorage.removeItem(KEY); } catch (e) {}
+      setCookie(false);
       unmountBanner();
       emit();
     },

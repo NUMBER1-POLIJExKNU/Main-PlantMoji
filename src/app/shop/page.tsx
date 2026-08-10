@@ -12,6 +12,7 @@ import { SHOP_CATALOG, SHOP_UI_COPY } from "@/game/economy/shop-catalog";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +46,14 @@ export default async function ShopPage() {
     return <Notice title={copy.comingSoonTitle} lines={[...copy.comingSoonLines]} />;
   }
 
-  const seeds = Number((bondRes.data as { seeds?: number } | null)?.seeds ?? 0);
-  const purchases = (purchasesRes.data ?? []) as ShopPurchaseRow[];
+  // Cheat sandbox (feature 3): own every item with a huge balance so the
+  // whole catalog is unlocked to browse. Set client-side by cheat.js; the
+  // grid additionally short-circuits real buy/equip writes while active, so
+  // nothing here reaches Supabase.
+  const cheat = (await cookies()).get("pm_cheat")?.value === "1";
+  const seeds = cheat
+    ? 999999
+    : Number((bondRes.data as { seeds?: number } | null)?.seeds ?? 0);
   const items: ShopGridItem[] = SHOP_CATALOG.map((item) => ({
     key: item.key,
     category: item.category,
@@ -55,6 +62,9 @@ export default async function ShopPage() {
     name: item.name[locale],
     blurb: item.blurb[locale],
   }));
+  const purchases: ShopPurchaseRow[] = cheat
+    ? SHOP_CATALOG.map((item) => ({ item_key: item.key, category: item.category, equipped: false }))
+    : ((purchasesRes.data ?? []) as ShopPurchaseRow[]);
 
   return (
     <main className="pm-shop w-full">
