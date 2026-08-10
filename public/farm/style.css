@@ -1868,7 +1868,12 @@ body.night .npc-farmer { opacity: 0; pointer-events: none; }
     .hud-top {
         position: absolute;
         top: 4px;
-        right: 8px;
+        /* #sound-toggle (sfx.js) is a fixed 44px button at top:12px;right:12px,
+           i.e. it owns 12–56px in from the viewport's right edge on every
+           screen. .app-layout adds 24px of its own padding here, so 44px puts
+           this row's right edge 68px in — clear of the button with a 12px gap
+           (same approach as .hatch-skip). */
+        right: 44px;
         z-index: 20;
     }
     .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }

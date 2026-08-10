@@ -15,6 +15,25 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).not.toContain("pm-npc-wander");
   });
 
+  it("keeps the walk lane inside the character column, clear of the status cards", () => {
+    // The grass runs under both desktop grid columns, but .mascot-stage
+    // (z-index 5) is its own stacking context and .home-stack sits at 10 —
+    // the farmer's z-index 15 cannot lift him above the cards, so the lane
+    // itself has to stop where the character column does.
+    expect(live).toContain('const stage = $(".mascot-stage")?.getBoundingClientRect()');
+    expect(live).toContain("Math.max(rect.left, stage ? stage.left : rect.left)");
+    expect(live).toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
+    // Footing still comes from the grass, only the horizontal span is clamped.
+    expect(live).toContain("top: Math.round(rect.top - height + 8)");
+    // A column narrower than the sprite must not produce right < left.
+    expect(live).toContain("Math.max(left, laneRight - width - 12)");
+    // Lane depends on the stage now, so its resize has to restart the wander.
+    expect(live).toContain('for (const el of [$(".grass-floor"), $(".mascot-stage")])');
+
+    // The weather/clock row must not sit under the fixed 44px mute button.
+    expect(css).toMatch(/\.hud-top \{[\s\S]*?right:\s*44px/);
+  });
+
   it("implements the fall, vine, climb, and reduced-motion paths", () => {
     expect(live).toContain("farmerFallAndClimb");
     expect(live).toContain('vine.classList.add("is-visible")');

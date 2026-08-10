@@ -2886,9 +2886,27 @@ function farmerGround() {
   const rect = grass.getBoundingClientRect();
   const width = farmer.offsetWidth || 48;
   const height = farmer.offsetHeight || 56;
+
+  // Vertically he must stand ON the grass, so `top` stays measured from it.
+  //
+  // Horizontally the grass is NOT a safe lane. From 801px up the game world is
+  // a two-column grid and the grass strip runs under BOTH columns, while the
+  // status cards (.home-stack) sit on top of it. .mascot-stage carries
+  // z-index 5 and .home-stack z-index 10, so the stage becomes its own
+  // stacking context and the farmer's own z-index 15 cannot lift him out of
+  // it — walking right simply made him vanish behind the cards.
+  //
+  // Clamping the lane to the character column keeps him on screen for the
+  // whole lap. Below 801px the stage spans the game world anyway, so this
+  // intersection is a no-op there apart from respecting its padding.
+  const stage = $(".mascot-stage")?.getBoundingClientRect();
+  const laneLeft = Math.max(rect.left, stage ? stage.left : rect.left);
+  const laneRight = Math.min(rect.right, stage ? stage.right : rect.right);
+
+  const left = Math.round(laneLeft + 12);
   return {
-    left: Math.round(rect.left + 12),
-    right: Math.round(Math.max(rect.left + 12, rect.right - width - 12)),
+    left,
+    right: Math.round(Math.max(left, laneRight - width - 12)),
     top: Math.round(rect.top - height + 8),
   };
 }
@@ -3328,8 +3346,12 @@ function scheduleFarmerTalk(first = false) {
 scheduleFarmerTalk(true);
 
 window.addEventListener("resize", scheduleFarmerMotionRestart, { passive: true });
-if (typeof ResizeObserver === "function" && $(".grass-floor")) {
-  new ResizeObserver(scheduleFarmerMotionRestart).observe($(".grass-floor"));
+if (typeof ResizeObserver === "function") {
+  // Both feed farmerGround(): the grass gives his footing, the stage his lane.
+  const groundObserver = new ResizeObserver(scheduleFarmerMotionRestart);
+  for (const el of [$(".grass-floor"), $(".mascot-stage")]) {
+    if (el) groundObserver.observe(el);
+  }
 }
 void runFarmerMotion();
 window.setInterval(() => {
