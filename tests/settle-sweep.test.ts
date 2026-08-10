@@ -4,6 +4,12 @@ import { badgeRewardKey, chapterRewardKey } from "@/game/progression/bonus-xp";
 import { dailyChallengeRewardKey } from "@/game/random/daily-events";
 import { dayString } from "@/game/progression/streak-engine";
 import { isLuckyQuest } from "@/game/random/lucky";
+import {
+  isCountQuery,
+  makeSupabase,
+  type RecordedCall,
+  type Responder,
+} from "./helpers/supabase-stub";
 
 // ── Performance-surgery regression tests for settleCompletions ───────────
 // 1. Steady state (every quest settled, every badge/chapter bonus already in
@@ -49,66 +55,6 @@ vi.mock("@/game/random/daily-events", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/game/random/daily-events")>()),
   getDailyEvent: mocks.getDailyEvent,
 }));
-
-// ── Table-aware Supabase stub ────────────────────────────────────────────
-
-interface StubResponse {
-  data: unknown;
-  error: null;
-  count?: number | null;
-}
-
-interface RecordedCall {
-  table: string;
-  method: string;
-  args: unknown[];
-}
-
-type Responder = (chainCalls: RecordedCall[]) => StubResponse;
-
-const CHAIN_METHODS = [
-  "select",
-  "eq",
-  "neq",
-  "in",
-  "gte",
-  "lt",
-  "order",
-  "limit",
-  "upsert",
-  "maybeSingle",
-];
-
-/** PostgREST-style thenable chain: every builder method records itself and
- *  returns the chain; awaiting resolves the table's responder, which can
- *  inspect the recorded chain (e.g. to tell a head:true count apart from a
- *  row select on the same table). */
-function makeSupabase(responders: Record<string, Responder>, log: RecordedCall[]) {
-  return {
-    from(table: string) {
-      const chainCalls: RecordedCall[] = [];
-      const stub: Record<string, unknown> = {};
-      for (const method of CHAIN_METHODS) {
-        stub[method] = (...args: unknown[]) => {
-          const call = { table, method, args };
-          chainCalls.push(call);
-          log.push(call);
-          return stub;
-        };
-      }
-      stub.then = (resolve: (value: StubResponse) => unknown) => {
-        const responder = responders[table] ?? (() => ({ data: [], error: null }));
-        return Promise.resolve(responder(chainCalls)).then(resolve);
-      };
-      return stub;
-    },
-  };
-}
-
-const isCountQuery = (calls: RecordedCall[]) =>
-  calls.some(
-    (c) => c.method === "select" && (c.args[1] as { count?: string } | undefined)?.count,
-  );
 
 // ── Fixtures ─────────────────────────────────────────────────────────────
 

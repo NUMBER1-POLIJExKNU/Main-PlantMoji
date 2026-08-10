@@ -14,41 +14,14 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { evaluateQuests } from "@/game/quests/quest-engine";
+import {
+  makeSupabase,
+  type RecordedCall,
+  type Responder,
+} from "./helpers/supabase-stub";
 
 const PLANT = "plant-01";
 const QUEST_ID = "q-cool-down";
-
-interface RecordedCall {
-  table: string;
-  method: string;
-  args: unknown[];
-}
-
-type Responder = (calls: RecordedCall[]) => { data: unknown; error: unknown };
-
-const CHAIN_METHODS = ["select", "eq", "in", "order", "limit", "update", "maybeSingle", "upsert"];
-
-function makeSupabase(responders: Record<string, Responder>, log: RecordedCall[]) {
-  return {
-    from(table: string) {
-      const calls: RecordedCall[] = [];
-      const chain: Record<string, unknown> = {};
-      for (const method of CHAIN_METHODS) {
-        chain[method] = (...args: unknown[]) => {
-          const call = { table, method, args };
-          calls.push(call);
-          log.push(call);
-          return chain;
-        };
-      }
-      chain.then = (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
-        Promise.resolve(
-          (responders[table] ?? (() => ({ data: [], error: null })))(calls),
-        ).then(resolve, reject);
-      return chain;
-    },
-  };
-}
 
 /** COOL_ME_DOWN: recovery, requiredSeconds 300, verifyTemperatureMax 26
  *  (matches the default strawberry profile's overheating.recoverAtOrBelow,

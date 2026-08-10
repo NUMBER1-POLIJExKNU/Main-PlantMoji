@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { evaluateBadges } from "@/game/badges/badge-engine";
 import { PLANT_MOODS } from "@/types/events";
+import {
+  isHeadCount,
+  makeSupabase,
+  type RecordedCall,
+  type Responder,
+} from "./helpers/supabase-stub";
 
 // ── Behavior lock for the badge engine's read fan-out ────────────────────
 // The engine's ~7 independent reads are being parallelized; these tests pin
@@ -10,60 +15,6 @@ import { PLANT_MOODS } from "@/types/events";
 // cannot silently change a condition. The stub routes multiple distinct
 // queries against the same table (device_events serves two head:true counts
 // AND a mood-row select) by inspecting the recorded builder chain.
-
-interface StubResponse {
-  data: unknown;
-  error: { code?: string; message: string } | null;
-  count?: number | null;
-}
-
-interface RecordedCall {
-  table: string;
-  method: string;
-  args: unknown[];
-}
-
-type Responder = (chainCalls: RecordedCall[]) => StubResponse;
-
-const CHAIN_METHODS = [
-  "select",
-  "eq",
-  "neq",
-  "in",
-  "gte",
-  "lt",
-  "order",
-  "limit",
-  "upsert",
-  "maybeSingle",
-];
-
-function makeSupabase(responders: Record<string, Responder>, log: RecordedCall[] = []) {
-  return {
-    from(table: string) {
-      const chainCalls: RecordedCall[] = [];
-      const stub: Record<string, unknown> = {};
-      for (const method of CHAIN_METHODS) {
-        stub[method] = (...args: unknown[]) => {
-          const call = { table, method, args };
-          chainCalls.push(call);
-          log.push(call);
-          return stub;
-        };
-      }
-      stub.then = (resolve: (value: StubResponse) => unknown) => {
-        const responder = responders[table] ?? (() => ({ data: [], error: null }));
-        return Promise.resolve(responder(chainCalls)).then(resolve);
-      };
-      return stub;
-    },
-  } as unknown as SupabaseClient;
-}
-
-const isHeadCount = (calls: RecordedCall[]) =>
-  calls.some(
-    (c) => c.method === "select" && (c.args[1] as { head?: boolean } | undefined)?.head,
-  );
 
 const PLANT = "plant-01";
 
