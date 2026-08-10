@@ -312,6 +312,10 @@ let evoDemoStage = null;
 // `plantName` variable.
 let lastPlantName = null;
 
+// True once the first ONLINE refresh() painted real data — the bottom-of-file
+// main().catch must never repaint fabricated offline defaults over it.
+let firstOnlinePaint = false;
+
 /** Display name for ceremony dialog, same fallback as the hatching intro. */
 function currentPlantName() {
   return lastPlantName || "Jamkachu";
@@ -1954,15 +1958,17 @@ let petExpressionIndex = 0;
 // struggling plant). Cycled by a tap counter so consecutive spam-taps
 // always visibly differ. Pure presentation: zero XP, zero writes, no
 // counters beyond the cycle index.
+// ("surprised" and "dizzy" were cut by user decision 2026-08-11 — the round-eye
+// gasp and X-eye KO faces read as scary, not cute. Don't re-add them.)
 const PET_EXPRESSION_POOLS = {
-  Happy: ["love", "star", "wink", "blep", "giggle", "proud"],
-  Overheating: ["surprised", "teary", "grit", "wink"],
-  TooCold: ["grit", "surprised", "teary", "wink"],
-  DryAir: ["teary", "grit", "surprised", "wink"],
-  HumidAir: ["surprised", "grit", "teary", "wink"],
-  Sleepy: ["blink", "surprised", "teary", "curious"],
-  SoilAcidic: ["surprised", "teary", "grit", "curious"],
-  SoilAlkaline: ["grit", "teary", "surprised", "curious"],
+  Happy: ["love", "star", "wink", "blep", "giggle", "proud", "heart", "shy"],
+  Overheating: ["teary", "grit", "wink", "sweat"],
+  TooCold: ["grit", "teary", "wink", "shy"],
+  DryAir: ["teary", "grit", "wink", "sweat", "shy"],
+  HumidAir: ["grit", "teary", "wink", "sweat"],
+  Sleepy: ["blink", "teary", "curious", "shy"],
+  SoilAcidic: ["teary", "grit", "curious", "angry"],
+  SoilAlkaline: ["grit", "teary", "curious", "sweat"],
 };
 const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood face returns
 const PET_EXPRESSION_CLASSES = [...new Set(Object.values(PET_EXPRESSION_POOLS).flat())].map((face) => `tapface-${face}`);
@@ -2342,7 +2348,7 @@ function onCameraEventInsert(row) {
 function surpriseHop(now) {
   petCooldownUntil = now + PET_COOLDOWN_MS; // hops pace exactly like pets
   window.PMSfx?.play("boing");
-  showPetExpression("surprised", 700); // round-eye gasp face for the hop
+  showPetExpression("giggle", 700); // playful giggle for the hop (gasp face was cut — too scary)
   $(".mascot-svg")?.classList.add("eyes-wide");
   setTimeout(() => $(".mascot-svg")?.classList.remove("eyes-wide"), 700);
   const wrapper = $(".mascot-wrapper");
@@ -4455,6 +4461,13 @@ function renderPlant(plant) {
 function renderBond(bond, plantName) {
   if (!bond) return;
   if (plantName) lastPlantName = plantName; // evolution ceremony's dialog name (see currentPlantName())
+  // #char-name is the single name owner — keep it synced to the DB name so a
+  // Settings rename actually shows on the home screen (the old .username
+  // writer was removed; without this no code ever wrote the name at all).
+  if (plantName) {
+    const nameEl = $("#char-name");
+    if (nameEl && nameEl.textContent !== plantName) nameEl.textContent = plantName;
+  }
   const totalXp = Number(bond.total_xp) || 0;
   const level = Number(bond.bond_level) || 1;
   const streakDays = Number(bond.current_streak) || 0;
@@ -4478,6 +4491,10 @@ function renderBond(bond, plantName) {
   const levelEl = $(".username");
   if (levelEl) levelEl.textContent = `${t("bond")} Lv.${bond.bond_level}`;
   setXpBar((totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
+  // renderOfflineHome may have hidden the badges before the backend came
+  // back — real data always un-hides (`.badge[hidden]` really hides now).
+  const coinBadge = $(".badge.coin");
+  if (coinBadge) coinBadge.hidden = false;
   const numEl = ensureCoinNumber();
   if (numEl) {
     if (xpDelta > 0 && !prefersReducedMotion()) {
@@ -4503,6 +4520,7 @@ function renderBond(bond, plantName) {
     // Flame tier grows at 7/14/30 days (Task 15) — text-level, no sprites.
     streak.innerHTML = `<i class="icon">${flameFor(streakDays)}</i> ${streakDays} ${t("days")}`;
     streak.style.display = streakDays > 0 ? "" : "none";
+    if (streakDays > 0) streak.hidden = false; // clear renderOfflineHome's hide
   }
   // Ember ignition (sfx wiring): a real streak GAIN that crosses a flame
   // tier (7/14/30) crackles once. Diff-gated like every celebration — the
@@ -5617,6 +5635,9 @@ function renderOfflineHome() {
   // Sensor tiles: the same honest localized "waiting…" state a configured-
   // but-empty backend shows (renderSensorsWaiting), never raw "--".
   renderSensorsWaiting();
+  // Bond-level label: the fresh-start default, never the "Lv.--" markup.
+  const levelEl = $(".username");
+  if (levelEl) levelEl.textContent = `${t("bond")} Lv.1`;
 }
 
 async function main() {
@@ -5745,6 +5766,7 @@ async function main() {
   };
 
   await refresh();
+  firstOnlinePaint = true; // real data is on screen — the catch may not stomp it
   // Hatching intro (spec §6.3): once, after the first real render settles.
   scheduleHatch(plantName);
 
@@ -5856,6 +5878,12 @@ async function main() {
 // escaped error still falls back to the same offline path (defaults render,
 // hatching still runs) and gets logged instead of silently hanging.
 main().catch((error) => {
+  // Real data already painted → only log; repainting offline defaults here
+  // would mask a live distressed plant with a fabricated Happy home.
+  if (firstOnlinePaint) {
+    console.error("farm init failed after first paint:", error);
+    return;
+  }
   console.error("PlantMoji farm page failed to initialize", error);
   window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
   renderOfflineHome(); // same presentable defaults as every early-return path
