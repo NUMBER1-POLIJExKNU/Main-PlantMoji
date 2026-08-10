@@ -732,53 +732,65 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 /* ── Cosmetic companion skins (milestone20, display-only) ────────────────
    renderCompanion swaps ONE .skin-<key> class on .mascot-svg from
    companion_state.skin_key (missing/unknown key → jamkachu, the default
-   look). Each skin re-tokens ONLY the plant palette — --color-grass
-   (leaves), --color-grass-light (head/body), --color-forest (stem,
-   sproutlets, elder branches) — scoped to the mascot SVG, so:
+   look). 2026-08-11 directive: outfit color changes the POT, never the
+   plant. Each skin re-tokens ONLY the pot palette — --color-soil (pot
+   body: .pot-body, the big rect), --color-soil-light (pot rim: .pot-rim,
+   the thin top band), --color-soil-dark (pot shadow strip: .pot-shadow) —
+   scoped to the mascot SVG, so:
+   · the PLANT always keeps its natural green look — --color-grass (leaves),
+     --color-grass-light (head/body), --color-forest (stem, sproutlets,
+     elder branches) are NEVER touched here, so every skin renders the same
+     green leaves/head/stem the default look has;
    · all ten companion-<Stage> scale rungs + cumulative stage-part reveals
      above keep working (they are class/scale-driven, palette-independent);
-   · the 12 shop-* pot/accessory cosmetics keep their literal hex colors;
-   · pots/soil (--color-soil*), outlines (--color-outline), cheeks and the
-     care-affinity form tint (--companion-accent, which keeps coloring the
-     stage accents and evo backdrop) are untouched — skins recolor the
-     plant, forms keep tinting the evolution backdrop.
-   Hues derive from each skin's catalog accent (companion-skins.js).
+   · the 12 shop-* pot/accessory cosmetics (milestone18, literal hex, a
+     separate purchase-gated system) still layer on top when equipped — a
+     skin's pot color only shows through the clay pot underneath;
+   · outlines (--color-outline), cheeks and the care-affinity form tint
+     (--companion-accent, which keeps coloring the stage accents and evo
+     backdrop) are untouched.
+   Body = each skin's catalog accent (companion-skins.js — the same hex the
+   wardrobe swatch shows, so pot and swatch always agree); rim is a 30%
+   white tint and shadow a 30% black shade of that same accent, matching
+   the ratio the default clay pot's soil → soil-light/-dark already uses.
+   jamkachu keeps the literal default clay-pot hex — no visual change for
+   the default skin.
    Static custom-property overrides only: no new animation, reduced-motion
    safe, and never part of any celebration. */
-.mascot-svg.skin-jamkachu { /* Classic Jamkachu — the default palette, spelled out */
-    --color-grass: #69C455;
-    --color-grass-light: #89D974;
-    --color-forest: #397A2B;
+.mascot-svg.skin-jamkachu { /* Classic Jamkachu — the default clay pot, spelled out */
+    --color-soil: #AA7E55;
+    --color-soil-light: #C9A075;
+    --color-soil-dark: #825C37;
 }
-.mascot-svg.skin-edamame { /* Edamame Buddy — soft olive pod green */
-    --color-grass: #8ABA43;
-    --color-grass-light: #9CCB5D;
-    --color-forest: #5C7A28;
+.mascot-svg.skin-edamame { /* Edamame Buddy — soft olive pod green pot */
+    --color-soil: #9CCB5D;
+    --color-soil-light: #BADB8E;
+    --color-soil-dark: #6D8E41;
 }
-.mascot-svg.skin-padi { /* Golden Rice — straw-gold head, leaves and stalk */
-    --color-grass: #D9B23E;
-    --color-grass-light: #E8C95A;
-    --color-forest: #8A6E1F;
+.mascot-svg.skin-padi { /* Golden Rice — straw-gold pot */
+    --color-soil: #E8C95A;
+    --color-soil-light: #EFD98C;
+    --color-soil-dark: #A28D3F;
 }
-.mascot-svg.skin-jagung { /* Sweet Corn — golden cob body in husk-green leaves */
-    --color-grass: #69A94E;
-    --color-grass-light: #F5B93F;
-    --color-forest: #397A2B;
+.mascot-svg.skin-jagung { /* Sweet Corn — golden cob pot */
+    --color-soil: #F5B93F;
+    --color-soil-light: #F8CE79;
+    --color-soil-dark: #AC822C;
 }
-.mascot-svg.skin-kopi { /* Robusta Coffee — roasted-bean body, dark leaf green */
-    --color-grass: #4E6B33;
-    --color-grass-light: #8A5A3B;
-    --color-forest: #573823;
+.mascot-svg.skin-kopi { /* Robusta Coffee — roasted-bean pot */
+    --color-soil: #8A5A3B;
+    --color-soil-light: #AD8C76;
+    --color-soil-dark: #613F29;
 }
-.mascot-svg.skin-kakao { /* Cacao Pod — warm pod body, bright cacao leaves */
-    --color-grass: #6B8E3F;
-    --color-grass-light: #B0693C;
-    --color-forest: #5D4425;
+.mascot-svg.skin-kakao { /* Cacao Pod — warm cacao-pod pot */
+    --color-soil: #B0693C;
+    --color-soil-light: #C89677;
+    --color-soil-dark: #7B4A2A;
 }
-.mascot-svg.skin-buah_naga { /* Dragon Fruit — pink body, vivid scale-green leaves */
-    --color-grass: #58C46B;
-    --color-grass-light: #E85FA2;
-    --color-forest: #3E8A4C;
+.mascot-svg.skin-buah_naga { /* Dragon Fruit — vivid pink pot */
+    --color-soil: #E85FA2;
+    --color-soil-light: #EF8FBE;
+    --color-soil-dark: #A24371;
 }
 
 /* Wardrobe picker (milestone20): small chip under the stage label + a
@@ -822,7 +834,7 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .wardrobe-skin-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wardrobe-skin-state { color: var(--color-forest); font: 7px/1.4 var(--font-heading); white-space: nowrap; }
 .wardrobe-skin.is-locked .wardrobe-skin-state { color: #7B8876; }
-.wardrobe-swatch { width: 22px; height: 22px; border: 2px solid var(--color-outline); border-radius: 7px; background: var(--color-grass-light); }
+.wardrobe-swatch { width: 22px; height: 22px; border: 2px solid var(--color-outline); border-radius: 7px; background: var(--color-soil); } /* live.js sets this inline from skin.accent — pot-body fallback matches the pot-recolor contract */
 /* Locked hint + migration-missing notice share one gentle amber well
    (same voice as the verifying shimmer — honest state, not alarm). */
 .wardrobe-note { margin: 0 0 10px; padding: 9px 11px; border: 2px dashed #D6A53B; border-radius: 10px; background: #FFF7DF; color: #7A5B12; font-size: 12px; line-height: 1.45; }
