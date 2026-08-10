@@ -88,6 +88,21 @@ const TIMEOUT_MS = 4_000;
 /** Anything longer than this is not a valid 1–2 sentence plant line. */
 const MAX_MESSAGE_CHARS = 300;
 
+// Speech-bubble kinds render in Jamkachu's small bubble on the farm home —
+// one glanceable line, or players get a novel ("…officially throwing a chalk
+// party at the roots…"). Anything over the short cap is rejected so the
+// caller falls back to the short deterministic template instead.
+const BUBBLE_KINDS: ReadonlySet<AiMessageKind> = new Set([
+  "MOOD",
+  "QUEST_CREATED",
+  "QUEST_COMPLETED",
+  "LEVEL_UP",
+  "BADGE_UNLOCKED",
+  "CHAPTER_UNLOCKED",
+]);
+const MAX_BUBBLE_CHARS = 140;
+const MAX_BUBBLE_TOKENS = 48;
+
 // ── Personality voices (tone only — handoff §13) ────────────────────────
 
 const VOICE_DESCRIPTIONS: Record<PersonalityId, string> = {
@@ -193,7 +208,9 @@ function buildUserMessage(input: AiMessageInput, facts: string): string {
     `My personality voice: ${personality} — ${VOICE_DESCRIPTIONS[personality]}.`,
     facts,
     `Reply language: ${input.locale === "id" ? "Bahasa Indonesia" : "English"}.`,
-    "Say one short in-character line (1-2 sentences) to my caretaker about this event.",
+    BUBBLE_KINDS.has(input.kind)
+      ? "Say ONE short in-character sentence (at most about 15 words) to my caretaker about this event. It must fit a tiny speech bubble — no wind-ups, no asides."
+      : "Say one short in-character line (1-2 sentences) to my caretaker about this event.",
   ].join("\n");
 }
 
@@ -239,7 +256,10 @@ export async function generateAiMessage(input: AiMessageInput): Promise<string |
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: "user", parts: [{ text: buildUserMessage(input, facts) }] }],
-        generationConfig: { maxOutputTokens: MAX_TOKENS, temperature: 0.4 },
+        generationConfig: {
+          maxOutputTokens: BUBBLE_KINDS.has(input.kind) ? MAX_BUBBLE_TOKENS : MAX_TOKENS,
+          temperature: 0.4,
+        },
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
       cache: "no-store",
@@ -248,7 +268,8 @@ export async function generateAiMessage(input: AiMessageInput): Promise<string |
     if (!response.ok) return null;
 
     const text = extractText(await response.json());
-    if (!text || text.length > MAX_MESSAGE_CHARS) return null;
+    const maxChars = BUBBLE_KINDS.has(input.kind) ? MAX_BUBBLE_CHARS : MAX_MESSAGE_CHARS;
+    if (!text || text.length > maxChars) return null;
     return text;
   } catch {
     // Network failure, DNS, abort/timeout, invalid JSON — all identical to
