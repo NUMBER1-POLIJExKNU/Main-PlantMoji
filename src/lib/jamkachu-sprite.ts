@@ -9,6 +9,7 @@
 
 import type { PlantMood } from "@/types/events";
 import type { CompanionStage } from "@/types/game";
+import type { GrowthStage } from "@/lib/queries";
 
 /** The pack draws 4 growth phases; the 10 companion stages bucket into them. */
 export type SpritePhase = 1 | 2 | 3 | 4;
@@ -101,6 +102,21 @@ export function accessoryTier(bondLevel: number, phase: SpritePhase): SpriteTier
     level >= TIER_THRESHOLDS.ribbon ? "ribbon" : level >= TIER_THRESHOLDS.bow ? "bow" : "";
   const cap = PHASE_TIER_CAP[phase] ?? "";
   return TIER_RANK[earned] <= TIER_RANK[cap] ? earned : cap;
+}
+
+/** The diary's 5 manually-recorded growth stages also bucket into the 4
+ * drawn phases, so records without a real photo can show a state-matched
+ * Jamkachu portrait automatically. */
+export const GROWTH_STAGE_PHASE: Record<GrowthStage, SpritePhase> = {
+  "New Plant": 1,
+  Settled: 2,
+  Growing: 3,
+  Thriving: 4,
+  Mature: 4,
+};
+
+export function growthStagePhase(stage: GrowthStage | null | undefined): SpritePhase {
+  return (stage && GROWTH_STAGE_PHASE[stage]) || 2;
 }
 
 export type SpriteScale = "1x" | "2x" | "4x";

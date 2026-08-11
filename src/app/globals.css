@@ -1527,6 +1527,9 @@ html[data-theme="night"] .pm-story-stage-head b { background:#29452e; color:#9cd
 .pm-growth-photo { position:relative; aspect-ratio:4/3; display:grid; place-items:center; overflow:hidden; border:2px solid #243421; background:repeating-linear-gradient(45deg,#e9f4e4 0 12px,#dcead5 12px 24px); }
 .pm-growth-photo img { width:100%; height:100%; object-fit:cover; }.pm-growth-photo > div { display:grid; justify-items:center; gap:8px; color:#57684f; }.pm-growth-photo > div span { font-size:42px; }.pm-growth-photo > div small { font:7px/1.4 var(--font-heading); }
 .pm-growth-photo b { position:absolute; right:8px; bottom:8px; padding:6px 8px; border:2px solid #243421; color:#243421; background:#ffde6a; font:7px/1 var(--font-heading); transform:rotate(-5deg); }
+/* Auto portrait for records without a real photo: the sprite must stay
+   contained + pixelated, never cover-cropped like camera snapshots. */
+.pm-growth-photo .pm-growth-autoart img { width:auto; height:96px; object-fit:contain; image-rendering:pixelated; }
 .pm-growth-postcard-copy { display:flex; flex-direction:column; gap:4px; padding:10px 6px 0; color:#57684f; font-size:11px; }.pm-growth-postcard-copy strong { color:#243421; }.pm-growth-postcard-copy q { margin-top:3px; color:#3a4a34; font-size:13px; line-height:1.5; }
 
 /* Keep content-heavy surfaces readable in the user-selected night theme. */

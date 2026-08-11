@@ -12,6 +12,7 @@
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import JamkachuMemoryReflection from "@/components/jamkachu-memory-reflection";
+import { growthStagePhase, spriteAssetPath } from "@/lib/jamkachu-sprite";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { companionFormLabel, companionStageLabel, growthStageLabel } from "@/lib/i18n";
@@ -250,7 +251,14 @@ export default async function DiaryPage() {
                     {snapshotUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- short-lived signed Supabase Storage URL
                       <img src={snapshotUrl} alt={locale === "id" ? `Snapshot pertumbuhan ${plant.name} pada ${dateLabel}` : `${plant.name} growth snapshot on ${dateLabel}`} />
-                    ) : <div aria-label={locale === "id" ? "Tidak ada snapshot" : "No snapshot"}><span>🌱</span><small>{locale === "id" ? "BELUM ADA FOTO" : "NO SNAPSHOT"}</small></div>}
+                    ) : <div className="pm-growth-autoart" aria-label={locale === "id" ? `Potret Jamkachu tahap ${growthStageLabel(locale, record.stage)}` : `Jamkachu portrait at the ${growthStageLabel(locale, record.stage)} stage`}>
+                      {/* No manual photo: show the record's growth stage as a
+                          Jamkachu portrait automatically. Honest caption — a
+                          drawn portrait, never presented as a real photo. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element -- tiny static sprite, pixelated rendering */}
+                      <img src={spriteAssetPath(growthStagePhase(record.stage), "happy", "", "2x")} alt="" />
+                      <small>{locale === "id" ? "POTRET JAMKACHU" : "JAMKACHU PORTRAIT"}</small>
+                    </div>}
                     {snapshotUrl && <b>{locale === "id" ? "JEPRET!" : "SNAP!"}</b>}
                   </div>
                   <div className="pm-growth-postcard-copy">
