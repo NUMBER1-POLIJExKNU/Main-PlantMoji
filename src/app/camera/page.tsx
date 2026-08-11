@@ -101,7 +101,7 @@ export default async function CameraPage() {
 
   return (
     <main className="mx-auto w-full">
-      <PageHeader destination="camera" eyebrow={locale === "id" ? "AMATI DENGAN AMAN" : "OBSERVE SAFELY"} title={copy.title} description={copy.description} />
+      <PageHeader icon="📷" eyebrow={locale === "id" ? "AMATI DENGAN AMAN" : "OBSERVE SAFELY"} title={copy.title} description={copy.description} />
       <div className="mx-auto w-full max-w-[720px]">
         <CameraGuardian
           locale={locale}

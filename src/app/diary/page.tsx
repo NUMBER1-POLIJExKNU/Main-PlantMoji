@@ -138,7 +138,7 @@ export default async function DiaryPage() {
   return (
     <main className="mx-auto w-full">
       <PageHeader
-        destination="diary"
+        icon="📔"
         eyebrow={locale === "id" ? "KENANGAN TANAMAN" : "PLANT MEMORIES"}
         title={locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
         description={locale === "id" ? "Foto dan catat perubahan kecil agar perjalanan tumbuhnya mudah diingat." : "Photograph and note small changes so the growth journey is easy to remember."}
