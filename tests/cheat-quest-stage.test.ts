@@ -27,6 +27,31 @@ describe("cheat quest stage", () => {
     expect(stageFromQuestStatus(null)).toBe(STAGE_ACT);
   });
 
+  it("never moves outside the sandbox, whatever the sensors say", () => {
+    // Normal mode is sensor-driven by design: only a real reading advances a
+    // quest. cheatQuestStage is only ever handed vitals while the sandbox is
+    // on (see quest-hero-stages.tsx), and with none it can only echo the row.
+    const perfect = comfy;
+    for (const status of ["ACTIVE", "VERIFYING", null]) {
+      expect(cheatQuestStage({ key: "COOL_ME_DOWN", questStatus: status })).toBe(
+        stageFromQuestStatus(status),
+      );
+    }
+    // A board left over in localStorage is the sandbox's own state, but the
+    // island does not read it with the sandbox off, so the row still rules.
+    expect(stageFromQuestStatus("ACTIVE")).toBe(STAGE_ACT);
+    expect(stageFromSensors("COOL_ME_DOWN", perfect)).toBe(STAGE_VERIFY); // sandbox-only path
+  });
+
+  it("treats a VERIFYING row with no timestamp as not verifying", () => {
+    // The page computes `verifying` as status === VERIFYING AND a non-null
+    // verifying_since, then hands the island that verdict — forwarding the raw
+    // status instead would light VERIFY for a half-written row in NORMAL mode.
+    const page = readFileSync("src/app/quests/page.tsx", "utf8");
+    expect(page).toContain('questStatus={verifying ? "VERIFYING" : "ACTIVE"}');
+    expect(page).toContain('const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;');
+  });
+
   it("lets the board force any stage, including REWARD", () => {
     expect(stageFromBoard({ COOL_ME_DOWN: 4 }, "COOL_ME_DOWN")).toBe(STAGE_REWARD);
     expect(cheatQuestStage({ key: "COOL_ME_DOWN", questStatus: "ACTIVE", quests: { COOL_ME_DOWN: 4 } })).toBe(STAGE_REWARD);

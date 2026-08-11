@@ -113,7 +113,11 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
       {featured && (
         <QuestHeroStages
           questKey={quest.quest_key}
-          questStatus={verifying ? "VERIFYING" : quest.status}
+          // `verifying` already demands a non-null verifying_since, so pass it
+          // rather than quest.status: a row stuck on VERIFYING with no
+          // timestamp is not verifying, and forwarding the raw status would
+          // light the VERIFY step for it outside the sandbox.
+          questStatus={verifying ? "VERIFYING" : "ACTIVE"}
           locale={locale}
           description={localized.description}
           target={target}
