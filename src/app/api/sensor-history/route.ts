@@ -34,22 +34,6 @@ export async function GET(request: Request) {
     return Response.json({ ok: false, error: "no_env" }, { status: 503 });
   }
 
-  const latestResult = await supabase
-    .from("sensor_readings")
-    .select("*")
-    .eq("plant_id", plantId)
-    .order("recorded_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (latestResult.error) {
-    if (isMissingTableError(latestResult.error)) {
-      return Response.json({ latest: null, history: [] });
-    }
-    console.error("sensor-history latest failed:", latestResult.error.message);
-    return Response.json({ ok: false, error: "query_failed" }, { status: 500 });
-  }
-
   // History is fetched newest-first so the row limit keeps the MOST RECENT
   // readings, then reversed to ascending for the chart.
   const sinceIso = new Date(Date.now() - minutes * 60_000).toISOString();
@@ -62,8 +46,31 @@ export async function GET(request: Request) {
       .order("recorded_at", { ascending: false })
       .limit(FETCH_LIMIT);
 
+  // latest + the (usual) with-lux history query are independent reads of the
+  // same table — run them concurrently instead of serially (this route is
+  // polled every 5s by live-activity-bar.tsx and every 10s by
+  // monitoring-live.tsx). The light_lux-missing fallback below stays
+  // sequential since it only fires after seeing withLux's error.
+  const [latestResult, withLux] = await Promise.all([
+    supabase
+      .from("sensor_readings")
+      .select("*")
+      .eq("plant_id", plantId)
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    historyQuery("recorded_at, light, light_lux"),
+  ]);
+
+  if (latestResult.error) {
+    if (isMissingTableError(latestResult.error)) {
+      return Response.json({ latest: null, history: [] });
+    }
+    console.error("sensor-history latest failed:", latestResult.error.message);
+    return Response.json({ ok: false, error: "query_failed" }, { status: 500 });
+  }
+
   let rows: HistoryRow[];
-  const withLux = await historyQuery("recorded_at, light, light_lux");
   if (!withLux.error) {
     rows = (withLux.data ?? []) as unknown as HistoryRow[];
   } else if (isMissingColumnError(withLux.error)) {

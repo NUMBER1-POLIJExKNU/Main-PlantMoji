@@ -186,6 +186,22 @@ export async function getHomeMoodMessage(plant: Plant, locale: AppLocale = "en")
 }
 
 /**
+ * Synchronous, AI-free counterpart to getWeeklyReportNarration: exactly the
+ * deterministic line getWeeklyReportNarration falls back to when there's no
+ * GEMINI_API_KEY. Used by reports/page.tsx (speed fix 2026-08-11) so the
+ * page renders instantly instead of awaiting a live Gemini call during
+ * server render; the AI-flavored upgrade streams in client-side via
+ * WeeklyNarrationLive → POST /api/weekly-report-narration, which calls
+ * getWeeklyReportNarration itself and lands in the SAME settled/in-flight
+ * cache above — so a repeat visit for an unchanged report still costs at
+ * most one API call.
+ */
+export function getWeeklyReportFallback(plant: Plant, report: WeeklyReport, locale: AppLocale = "en"): string {
+  const personality = normalizePersonality(plant.personality);
+  return buildWeeklyReportFallback(personality, report, locale);
+}
+
+/**
  * Plant-voiced one-liner summarizing the week's report, AI-flavored when
  * possible. Always resolves to a displayable string; never throws. Without
  * a GEMINI_API_KEY this is fully synchronous in effect — the

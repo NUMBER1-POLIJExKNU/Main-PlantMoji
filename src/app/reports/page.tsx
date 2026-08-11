@@ -4,8 +4,9 @@
 import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
+import WeeklyNarrationLive from "@/components/weekly-narration-live";
 import { fetchPlant, type PlantFetchResult } from "@/lib/plants";
-import { getWeeklyReportNarration } from "@/lib/plant-messages";
+import { getWeeklyReportFallback } from "@/lib/plant-messages";
 import { computeWeeklyReport } from "@/lib/weekly-report";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { AppLocale } from "@/lib/i18n";
@@ -125,14 +126,15 @@ export default async function ReportsPage() {
     );
   }
 
-  // AI-personalized when GEMINI_API_KEY is set (cached per report shape,
-  // handoff §24); deterministic template otherwise — never blocks on
-  // failure. No plant row (e.g. schema not seeded yet) simply skips the
-  // narration — the stat tiles below still render from `report`.
-  const narration =
-    plantResult.status === "ok"
-      ? await getWeeklyReportNarration(plantResult.plant, report, locale)
-      : null;
+  // Instant, meaningful first paint (no live-Gemini wait during server
+  // render, speed fix 2026-08-11): the deterministic template renders
+  // immediately; the AI-flavored version streams in client-side after mount
+  // via WeeklyNarrationLive → /api/weekly-report-narration (same cache-per-
+  // report-shape rule, handoff §24). No plant row (e.g. schema not seeded
+  // yet) simply skips the narration — the stat tiles below still render
+  // from `report`.
+  const fallbackNarration =
+    plantResult.status === "ok" ? getWeeklyReportFallback(plantResult.plant, report, locale) : null;
   const nextGoal = report.overheatingEvents > 0
     ? (locale === "id" ? "Kurangi kejadian panas dan jaga tempat tetap teduh." : "Reduce heat events and keep the garden comfortably shaded.")
     : report.questsCompleted === 0
@@ -154,7 +156,7 @@ export default async function ReportsPage() {
         meta={<span className="pm-chip">🗓️ {formatWeekRange(report, locale)}</span>}
       />
 
-      {narration && plantResult.status === "ok" && (
+      {fallbackNarration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="pm-report-jam-note mb-6">
           <div className="pm-report-jamkachu" aria-hidden="true"><i /><i /><b /><b /></div>
           <p className="pm-heading mb-2 text-center text-[9px] uppercase" style={{ color: INK_MUTED }}>
@@ -167,7 +169,7 @@ export default async function ReportsPage() {
             style={{ borderColor: "var(--color-grass-light)" }}
           >
             <span aria-hidden="true">&ldquo;</span>
-            {narration}
+            <WeeklyNarrationLive report={report} locale={locale} fallback={fallbackNarration} />
             <span aria-hidden="true">&rdquo;</span>
           </div>
         </section>

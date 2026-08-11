@@ -234,10 +234,18 @@ export default function MonitoringLive({
     const id = setInterval(() => {
       void load();
     }, REFRESH_MS);
+    // Re-prime on tab refocus instead of waiting up to REFRESH_MS for the
+    // next tick — the inFlight guard above keeps this a no-op if a poll is
+    // already in progress.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [plantId]);
 

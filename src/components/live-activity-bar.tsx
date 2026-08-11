@@ -29,25 +29,46 @@ export default function LiveActivityBar({ locale, plantId = "plant-01" }: { loca
   useEffect(() => {
     let cancelled = false;
     let previousStamp: string | null = null;
+    // inFlight skips a tick outright while a request is still pending (a
+    // slow response could otherwise overlap the next 5s poll); requestToken
+    // is a second guard so that even if a request somehow outlives a newer
+    // one, its response can never overwrite state the newer one already set.
+    let inFlight = false;
+    let requestToken = 0;
     const load = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      const token = ++requestToken;
       try {
         const response = await fetch(`/api/sensor-history?plantId=${encodeURIComponent(plantId)}&minutes=60`, { cache: "no-store" });
         if (!response.ok) throw new Error("sensor stream unavailable");
         const next = await response.json() as Payload;
-        if (cancelled) return;
+        if (cancelled || token !== requestToken) return;
         const stamp = next.latest?.recorded_at ?? null;
         if (stamp && stamp !== previousStamp) setPulse((value) => value + 1);
         previousStamp = stamp;
         setPayload(next);
         setRequestOk(true);
       } catch {
-        if (!cancelled) setRequestOk(false);
+        if (!cancelled && token === requestToken) setRequestOk(false);
+      } finally {
+        inFlight = false;
       }
     };
     const first = window.setTimeout(() => void load(), 0);
     const poll = window.setInterval(() => void load(), 5_000);
     const clock = window.setInterval(() => setNow(Date.now()), 250);
-    return () => { cancelled = true; window.clearTimeout(first); window.clearInterval(poll); window.clearInterval(clock); };
+    // Re-prime on tab refocus instead of waiting up to 5s for the next poll
+    // tick — a presenter tabbing back mid-demo should see fresh data at once.
+    const onVisible = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(first);
+      window.clearInterval(poll);
+      window.clearInterval(clock);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [plantId]);
 
   const ageSeconds = useMemo(() => {
