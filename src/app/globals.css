@@ -12,6 +12,15 @@
   --foreground: #243421;
 }
 
+/* Locale switch for Suspense fallbacks only (pixel-loading.tsx). A fallback
+   may not await the request locale — doing so suspends the fallback itself and
+   breaks the whole boundary — so it renders both languages and this picks one
+   off the <html lang> the root layout already sets. `display: none` also keeps
+   the hidden copy out of the accessible name. */
+.pm-i18n-id,
+html[lang="id"] .pm-i18n-en { display: none; }
+html[lang="id"] .pm-i18n-id { display: inline; }
+
 /* Shared route transition: tiny CSS pixel Jamkachu, no image/network wait. */
 .pm-pixel-loading {
   position: relative;
