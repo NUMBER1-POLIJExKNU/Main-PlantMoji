@@ -161,3 +161,5 @@ html[data-theme="night"] .pm-cam-chip.is-hidden { background: color-mix(in srgb,
 html[data-theme="night"] .pm-cam-note { border-color:var(--color-border); color:var(--color-text); background:#332f1f; }
 html[data-theme="night"] .pm-cam-event.is-pest_advice { color:var(--color-text); background:#39331f; }
 @media(max-width:560px){.pm-cam-speech{top:12px;width:min(86%,330px);padding:9px 12px 11px;font-size:12px}.pm-cam-speech-name{font-size:7px}.pm-cam-result{right:82px}.pm-cam-result strong{font-size:14px}.pm-cam-chip{width:13px;height:13px}.pm-cam.is-presentation .pm-cam-chip{font-size:16px}.pm-cam.is-presentation .pm-cam-result strong{font-size:18px}.pm-cam-jamkachu{width:62px;height:62px;font-size:34px}}
+.pm-cam-diary-save{display:flex;align-items:center;gap:12px;padding:12px 14px;border:2px solid #b6ceaa;border-radius:12px;background:#f7f4d8}.pm-cam-diary-save .pm-btn{min-width:190px}.pm-cam-diary-save p{margin:0;color:#57684f;font-size:12px;line-height:1.4}
+@media(max-width:600px){.pm-cam-diary-save{align-items:stretch;flex-direction:column}.pm-cam-diary-save .pm-btn{width:100%;min-width:0}}

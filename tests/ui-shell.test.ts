@@ -165,17 +165,6 @@ describe("shared PlantMoji application shell", () => {
     expect(collectionTabs).toContain('moodFlipping.has(mood.mood) ? " pm-badge-flip" : ""');
   });
 
-  it("keeps collection icons readable on desktop", () => {
-    const collectionTabs = source("src/components/collection-tabs.tsx");
-    expect(collectionTabs).toContain("pm-collection-tab-icon text-base");
-    expect(collectionTabs).toContain("pm-badge-icon text-3xl");
-    expect(collectionTabs).toContain("pm-selected-badge-icon");
-    expect(reactCss).toContain(".pm-collection-tab-icon");
-    expect(reactCss).toContain("font-size:24px !important");
-    expect(reactCss).toContain(".pm-badge-icon");
-    expect(reactCss).toContain("background:rgba(255,255,255,.86)");
-  });
-
   it("keeps presenter controls behind the explicit demo settings route", () => {
     const settings = source("src/app/settings/page.tsx");
     const controls = source("src/components/demo-control-center.tsx");

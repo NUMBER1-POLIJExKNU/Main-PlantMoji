@@ -28,7 +28,8 @@ export function npcSpriteSrc(npc: NpcKey, scale: NpcScale = "4x"): string {
   return `/farm/assets/npc/${scale}/${NPC_SPRITE_FILES[npc]}.png`;
 }
 
-/** Ambient idle loop on the designer's grass backdrop (GIFs carry no alpha). */
+/** Ambient idle loop on the designer's grass backdrop (GIFs carry no alpha).
+ *  Only safe over that same grass — see npcStillImgProps below. */
 export function npcIdleGifSrc(npc: NpcKey): string {
   return `/farm/assets/npc/gif/${NPC_SPRITE_FILES[npc]}.gif`;
 }
@@ -38,6 +39,20 @@ export function npcIdleGifSrc(npc: NpcKey): string {
  *  for the effective density. */
 export function npcSpriteSrcSet(npc: NpcKey): string {
   return NPC_SCALES.map((scale, index) => `${npcSpriteSrc(npc, scale)} ${32 * 2 ** index}w`).join(", ");
+}
+
+/** The still sprite, ready to spread onto an <img>.
+ *
+ *  Every one of the six idle GIFs opens on a frame with its transparency flag
+ *  off, so frame 0 paints the whole 160×144 canvas — the designer's grass
+ *  diorama — opaque, and later frames only overlay it. Placed anywhere other
+ *  than that same grass (a shop stage, a page header) the NPC therefore
+ *  arrives inside a solid rectangle. The PNG exports are RGBA and carry the
+ *  identical drawing without the backdrop, which is the trade already made for
+ *  Mbah Tani on the home farm. Motion is the thing given up, and it is worth
+ *  less than the sprite sitting in the scene it was placed in. */
+export function npcStillImgProps(npc: NpcKey, sizes: string) {
+  return { src: npcSpriteSrc(npc, "2x"), srcSet: npcSpriteSrcSet(npc), sizes };
 }
 
 export default function NpcBadge({
@@ -52,10 +67,8 @@ export default function NpcBadge({
 }) {
   return (
     <span className="pm-npc-badge">
-      <picture>
-        <source media="(prefers-reduced-motion: reduce)" srcSet={npcSpriteSrcSet(npc)} sizes="64px" />
-        <img src={npcIdleGifSrc(npc)} alt="" aria-hidden="true" width={70} height={63} />
-      </picture>
+      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+      <img {...npcStillImgProps(npc, "64px")} alt="" aria-hidden="true" width={70} height={63} />
       <span>
         <b>{npcNameLabel(locale, npc)}</b>
         {note && <small>{note}</small>}

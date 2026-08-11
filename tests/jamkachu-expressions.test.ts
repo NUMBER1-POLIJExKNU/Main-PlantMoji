@@ -28,12 +28,12 @@ const SPRITE_MOODS = new Set(["happy", "plain", "thirsty", "sleepy", "overheat"]
 /** Mood→sprite mapping (plan table) — the honest "own body" per mood. */
 const OWN_SPRITE: Record<string, string> = {
   Overheating: "overheat",
-  TooCold: "happy",
+  TooCold: "plain",
   DryAir: "thirsty",
-  HumidAir: "happy",
-  Sleepy: "happy",
-  SoilAcidic: "happy",
-  SoilAlkaline: "happy",
+  HumidAir: "plain",
+  Sleepy: "sleepy",
+  SoilAcidic: "plain",
+  SoilAlkaline: "plain",
 };
 
 interface ReactionPair {
@@ -82,7 +82,7 @@ describe("per-mood tap-reaction pair pools", () => {
     const section = expressionSection();
     expect(section).toContain("const POSITIVE_FACE_GLYPHS");
     expect(section).toContain('expression.textContent = POSITIVE_FACE_GLYPHS[reaction.emojiBurst] ?? "😊"');
-    expect(section).not.toMatch(/Happy:[\s\S]{0,1200}spriteMood: "(?:plain|sleepy)"/);
+    expect(pools.Happy.every((pair) => pair.spriteMood === "happy")).toBe(true);
   });
 
   it("only flashes sprite moods the designer actually drew, with a real emoji burst", () => {
@@ -114,7 +114,7 @@ describe("per-mood tap-reaction pair pools", () => {
   it("keeps named reactions for the explicit callers (drowsy blink, hop giggle)", () => {
     const section = expressionSection();
     expect(section).toContain("const PET_NAMED_REACTIONS");
-    expect(section).toMatch(/blink: \{ spriteMood: "happy"/);
+    expect(section).toMatch(/blink: \{ spriteMood: "sleepy"/);
     expect(section).toMatch(/giggle: \{ spriteMood: "happy"/);
   });
 });

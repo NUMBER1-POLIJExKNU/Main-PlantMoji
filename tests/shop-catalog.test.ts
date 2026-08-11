@@ -34,8 +34,8 @@ describe("SHOP_CATALOG", () => {
     const byCategory = (c: string) => SHOP_CATALOG.filter((i) => i.category === c).map((i) => i.key);
     expect(byCategory("pot")).toEqual(["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"]);
     expect(byCategory("decor")).toEqual(["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond", "decor_coffee_sign", "decor_greenhouse", "decor_rain_barrel", "decor_compost", "decor_tobacco_barn", "decor_puger_pinwheel", "decor_jfc_banner", "decor_indonesia_flag", "decor_mugunghwa"]);
-    expect(byCategory("accessory")).toEqual(["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles", "acc_jfc_headdress", "acc_indonesia_sash"]);
-    expect(SHOP_CATALOG).toHaveLength(27);
+    expect(byCategory("accessory")).toEqual(["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles", "acc_jfc_headdress", "acc_taeguk_ribbon", "acc_indonesia_sash"]);
+    expect(SHOP_CATALOG).toHaveLength(28);
   });
 
   it("carries non-empty en AND id copy for every item (locale parity)", () => {

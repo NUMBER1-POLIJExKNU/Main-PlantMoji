@@ -29,11 +29,10 @@ describe("try-on preview strip renders in the shop page markup", () => {
   });
 
   it("tapping an item card selects it into the preview stage", () => {
-    expect(grid).toMatch(/<button[\s\S]{0,700}aria-pressed=\{isPreviewed\}[\s\S]{0,300}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
-    // One semantic button owns selection; nested preview/equip controls were
-    // removed from cards so keyboard and pointer users get the same target.
-    expect(grid).not.toContain("pm-shop-preview-btn");
-    expect(grid).not.toContain("pm-shop-equip-btn");
+    expect(grid).toMatch(/<article[\s\S]{0,700}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
+    // The eye button stays an independent, keyboard-operable toggle — it
+    // must not also re-trigger the card's own select-on-click.
+    expect(grid).toContain("event.stopPropagation()");
   });
 
   it("the stage is a sticky strip that sticks below the mobile top bar", () => {
@@ -50,16 +49,14 @@ describe("try-on preview strip renders in the shop page markup", () => {
   });
 });
 
-describe("Pedagang stands beside Jamkachu with the npc-badge picture pattern", () => {
-  it("renders a <picture> with a reduced-motion static source, same helpers as npc-badge.tsx", () => {
-    expect(preview).toContain('import { npcIdleGifSrc, npcSpriteSrcSet } from "@/components/npc-badge"');
-    expect(preview).toContain("<picture>");
-    expect(preview).toContain('media="(prefers-reduced-motion: reduce)"');
-    expect(preview).toContain('npcSpriteSrcSet("pedagang")');
-    expect(preview).toContain('npcIdleGifSrc("pedagang")');
+describe("Pedagang stands beside Jamkachu without an opaque GIF rectangle", () => {
+  it("renders the shared transparent still with a responsive srcSet", () => {
+    expect(preview).toContain('import { npcStillImgProps } from "@/components/npc-badge"');
+    expect(preview).toContain('npcStillImgProps("pedagang", "46px")');
+    expect(preview).not.toContain("<picture>");
     // Decorative sprite art stays aria-hidden; the visible NPC name is the
     // accessible signal (same contract as npc-badge.tsx).
-    expect(preview).toMatch(/<img src=\{npcIdleGifSrc\("pedagang"\)\} alt="" aria-hidden="true"/);
+    expect(preview).toMatch(/<img \{\.\.\.npcStillImgProps\("pedagang", "46px"\)\} alt="" aria-hidden="true"/);
     expect(preview).toContain("npcNameLabel(locale, \"pedagang\")");
   });
 
@@ -101,7 +98,8 @@ describe("current Jamkachu is fetched server-side, same pattern as other pages",
 
 describe("pot items recolor the preview sprite; canvas failure never blanks it", () => {
   it("only pot-category items compute a palette ramp", () => {
-    expect(preview).toContain('item && item.category === "pot" ? potRampFor(item.key) : null');
+    expect(preview).toContain('const shownPotKey = item?.category === "pot" ? item.key : wornPotKey ?? null;');
+    expect(preview).toContain("shownPotKey ? potRampFor(shownPotKey) : null");
   });
 
   it("paints the plain sprite immediately and swaps in the recolor only once it resolves", () => {
@@ -127,7 +125,7 @@ describe("bond Lv.10 keepsake: the baseline look, not an override", () => {
     // The keepsake used to win outright, so a Lv.10+ player tapping any pot
     // saw gold — the stage was honestly reporting that buying it would change
     // nothing, because on the farm it changed nothing.
-    expect(preview).toContain('const previewPotRamp = item && item.category === "pot" ? potRampFor(item.key) : null;');
+    expect(preview).toContain("const previewPotRamp = shownPotKey ? potRampFor(shownPotKey) : null;");
     expect(preview).toContain("const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;");
     expect(preview).toContain("const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);");
     expect(preview).toContain('import { GOLDPOT_RAMP, GOLD_POT_LEVEL, potRampFor, swapPotPalette } from "@/lib/sprite-palette"');
@@ -143,7 +141,7 @@ describe("bond Lv.10 keepsake: the baseline look, not an override", () => {
 
 describe("decor renders as a prop on the grass; accessories get an honest try-on note", () => {
   it("decor items render their catalog emoji beside the cast, aria-hidden", () => {
-    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className="pm-shop-stage-decor-prop" aria-hidden="true"/);
+    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className="pm-shop-stage-decor-prop" aria-hidden="true">/);
   });
 
   it("accessory items show a large icon plus the honest 'arrives when equipped on the farm' note", () => {
@@ -179,12 +177,12 @@ describe("honest, non-gameplay preview copy — en+id parity", () => {
 
 describe("mobile: no page overflow, 44px controls, reduced motion respected", () => {
   it("collapses to a single column under 560px (no fixed-width overflow at 360-430px)", () => {
-    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{[^}]*grid-template-columns:1fr;/);
+    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{ grid-template-columns:1fr; \}/);
   });
 
   it("keeps the clear button and the buy/equip button at a 44px touch target", () => {
     expect(css).toMatch(/\.pm-shop-stage-clear\s*\{[^}]*width:44px;\s*height:44px;/);
-    expect(css).toMatch(/\.pm-shop-stage-action\s*\{[^}]*min-height:48px;/);
+    expect(css).toMatch(/\.pm-shop-stage-copy > \.pm-btn\s*\{[^}]*min-height:44px;/);
   });
 
   it("ships no new always-on animation on the stage", () => {
@@ -204,8 +202,8 @@ describe("every rendered image is pixelated; decorative art is aria-hidden with 
   });
 
   it("the decor prop and accessory icon are decorative (aria-hidden) — the item name text is the signal", () => {
-    expect(preview).toContain('className="pm-shop-stage-decor-prop" aria-hidden="true"');
-    expect(preview).toMatch(/className=\{`pm-shop-stage-acc-icon[\s\S]{0,100}?aria-hidden="true"/);
+    expect(preview).toMatch(/className="pm-shop-stage-decor-prop" aria-hidden="true"/);
+    expect(preview).toMatch(/className="pm-shop-stage-acc-icon" aria-hidden="true"/);
     expect(preview).toContain("<h2>{item.name}</h2>");
   });
 });

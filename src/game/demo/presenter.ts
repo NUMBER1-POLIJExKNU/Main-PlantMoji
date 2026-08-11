@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { awardXp, getBondState } from "@/game/progression/xp-engine";
-import { COMPANION_STAGES, XP_PER_LEVEL, companionStageForLevel, levelForXp, type CompanionStage } from "@/types/game";
+import { COMPANION_STAGES, XP_PER_LEVEL, levelForXp, type CompanionStage } from "@/types/game";
 
 export const DEMO_PRESENTATION_MAX_XP = XP_PER_LEVEL * 10 - 1;
 
@@ -36,22 +36,19 @@ export async function awardDemoLevelUp(supabase: SupabaseClient, plantId: string
 }
 
 export async function advanceDemoCompanion(supabase: SupabaseClient, plantId: string, now = new Date()) {
-  const bond = await getBondState(supabase, plantId);
-  const level = bond?.bond_level ?? 1;
-  const fromStage = companionStageForLevel(level);
-  if (level >= COMPANION_STAGES.length) return { fromStage, stage: fromStage, evolved: false };
-
-  // The demo shortcut obeys production truth: award exactly enough XP for
-  // the next Bond Level, then awardXp runs the shared level→stage sync.
-  const targetXp = level * XP_PER_LEVEL;
-  const amount = Math.max(1, targetXp - (bond?.total_xp ?? 0));
-  const result = await awardXp(
-    supabase,
-    plantId,
-    `presenter-evolve:${plantId}:${level + 1}:${now.getTime()}`,
-    amount,
-    "presenter-level-evolution",
-  );
-  const stage = companionStageForLevel(result.bondLevel);
-  return { fromStage, stage, evolved: stage !== fromStage };
+  const { data, error } = await supabase.from("companion_state").select("*").eq("plant_id", plantId).maybeSingle();
+  if (error) throw new Error(`demo presenter companion lookup failed: ${error.message}`);
+  const current = (data?.stage ?? "Seed") as CompanionStage;
+  const next = nextCompanionStage(current);
+  if (!next) return { fromStage: current, stage: current, evolved: false };
+  const cycle = Number(data?.cycle ?? 1);
+  const occurredAt = now.toISOString();
+  const evolution = { plant_id: plantId, cycle, stage: next, from_stage: current, form_key: "balanced", care_snapshot: { presenterDemo: 1 }, evolved_at: occurredAt };
+  const { error: evolutionError } = await supabase.from("companion_evolutions").upsert(evolution, { onConflict: "plant_id,cycle,stage", ignoreDuplicates: true });
+  if (evolutionError) throw new Error(`demo presenter evolution failed: ${evolutionError.message}`);
+  const { error: eventError } = await supabase.from("bond_events").upsert({ event_id: `presenter:${plantId}:${cycle}:${next}`, plant_id: plantId, type: "COMPANION_EVOLVED", occurred_at: occurredAt, data: { fromStage: current, stage: next, formKey: "balanced", presenterDemo: true } }, { onConflict: "event_id", ignoreDuplicates: true });
+  if (eventError) throw new Error(`demo presenter event failed: ${eventError.message}`);
+  const { error: stateError } = await supabase.from("companion_state").upsert({ plant_id: plantId, cycle, stage: next, form_key: "balanced", last_evolved_at: occurredAt, updated_at: occurredAt }, { onConflict: "plant_id" });
+  if (stateError) throw new Error(`demo presenter state failed: ${stateError.message}`);
+  return { fromStage: current, stage: next, evolved: true };
 }

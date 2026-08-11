@@ -37,6 +37,17 @@ describe("/camera route (Live Guardian)", () => {
     expect(guardian).not.toMatch(/awardSeeds|awardXp|seed-engine|bonus-xp|total_xp|bond_level/);
   });
 
+  it("persists only an explicit live-frame capture through the existing Growth Diary action", () => {
+    const guardian = source("src/components/camera-guardian.tsx");
+    const page = source("src/app/camera/page.tsx");
+    expect(guardian).toContain('import { addGrowthRecord } from "@/app/settings/actions"');
+    expect(guardian).toContain("const saveCurrentFrameToDiary");
+    expect(guardian).toContain('canvas.toBlob(resolve, "image/jpeg", 0.82)');
+    expect(guardian).toContain('formData.set("photoRequired", "true")');
+    expect(guardian).toContain("result.ok && result.photoSaved");
+    expect(page).toContain("growthStage={normalizeGrowthStage(result.plant.growth_stage)");
+  });
+
   it("labels motion-only mode and the local-only (no-migration) mode honestly", () => {
     const guardian = source("src/components/camera-guardian.tsx");
     expect(guardian).toContain("motionOnlyLabel");
@@ -44,7 +55,7 @@ describe("/camera route (Live Guardian)", () => {
     expect(guardian).toContain("scanDisabled");
   });
 
-  it("superseded photo-diary capture flow is fully removed", () => {
+  it("does not resurrect the superseded standalone photo-diary modules", () => {
     expect(() => source("src/app/camera/actions.ts")).toThrow();
     expect(() => source("src/components/camera-capture.tsx")).toThrow();
   });

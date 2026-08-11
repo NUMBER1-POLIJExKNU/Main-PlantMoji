@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import IntelligenceConsole, { TypewriterText, type IntelligenceLine } from "@/components/intelligence-console";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import type { EnvironmentAnalysis } from "@/lib/environment-analyzer";
-import { npcIdleGifSrc, npcSpriteSrcSet } from "@/components/npc-badge";
+import { npcStillImgProps } from "@/components/npc-badge";
 import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { ExplorerCrop } from "@/lib/jember-crop-catalog";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
@@ -36,16 +36,13 @@ function localAdvice(analysis: EnvironmentAnalysis, locale: AppLocale) {
   return locale === "id" ? `${label} adalah perbedaan utama. Coba ${move}, lalu ukur lagi.` : `${label} is the main difference. Try ${move}, then measure again.`;
 }
 
-/** Keep Gemini's grounded explanation readable in the result card. Every
- *  sentence gets its own paragraph-sized beat (two line breaks), regardless
- *  of whether the provider returned one long line or inconsistent wrapping. */
-export function formatExplanation(text: string) {
+/** Keep Gemini's grounded explanation readable in the compact result card.
+ *  The model may return one long paragraph; sentence breaks become visual
+ *  lines while existing intentional paragraphs remain untouched. */
+function formatExplanation(text: string) {
   const normalized = text.replace(/\r\n?/g, "\n").trim();
-  if (!normalized) return "";
-  return normalized
-    .replace(/\s+/g, " ")
-    .replace(/([.!?。！？])(?:\s+|$)/g, "$1\n\n")
-    .trim();
+  if (!normalized || normalized.includes("\n")) return normalized;
+  return normalized.replace(/([.!?。！？])\s+/g, "$1\n");
 }
 
 export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {
@@ -123,10 +120,14 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
 
   return <section className="pm-crop-explorer mb-6" aria-labelledby="crop-explorer-title">
     {/* Penjelajah (designer NPC cast) hosts the explorer from inside the
-        scan radar — the ambient idle GIF plays in the porthole, reduced
-        motion swaps in the static sprite (all four export scales offered
-        via srcSet); the alt carries the cast name for assistive tech. */}
-    <div className="pm-crop-scan-hero"><div className="pm-crop-radar"><picture><source media="(prefers-reduced-motion: reduce)" srcSet={npcSpriteSrcSet("penjelajah")} sizes="68px" /><img src={npcIdleGifSrc("penjelajah")} alt={npcNameLabel(locale, "penjelajah")} width={68} height={68} /></picture></div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
+        scan radar. The transparent PNG, not the idle GIF: the loop opens on
+        an opaque frame, and the radar porthole is a border-radius circle with
+        nothing clipping it, so the GIF's baked backdrop squared the porthole
+        off. The alt carries the cast name for assistive tech. */}
+    <div className="pm-crop-scan-hero"><div className="pm-crop-radar">
+      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+      <img {...npcStillImgProps("penjelajah", "68px")} alt={npcNameLabel(locale, "penjelajah")} width={68} height={68} />
+    </div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
     {presentationMode && <label className="pm-crop-demo-toggle"><input type="checkbox" checked={demoMode} onChange={(event) => { setDemoMode(event.target.checked); setData(null); setError(false); setExplanation(""); }} /> <span>{c.demoMode}</span></label>}
     {presentationMode && (scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
     {error && <p role="alert" className="mt-4 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] p-3 text-sm">{c.noData}</p>}

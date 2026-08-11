@@ -365,28 +365,11 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .farm-guide-cast { display:block; width:min(100%, 288px); margin:14px auto 0; image-rendering:pixelated; }
 @media (prefers-reduced-motion: reduce) { .farm-guide-cast { display:none; } }
 
-/* Shared sensor/progression detail dialog: title → one-sentence meaning →
-   useful facts/action → close. Native <dialog> owns Escape and modality. */
-.hud-detail { width:min(500px,calc(100vw - 32px)); margin:auto; border:0; padding:0; color:var(--color-text); background:transparent; }
-.hud-detail::backdrop { background:rgba(18,31,25,.66); backdrop-filter:blur(4px); }
-.hud-detail-card { display:grid; gap:12px; border:4px solid var(--color-outline); border-radius:18px; padding:22px; background:var(--color-surface); box-shadow:0 9px 0 var(--color-outline); }
-.hud-detail-kicker { color:var(--color-forest); font:10px/1.4 var(--font-heading); letter-spacing:.06em; }
-.hud-detail-card h2 { font:22px/1.25 var(--font-body); font-weight:800; }
-.hud-detail-card > p,.hud-detail-action { font:14px/1.55 var(--font-body); }
-.hud-detail-gauge { height:14px; overflow:hidden; border:2px solid var(--color-outline); border-radius:999px; background:var(--color-bg); }
-.hud-detail-gauge i { display:block; width:var(--detail-progress,0%); height:100%; background:linear-gradient(90deg,var(--color-water),var(--color-grass)); }
-.hud-detail-facts { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px 12px; border-block:2px dashed var(--color-border); padding:11px 0; font-size:13px; line-height:1.45; }
-.hud-detail-facts dt { color:var(--color-text-muted); font-weight:700; }
-.hud-detail-facts dd { font-weight:800; }
-.hud-detail-action { border-left:5px solid var(--color-grass); border-radius:8px; padding:10px 12px; background:var(--color-bg); }
-.hud-detail-card > .pixel-btn { min-height:52px; margin-top:2px; }
-
 .user-gamification {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 20px;
     width: 100%;
 }
 
@@ -409,31 +392,25 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    never push .user-details/.user-gamification wider than the HUD row —
    overflow:hidden + text-overflow:ellipsis then truncates it cleanly.
    Per-breakpoint overrides below tighten it to match the narrower rail. */
-.username { font-family: var(--font-heading); font-size: 10px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.username { font-family: var(--font-heading); font-size: 12px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .xp-row { display: flex; align-items: center; gap: 10px; }
-#hp-inline { font-family: var(--font-body); font-size: 13px; white-space: nowrap; }
+#hp-inline { font-family: var(--font-heading); font-size: 10px; white-space: nowrap; }
 #hp-inline.hp-good { color: var(--color-forest); }
 #hp-inline.hp-warn { color: #A97B12; }
 #hp-inline.hp-low { color: #C24141; }
 .xp-bar-wrap {
-    position:relative;
-    width: 150px; height: 44px;
-    border:2px solid var(--color-border);
-    background: var(--color-bg);
+    width: 160px; height: 14px;
+    background: rgba(255, 255, 255, 0.5);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow:none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
 .xp-bar {
-    position:absolute;
-    inset:0 auto 0 0;
-    z-index:0;
     height: 100%;
     background: linear-gradient(90deg, var(--color-grass), var(--color-grass-light));
-    border-radius: 7px;
+    border-radius: 10px;
     transition: width 1s ease-in-out;
 }
-.xp-bar-label { position:relative; z-index:1; display:grid; height:100%; place-items:center; color:var(--color-outline); font:10px/1 var(--font-heading); text-shadow:0 1px rgba(255,255,255,.8); }
 
 .badges {
     display: flex;
@@ -441,10 +418,8 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 }
 .badge {
     background: var(--color-white);
-    border:2px solid var(--color-border);
-    border-radius: 10px;
-    min-height:44px;
-    padding: 7px 9px;
+    border-radius: 20px;
+    padding: 6px 14px;
     font-family: var(--font-heading);
     font-size: 10px;
     display: flex; align-items: center; gap: 8px;
@@ -456,23 +431,14 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .badge .seed-icon { width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; }
 /* Same picture, same currency, in the cheat panel's care heading. */
 .pm-cheat-heading-icon { width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; vertical-align: -2px; }
-/* Every progression value explains itself on press. These are real buttons,
-   but retain the compact HUD styling instead of inheriting browser chrome. */
-.status-help { appearance:none; color:inherit; cursor:help; }
-.status-help.username { min-height:44px; border:2px solid var(--color-border); border-radius:10px; padding:7px 9px; background:var(--color-bg); text-align:center; }
-.status-help.xp-bar-wrap { display:block; padding:0; }
-#hp-inline.status-help { min-height:44px; display:grid; gap:1px; border:2px solid var(--color-border); border-radius:10px; padding:5px 8px; background:var(--color-bg); }
-#hp-inline small { font-size:10px; font-weight:700; }
-.status-help:hover { filter:brightness(1.03); }
-.status-help:focus-visible { outline:3px solid var(--color-water); outline-offset:3px; }
-.status-help:active { transform:translateY(1px); }
 
 /* Streak flame is pressable (Task 15): tap → honest "N days in a row"
    line + blip. Pure celebration of real history — grants nothing. */
 .badge.streak { cursor: pointer; user-select: none; }
 .badge.streak:active { transform: translateY(1px); }
-.hud-section-label { color:var(--color-forest); font:10px/1.4 var(--font-heading); letter-spacing:.04em; }
-.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:10px/1 var(--font-heading); }
+.hud-section-label { color:var(--color-forest); font:7px/1.4 var(--font-heading); letter-spacing:.04em; }
+.current-quest-line { display:block; }
+.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:6px/1 var(--font-heading); }
 
 .weather-widget {
     display: flex;
@@ -492,7 +458,9 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .weather-text .indoor-reading { margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(43, 58, 39, 0.25); font-size: 13px; color: #555; }
 .weather-widget.weather-stale .forecast-time { color: #9a6515; }
 
-/* Home info stack: sensor evidence followed by today's quiz bonus. */
+/* Home info stack: one decision → mission → sensor evidence → progression →
+   bonus. The care-focus card answers the three first-use questions before
+   asking a child to interpret numbers or rewards. */
 .home-stack {
     position: relative;
     z-index: 10;
@@ -504,7 +472,89 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     align-items: stretch;
     gap: 14px;
 }
-.home-stack-scroll { display: contents; }
+
+.care-focus {
+    --care-accent:#718076;
+    position:relative;
+    display:grid;
+    gap:14px;
+    overflow:hidden;
+    border-color:var(--care-accent);
+    padding:18px;
+    background:linear-gradient(145deg,color-mix(in srgb,var(--care-accent) 10%,var(--color-surface)),var(--color-surface) 62%);
+    box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent);
+}
+.care-focus::before { content:""; position:absolute; inset:0 auto 0 0; width:7px; background:var(--care-accent); }
+.care-focus[data-care-state="waiting"] { --care-accent:#6583a0; }
+.care-focus[data-care-state="healthy"] { --care-accent:var(--color-grass); }
+.care-focus[data-care-state="action"] { --care-accent:#d36c43; }
+.care-focus[data-care-state="verifying"] { --care-accent:#d4a52f; }
+.care-focus-heading { display:grid; grid-template-columns:46px minmax(0,1fr); align-items:center; gap:12px; padding-left:3px; }
+.care-focus-icon { display:grid; place-items:center; width:46px; height:46px; border:2px solid var(--color-outline); border-radius:12px; background:var(--color-surface); font:25px/1 sans-serif; }
+.care-focus-kicker { display:block; margin-bottom:4px; color:var(--care-accent); font:7px/1.3 var(--font-heading); letter-spacing:.08em; }
+.care-focus h2 { margin:0; color:var(--color-outline); font:13px/1.45 var(--font-heading); }
+.care-focus-heading p { margin:5px 0 0; color:var(--color-text); font:14px/1.4 var(--font-body); }
+.care-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:0; padding:0; list-style:none; }
+.care-steps li { min-width:0; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:6px; border:2px solid var(--color-border); border-radius:10px; padding:7px; color:var(--color-text-muted); background:color-mix(in srgb,var(--color-surface) 76%,#dce5da); }
+.care-steps li > b { display:grid; place-items:center; width:27px; height:27px; border:2px solid currentColor; border-radius:50%; font:9px/1 var(--font-heading); }
+.care-steps li span { min-width:0; display:grid; gap:2px; }
+.care-steps li strong { overflow:hidden; font:7px/1.25 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
+.care-steps li small { overflow:hidden; font:10px/1.25 var(--font-body); text-overflow:ellipsis; white-space:nowrap; }
+.care-steps li[data-step-state="done"] { color:#285a30; border-color:#76ab70; background:#e4f4dd; }
+.care-steps li[data-step-state="done"] > b::after { content:"✓"; }
+.care-steps li[data-step-state="done"] > b { font-size:0; }
+.care-steps li[data-step-state="current"] { color:var(--color-outline); border-color:var(--care-accent); background:color-mix(in srgb,var(--care-accent) 20%,white); box-shadow:0 3px 0 color-mix(in srgb,var(--care-accent) 38%,transparent); }
+.care-steps li[data-step-state="not-needed"] { opacity:.58; }
+.care-proof-note { margin:0; color:var(--color-text-muted); font:11px/1.4 var(--font-body); text-align:center; }
+.care-focus .actions-panel { margin:0; }
+.care-focus #care-action { max-width:none; }
+
+@media (prefers-reduced-motion:no-preference) {
+    .care-focus[data-care-state="verifying"] { animation:care-focus-check 1.8s ease-in-out infinite; }
+}
+@keyframes care-focus-check { 0%,100% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent); } 50% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 62%,transparent); } }
+
+/* Whole-card quest link (kid-guide Task 1): #current-quest is a real
+   <a href="/quests"> now — link resets + a ≥44px tap target + the same
+   gentle press feel as the env tiles, so it reads as tappable. */
+#current-quest {
+    display: block;
+    min-height: 44px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    line-height: 1.8;
+    text-align: center;
+    padding: 14px 20px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+#current-quest:hover { transform: translateY(-1px); }
+#current-quest:active { transform: translateY(2px); }
+#current-quest:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
+#cq-progress { color: var(--color-primary); }
+
+/* Verifying shimmer (Task 12): while the sensor is confirming real care the
+   quest slot turns amber with a magnifier and three blinking dots — honest
+   anticipation, not celebration. Dots animate with hard steps() toggles
+   (pixel feel) and stay static under reduced motion. */
+#current-quest.verifying {
+    background: #FFF7DF;
+    border-color: #E8C46B;
+    color: #7A5B12;
+}
+#current-quest.verifying #cq-progress { color: #A97B12; }
+.quest-verify-console { display:grid; gap:3px; margin-top:-10px; border:2px solid #a97b12; border-top:0; border-radius:0 0 9px 9px; padding:9px 11px; color:#f7da86; background:#241e0f; font:8px/1.45 ui-monospace,Consolas,monospace; }.quest-verify-console[hidden] { display:none; }.quest-verify-console b { color:#ffe6a0; }.quest-verify-console span { display:flex; justify-content:space-between; gap:8px; }.quest-verify-console strong { color:#fff0bd; }
+.cq-dots span { opacity: 0.25; }
+@media (prefers-reduced-motion: no-preference) {
+    .cq-dots span { animation: pm-dot-blink 1.2s steps(1, end) infinite; }
+    .cq-dots span:nth-child(2) { animation-delay: 0.4s; }
+    .cq-dots span:nth-child(3) { animation-delay: 0.8s; }
+}
+@keyframes pm-dot-blink {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+}
 
 .home-divider {
     border: 0;
@@ -537,9 +587,6 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .env-hud-copy strong { margin-top:4px; overflow:hidden; font:26px/1.15 var(--font-body); font-weight:700; color:var(--color-text); text-overflow:ellipsis; white-space:nowrap; }
 .env-hud-copy em { display:block; overflow:hidden; color:var(--color-forest); font:10px/1.3 var(--font-body); font-style:normal; white-space:nowrap; text-overflow:ellipsis; }
 .env-hud-card.is-alert .env-status { color:#a34d32; }
-.env-status::before { content:"✓ "; font-weight:900; }
-.env-hud-card.is-alert { border-color:#b84f37; box-shadow:0 4px 0 #783426; }
-.env-hud-card.is-alert .env-status::before { content:"! "; }
 /* Explicit "Ideal min–max" line (crop-profile sourced; hidden — never a
    hand-typed number — when the profile fetch is unavailable). */
 .env-range { display:block; margin-top:1px; overflow:hidden; color:var(--color-text-muted); font:9px/1.35 var(--font-body); white-space:normal; }
@@ -693,9 +740,40 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 }
 .pixel-btn .icon { font-style: normal; font-size: 18px; }
 
+/* Contextual care button (spec §6.1): ONE large mood-driven safe action —
+   live.js owns the label; ≥64px touch target, centered in the panel. */
+#care-action {
+    width: 100%;
+    max-width: 440px;
+    min-height: 64px;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.7;
+    background: var(--color-grass);
+    color: var(--color-white);
+    border-color: var(--color-forest);
+    box-shadow: 0 6px 0 var(--color-forest);
+}
+#care-action:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-forest); filter: brightness(1.06); }
+#care-action:active { transform: translateY(6px); box-shadow: 0 0 0 var(--color-forest); }
+
+/* Night state (spec §6.2): quiet "Good night 🌙" disabled-style look —
+   still pressable (soft shh why-card), but calm colors and no eager
+   hover lift while Jamkachu sleeps. */
+#care-action.care-night {
+    background: #39456B;
+    border-color: #232B45;
+    box-shadow: 0 6px 0 #232B45;
+    color: #D9DFF2;
+}
+#care-action.care-night:hover { transform: none; box-shadow: 0 6px 0 #232B45; filter: none; }
+#care-action.care-night:active { transform: translateY(3px); box-shadow: 0 3px 0 #232B45; }
+
 /* Touch press feedback (micro-juice): .pressed mirrors :active for
    pointerdown-driven presses, chunky 3px push (spec Task 8). */
 .pixel-btn.pressed { transform: translateY(3px); filter: brightness(0.96); }
+#care-action.pressed { box-shadow: 0 3px 0 var(--color-forest); }
+#care-action.care-night.pressed { box-shadow: 0 3px 0 #232B45; filter: none; }
 .nav-item.pressed { transform: translateX(2px) scale(0.98); }
 
 /* Mascot Stage (Center Stage — top of the hierarchy, now in document flow) */
@@ -739,13 +817,15 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    restated here; the panel keeps every class live.js writes into. */
 .mascot-container > .user-gamification {
     width: auto;
-    max-width: min(560px, 100%);
+    max-width: min(420px, 100%);
     margin-bottom: 10px;
-    gap: 7px;
+    gap: 6px 14px;
     justify-content: center;
-    padding: 8px 10px;
+    padding: 8px 14px;
 }
 .mascot-container > .user-gamification > .hud-section-label { text-align: center; }
+.mascot-container > .user-gamification .user-details { flex: 0 1 auto; align-items: center; }
+.mascot-container > .user-gamification .badges { justify-content: center; }
 /* The bar is the only greedy child; without a cap it stretches the panel to
    the full stage width and stops reading as a card over the plant. */
 .mascot-container > .user-gamification .xp-bar-wrap { width: 150px; }
@@ -855,7 +935,7 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 /* Honest next-stage progress line (evolution-ladder plan, Task 5): same
    voice as .companion-stage, one size smaller; :empty keeps the row from
    reserving space when live.js hides it (pre-milestone16, missing ladder). */
-.companion-next { margin-top: 3px; font: 13px/1.45 var(--font-body); color: #57684f; letter-spacing: 0; }
+.companion-next { margin-top: 3px; font: 7px/1.5 var(--font-pixel); color: #6b7a61; letter-spacing: .05em; }
 .companion-next:empty { display: none; }
 /* Late-stage differentiation on the designer sprite (kiki design
    integration): the drawn PHASE carries growth (stage→phase table in
@@ -869,24 +949,6 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.companion-Elder #jamkachu-sprite { filter: saturate(1.28) drop-shadow(0 0 6px var(--companion-accent, #f5c94a)); }
 .mascot-svg.companion-Radiant #jamkachu-sprite { filter: saturate(1.32) drop-shadow(0 0 8px var(--companion-accent, #f5c94a)); }
 .mascot-svg.companion-Legend #jamkachu-sprite { filter: saturate(1.38) drop-shadow(0 0 10px var(--companion-accent, #f5c94a)); }
-
-.evolution-guide-open { min-width:260px; min-height:52px; display:grid; gap:3px; margin:7px auto 0; border:2px solid var(--color-outline); border-radius:11px; padding:8px 12px; color:var(--color-outline); background:#eef8e9; box-shadow:0 3px 0 var(--color-outline); cursor:pointer; text-align:left; }
-.evolution-guide-open .companion-stage { margin:0; font-size:10px; }
-.evolution-guide-link { color:var(--color-forest); font:10px/1.35 var(--font-heading); }
-.evolution-guide-open:active { transform:translateY(1px); box-shadow:0 1px 0 var(--color-outline); }
-.evolution-guide-card { width:min(560px,calc(100vw - 32px)); max-height:86dvh; overflow-y:auto; }
-.evolution-guide-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.evolution-guide-heading h2 { margin-bottom:10px; }
-.evolution-guide-heading b { border:2px solid #82ad78; border-radius:999px; padding:6px 8px; background:#e8f6e0; white-space:nowrap; }
-.evolution-guide-card > p { margin:0 0 13px; color:#57684f; }
-.evolution-guide-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
-.evolution-guide-stage { min-width:0; display:grid; grid-template-columns:52px minmax(0,1fr) 58px; align-items:center; gap:7px; border:2px solid #c6d3c1; border-radius:10px; padding:9px; color:#778274; background:#f0f2ec; opacity:.72; }
-.evolution-guide-stage b { color:inherit; font:10px/1.3 var(--font-heading); }
-.evolution-guide-stage strong { overflow:hidden; font:10px/1.35 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
-.evolution-guide-stage span { color:#657060; font:10px/1.3 var(--font-heading); text-align:right; }
-.evolution-guide-stage.is-unlocked { color:#285a30; border-color:#7cad70; background:#e8f6e0; opacity:1; }
-.evolution-guide-stage.is-current { color:#243421; border-color:#243421; background:#ffde6a; box-shadow:0 3px 0 #243421; }
-.evolution-guide-stage.is-next { border-style:dashed; border-color:#d3a539; background:#fff7df; opacity:1; }
 
 /* Care-affinity form tint (audit fix: form_key finally shows on the
    character). Sets the SAME --companion-accent custom property the aura
@@ -1016,7 +1078,6 @@ body.evolution-active .fx-layer { z-index:1390; }
   filter:none;
   pointer-events:none;
 }
-.mascot-wrapper.evo-arena .jamkachu-home-portrait,
 .mascot-wrapper.evo-arena .positive-expression { opacity:0; }
 .mascot-wrapper.evo-arena > .mascot-svg {
   position:relative;
@@ -1085,60 +1146,26 @@ body.evolution-active .fx-layer { z-index:1390; }
   .evo-ceremony-hud * { animation:none !important; transition:none !important; }
 }
 
-.speech-bubble-frame {
+.speech-bubble {
+    background: var(--color-surface);
+    border: 3px solid var(--color-border);
+    padding: 14px 22px;
+    font-size: 15px;
+    max-width: 400px;
+    text-align: center;
     position: relative;
     margin-bottom: 24px;
-    width: fit-content;
-    max-width: min(470px, calc(100vw - 36px));
-    filter: drop-shadow(0 8px 0 rgba(8,45,72,.16));
-}
-.speech-bubble {
-    position: relative;
-    isolation: isolate;
-    box-sizing: border-box;
-    min-width: min(300px, calc(100vw - 40px));
-    max-width: 470px;
-    padding: 19px 34px 21px;
-    overflow-wrap: anywhere;
-    color: #33413D;
-    background: #0A3D62;
-    clip-path: polygon(16px 0,calc(100% - 16px) 0,calc(100% - 16px) 5px,calc(100% - 8px) 5px,calc(100% - 8px) 12px,100% 12px,100% calc(100% - 13px),calc(100% - 8px) calc(100% - 13px),calc(100% - 8px) calc(100% - 6px),calc(100% - 16px) calc(100% - 6px),calc(100% - 16px) 100%,16px 100%,16px calc(100% - 6px),8px calc(100% - 6px),8px calc(100% - 13px),0 calc(100% - 13px),0 13px,8px 13px,8px 6px,16px 6px);
-    font-size: 15px;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     line-height: 1.5;
-    text-align: center;
-}
-.speech-bubble::before {
-    content: '';
-    position: absolute;
-    inset: 5px;
-    z-index: -1;
-    background: #FFF;
-    box-shadow: inset 0 0 0 5px #C8EE98, inset 0 -7px 0 #E5ECEC;
-    clip-path: polygon(14px 0,calc(100% - 14px) 0,calc(100% - 14px) 5px,calc(100% - 6px) 5px,calc(100% - 6px) 12px,100% 12px,100% calc(100% - 12px),calc(100% - 6px) calc(100% - 12px),calc(100% - 6px) calc(100% - 5px),calc(100% - 14px) calc(100% - 5px),calc(100% - 14px) 100%,14px 100%,14px calc(100% - 5px),6px calc(100% - 5px),6px calc(100% - 12px),0 calc(100% - 12px),0 12px,6px 12px,6px 5px,14px 5px);
+    color: #444;
 }
 .speech-bubble::after {
-    content: '';
-    position: absolute;
-    bottom: -17px;
-    left: clamp(62px,22%,104px);
-    z-index: -2;
-    width: 34px;
-    height: 28px;
-    background: linear-gradient(90deg,#0A3D62 0 7px,#C8EE98 7px 14px,#FFF 14px 23px,transparent 23px);
-    clip-path: polygon(0 0,100% 0,100% 8px,75% 8px,75% 17px,50% 17px,50% 100%,25% 100%,25% 9px,0 9px);
-}
-.speech-bubble-sparkles { position:absolute; z-index:4; pointer-events:none; }
-.speech-bubble-sparkles { top:-18px; right:-13px; width:78px; height:52px; }
-.speech-bubble-sparkles i { position:absolute; display:block; background:linear-gradient(135deg,#FFF17A 0 35%,#FFD62F 36% 70%,#F1AA16 71%); clip-path:polygon(38% 0,62% 0,62% 34%,100% 34%,100% 66%,62% 66%,62% 100%,38% 100%,38% 66%,0 66%,0 34%,38% 34%); filter:drop-shadow(3px 0 #0A3D62) drop-shadow(-3px 0 #0A3D62) drop-shadow(0 3px #0A3D62) drop-shadow(0 -3px #0A3D62); }
-.speech-bubble-sparkles i:nth-child(1) { left:5px; top:1px; width:24px; height:34px; transform:rotate(19deg); }
-.speech-bubble-sparkles i:nth-child(2) { left:38px; top:8px; width:21px; height:31px; transform:rotate(35deg); }
-.speech-bubble-sparkles i:nth-child(3) { right:0; bottom:0; width:26px; height:14px; transform:rotate(2deg); }
-.speech-bubble-frame:has(.speech-bubble:empty) { display:none; }
-.mascot-container.hatch-hidden .speech-bubble-frame { visibility:hidden; }
-@media (max-width: 520px) {
-    .speech-bubble-frame { max-width:calc(100vw - 28px); }
-    .speech-bubble { min-width:min(260px,calc(100vw - 32px)); padding:17px 25px 19px; font-size:14px; }
-    .speech-bubble-sparkles { right:-5px; transform:scale(.82); transform-origin:right bottom; }
+    content: ''; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+    border-width: 12px 12px 0;
+    border-style: solid;
+    border-color: var(--color-white) transparent transparent transparent;
+    display: block; width: 0;
 }
 .animated-bounce { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
@@ -1187,7 +1214,6 @@ body.evolution-active .fx-layer { z-index:1390; }
     18%,78% { opacity:1; transform:translateY(0) scale(1.08) rotate(4deg); }
     100% { opacity:0; transform:translateY(-14px) scale(.85) rotate(8deg); }
 }
-.jamkachu-home-portrait { display:none; }
 /* Designer sprite stage (kiki design integration): .mascot-svg is a DIV
    now — it keeps the old inline SVG's 300×350 footprint inside the
    .mascot-wrapper (all the responsive wrapper widths below keep working),
@@ -1845,7 +1871,7 @@ body.env-hot .env-haze { opacity: 1; }
    unaffected — scaleX(-1) mirrors about the tag's own centre, which the
    -50% has already parked on the sprite's midline. */
 .npc-farmer.npc-facing-left .npc-ai-tag { transform:translateX(-50%) scaleX(-1); }
-body.night:not(.farmer-night-awake) .npc-farmer.npc-ready {
+body.night .npc-farmer.npc-ready {
     left: auto !important;
     right: clamp(72px, 9vw, 132px);
     top: auto !important;
@@ -1864,19 +1890,20 @@ body.night.farmer-night-awake .npc-farmer .npc-ai-tag { display:none; }
     right: clamp(22px, 5vw, 78px);
     bottom: 56px;
     display: none;
-    width: 90px;
-    height: 48px;
-    border: 0;
-    background: transparent;
-    box-shadow: none;
+    width: 142px;
+    height: 62px;
+    border: 4px solid var(--color-outline);
+    border-radius: 5px 5px 2px 2px;
+    background: #8f563b;
+    box-shadow: inset 0 -10px #6f3f2d, 7px 7px 0 rgba(10,20,18,.25);
     image-rendering: pixelated;
     pointer-events: none;
     z-index: 240;
 }
 body.night .npc-farmer-bed { display: block; }
 body.night.farmer-night-awake .npc-farmer-bed { display:none; }
-.npc-bed-pillow,
-.npc-bed-blanket { display:none; }
+.npc-bed-pillow { position:absolute; left:8px; top:7px; width:47px; height:27px; border:3px solid var(--color-outline); border-radius:8px; background:#f7edc8; }
+.npc-bed-blanket { position:absolute; right:7px; bottom:8px; width:78px; height:39px; border:3px solid var(--color-outline); background:repeating-linear-gradient(90deg,#4f8764 0 14px,#6da479 14px 28px); box-shadow:inset 0 7px rgba(255,255,255,.12); }
 .npc-sleep-zzz { position:absolute; right:5px; bottom:calc(100% + 8px); display:flex; align-items:flex-end; gap:4px; color:#f8e68e; font:14px/1 var(--font-heading); text-shadow:2px 2px 0 #253349; }
 .npc-sleep-zzz i { display:block; font-style:normal; }
 .npc-sleep-zzz i:nth-child(1) { font-size:18px; }
@@ -1891,21 +1918,9 @@ body.night.farmer-night-awake .npc-farmer-bed { display:none; }
     45%,75% { opacity:1; transform:translateY(-3px); }
     100% { opacity:0; transform:translateY(-8px); }
 }
-/* Desktop sleeping zone: the right HUD rail occupies the viewport edge, so
-   the old right-anchored bed was physically present but hidden behind cards.
-   Park both bed and sleeping sprite in the open grass just after the sidebar. */
-@media (min-width:801px) {
-    body { --farmer-bed-left:clamp(304px,24vw,410px); }
-    .npc-farmer-bed { left:var(--farmer-bed-left); right:auto; bottom:56px; }
-    body.night:not(.farmer-night-awake) .npc-farmer.npc-ready {
-        left:calc(var(--farmer-bed-left) + 18px) !important;
-        right:auto;
-        bottom:82px;
-    }
-}
 @media (max-width:600px) {
     .npc-farmer-bed { right:14px; bottom:102px; transform:scale(.82); transform-origin:right bottom; }
-    body.night:not(.farmer-night-awake) .npc-farmer.npc-ready { right:55px; bottom:124px; transform:rotate(90deg) scale(.68) !important; }
+    body.night .npc-farmer.npc-ready { right:55px; bottom:124px; transform:rotate(90deg) scale(.68) !important; }
     body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; }
 }
 .npc-farmer.npc-falling { pointer-events: none; }
@@ -2166,9 +2181,13 @@ body.farmer-dragging {
        responsive information hierarchy. */
     .home-stack { display:contents; }
     .hud-top { order:0; }
+    .care-focus { order:1; align-self:center; flex:0 0 auto; width:calc(100vw - 28px); min-width:0; max-width:640px; margin-inline:0; }
     .mascot-stage { order:2; }
-    /* Keep the four garden readings together in the mobile flow. */
+    /* Vitals above the mission (see the ≥801px block for why). The verify
+       console stays welded to the mission it belongs to. */
     #env-strip { order:3; width:100%; max-width:640px; margin-inline:auto; }
+    #current-quest { order:4; width:100%; max-width:640px; margin-inline:auto; }
+    #quest-verify-console { order:5; width:100%; max-width:640px; margin-inline:auto; }
     .user-gamification { order:6; max-width:640px; margin-inline:auto; }
     .quiz-chip { order:7; max-width:640px; margin-inline:auto; }
     .hud-top { width:calc(100% - 60px); min-width:0; justify-content:center; }
@@ -2217,6 +2236,30 @@ body.farmer-dragging {
     .xp-bar-wrap { width: 110px; }
     .username { max-width: 150px; }
     .badges { flex-basis: 100%; justify-content: center; }
+
+    /* Keep the character expressive but let the one care decision enter the
+       first phone viewport instead of sitting below a presentation-scale
+       mascot and several progression rows. */
+    .mascot-wrapper { width:min(210px,60vw); }
+    .speech-bubble { max-width:calc(100vw - 48px); margin-bottom:10px; padding:10px 14px; font-size:13px; }
+    .char-id h2 { font-size:18px; }
+    #char-mood { margin-top:4px; }
+    .companion-next { display:none; }
+    .wardrobe-open { margin-top:4px; }
+    .home-stack { gap:10px; }
+    .care-focus { gap:11px; padding:14px 12px 14px 16px; }
+    .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
+    .care-focus-icon { width:40px; height:40px; font-size:21px; }
+    .care-focus h2 { font-size:11px; }
+    .care-focus-heading p { font-size:12px; }
+    .care-steps { gap:4px; }
+    .care-steps,.care-steps li,.care-focus .actions-panel,#care-action,.care-action-label { min-width:0; }
+    .care-action-label { overflow-wrap:anywhere; }
+    .care-steps li { min-height:54px; grid-template-columns:22px minmax(0,1fr); gap:4px; padding:5px 4px; }
+    .care-steps li > b { width:22px; height:22px; font-size:7px; }
+    .care-steps li strong { font-size:6px; }
+    .care-steps li small { font-size:8px; white-space:normal; }
+    .care-proof-note { font-size:10px; }
 
     /* Weather widget had only ~10px of slack at exactly 360px wide
        (32px icon + 16px gap + 190px min-width text + 48px panel padding
@@ -2267,10 +2310,6 @@ body.farmer-dragging {
    Existing IDs and DOM order stay intact so live.js, realtime and demo hooks
    keep working without a second state path. */
 @media (min-width: 801px) {
-    .nav-item { min-height:44px; }
-    .nav-section-title,.farm-appearance-row > span { font-size:10px; }
-    .farm-appearance select { min-height:44px; font-size:13px; }
-    .locale-switch button { min-height:44px; font-size:10px; }
     .game-world {
         display: grid;
         grid-template-columns: minmax(360px, 1.3fr) minmax(330px, .9fr);
@@ -2294,15 +2333,11 @@ body.farmer-dragging {
 
     .mascot-container { max-height: 100%; }
     .mascot-wrapper { width: min(300px, 34vh); }
-    .speech-bubble-frame {
-        width: min(400px, 38vw);
-        margin-bottom: clamp(8px, 1.5vh, 18px);
-    }
     .speech-bubble {
-        width: 100%;
-        min-width: 0;
+        width: min(400px, 38vw);
         min-height: 58px;
         max-height: 92px;
+        margin-bottom: clamp(8px, 1.5vh, 18px);
         padding: 12px 18px;
         overflow: hidden;
         display: grid;
@@ -2329,61 +2364,82 @@ body.farmer-dragging {
         align-self: stretch;
         width: 100%;
         max-width: 560px;
-        min-height: 0;
         /* Clearance over the floor. It is 140px tall here (105px on short
            laptops, where the clamp lands lower too). */
         margin: 0 0 clamp(44px, 8vh, 92px);
         padding:68px 5px 0 0;
         gap:10px;
-        overflow:hidden;
-    }
-    .home-stack-scroll {
-        min-height:0;
-        display:flex;
-        flex-direction:column;
-        gap:10px;
         overflow-y:auto;
-        padding:0 5px 8px 0;
         scrollbar-width:thin;
         scrollbar-color:var(--color-border) transparent;
     }
+
+    .care-focus { order:-5; }
+    /* Vitals sit directly under the care card: both are readings, and the
+       care card's advice is about the numbers this strip shows, so they read
+       as one block. The mission follows, with its verify console attached —
+       those two must never be separated. */
     #env-strip { order:-4; }
+    #current-quest { order:-3; }
+    #quest-verify-console { order:-2; }
     .home-stack .user-gamification { order:-1; }
     .quiz-chip { order:0; }
-    .home-stack-scroll > * { flex:0 0 auto; }
     .home-divider { display: none; }
 
-    .mascot-container > .user-gamification {
+    .care-focus { gap:10px; padding:13px 14px 14px 17px; }
+    .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
+    .care-focus-icon { width:40px; height:40px; font-size:21px; }
+    .care-focus h2 { font-size:11px; }
+    .care-focus-heading p { margin-top:3px; font-size:12px; }
+    .care-steps li { grid-template-columns:23px minmax(0,1fr); min-height:47px; padding:5px; }
+    .care-steps li > b { width:23px; height:23px; font-size:7px; }
+    .care-steps li strong { font-size:6px; }
+    .care-steps li small { font-size:8px; }
+    .care-proof-note { font-size:9px; }
+    .care-focus #care-action { min-height:58px; border-top-width:3px; border-radius:12px; font-size:10px; }
+
+    .user-gamification {
         display:grid;
-        grid-template-columns:minmax(78px,auto) minmax(96px,1fr) auto auto auto;
-        gap:4px;
-        padding:7px 6px;
+        grid-template-columns:48px minmax(0,1fr);
+        gap:8px 12px;
+        padding:12px 14px;
         border-color:var(--color-border);
     }
-    .user-gamification .username { min-width:78px; max-width:none; font-size:10px; }
-    .mascot-container > .user-gamification .xp-bar-wrap { width:auto; min-width:96px; height:44px; }
-    .user-gamification .comfort-hearts { min-width:62px; }
-    .user-gamification .badge { min-width:44px; justify-content:center; padding:5px; color:var(--color-text); background:var(--color-bg); box-shadow:none; white-space:nowrap; }
-    /* Desktop quiz is exactly two useful text rows: title + progress. The +XP
-       pill already communicates the bonus, so the duplicate label stays out. */
-    .quiz-chip { position:relative; min-width:0; min-height:52px; max-height:62px; overflow:hidden; padding:7px 11px; border-style:dashed; box-shadow:0 3px 0 rgba(36,52,33,.14); }
+    .user-gamification > .hud-section-label { grid-column:1/-1; }
+    .user-gamification .avatar { grid-column:1; grid-row:2/4; align-self:center; }
+    .user-gamification .user-details { grid-column:2; min-width:0; }
+    .user-gamification .username { max-width:none; font-size:13px; }
+    .user-gamification .xp-row { width:100%; }
+    .user-gamification .xp-bar-wrap { flex:1; width:auto; height:12px; border:2px solid var(--color-border); background:var(--color-bg); box-shadow:none; }
+    .user-gamification .badges { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+    .user-gamification .badge { min-width:0; justify-content:center; border:2px solid var(--color-border); border-radius:9px; padding:7px 5px; color:var(--color-text); background:var(--color-bg); box-shadow:none; white-space:nowrap; }
+    .quiz-chip { min-height:48px; padding:7px 11px; border-style:dashed; box-shadow:0 3px 0 rgba(36,52,33,.14); }
     .quiz-chip > span:first-child { font-size:22px; }
-    .quiz-chip-copy { min-width:0; }
-    .quiz-chip-copy strong,.quiz-chip-copy small { display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .quiz-bonus-label { display:none; }
-    .quiz-chip-copy strong { font-size:10px; }.quiz-chip-copy small { font-size:13px; }
+    .quiz-chip-copy strong { font-size:7px; }.quiz-chip-copy small { font-size:11px; }
     .avatar-img { width: 48px; height: 48px; }
 
+    #current-quest {
+        min-height:70px;
+        display:grid;
+        gap:8px;
+        place-items:stretch;
+        padding:12px 15px 17px;
+        border-color:var(--color-forest);
+        border-bottom-right-radius:5px;
+        border-bottom-left-radius:5px;
+        background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 12%,var(--color-surface)),var(--color-surface));
+        text-align:left;
+    }
+    #current-quest .current-quest-line { font:11px/1.65 var(--font-body); font-weight:800; }
     #env-strip { padding:12px; font-size:14px; white-space:normal; border-color:var(--color-border); }
-    .env-hud-title { margin-bottom:10px; font-size:10px; }
+    .env-hud-title { margin-bottom:10px; }
     /* The rail is narrow: a 2×2 board gives values, state and ideal range room. */
     .env-hud-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .env-hud-card { min-height:86px; grid-template-columns:36px minmax(0,1fr); align-items:center; padding:9px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
+    .env-hud-card { min-height:108px; grid-template-columns:30px minmax(0,1fr); padding:8px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
     .env-hud-card > i { width:28px; height:28px; font-size:16px; }
     .env-hud-copy strong { font-size:21px; margin-top:2px; }
-    .env-hud-copy small { font-size:10px; }
-    .env-gauge,.env-range,.env-hud-delta { display:none; }
-    .env-hud-copy em { margin-top:4px; font-size:13px; font-weight:700; }
+    .env-gauge { margin:5px 0 4px; height:7px; }.env-gauge-marker { height:13px; }
+    .env-range { font-size:8px; }.env-hud-copy em { font-size:9px; }
 
     .hud-top {
         position: absolute;
@@ -2398,69 +2454,42 @@ body.farmer-dragging {
     }
     .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }
     .jember-clock-icon { font-size: 20px; }
-    .jember-clock-copy small { font-size: 10px; }
+    .jember-clock-copy small { font-size: 6px; }
     .jember-clock-copy strong { font-size: 14px; }
     .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
     .weather-icon { font-size: 22px; }
     .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }
-    .weather-text .temp { font-size: 13px; }
+    .weather-text .temp { font-size: 11px; }
     .weather-text .desc { max-width: 145px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .weather-text .weather-source,
     .weather-text .forecast-time,
     .weather-text .indoor-reading { display: none; }
 
-    .npc-ai-tag,.npc-bubble > small,.farmer-chat-top span,.farmer-chat-message.is-system,.farmer-chat-form button { font-size:10px; }
-    .farmer-chat-message,.farmer-chat-note { font-size:13px; }
-
     .panel-glass:hover { transform: none; }
     .grass-floor { left: 272px; width: calc(100% - 272px); height: 105px; }
-    /* Keep the persistent help control away from the quiz/action rail. */
-    .farm-guide-open { right:auto; left:290px; }
-}
-
-@media (min-width: 801px) and (max-width: 1100px) {
-    .user-gamification .bond-word { display:none; }
 }
 
 /* Short classroom laptops get the same information hierarchy with a smaller
-   character and tighter cards. 768px-tall projector/laptop viewports land
-   here after browser chrome, so this breakpoint must cover them too. */
-@media (min-width: 801px) and (max-height: 820px) {
+   character and tighter cards; the page itself still never scrolls. */
+@media (min-width: 801px) and (max-height: 720px) {
     .app-layout { padding-top: 14px; padding-bottom: 14px; }
-    .sidebar { gap:8px; padding:12px; }
-    .brand { gap:10px; padding-bottom:8px; }
-    .logo-img { width:38px; }
-    .brand-wordmark { width:82px; }
-    .nav-links,.nav-tool-grid { gap:2px; }
-    .nav-tool-pocket { margin-top:2px; padding-top:2px; }
-    .nav-item { padding-block:7px; }
-    .locale-switch { margin-top:0; }
-    .farm-appearance { flex-direction:row; gap:5px; margin-top:2px; padding-top:5px; }
-    .farm-appearance-row { min-width:0; flex:1 1 0; flex-direction:column; align-items:stretch; gap:2px; }
-    .farm-appearance select { width:100%; max-width:none; padding:4px; font-size:11px; }
+    /* The sidebar gap, brand padding and nav-item padding this breakpoint used
+       to tighten are now the defaults — the same numbers, applied everywhere. */
+    .sidebar { padding-top: 14px; padding-bottom: 14px; }
     .mascot-wrapper { width: min(250px, 32vh); }
-    .speech-bubble-frame { margin-bottom: 6px; }
-    .speech-bubble { min-height: 48px; max-height: 70px; font-size: 13px; }
+    .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
-    .home-stack { align-self:stretch; padding-top:54px; padding-bottom:8px; gap:6px; }
-
-    #env-strip { padding:7px 8px 8px; }
-    .env-hud-title { margin-bottom:5px; }
-    .env-hud-grid { gap:5px; }
-    .env-hud-card { min-height:72px; grid-template-columns:25px minmax(0,1fr); gap:5px; padding:5px; }
-    .env-hud-card > i { width:23px; height:23px; font-size:13px; }
-    .env-hud-copy small { font-size:10px; }
-    .env-hud-copy strong { margin-top:0; font-size:16px; }
-    .env-gauge,.env-range { display:none; }
-
-    .mascot-container > .user-gamification { grid-template-columns:minmax(78px,auto) minmax(96px,1fr) auto auto auto; gap:4px; padding:7px 6px; }
-    .user-gamification .badge { padding:5px 4px; }
-    .quiz-chip { min-height:52px; }
+    .home-stack { padding-top:54px; gap:7px; }
+    .user-gamification { padding: 8px 11px; }
+    #current-quest { min-height: 54px; padding: 8px 12px; }
+    #care-action { min-height: 50px; padding: 9px 14px; }
+    #env-strip { padding-top: 5px; padding-bottom: 5px; }
 }
 .user-gamification > .hud-section-label { flex:0 0 100%; }
 
 /* Right-rail night contrast: retain hierarchy without white SaaS cards. */
 body.night .user-gamification .badge,body.night .user-gamification .xp-bar-wrap,body.night .quiz-chip { color:#eef5e9; background:#25322d; border-color:#627664; }
+body.night #current-quest { color:#eef5e9; border-color:#71916e; background:linear-gradient(135deg,#26382e,#202c28); }
 body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#ad8b39; }
 
 /* ── Seed Shop farm rendering (milestone18) ─────────────────────────────
@@ -2479,6 +2508,7 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 .mascot-svg.shop-acc_bandana .shop-g-acc_bandana { display: block; }
 .mascot-svg.shop-acc_goggles .shop-g-acc_goggles { display: block; }
 .mascot-svg.shop-acc_jfc_headdress .shop-g-acc_jfc_headdress { display: block; }
+.mascot-svg.shop-acc_taeguk_ribbon .shop-g-acc_taeguk_ribbon { display: block; }
 .mascot-svg.shop-acc_indonesia_sash .shop-g-acc_indonesia_sash { display: block; }
 
 .shop-decor-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
@@ -2733,60 +2763,4 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
 @media (max-width: 900px) {
   #pm-cheat-panel { left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 52vh; }
   #pm-cheat-panel.is-collapsed { width: auto; }
-}
-
-/* Desktop homepage portrait: this is the primary character picture while the
-   existing state-driven sprite remains visible as a compact live badge. The
-   DOM IDs and every mood/evolution/shop data channel stay untouched. Mobile
-   keeps its original sprite-only layout. */
-@media (min-width: 801px) {
-  .mascot-wrapper {
-    position: relative;
-    width: min(280px, 32vh);
-    aspect-ratio: 4 / 5;
-  }
-  .jamkachu-home-portrait {
-    position: absolute;
-    inset: 0;
-    display: block;
-    overflow: hidden;
-    border: 4px solid var(--color-outline);
-    border-radius: 24px 24px 17px 17px;
-    background: #F7E899;
-    box-shadow: 0 7px 0 rgba(36,52,33,.2), 0 20px 36px rgba(36,52,33,.18);
-  }
-  .jamkachu-home-portrait img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    user-select: none;
-  }
-  .mascot-wrapper > .mascot-svg {
-    position: absolute;
-    right: -20px;
-    bottom: 8px;
-    z-index: 4;
-    width: 88px;
-    aspect-ratio: 300 / 350;
-    border: 3px solid var(--color-outline);
-    border-radius: 17px;
-    background: rgba(255,255,255,.94);
-    box-shadow: 0 4px 0 rgba(36,52,33,.23);
-  }
-  .mascot-wrapper > .mascot-svg::before {
-    content: "LIVE";
-    position: absolute;
-    top: -11px;
-    left: 50%;
-    z-index: 8;
-    transform: translateX(-50%);
-    border: 2px solid var(--color-outline);
-    border-radius: 999px;
-    padding: 3px 6px;
-    color: #fff;
-    background: var(--color-forest);
-    font: 7px/1 var(--font-heading);
-  }
 }

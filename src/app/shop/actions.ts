@@ -17,7 +17,6 @@ import {
   purchaseErrorCopy,
   shopItemByKey,
   type PurchaseErrorCode,
-  type ShopCategory,
 } from "@/game/economy/shop-catalog";
 
 const PLANT_ID = "plant-01";
@@ -28,10 +27,6 @@ export interface ShopActionResult {
   message: string;
   /** Authoritative balance returned by the RPC, or null when unknown. */
   seeds: number | null;
-  /** Present on a successful equip response; values come from the RPC. */
-  itemKey?: string;
-  category?: ShopCategory;
-  equipped?: boolean;
 }
 
 function failure(code: PurchaseErrorCode, locale: "en" | "id", seeds: number | null = null): ShopActionResult {
@@ -95,7 +90,7 @@ export async function equipShopItem(
     return failure(isMissingSchemaError(error) ? "migration_missing" : "offline", locale);
   }
 
-  const row = data as { ok: boolean; error?: string; category?: string; equipped?: boolean };
+  const row = data as { ok: boolean; error?: string };
   if (!row.ok) {
     const code: PurchaseErrorCode =
       row.error === "not_owned" ? "not_owned" : row.error === "not_equippable" ? "not_equippable" : "offline";
@@ -104,13 +99,5 @@ export async function equipShopItem(
 
   revalidatePath("/shop");
   revalidatePath("/");
-  return {
-    status: "success",
-    code: null,
-    message: SHOP_UI_COPY[locale].equippedToast,
-    seeds: null,
-    itemKey: item.key,
-    category: row.category === "pot" || row.category === "accessory" ? row.category : item.category,
-    equipped: typeof row.equipped === "boolean" ? row.equipped : equipped !== false,
-  };
+  return { status: "success", code: null, message: SHOP_UI_COPY[locale].equippedToast, seeds: null };
 }

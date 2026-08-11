@@ -65,7 +65,7 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
       return;
     }
     // Some mobile browsers synthesize a click after a drag. Consume that
-    // click so moving Grandpa never unexpectedly opens the chat dialog.
+    // click so moving Farmer Tani never unexpectedly opens the chat dialog.
     suppressClickRef.current = true;
     scheduleSleep();
   };
@@ -111,22 +111,22 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
   return <>
     <div className={`pm-react-farmer${isNight ? " is-night" : ""}${awake ? " is-awake" : " is-sleeping"}${chatOpen ? " is-chatting" : ""}${dragging ? " is-dragging" : ""}`}>
       <div className="pm-react-farmer-bed" aria-hidden="true"><i /><b /></div>
-      <button ref={buttonRef} type="button" className={position ? "is-moved" : undefined} style={position ? { left: position.x, top: position.y } : undefined} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerCancel} onClick={openChatFromButton} aria-label={locale === "id" ? "Ngobrol dengan atau pindahkan Kakek Tani" : "Chat with or drag Grandpa Tani"} aria-expanded={chatOpen} aria-controls="pm-farmer-chat-dialog">
+      <button ref={buttonRef} type="button" className={position ? "is-moved" : undefined} style={position ? { left: position.x, top: position.y } : undefined} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerCancel} onClick={openChatFromButton} aria-label={locale === "id" ? "Ngobrol dengan atau pindahkan Farmer Tani" : "Chat with or drag Farmer Tani"} aria-expanded={chatOpen} aria-controls="pm-farmer-chat-dialog">
         <span className="pm-react-farmer-label">
-          <b>{isNight && !awake ? "Zzz.." : locale === "id" ? "💬 KAKEK TANI" : "💬 GRANDPA"}</b>
+          <b>{isNight && !awake ? "Zzz.." : "💬 FARMER TANI"}</b>
           {(!isNight || awake) && <small>{dragging ? (locale === "id" ? "LEPAS DI SINI" : "DROP ME HERE") : locale === "id" ? "KETUK CHAT · GESER" : "TAP CHAT · DRAG"}</small>}
         </span>
         <span className="pm-react-farmer-sprite" aria-hidden="true">
-          {/* Designer art (kiki design integration): the transparent Mbah Tani
-              PNG replaces the broken GIF whose later frames contained an
-              opaque green rectangle. All four export scales are offered so
-              the browser picks the crispest for its density. The button's
-              aria-label above stays the accessible name, so this art is
-              purely decorative. */}
-          <picture>
-            <source srcSet="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" media="(prefers-reduced-motion: reduce)" />
-            <img src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcSet="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" />
-          </picture>
+          {/* Designer art (kiki design integration): the transparent Farmer
+              Tani PNG, for the same reason Mbah Tani below uses one — the
+              idle GIF opens on a frame with transparency off, so it paints
+              the designer's grass diorama opaque behind the sprite wherever
+              it stands on the app's own scenery. All four export scales are
+              offered so the browser picks the crispest for its density. The
+              button's aria-label above stays the accessible name, so this
+              art is purely decorative. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- responsive pixel art must not be resampled */}
+          <img src="/farm/assets/npc/2x/npc-01-pak-tani.png" srcSet="/farm/assets/npc/1x/npc-01-pak-tani.png 32w, /farm/assets/npc/2x/npc-01-pak-tani.png 64w, /farm/assets/npc/4x/npc-01-pak-tani.png 128w, /farm/assets/npc/8x/npc-01-pak-tani.png 256w" sizes="64px" alt="" />
         </span>
       </button>
     </div>
