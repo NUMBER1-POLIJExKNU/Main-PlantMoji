@@ -3393,6 +3393,7 @@ function applyNightUi() {
     document.body?.classList.remove("farmer-night-awake");
     $("#npc-farmer")?.classList.remove("npc-night-awake");
   }
+  if (night) $("#npc-farmer")?.classList.remove("npc-farming");
   const celestial = $(".env-sun");
   if (celestial && now) {
     const hour = now.hour + now.minute / 60;
@@ -3647,6 +3648,7 @@ const FARMER_FIRST_MAX_MS = 15_000;
 const FARMER_AUTO_MIN_MS = 35_000;
 const FARMER_AUTO_MAX_MS = 70_000;
 const FARMER_ACTIVITY_QUIET_MS = 20_000;
+const FARMER_FARMING_MS = 3_600;
 // English fallbacks — PM_STRINGS.farmer carries the localized sets. Both
 // soil moods share the "Soil" family, exactly like the care button.
 const FARMER_FALLBACK = {
@@ -3837,6 +3839,20 @@ async function farmerWalkTo(x, facing, epoch, duration = 10_000) {
   return ok;
 }
 
+/** A quiet, daytime-only tending beat between walks. The hoe and soil puffs
+ * are CSS art so Tani keeps the same transparent designer sprite; this loop
+ * is decorative and never changes sensor values, inventory, XP, or rewards. */
+async function farmerFarmPlot(epoch) {
+  const farmer = $("#npc-farmer");
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!farmer || reduced || isNightWIB() || document.body?.classList.contains("night")
+    || farmerDrag || epoch !== farmerMotionEpoch) return epoch === farmerMotionEpoch;
+  farmer.classList.add("npc-farming");
+  const completed = await farmerDelay(FARMER_FARMING_MS, epoch);
+  farmer.classList.remove("npc-farming");
+  return completed;
+}
+
 async function farmerFallAndClimb(ground, epoch) {
   const farmer = $("#npc-farmer");
   const vine = $("#npc-farmer-vine");
@@ -3899,7 +3915,9 @@ async function runFarmerMotion() {
     if (!ground) return;
     farmer.style.top = `${ground.top}px`;
     if (!(await farmerWalkTo(ground.right, 1, epoch, 12_000))) return;
-    if (!(await farmerDelay(1800, epoch))) return;
+    if (!(await farmerDelay(700, epoch))) return;
+    if (!(await farmerFarmPlot(epoch))) return;
+    if (!(await farmerDelay(900, epoch))) return;
     if (!(await farmerWalkTo(ground.left, -1, epoch, 14_000))) return;
     if (!(await farmerDelay(600, epoch))) return;
     await farmerFallAndClimb(ground, epoch);
@@ -3911,6 +3929,7 @@ function restartFarmerMotion() {
   farmerMotionEpoch += 1;
   try { farmerMotionAnimation?.cancel(); } catch {}
   farmerMotionAnimation = null;
+  $("#npc-farmer")?.classList.remove("npc-farming");
   $("#npc-farmer-vine")?.classList.remove("is-visible");
   window.setTimeout(() => void runFarmerMotion(), 80);
 }
@@ -3969,7 +3988,7 @@ function startFarmerDrag(event) {
   farmer.style.top = `${rect.top}px`;
   farmer.style.transform = "none";
   setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
-  farmer.classList.remove("npc-walking", "npc-talking");
+  farmer.classList.remove("npc-walking", "npc-talking", "npc-farming");
   // moveFarmerDrag's preventDefault only starts after the 6px slop, so without
   // this the first few pixels of every grab swept a text selection across the
   // name/mood lines behind him and left them highlighted blue.

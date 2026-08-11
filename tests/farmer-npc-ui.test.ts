@@ -87,6 +87,22 @@ describe("Farmer Tani living-world UI", () => {
     expect(css).toContain(".npc-farmer-vine");
   });
 
+  it("stops to farm during the day without changing game data", () => {
+    expect(html).toContain('class="npc-farm-tool" aria-hidden="true"');
+    expect(html).toContain('class="npc-farm-soil" aria-hidden="true"');
+    expect(live).toContain("async function farmerFarmPlot(epoch)");
+    expect(live).toContain("FARMER_FARMING_MS = 3_600");
+    expect(live).toContain('document.body?.classList.contains("night")');
+    expect(live).toContain("if (!(await farmerFarmPlot(epoch))) return;");
+    expect(live).toMatch(/if \(night\) \$\("#npc-farmer"\)\?\.classList\.remove\("npc-farming"\)/);
+    expect(live).toMatch(/restartFarmerMotion\(\)[\s\S]{0,220}?classList\.remove\("npc-farming"\)/);
+    expect(live).toMatch(/startFarmerDrag[\s\S]*?classList\.remove\("npc-walking", "npc-talking", "npc-farming"\)/);
+    expect(css).toContain("body:not(.night) .npc-farmer.npc-farming .npc-farm-tool");
+    expect(css).toContain("@keyframes pm-farmer-hoe");
+    expect(css).toContain("@keyframes pm-farmer-soil");
+    expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pm-farmer-tend-body/);
+  });
+
   it("provides an accessible localized chat dialog with server-side answers", () => {
     expect(html).toContain('id="farmer-chat"');
     expect(html).toContain('aria-labelledby="farmer-chat-title"');

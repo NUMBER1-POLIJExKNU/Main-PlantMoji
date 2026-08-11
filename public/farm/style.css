@@ -2019,6 +2019,60 @@ body.farmer-dragging {
     -webkit-user-drag: none;
 }
 
+/* Daytime tending loop. The tiny hoe and tilled-soil flecks are separate
+   decorative layers around the unchanged Tani PNG. Motion is opt-in below,
+   pauses with his chat, and the night state can never display it. */
+.npc-farm-tool,
+.npc-farm-soil {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+}
+.npc-farm-tool {
+    right: -12px;
+    bottom: 4px;
+    width: 5px;
+    height: 38px;
+    border: 2px solid #513424;
+    border-radius: 3px;
+    background: #a56b38;
+    box-shadow: inset 1px 0 #d79a57;
+    transform-origin: 50% 88%;
+}
+.npc-farm-tool::after {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: -4px;
+    width: 20px;
+    height: 7px;
+    border: 2px solid #3d4a42;
+    border-radius: 2px 5px 2px 2px;
+    background: #849286;
+}
+.npc-farm-soil {
+    right: -23px;
+    bottom: -5px;
+    width: 34px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 18% 40%,#c48645 0 2px,transparent 3px),radial-gradient(circle at 48% 70%,#8e542f 0 3px,transparent 4px),radial-gradient(circle at 80% 35%,#bd7840 0 2px,transparent 3px);
+    transform-origin: 50% 100%;
+}
+body:not(.night) .npc-farmer.npc-farming .npc-farm-tool,
+body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
+@media (prefers-reduced-motion: no-preference) {
+    body:not(.night) .npc-farmer.npc-farming .npc-farmer-art { animation:pm-farmer-tend-body .72s steps(4,end) infinite; }
+    body:not(.night) .npc-farmer.npc-farming .npc-farm-tool { animation:pm-farmer-hoe .72s cubic-bezier(.6,0,.35,1) infinite; }
+    body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { animation:pm-farmer-soil .72s steps(4,end) infinite; }
+    .npc-farmer.npc-talking .npc-farmer-art,
+    .npc-farmer.npc-talking .npc-farm-tool,
+    .npc-farmer.npc-talking .npc-farm-soil { animation-play-state: paused; }
+}
+@keyframes pm-farmer-tend-body { 0%,100% { transform:rotate(0deg) translateY(0); } 45%,65% { transform:rotate(5deg) translateY(2px); } }
+@keyframes pm-farmer-hoe { 0%,100% { transform:rotate(-42deg); } 48%,68% { transform:rotate(34deg) translateY(2px); } }
+@keyframes pm-farmer-soil { 0%,35% { opacity:0; transform:scale(.45) translateY(2px); } 55% { opacity:1; transform:scale(1.15) translateY(-2px); } 100% { opacity:0; transform:scale(1.35) translateY(-5px); } }
+
 .npc-farmer-vine {
     position: fixed;
     z-index: 2;
