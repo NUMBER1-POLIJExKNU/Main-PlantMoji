@@ -204,8 +204,15 @@ describe("cheat quest stage", () => {
     // the card only through the sensors, which reach ACT and VERIFY but never
     // SENSE or REWARD. That read as "SENSE and REWARD are broken".
     expect(panel).toContain("const isHero = state?.heroQuest === quest.key;");
-    expect(panel).toContain("onClick={() => api.set({ heroQuest: isHero ? null : quest.key })}");
-    expect(panel).toContain("★ makes it the hero mission");
+    // A real checkbox, not a styled ★ button: pick-one-of-many is what a
+    // checkbox looks like, and the native control carries the keyboard and
+    // screen-reader behaviour a <button> had to fake with aria-pressed.
+    expect(panel).toContain('type="checkbox"');
+    expect(panel).toContain("checked={isHero}");
+    expect(panel).toContain("onChange={() => api.set({ heroQuest: isHero ? null : quest.key })}");
+    expect(panel).not.toContain("★");
+    expect(panel).not.toContain("☆");
+    expect(panel).toContain("Tick the box to make it the hero mission");
     expect(panel).toContain("Jadikan Misi Utama");
 
     const hero = readFileSync("src/components/quest-hero-stages.tsx", "utf8");

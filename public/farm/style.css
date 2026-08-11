@@ -2212,7 +2212,10 @@ body.farmer-dragging {
         grid-row: 1;
         min-height: 0;
         justify-content: center;
-        padding-top: 22px;
+        /* Was 22px. Trimmed together with the status card's new bottom margin
+           below: the column is centred, so the card can only rise if the
+           column has headroom to rise into. */
+        padding-top: 4px;
     }
 
     .mascot-container { max-height: 100%; }
@@ -2231,15 +2234,27 @@ body.farmer-dragging {
     .char-id h2 { font-size: clamp(17px, 2.2vh, 24px); }
     #char-mood { margin-top: 5px; }
 
+    /* Lift the status card into the headroom above Jamkachu. The column is
+       centred, so the gap this opens is shared between the card rising and the
+       bubble settling — the stage's trimmed top padding above pays for the
+       second half, keeping the plant clear of the grass. */
+    .mascot-container > .user-gamification { margin-bottom: clamp(16px, 3.4vh, 34px); }
+
     .home-stack {
         grid-column: 2;
         grid-row: 1;
-        align-self: center;
+        /* Stretch, not centre: the rail is as tall as the row minus its own
+           margins, so where it ENDS is a number we control. Centring made the
+           end depend on how much content there happened to be, and with a full
+           rail the last card ran straight into the grass floor — which is
+           position:fixed and therefore invisible to this grid. */
+        align-self: stretch;
         width: 100%;
         max-width: 560px;
-        max-height: 100%;
-        margin: 0;
-        padding:68px 5px 8px 0;
+        /* Clearance over the floor. It is 140px tall here (105px on short
+           laptops, where the clamp lands lower too). */
+        margin: 0 0 clamp(44px, 8vh, 92px);
+        padding:68px 5px 0 0;
         gap:10px;
         overflow-y:auto;
         scrollbar-width:thin;

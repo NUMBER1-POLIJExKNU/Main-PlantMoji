@@ -17,6 +17,7 @@ import { getPlant } from "@/lib/queries";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
+import { questLabel, questSubtitle } from "@/game/quests/quest-labels";
 import { getDailyEvent, type DailyEvent } from "@/game/random/daily-events";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, npcTagline, type AppLocale } from "@/lib/i18n";
@@ -94,6 +95,8 @@ function heroCatalogue(locale: AppLocale): Record<string, HeroQuestEntry> {
       key,
       emoji: def.emoji,
       title: localized.title,
+      // Null for the seven quests whose title already stands alone.
+      subtitle: questSubtitle(key, locale),
       description: localized.description,
       target: questTarget(key, locale),
       xp: def.xpReward,
@@ -354,29 +357,16 @@ export default async function QuestsPage() {
 
   // Cheat quest board (feature 4): localized titles for every quest so the
   // presenter can jump stages. Client panel self-hides unless the sandbox is on.
-  const cheatKeys = Object.keys(QUEST_DEFINITIONS) as QuestKey[];
-  const cheatTitleFor = (key: QuestKey) =>
-    locale === "id" ? QUEST_COPY_ID[key].title : QUEST_DEFINITIONS[key].title;
-  // BALANCE_SOIL_ACIDIC and BALANCE_SOIL_ALKALINE deliberately share the title
-  // "Balance My Soil" — a player only ever sees the one that triggered. The
-  // board lists ALL of them at once, so identical rows left the presenter
-  // guessing which was which; the trigger mood is what actually separates them.
-  const cheatTitleCounts = new Map<string, number>();
-  for (const key of cheatKeys) {
-    const title = cheatTitleFor(key);
-    cheatTitleCounts.set(title, (cheatTitleCounts.get(title) ?? 0) + 1);
-  }
-  const cheatQuests: CheatQuestItem[] = cheatKeys.map((key) => {
-    const title = cheatTitleFor(key);
-    return {
-      key,
-      title: (cheatTitleCounts.get(title) ?? 0) > 1
-        ? `${title} · ${QUEST_DEFINITIONS[key].triggerMood}`
-        : title,
-      emoji: QUEST_DEFINITIONS[key].emoji,
-      xp: QUEST_DEFINITIONS[key].xpReward,
-    };
-  });
+  // The board lists every quest at once, so same-titled ones need the mood
+  // that separates them — questLabel appends it, translated, only when the
+  // title is actually shared. It used to be spelled out here with the raw
+  // enum ("· SoilAcidic"), which no Indonesian visitor could read.
+  const cheatQuests: CheatQuestItem[] = (Object.keys(QUEST_DEFINITIONS) as QuestKey[]).map((key) => ({
+    key,
+    title: questLabel(key, locale),
+    emoji: QUEST_DEFINITIONS[key].emoji,
+    xp: QUEST_DEFINITIONS[key].xpReward,
+  }));
 
   // Measure/padding come from the shell contract (.reno-route-content > main).
   return (

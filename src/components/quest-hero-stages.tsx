@@ -29,6 +29,10 @@ export interface HeroQuestEntry {
   key: QuestKey;
   emoji: string;
   title: string;
+  /** What separates this quest from another wearing the same title — the
+   *  translated trigger mood, e.g. "Soil Too Acidic". Null when the title is
+   *  unique, which is every quest except the two soil ones. */
+  subtitle?: string | null;
   description: string;
   /** Localized target line, e.g. "pH 5.5–6.5". */
   target: string;
@@ -98,6 +102,12 @@ export default function QuestHeroStages({
             <h2 className="pm-heading text-xs">{quest.title}</h2>
             <span className="pm-chip shrink-0" style={XP_CHIP_STYLE}>+{quest.xp} XP</span>
           </div>
+          {/* "Balance My Soil" is two different quests. Without this line the
+              card gave no clue which one it was showing — and the pH target
+              is the same 5.5–6.5 for both, so nothing else disambiguated it. */}
+          {quest.subtitle && (
+            <p className="pm-quest-subtitle">{quest.subtitle}</p>
+          )}
         </div>
       </div>
 

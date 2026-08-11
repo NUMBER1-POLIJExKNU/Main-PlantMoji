@@ -22,14 +22,14 @@ export interface CheatQuestItem {
 const COPY = {
   id: {
     title: "🎛️ Papan Misi (Mode Curang)",
-    note: "★ menjadikannya Misi Utama. Klik sebuah tahap untuk melompat ke sana — nilai sensor ikut menyesuaikan; klik lagi untuk mengembalikannya ke editor sensor. Hanya tampilan demo; misi asli dan perangkat tidak berubah.",
+    note: "Centang kotaknya untuk menjadikannya Misi Utama. Klik sebuah tahap untuk melompat ke sana — nilai sensor ikut menyesuaikan; klik lagi untuk mengembalikannya ke editor sensor. Hanya tampilan demo; misi asli dan perangkat tidak berubah.",
     heroOff: "Jadikan Misi Utama",
     heroOn: "Kembalikan ke misi asli",
     steps: ["RASAKAN", "BERTINDAK", "VERIFIKASI", "HADIAH"],
   },
   en: {
     title: "🎛️ Quest Board (Cheat Mode)",
-    note: "★ makes it the hero mission. Click a stage to jump there — the sensors move to match; click it again to hand the quest back to the sensor editor. Demo view only; real quests and hardware stay untouched.",
+    note: "Tick the box to make it the hero mission. Click a stage to jump there — the sensors move to match; click it again to hand the quest back to the sensor editor. Demo view only; real quests and hardware stay untouched.",
     heroOff: "Show as hero mission",
     heroOn: "Back to the real hero mission",
     steps: ["SENSE", "ACT", "VERIFY", "REWARD"],
@@ -99,19 +99,20 @@ export default function CheatQuestPanel({
                   of nine rows the hero card was showing — and with two quests
                   sharing the "Balance My Soil" title, pressing the wrong one
                   moved the card only indirectly through the sensors, which can
-                  land on ACT or VERIFY and never on SENSE or REWARD. */}
-              <button
-                type="button"
-                onClick={() => api.set({ heroQuest: isHero ? null : quest.key })}
-                aria-pressed={isHero}
+                  land on ACT or VERIFY and never on SENSE or REWARD.
+
+                  A real checkbox rather than a styled button: pick-one-of-many
+                  is what a checkbox looks like, and it brings the keyboard and
+                  screen-reader behaviour for free. Unchecking hands the card
+                  back to the quest Supabase actually made the hero. */}
+              <input
+                type="checkbox"
+                checked={isHero}
+                onChange={() => api.set({ heroQuest: isHero ? null : quest.key })}
                 title={isHero ? t.heroOn : t.heroOff}
-                className="shrink-0 cursor-pointer rounded-md border-2 px-1.5 py-0.5 text-[11px] leading-none"
-                style={isHero
-                  ? { borderColor: "#8A2B5B", background: "#8A2B5B", color: "#fff" }
-                  : { borderColor: "#E0B0C6", background: "#fff", color: "#C2618A" }}
-              >
-                {isHero ? "★" : "☆"}
-              </button>
+                aria-label={`${t.heroOff}: ${quest.title}`}
+                className="pm-cheat-hero-check shrink-0"
+              />
               <span className="text-xl leading-none" role="img" aria-hidden="true">
                 {quest.emoji}
               </span>

@@ -252,8 +252,14 @@ describe("cheat sensor edits stay physically possible", () => {
 describe("cheat quest board", () => {
   it("separates the two quests that share the Balance My Soil title", () => {
     // BALANCE_SOIL_ACIDIC and BALANCE_SOIL_ALKALINE both render at once on the
-    // board, unlike the player-facing cards where only the triggered one shows.
-    expect(questsPage).toContain("cheatTitleCounts");
-    expect(questsPage).toContain("`${title} · ${QUEST_DEFINITIONS[key].triggerMood}`");
+    // board, and the hero card can be swapped between them — unlike the
+    // player-facing cards, where only the triggered one ever shows. The rule
+    // lives in quest-labels so the board and the hero card cannot disagree.
+    expect(questsPage).toContain("questLabel(key, locale)");
+    expect(questsPage).toContain("subtitle: questSubtitle(key, locale)");
+    // The old inline version pasted the raw enum ("· SoilAcidic"), which is
+    // untranslated and is a name no visitor should have to read.
+    expect(questsPage).not.toContain("cheatTitleCounts");
+    expect(questsPage).not.toContain("QUEST_DEFINITIONS[key].triggerMood}`");
   });
 });
