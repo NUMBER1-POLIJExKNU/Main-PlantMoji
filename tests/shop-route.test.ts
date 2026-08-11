@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const page = readFileSync(resolve(process.cwd(), "src/app/shop/page.tsx"), "utf8");
 const actions = readFileSync(resolve(process.cwd(), "src/app/shop/actions.ts"), "utf8");
 const grid = readFileSync(resolve(process.cwd(), "src/components/shop-grid.tsx"), "utf8");
+const preview = readFileSync(resolve(process.cwd(), "src/components/shop-preview.tsx"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "src/app/shop/shop.css"), "utf8");
 
 describe("/shop route", () => {
@@ -58,9 +59,12 @@ describe("/shop route", () => {
   it("draws both Indonesia items as flags instead of the Windows ID glyph", () => {
     expect(grid).toContain('new Set(["decor_indonesia_flag", "acc_indonesia_sash"])');
     expect(grid).toContain("isIndonesiaFlag ? null : item.emoji");
-    expect(grid).toContain("<ShopItemIcon item={previewItem} preview />");
+    expect(preview).toContain('new Set(["decor_indonesia_flag", "acc_indonesia_sash"])');
+    expect(preview).toContain('isIndonesiaFlag ? null : item.emoji');
+    expect(preview).toContain('pm-shop-stage-acc-icon${isIndonesiaFlag ? " is-indonesia-flag" : ""}');
     expect(grid).toContain("<ShopItemIcon item={item} />");
     expect(css).toContain(".pm-shop-emoji.is-indonesia-flag");
     expect(css).toContain("background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%)");
+    expect(css).toContain(".pm-shop-stage-acc-icon.is-indonesia-flag");
   });
 });

@@ -13,7 +13,7 @@ const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8")
 
 describe("#current-quest is a real link to /quests", () => {
   it("wraps the whole panel in <a href=\"/quests\"> with the same inner anchors", () => {
-    expect(html).toContain('<a id="current-quest" class="panel-glass" href="/quests">');
+    expect(html).toContain('<a id="current-quest" class="care-focus-quest" href="/quests">');
     // renderQuestSlot's writers still find their ids INSIDE the link.
     const start = html.indexOf('<a id="current-quest"');
     const end = html.indexOf("</a>", start);
@@ -25,7 +25,7 @@ describe("#current-quest is a real link to /quests", () => {
 
   it("keeps a ≥44px tap target and link resets so the panel look survives", () => {
     const rule = css.slice(css.indexOf("#current-quest {"), css.indexOf("}", css.indexOf("#current-quest {")));
-    expect(rule).toContain("display: block");
+    expect(rule).toContain("display: grid");
     expect(rule).toContain("min-height: 44px");
     expect(rule).toContain("text-decoration: none");
     expect(rule).toContain("color: inherit");

@@ -31,12 +31,9 @@ describe("My Garden adventure HUD", () => {
     expect(html.indexOf('id="current-quest"')).toBeLessThan(html.indexOf('id="env-strip"'));
     expect(html.indexOf('id="env-strip"')).toBeLessThan(html.indexOf('id="daily-quiz-open"'));
     // The bond/XP panel left this stack for the headroom above Jamkachu, so
-    // the decision-first order above is now care → quest → sensors → bonus.
+    // the decision-first order above is now care+quest → sensors → bonus.
     // Its own placement is pinned in the status-panel test below.
-    expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.home-stack \{ display:contents; \}/);
-    expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.care-focus \{ order:1;/);
-    expect(css).toContain("width:calc(100vw - 28px)");
-    expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.mascot-stage \{ order:2; \}/);
+    expect(css).toContain(".home-stack-scroll { display: contents; }");
   });
 
   it("puts the status panel in the headroom above Jamkachu, over the bubble", () => {
@@ -52,11 +49,14 @@ describe("My Garden adventure HUD", () => {
     expect(panel).toBeLessThan(bubble);
     expect(bubble).toBeLessThan(mascot);
     // Every hook live.js writes into survived the move.
-    for (const hook of ['class="username"', 'class="xp-bar"', 'id="hp-inline"', "class=\"badge coin\"", "class=\"badge streak\"", "class=\"badge seeds\"", "data-seed-num", "data-seed-label"]) {
+    for (const hook of ['class="status-help username"', 'class="xp-bar"', 'id="hp-inline"', "class=\"badge streak", "class=\"badge seeds", "data-xp-num", "data-seed-num", "data-seed-label"]) {
       expect(html).toContain(hook);
     }
+    expect(html).not.toContain('class="badge coin"');
+    expect(html).not.toContain("body .user-gamification { grid-template-columns: minmax(0, 1fr); }");
+    expect(html.match(/data-xp-num/g)).toHaveLength(1);
     // Sized as a card over the plant rather than a full-width stage band.
-    expect(css).toMatch(/\.mascot-container > \.user-gamification \{[\s\S]*?max-width: min\(420px, 100%\)/);
+    expect(css).toMatch(/\.mascot-container > \.user-gamification \{[\s\S]*?max-width: min\(560px, 100%\)/);
     expect(css).toContain(".mascot-container > .user-gamification .xp-bar-wrap { width: 150px; }");
   });
 
@@ -82,6 +82,12 @@ describe("My Garden adventure HUD", () => {
     expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.care-focus \.care-action-label \{[^}]*-webkit-line-clamp:2/);
   });
 
+  it("keeps RIGHT NOW fixed while only sensors and quiz can scroll", () => {
+    expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.home-stack \{[\s\S]*?overflow:hidden/);
+    expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.home-stack-scroll \{[\s\S]*?overflow-y:auto/);
+    expect(html.indexOf('id="care-focus"')).toBeLessThan(html.indexOf('class="home-stack-scroll"'));
+  });
+
   it("keeps primary desktop actions intact on 768px-tall classroom screens", () => {
     expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.home-stack \{[\s\S]*?overflow:hidden/);
     expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.home-stack-scroll > \* \{ flex:0 0 auto; \}/);
@@ -89,6 +95,8 @@ describe("My Garden adventure HUD", () => {
     expect(css).toMatch(/max-height: 820px\)[\s\S]*?\.care-focus #care-action \{[^}]*min-height:52px/);
     expect(css).toMatch(/max-height: 820px\)[\s\S]*?\.env-hud-card \{[^}]*min-height:72px/);
     expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.farm-guide-open \{[^}]*left:290px/);
+    expect(css).toMatch(/max-height: 820px\)[\s\S]*?\.farm-appearance \{[^}]*flex-direction:row/);
+    expect(css).toMatch(/@media \(min-width: 801px\)[\s\S]*?\.nav-item \{ min-height:44px/);
   });
 
   it("keeps desktop NPC guidance away from Jamkachu controls", () => {

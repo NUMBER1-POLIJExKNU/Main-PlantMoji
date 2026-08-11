@@ -1333,6 +1333,30 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   to { transform: translate(-60px, -120px); }
 }
 
+@media (min-width: 801px) {
+  .reno-nav-item { min-height: 44px; }
+  .reno-nav-section-title,
+  .reno-appearance-controls label > span,
+  .reno-skin-control > span { font-size: 10px; }
+  .reno-appearance-controls select,
+  .reno-skin-open,
+  .reno-locale-switch button { min-height: 44px; }
+  .reno-locale-switch button { font-size: 10px; }
+}
+
+@media (min-width: 801px) and (max-height: 820px) {
+  .reno-sidebar { gap: 8px; padding: 12px; }
+  .reno-brand { gap: 10px; padding-bottom: 8px; }
+  .reno-logo { width: 38px; }
+  .reno-wordmark { width: 82px; }
+  .reno-nav-links,.reno-nav-tool-grid { gap: 2px; }
+  .reno-nav-tool-pocket { margin-top: 2px; padding-top: 2px; }
+  .reno-nav-item { padding-block: 7px; }
+  .reno-locale-switch { margin-top: 0; }
+  .reno-appearance-controls { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; margin-top: 2px; padding-top: 5px; }
+  .reno-appearance-controls label,.reno-skin-control { grid-template-columns: 1fr; align-content: start; gap: 2px; }
+}
+
 /* On phones brand/language form a compact sticky top bar. The five core game
    destinations stay visible in a fixed Tamagotchi-style bottom dock; the
    desktop-only operator tool pocket does not compete with care actions. */

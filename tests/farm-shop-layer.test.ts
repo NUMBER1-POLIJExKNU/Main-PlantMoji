@@ -155,9 +155,11 @@ describe("farm shop layer (display-only)", () => {
         const artClass = item.key.replace("decor_", "shop-decor-").replaceAll("_", "-");
         expect(html, `${item.key} missing decor markup`).toContain(artClass);
         expect(css, `${item.key} missing decor selector`).toContain(`own-${item.key}`);
-      } else {
+      } else if (item.category === "accessory") {
         expect(html, `${item.key} missing SVG group`).toContain(`shop-g-${item.key}`);
         expect(css, `${item.key} missing equip selector`).toContain(`.mascot-svg.shop-${item.key}`);
+      } else {
+        expect(spriteJs, `${item.key} missing pot palette ramp`).toContain(`${item.key}:`);
       }
     }
   });

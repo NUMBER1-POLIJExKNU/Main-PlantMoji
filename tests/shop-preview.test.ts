@@ -140,7 +140,7 @@ describe("bond Lv.10 keepsake: the preview always shows the gold pot, matching t
 
 describe("decor renders as a prop on the grass; accessories get an honest try-on note", () => {
   it("decor items render their catalog emoji beside the cast, aria-hidden", () => {
-    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className="pm-shop-stage-decor-prop" aria-hidden="true">/);
+    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className=\{`pm-shop-stage-decor-prop/);
   });
 
   it("accessory items show a large icon plus the honest 'arrives when equipped on the farm' note", () => {
@@ -201,8 +201,8 @@ describe("every rendered image is pixelated; decorative art is aria-hidden with 
   });
 
   it("the decor prop and accessory icon are decorative (aria-hidden) — the item name text is the signal", () => {
-    expect(preview).toMatch(/className="pm-shop-stage-decor-prop" aria-hidden="true"/);
-    expect(preview).toMatch(/className="pm-shop-stage-acc-icon" aria-hidden="true"/);
+    expect(preview).toMatch(/className=\{`pm-shop-stage-decor-prop[\s\S]{0,100}?aria-hidden="true"/);
+    expect(preview).toMatch(/className=\{`pm-shop-stage-acc-icon[\s\S]{0,100}?aria-hidden="true"/);
     expect(preview).toContain("<h2>{item.name}</h2>");
   });
 });

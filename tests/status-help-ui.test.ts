@@ -13,7 +13,7 @@ describe("self-explaining status HUD", () => {
       expect(html).toContain(`data-status-help="${kind}"`);
       expect(live).toContain(`"status.help.${kind}"`);
     }
-    expect(html.match(/data-status-help="xp"/g)).toHaveLength(2);
+    expect(html.match(/data-status-help="xp"/g)).toHaveLength(1);
     expect(css).toContain(".status-help:focus-visible");
   });
 
@@ -21,8 +21,12 @@ describe("self-explaining status HUD", () => {
     expect(live).toContain("function statusHelpText(kind)");
     expect(live).toContain("function showStatusHelp(element)");
     expect(live).toContain('document.querySelectorAll("[data-status-help]")');
+    expect(html).toContain('id="hud-detail"');
+    expect(html).toContain('aria-controls="hud-detail"');
+    expect(live).toContain("openHudDetail({");
+    expect(live).toContain('window.matchMedia?.("(min-width: 801px)").matches');
     expect(live).toContain('floatWhyCard(statusHelpText(kind), element.getBoundingClientRect())');
-    expect(live).toContain("sensor-verified care missions");
+    expect(live).toContain("care missions the sensors confirm");
     expect(live).toContain("Spend them in the Shop");
 
     const helpStart = live.indexOf("function showStatusHelp(element)");

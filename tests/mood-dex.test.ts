@@ -91,7 +91,7 @@ describe("SoilAcidic vs. SoilAlkaline collision is resolved by distinct art", ()
 describe("detail panel keeps the real Jamkachu sprite hero (unchanged by the icon-pack swap)", () => {
   it("imports the sprite mapping module and computes the hero from the player's real current phase", () => {
     expect(tabs).toContain('from "@/lib/jamkachu-sprite"');
-    expect(tabs).toContain("const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? \"plain\");");
+    expect(tabs).toContain("const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? \"happy\");");
   });
 
   it("CollectionTabsProps carries spritePhase, and the collection page supplies it from companion_state.stage", () => {

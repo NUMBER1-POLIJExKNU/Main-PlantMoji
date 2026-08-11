@@ -388,7 +388,7 @@ export default async function QuestsPage() {
         title={locale === "id" ? "Misi" : "Quests"}
         description={locale === "id"
           ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol."
-          : "Real care, verified by sensors — no tap-to-win."}
+          : "Real care, checked by sensors — no tap-to-win."}
         // Pak Tani (designer NPC cast) hands out the missions — a header
         // accent only, the quest cards below are untouched.
         meta={<NpcBadge npc="pak-tani" locale={locale} note={npcTagline(locale, "pak-tani")} />}

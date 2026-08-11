@@ -245,6 +245,8 @@ export default function ShopGrid({
           <section aria-label={copy.categories[category]}>
             <div className="pm-shop-grid">
               {shownItems.map((item) => {
+                  const owned = ownedRow(item.key);
+                  const affordable = seeds >= item.price;
                   const isPreviewed = previewKey === item.key;
                   // A card used to show a picture, a name, a blurb and a
                   // Preview button — no price, no idea whether you owned it,

@@ -27,12 +27,12 @@ const SPRITE_MOODS = new Set(["happy", "plain", "thirsty", "sleepy", "overheat"]
 /** Mood→sprite mapping (plan table) — the honest "own body" per mood. */
 const OWN_SPRITE: Record<string, string> = {
   Overheating: "overheat",
-  TooCold: "plain",
+  TooCold: "happy",
   DryAir: "thirsty",
-  HumidAir: "plain",
-  Sleepy: "sleepy",
-  SoilAcidic: "plain",
-  SoilAlkaline: "plain",
+  HumidAir: "happy",
+  Sleepy: "happy",
+  SoilAcidic: "happy",
+  SoilAlkaline: "happy",
 };
 
 interface ReactionPair {
@@ -104,7 +104,7 @@ describe("per-mood tap-reaction pair pools", () => {
   it("keeps named reactions for the explicit callers (drowsy blink, hop giggle)", () => {
     const section = expressionSection();
     expect(section).toContain("const PET_NAMED_REACTIONS");
-    expect(section).toMatch(/blink: \{ spriteMood: "sleepy"/);
+    expect(section).toMatch(/blink: \{ spriteMood: "happy"/);
     expect(section).toMatch(/giggle: \{ spriteMood: "happy"/);
   });
 });

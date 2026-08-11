@@ -698,7 +698,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             // The real Jamkachu sprite (four moods share the "plain" body —
             // MOOD_STATUS_CHIP tells them apart, same contract as mascot.tsx).
             const chip = MOOD_STATUS_CHIP[selectedMood.mood as PlantMood];
-            const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? "plain");
+            const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? "happy");
             // Small reinforcement icon ties the hero back to the dex card's
             // art — this is also what fully disambiguates SoilAcidic from
             // SoilAlkaline here, since the big sprite + chip alone still

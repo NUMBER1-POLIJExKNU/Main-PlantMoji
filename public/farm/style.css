@@ -365,11 +365,28 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .farm-guide-cast { display:block; width:min(100%, 288px); margin:14px auto 0; image-rendering:pixelated; }
 @media (prefers-reduced-motion: reduce) { .farm-guide-cast { display:none; } }
 
+/* Shared sensor/progression detail dialog: title → one-sentence meaning →
+   useful facts/action → close. Native <dialog> owns Escape and modality. */
+.hud-detail { width:min(500px,calc(100vw - 32px)); margin:auto; border:0; padding:0; color:var(--color-text); background:transparent; }
+.hud-detail::backdrop { background:rgba(18,31,25,.66); backdrop-filter:blur(4px); }
+.hud-detail-card { display:grid; gap:12px; border:4px solid var(--color-outline); border-radius:18px; padding:22px; background:var(--color-surface); box-shadow:0 9px 0 var(--color-outline); }
+.hud-detail-kicker { color:var(--color-forest); font:10px/1.4 var(--font-heading); letter-spacing:.06em; }
+.hud-detail-card h2 { font:22px/1.25 var(--font-body); font-weight:800; }
+.hud-detail-card > p,.hud-detail-action { font:14px/1.55 var(--font-body); }
+.hud-detail-gauge { height:14px; overflow:hidden; border:2px solid var(--color-outline); border-radius:999px; background:var(--color-bg); }
+.hud-detail-gauge i { display:block; width:var(--detail-progress,0%); height:100%; background:linear-gradient(90deg,var(--color-water),var(--color-grass)); }
+.hud-detail-facts { display:grid; grid-template-columns:auto minmax(0,1fr); gap:7px 12px; border-block:2px dashed var(--color-border); padding:11px 0; font-size:13px; line-height:1.45; }
+.hud-detail-facts dt { color:var(--color-text-muted); font-weight:700; }
+.hud-detail-facts dd { font-weight:800; }
+.hud-detail-action { border-left:5px solid var(--color-grass); border-radius:8px; padding:10px 12px; background:var(--color-bg); }
+.hud-detail-card > .pixel-btn { min-height:52px; margin-top:2px; }
+
 .user-gamification {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 20px;
+    justify-content: center;
+    gap: 8px;
     width: 100%;
 }
 
@@ -392,25 +409,31 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    never push .user-details/.user-gamification wider than the HUD row —
    overflow:hidden + text-overflow:ellipsis then truncates it cleanly.
    Per-breakpoint overrides below tighten it to match the narrower rail. */
-.username { font-family: var(--font-heading); font-size: 12px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.username { font-family: var(--font-heading); font-size: 10px; display: block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .xp-row { display: flex; align-items: center; gap: 10px; }
-#hp-inline { font-family: var(--font-heading); font-size: 10px; white-space: nowrap; }
+#hp-inline { font-family: var(--font-body); font-size: 13px; white-space: nowrap; }
 #hp-inline.hp-good { color: var(--color-forest); }
 #hp-inline.hp-warn { color: #A97B12; }
 #hp-inline.hp-low { color: #C24141; }
 .xp-bar-wrap {
-    width: 160px; height: 14px;
-    background: rgba(255, 255, 255, 0.5);
+    position:relative;
+    width: 150px; height: 44px;
+    border:2px solid var(--color-border);
+    background: var(--color-bg);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow:none;
 }
 .xp-bar {
+    position:absolute;
+    inset:0 auto 0 0;
+    z-index:0;
     height: 100%;
     background: linear-gradient(90deg, var(--color-grass), var(--color-grass-light));
-    border-radius: 10px;
+    border-radius: 7px;
     transition: width 1s ease-in-out;
 }
+.xp-bar-label { position:relative; z-index:1; display:grid; height:100%; place-items:center; color:var(--color-outline); font:10px/1 var(--font-heading); text-shadow:0 1px rgba(255,255,255,.8); }
 
 .badges {
     display: flex;
@@ -418,8 +441,10 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 }
 .badge {
     background: var(--color-white);
-    border-radius: 20px;
-    padding: 6px 14px;
+    border:2px solid var(--color-border);
+    border-radius: 10px;
+    min-height:44px;
+    padding: 7px 9px;
     font-family: var(--font-heading);
     font-size: 10px;
     display: flex; align-items: center; gap: 8px;
@@ -433,10 +458,11 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .pm-cheat-heading-icon { width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; vertical-align: -2px; }
 /* Every progression value explains itself on press. These are real buttons,
    but retain the compact HUD styling instead of inheriting browser chrome. */
-.status-help { appearance:none; border:0; color:inherit; font:inherit; cursor:help; }
-.status-help.username { padding:0; background:transparent; text-align:left; }
+.status-help { appearance:none; color:inherit; cursor:help; }
+.status-help.username { min-height:44px; border:2px solid var(--color-border); border-radius:10px; padding:7px 9px; background:var(--color-bg); text-align:center; }
 .status-help.xp-bar-wrap { display:block; padding:0; }
-#hp-inline.status-help { padding:2px 3px; background:transparent; }
+#hp-inline.status-help { min-height:44px; display:grid; gap:1px; border:2px solid var(--color-border); border-radius:10px; padding:5px 8px; background:var(--color-bg); }
+#hp-inline small { font-size:10px; font-weight:700; }
 .status-help:hover { filter:brightness(1.03); }
 .status-help:focus-visible { outline:3px solid var(--color-water); outline-offset:3px; }
 .status-help:active { transform:translateY(1px); }
@@ -445,9 +471,9 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    line + blip. Pure celebration of real history — grants nothing. */
 .badge.streak { cursor: pointer; user-select: none; }
 .badge.streak:active { transform: translateY(1px); }
-.hud-section-label { color:var(--color-forest); font:7px/1.4 var(--font-heading); letter-spacing:.04em; }
+.hud-section-label { color:var(--color-forest); font:10px/1.4 var(--font-heading); letter-spacing:.04em; }
 .current-quest-line { display:block; }
-.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:6px/1 var(--font-heading); }
+.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:10px/1 var(--font-heading); }
 
 .weather-widget {
     display: flex;
@@ -528,14 +554,20 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    <a href="/quests"> now — link resets + a ≥44px tap target + the same
    gentle press feel as the env tiles, so it reads as tappable. */
 #current-quest {
-    display: block;
+    display: grid;
+    gap:4px;
     min-height: 44px;
+    margin:4px -16px -16px;
+    border:0;
+    border-top:2px dashed color-mix(in srgb,var(--care-accent) 55%,var(--color-border));
+    border-radius:0 0 13px 13px;
     font-family: var(--font-heading);
     font-size: 11px;
-    line-height: 1.8;
-    text-align: center;
-    padding: 14px 20px;
+    line-height: 1.45;
+    text-align: left;
+    padding: 10px 16px 12px;
     color: inherit;
+    background:color-mix(in srgb,var(--care-soft) 68%,var(--color-surface));
     text-decoration: none;
     cursor: pointer;
 }
@@ -597,6 +629,9 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .env-hud-copy strong { margin-top:4px; overflow:hidden; font:26px/1.15 var(--font-body); font-weight:700; color:var(--color-text); text-overflow:ellipsis; white-space:nowrap; }
 .env-hud-copy em { display:block; overflow:hidden; color:var(--color-forest); font:10px/1.3 var(--font-body); font-style:normal; white-space:nowrap; text-overflow:ellipsis; }
 .env-hud-card.is-alert .env-status { color:#a34d32; }
+.env-status::before { content:"✓ "; font-weight:900; }
+.env-hud-card.is-alert { border-color:#b84f37; box-shadow:0 4px 0 #783426; }
+.env-hud-card.is-alert .env-status::before { content:"! "; }
 /* Explicit "Ideal min–max" line (crop-profile sourced; hidden — never a
    hand-typed number — when the profile fetch is unavailable). */
 .env-range { display:block; margin-top:1px; overflow:hidden; color:var(--color-text-muted); font:9px/1.35 var(--font-body); white-space:normal; }
@@ -827,15 +862,13 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    restated here; the panel keeps every class live.js writes into. */
 .mascot-container > .user-gamification {
     width: auto;
-    max-width: min(420px, 100%);
+    max-width: min(560px, 100%);
     margin-bottom: 10px;
-    gap: 6px 14px;
+    gap: 7px;
     justify-content: center;
-    padding: 8px 14px;
+    padding: 8px 10px;
 }
 .mascot-container > .user-gamification > .hud-section-label { text-align: center; }
-.mascot-container > .user-gamification .user-details { flex: 0 1 auto; align-items: center; }
-.mascot-container > .user-gamification .badges { justify-content: center; }
 /* The bar is the only greedy child; without a cap it stretches the panel to
    the full stage width and stops reading as a card over the plant. */
 .mascot-container > .user-gamification .xp-bar-wrap { width: 150px; }
@@ -945,7 +978,7 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 /* Honest next-stage progress line (evolution-ladder plan, Task 5): same
    voice as .companion-stage, one size smaller; :empty keeps the row from
    reserving space when live.js hides it (pre-milestone16, missing ladder). */
-.companion-next { margin-top: 3px; font: 7px/1.5 var(--font-pixel); color: #6b7a61; letter-spacing: .05em; }
+.companion-next { margin-top: 3px; font: 13px/1.45 var(--font-body); color: #57684f; letter-spacing: 0; }
 .companion-next:empty { display: none; }
 /* Late-stage differentiation on the designer sprite (kiki design
    integration): the drawn PHASE carries growth (stage→phase table in
@@ -960,7 +993,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.companion-Radiant #jamkachu-sprite { filter: saturate(1.32) drop-shadow(0 0 8px var(--companion-accent, #f5c94a)); }
 .mascot-svg.companion-Legend #jamkachu-sprite { filter: saturate(1.38) drop-shadow(0 0 10px var(--companion-accent, #f5c94a)); }
 
-.evolution-guide-open { min-height:32px; margin-top:6px; border:2px solid var(--color-outline); border-radius:8px; padding:6px 9px; color:var(--color-outline); background:#eef8e9; box-shadow:0 2px 0 var(--color-outline); font:6px/1.35 var(--font-heading); cursor:pointer; }
+.evolution-guide-open { min-width:260px; min-height:52px; display:grid; gap:3px; margin:7px auto 0; border:2px solid var(--color-outline); border-radius:11px; padding:8px 12px; color:var(--color-outline); background:#eef8e9; box-shadow:0 3px 0 var(--color-outline); cursor:pointer; text-align:left; }
+.evolution-guide-open .companion-stage { margin:0; font-size:10px; }
+.evolution-guide-link { color:var(--color-forest); font:10px/1.35 var(--font-heading); }
 .evolution-guide-open:active { transform:translateY(1px); box-shadow:0 1px 0 var(--color-outline); }
 .evolution-guide-card { width:min(560px,calc(100vw - 32px)); max-height:86dvh; overflow-y:auto; }
 .evolution-guide-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
@@ -969,9 +1004,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .evolution-guide-card > p { margin:0 0 13px; color:#57684f; }
 .evolution-guide-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
 .evolution-guide-stage { min-width:0; display:grid; grid-template-columns:52px minmax(0,1fr) 58px; align-items:center; gap:7px; border:2px solid #c6d3c1; border-radius:10px; padding:9px; color:#778274; background:#f0f2ec; opacity:.72; }
-.evolution-guide-stage b { color:inherit; font:7px/1.3 var(--font-heading); }
-.evolution-guide-stage strong { overflow:hidden; font:9px/1.35 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
-.evolution-guide-stage span { color:#657060; font:7px/1.3 var(--font-heading); text-align:right; }
+.evolution-guide-stage b { color:inherit; font:10px/1.3 var(--font-heading); }
+.evolution-guide-stage strong { overflow:hidden; font:10px/1.35 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
+.evolution-guide-stage span { color:#657060; font:10px/1.3 var(--font-heading); text-align:right; }
 .evolution-guide-stage.is-unlocked { color:#285a30; border-color:#7cad70; background:#e8f6e0; opacity:1; }
 .evolution-guide-stage.is-current { color:#243421; border-color:#243421; background:#ffde6a; box-shadow:0 3px 0 #243421; }
 .evolution-guide-stage.is-next { border-style:dashed; border-color:#d3a539; background:#fff7df; opacity:1; }
@@ -2237,6 +2272,10 @@ body.farmer-dragging {
    Existing IDs and DOM order stay intact so live.js, realtime and demo hooks
    keep working without a second state path. */
 @media (min-width: 801px) {
+    .nav-item { min-height:44px; }
+    .nav-section-title,.farm-appearance-row > span { font-size:10px; }
+    .farm-appearance select { min-height:44px; font-size:13px; }
+    .locale-switch button { min-height:44px; font-size:10px; }
     .game-world {
         display: grid;
         grid-template-columns: minmax(360px, 1.3fr) minmax(330px, .9fr);
@@ -2328,66 +2367,61 @@ body.farmer-dragging {
     .care-focus > * { min-width:0; }
     .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
     .care-focus-icon { width:40px; height:40px; font-size:21px; }
-    .care-focus h2 { font-size:11px; }
-    .care-focus-heading p { display:-webkit-box; margin-top:3px; overflow:hidden; font-size:12px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+    .care-focus-kicker { font-size:10px; }
+    .care-focus h2 { font-size:15px; }
+    .care-focus-heading p { display:-webkit-box; margin-top:3px; overflow:hidden; font-size:13px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
     .care-steps { gap:5px; }
     .care-steps li { min-width:0; min-height:39px; display:flex; grid-template-columns:none; justify-content:center; gap:5px; padding:5px 4px; overflow:hidden; }
-    .care-steps li > b { width:23px; height:23px; font-size:7px; }
+    .care-steps li > b { width:23px; height:23px; font-size:10px; }
     .care-steps li span { display:block; min-width:0; }
-    .care-steps li strong { display:block; overflow:hidden; font-size:6px; line-height:23px; text-overflow:ellipsis; white-space:nowrap; }
+    .care-steps li strong { display:block; overflow:hidden; font-size:10px; line-height:23px; text-overflow:ellipsis; white-space:nowrap; }
     .care-steps li small { display:none; }
-    .care-proof-note { display:-webkit-box; overflow:hidden; font-size:9px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+    .care-proof-note { display:-webkit-box; overflow:hidden; font-size:13px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
     .care-proof-note.is-feedback { color:var(--color-outline); font-weight:700; }
-    .care-focus #care-action { min-height:58px; border-top-width:3px; border-radius:12px; font-size:10px; }
+    .care-focus #care-action { min-height:58px; border-top-width:3px; border-radius:12px; font-size:15px; }
     .care-focus .care-action-label { display:-webkit-box; min-width:0; overflow:hidden; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 
-    .user-gamification {
+    .mascot-container > .user-gamification {
         display:grid;
-        grid-template-columns:48px minmax(0,1fr);
-        gap:8px 12px;
-        padding:12px 14px;
+        grid-template-columns:minmax(78px,auto) minmax(96px,1fr) auto auto auto;
+        gap:4px;
+        padding:7px 6px;
         border-color:var(--color-border);
     }
-    .user-gamification > .hud-section-label { grid-column:1/-1; }
-    .user-gamification .avatar { grid-column:1; grid-row:2/4; align-self:center; }
-    .user-gamification .user-details { grid-column:2; min-width:0; }
-    .user-gamification .username { max-width:none; font-size:13px; }
-    .user-gamification .xp-row { width:100%; }
-    .user-gamification .xp-bar-wrap { flex:1; width:auto; height:12px; border:2px solid var(--color-border); background:var(--color-bg); box-shadow:none; }
-    .user-gamification .badges { grid-column:1/-1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
-    .user-gamification .badge { min-width:0; justify-content:center; border:2px solid var(--color-border); border-radius:9px; padding:7px 5px; color:var(--color-text); background:var(--color-bg); box-shadow:none; white-space:nowrap; }
+    .user-gamification .username { min-width:78px; max-width:none; font-size:10px; }
+    .mascot-container > .user-gamification .xp-bar-wrap { width:auto; min-width:96px; height:44px; }
+    .user-gamification .comfort-hearts { min-width:62px; }
+    .user-gamification .badge { min-width:44px; justify-content:center; padding:5px; color:var(--color-text); background:var(--color-bg); box-shadow:none; white-space:nowrap; }
     /* Desktop quiz is exactly two useful text rows: title + progress. The +XP
        pill already communicates the bonus, so the duplicate label stays out. */
-    .quiz-chip { position:relative; min-width:0; min-height:48px; max-height:58px; overflow:hidden; padding:7px 11px; border-style:dashed; box-shadow:0 3px 0 rgba(36,52,33,.14); }
+    .quiz-chip { position:relative; min-width:0; min-height:52px; max-height:62px; overflow:hidden; padding:7px 11px; border-style:dashed; box-shadow:0 3px 0 rgba(36,52,33,.14); }
     .quiz-chip > span:first-child { font-size:22px; }
     .quiz-chip-copy { min-width:0; }
     .quiz-chip-copy strong,.quiz-chip-copy small { display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .quiz-bonus-label { display:none; }
-    .quiz-chip-copy strong { font-size:7px; }.quiz-chip-copy small { font-size:11px; }
+    .quiz-chip-copy strong { font-size:10px; }.quiz-chip-copy small { font-size:13px; }
     .avatar-img { width: 48px; height: 48px; }
 
     #current-quest {
-        min-height:70px;
-        display:grid;
-        gap:8px;
-        place-items:stretch;
-        padding:12px 15px 17px;
-        border-color:var(--color-forest);
-        border-bottom-right-radius:5px;
-        border-bottom-left-radius:5px;
+        min-height:52px;
+        margin:4px -13px -13px -16px;
+        gap:4px;
+        padding:9px 15px 11px;
+        border-top-color:color-mix(in srgb,var(--care-accent) 60%,var(--color-border));
         background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 12%,var(--color-surface)),var(--color-surface));
         text-align:left;
     }
-    #current-quest .current-quest-line { font:11px/1.65 var(--font-body); font-weight:800; }
+    #current-quest .current-quest-line { font:13px/1.4 var(--font-body); font-weight:800; }
     #env-strip { padding:12px; font-size:14px; white-space:normal; border-color:var(--color-border); }
-    .env-hud-title { margin-bottom:10px; }
+    .env-hud-title { margin-bottom:10px; font-size:10px; }
     /* The rail is narrow: a 2×2 board gives values, state and ideal range room. */
     .env-hud-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .env-hud-card { min-height:108px; grid-template-columns:30px minmax(0,1fr); padding:8px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
+    .env-hud-card { min-height:86px; grid-template-columns:36px minmax(0,1fr); align-items:center; padding:9px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
     .env-hud-card > i { width:28px; height:28px; font-size:16px; }
     .env-hud-copy strong { font-size:21px; margin-top:2px; }
-    .env-gauge { margin:5px 0 4px; height:7px; }.env-gauge-marker { height:13px; }
-    .env-range { font-size:8px; }.env-hud-copy em { font-size:9px; }
+    .env-hud-copy small { font-size:10px; }
+    .env-gauge,.env-range,.env-hud-delta { display:none; }
+    .env-hud-copy em { margin-top:4px; font-size:13px; font-weight:700; }
 
     .hud-top {
         position: absolute;
@@ -2402,16 +2436,19 @@ body.farmer-dragging {
     }
     .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }
     .jember-clock-icon { font-size: 20px; }
-    .jember-clock-copy small { font-size: 6px; }
+    .jember-clock-copy small { font-size: 10px; }
     .jember-clock-copy strong { font-size: 14px; }
     .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
     .weather-icon { font-size: 22px; }
     .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }
-    .weather-text .temp { font-size: 11px; }
+    .weather-text .temp { font-size: 13px; }
     .weather-text .desc { max-width: 145px; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .weather-text .weather-source,
     .weather-text .forecast-time,
     .weather-text .indoor-reading { display: none; }
+
+    .npc-ai-tag,.npc-bubble > small,.farmer-chat-top span,.farmer-chat-message.is-system,.farmer-chat-form button { font-size:10px; }
+    .farmer-chat-message,.farmer-chat-note { font-size:13px; }
 
     .panel-glass:hover { transform: none; }
     .grass-floor { left: 272px; width: calc(100% - 272px); height: 105px; }
@@ -2419,14 +2456,26 @@ body.farmer-dragging {
     .farm-guide-open { right:auto; left:290px; }
 }
 
+@media (min-width: 801px) and (max-width: 1100px) {
+    .user-gamification .bond-word { display:none; }
+}
+
 /* Short classroom laptops get the same information hierarchy with a smaller
    character and tighter cards. 768px-tall projector/laptop viewports land
    here after browser chrome, so this breakpoint must cover them too. */
 @media (min-width: 801px) and (max-height: 820px) {
     .app-layout { padding-top: 14px; padding-bottom: 14px; }
-    /* The sidebar gap, brand padding and nav-item padding this breakpoint used
-       to tighten are now the defaults — the same numbers, applied everywhere. */
-    .sidebar { padding-top: 14px; padding-bottom: 14px; }
+    .sidebar { gap:8px; padding:12px; }
+    .brand { gap:10px; padding-bottom:8px; }
+    .logo-img { width:38px; }
+    .brand-wordmark { width:82px; }
+    .nav-links,.nav-tool-grid { gap:2px; }
+    .nav-tool-pocket { margin-top:2px; padding-top:2px; }
+    .nav-item { padding-block:7px; }
+    .locale-switch { margin-top:0; }
+    .farm-appearance { flex-direction:row; gap:5px; margin-top:2px; padding-top:5px; }
+    .farm-appearance-row { min-width:0; flex:1 1 0; flex-direction:column; align-items:stretch; gap:2px; }
+    .farm-appearance select { width:100%; max-width:none; padding:4px; font-size:11px; }
     .mascot-wrapper { width: min(250px, 32vh); }
     .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
@@ -2435,36 +2484,30 @@ body.farmer-dragging {
     .care-focus { gap:6px; padding:9px 11px 10px 14px; }
     .care-focus-heading { grid-template-columns:34px minmax(0,1fr); gap:8px; }
     .care-focus-icon { width:34px; height:34px; font-size:18px; }
-    .care-focus h2 { font-size:10px; }
-    .care-focus-heading p { margin-top:1px; font-size:11px; -webkit-line-clamp:1; }
+    .care-focus h2 { font-size:15px; }
+    .care-focus-heading p { margin-top:1px; font-size:13px; -webkit-line-clamp:1; }
     .care-steps { gap:4px; }
     .care-steps li { min-height:32px; gap:4px; padding:3px; }
-    .care-steps li > b { width:20px; height:20px; font-size:6px; }
-    .care-steps li strong { font-size:7px; line-height:20px; }
-    .care-proof-note { font-size:8px; -webkit-line-clamp:1; }
+    .care-steps li > b { width:20px; height:20px; font-size:10px; }
+    .care-steps li strong { font-size:10px; line-height:20px; }
+    .care-proof-note { font-size:13px; -webkit-line-clamp:1; }
     .care-proof-note.is-feedback { -webkit-line-clamp:2; }
-    .care-focus #care-action { min-height:52px; padding:7px 10px; font-size:9px; }
+    .care-focus #care-action { min-height:52px; padding:7px 10px; font-size:15px; }
 
     #current-quest { min-height:52px; gap:4px; padding:7px 11px 9px; }
-    #current-quest .current-quest-line { font-size:10px; line-height:1.35; }
+    #current-quest .current-quest-line { font-size:13px; line-height:1.35; }
     #env-strip { padding:7px 8px 8px; }
     .env-hud-title { margin-bottom:5px; }
     .env-hud-grid { gap:5px; }
     .env-hud-card { min-height:72px; grid-template-columns:25px minmax(0,1fr); gap:5px; padding:5px; }
     .env-hud-card > i { width:23px; height:23px; font-size:13px; }
-    .env-hud-copy small { font-size:7px; }
+    .env-hud-copy small { font-size:10px; }
     .env-hud-copy strong { margin-top:0; font-size:16px; }
-    .env-gauge { height:5px; margin:2px 0; }
-    .env-range { display:none; }
+    .env-gauge,.env-range { display:none; }
 
-    .user-gamification { grid-template-columns:minmax(0,1fr); gap:5px; padding:7px 10px; }
-    .user-gamification > .hud-section-label,
-    .user-gamification .user-details,
-    .user-gamification .badges { grid-column:1; }
-    .user-gamification .avatar { display:none; }
-    .user-gamification .badges { gap:5px; }
+    .mascot-container > .user-gamification { grid-template-columns:minmax(78px,auto) minmax(96px,1fr) auto auto auto; gap:4px; padding:7px 6px; }
     .user-gamification .badge { padding:5px 4px; }
-    .quiz-chip { min-height:46px; }
+    .quiz-chip { min-height:52px; }
 }
 .user-gamification > .hud-section-label { flex:0 0 100%; }
 

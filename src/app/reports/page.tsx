@@ -160,11 +160,11 @@ export default async function ReportsPage() {
       {fallbackNarration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="pm-report-jam-note mb-6">
           {/* Report tone mirrors the next-goal logic: a heat-troubled week
-              gets the plain face, an easy week keeps the happy one. */}
+              gets the overheat face, an easy week keeps the happy one. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
           <img
             className="pm-report-jamkachu"
-            src={spriteAssetPath(4, report.overheatingEvents > 0 ? "plain" : "happy", "", "2x")}
+            src={spriteAssetPath(4, report.overheatingEvents > 0 ? "overheat" : "happy", "", "2x")}
             alt=""
             aria-hidden="true"
             draggable={false}
@@ -192,7 +192,7 @@ export default async function ReportsPage() {
           emoji="💚"
           label={locale === "id" ? "Waktu sehat" : "Healthy time"}
           value={formatDuration(report.healthySeconds, locale)}
-          sub={locale === "id" ? "terverifikasi sensor" : "sensor-verified"}
+          sub={locale === "id" ? "dicatat sensor" : "measured by sensors"}
           accent="var(--color-grass)"
         />
         <StatTile

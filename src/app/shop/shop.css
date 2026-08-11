@@ -61,6 +61,10 @@
 .pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:6px; font-size:28px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }
 /* The real sprite, at the size it will stand on the farm grass. */
 .pm-shop-stage-decor-prop img { display:block; width:54px; height:54px; object-fit:contain; image-rendering:pixelated; }
+.pm-shop-stage-acc-icon.is-indonesia-flag,
+.pm-shop-stage-decor-prop.is-indonesia-flag { width:38px; height:24px; border:2px solid rgba(36,52,33,.35); border-radius:2px; background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%); box-shadow:0 2px 0 rgba(36,52,33,.22); }
+.pm-shop-stage-acc-icon.is-indonesia-flag { top:-2px; right:-10px; }
+.pm-shop-stage-decor-prop.is-indonesia-flag { align-self:flex-end; margin-bottom:12px; }
 .pm-shop-stage-npc { position:relative; flex:none; display:flex; flex-direction:column; align-items:center; gap:2px; }
 .pm-shop-stage-npc picture { display:block; }
 .pm-shop-stage-npc img { display:block; width:46px; height:41px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.16)); }

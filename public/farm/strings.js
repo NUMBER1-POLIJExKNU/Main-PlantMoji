@@ -961,7 +961,7 @@
         humidityUp: (d) => `Udara +${d}% — Jamkachu bisa bernapas lega!`,
         tempComfy: "Sudah adem lagi",
         lightOn: "Matahari muncul!",
-        verifying: "Sensor melihat perawatanmu — sedang memverifikasi…",
+        verifying: "Sensor melihat perawatanmu — sedang mengecek…",
       },
 
       verifying: {

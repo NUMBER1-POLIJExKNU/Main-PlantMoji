@@ -86,7 +86,6 @@ describe("Grandpa Tani living-world UI", () => {
     const closeStart = live.indexOf('$("#farmer-chat")?.addEventListener("close"');
     const closeEnd = live.indexOf('$("#farmer-chat")?.addEventListener("click"', closeStart);
     expect(live.slice(closeStart, closeEnd)).toContain("if (isNightWIB()) scheduleFarmerNightSleep();");
-    expect(live).not.toContain("if (dialog?.open) dialog.close();");
   });
 
   it("measures the real grass boundary instead of wandering by viewport width", () => {
@@ -271,23 +270,20 @@ describe("Farm-layer NPC gif placements (kiki design integration)", () => {
     expect(assetExists("farm/assets/jamkachu/4x/plant-p4-fruit-happy.png")).toBe(true);
   });
 
-  it("re-points the how-I-grow strip at the live mood + tier on every guide open", () => {
+  it("re-points the how-I-grow strip at the safe front-facing art + live tier on every guide open", () => {
     // The markup's growth-happy default is only a fallback: renderGuideGrowth
-    // re-targets the art at the CURRENT accessory tier and at the calm strip
-    // whenever Jamkachu is not happily awake, so every designer growth
-    // variant (plain + bow/ribbon) is reachable in play — none orphaned.
+    // re-targets the art at the CURRENT accessory tier. The designer plain
+    // frames face away, so a player-facing guide never selects that strip.
     expect(live).toContain("function renderGuideGrowth()");
     expect(live).toContain("/farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif");
     // The reduced-motion <picture> source follows the same mood + tier.
     expect(live).toContain("/farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png");
     // Re-rendered on every open, before the dialog shows.
     expect(live).toMatch(/renderGuideGrowth\(\);\s*\n\s*farmGuide\.showModal\(\)/);
-    // Every variant the renderer can point at ships on disk.
-    for (const strip of ["happy", "plain"]) {
-      for (const suffix of ["", "-bow", "-ribbon"]) {
-        expect(assetExists(`farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif`)).toBe(true);
-        expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png`)).toBe(true);
-      }
+    expect(live).toContain('const strip = "happy"');
+    for (const suffix of ["", "-bow", "-ribbon"]) {
+      expect(assetExists(`farm/assets/jamkachu/gif/growth-happy${suffix}.gif`)).toBe(true);
+      expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-happy${suffix}.png`)).toBe(true);
     }
   });
 
