@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { XP_PER_LEVEL, levelForXp } from "@/types/game";
 
 // The classroom-demo sandbox is a plain browser script (window.PMCheat) plus a
 // branch inside public/farm/live.js, so it can't be imported and exercised in
@@ -113,6 +114,64 @@ describe("the sandbox panel stays clear of what it is demonstrating", () => {
 
   it("becomes a bottom sheet once the sidebar column is gone", () => {
     expect(css).toMatch(/@media \(max-width: 900px\) \{\s*\n\s*#pm-cheat-panel \{[^}]*bottom: 6px/);
+  });
+});
+
+describe("cheat panel XP is confined to its level's band", () => {
+  /** Mirror of cheatXpBounds() in public/farm/live.js. */
+  function bounds(level: number) {
+    const min = (Math.max(1, level) - 1) * XP_PER_LEVEL;
+    return { min, max: min + XP_PER_LEVEL - 1 };
+  }
+
+  it("keeps live.js's XP_PER_LEVEL in step with the game module", () => {
+    // The farm shell is a plain script and cannot import the constant, so the
+    // band math silently goes wrong if only one side is retuned.
+    expect(live).toContain(`const XP_PER_LEVEL = ${XP_PER_LEVEL};`);
+  });
+
+  it("offers exactly the XP that maps back to the chosen level", () => {
+    for (let level = 1; level <= 12; level += 1) {
+      const { min, max } = bounds(level);
+      expect(levelForXp(min)).toBe(level);
+      expect(levelForXp(max)).toBe(level);
+      expect(levelForXp(max + 1)).toBe(level + 1);
+      if (level > 1) expect(levelForXp(min - 1)).toBe(level - 1);
+    }
+  });
+
+  it("derives the bounds from the level rather than hard-coding them", () => {
+    expect(live).toContain("function cheatXpBounds(level)");
+    expect(live).toContain("const min = (safe - 1) * XP_PER_LEVEL;");
+    expect(live).toContain("return { min, max: min + XP_PER_LEVEL - 1 };");
+  });
+
+  it("lays the bounds either side of the XP field, like the level's -/+ row", () => {
+    const start = live.indexOf('<div class="pm-cheat-xp">');
+    expect(start).toBeGreaterThanOrEqual(0);
+    const row = live.slice(start, start + 700);
+    const minAt = row.indexOf('data-cheat-out="xpMin"');
+    const inputAt = row.indexOf('data-cheat="totalXp"');
+    const maxAt = row.indexOf('data-cheat-out="xpMax"');
+    expect(minAt).toBeGreaterThanOrEqual(0);
+    expect(inputAt).toBeGreaterThan(minAt);
+    expect(maxAt).toBeGreaterThan(inputAt);
+    // Same flex skeleton as .pm-cheat-level so the two rows read alike.
+    expect(css).toMatch(/#pm-cheat-panel \.pm-cheat-xp \{[\s\S]*?display: flex/);
+    // Readouts, not controls.
+    expect(css).toMatch(/#pm-cheat-panel \.pm-cheat-bound \{[\s\S]*?border: 2px dashed/);
+  });
+
+  it("clamps the stored XP without fighting a half-typed number", () => {
+    // Rewriting the input on every keystroke makes 105 unreachable at Lv.4,
+    // whose band starts at 90 — the leading "1" would snap straight to it.
+    expect(live).toContain("window.PMCheat.set({ status: { totalXp: clampXp(num) } })");
+    expect(live).toMatch(/input\.addEventListener\("change", \(\) => \{\s*\n\s*input\.value = String\(Number\(window\.PMCheat\.get\("status\.totalXp", 0\)\)/);
+  });
+
+  it("carries XP with the level so stepping it keeps progress inside the bar", () => {
+    expect(live).toContain('const within = (Number(window.PMCheat.get("status.totalXp", 0)) || 0) % XP_PER_LEVEL;');
+    expect(live).toContain("window.PMCheat.set({ status: { level: next, totalXp: nextXp } })");
   });
 });
 

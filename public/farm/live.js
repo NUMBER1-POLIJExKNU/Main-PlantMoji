@@ -5661,9 +5661,21 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
 };
+
+/** The XP band a bond level owns. levelForXp is floor(xp / XP_PER_LEVEL) + 1
+ *  (src/types/game.ts, mirrored by award_xp() in SQL), so Lv.L covers
+ *  [(L-1)·30, L·30 − 1]. Level and XP are separate fields in the sandbox
+ *  store; keeping the editor inside this band is what stops the panel from
+ *  producing a state the real game could never reach — Lv.4 with 0 XP, where
+ *  the header says Lv.4 but the XP bar (totalXp % 30) disagrees. */
+function cheatXpBounds(level) {
+  const safe = Math.max(1, Math.floor(Number(level)) || 1);
+  const min = (safe - 1) * XP_PER_LEVEL;
+  return { min, max: min + XP_PER_LEVEL - 1 };
+}
 
 /** Mood the sandbox shows for a sensor set — mirrors determinePlantMood's
  *  priority (heat→cold→dry→humid→dark→soil) without hysteresis, so a demo
@@ -5738,7 +5750,13 @@ function buildCheatPanel() {
     `<div class="pm-cheat-body">` +
     `<div class="pm-cheat-group"><h3>🎛️ ${L.statusTitle}</h3>` +
     `<div class="pm-cheat-level"><span>${L.level}</span><button type="button" data-cheat-level="-1">−</button><output data-cheat-out="level">${s.status.level}</output><button type="button" data-cheat-level="1">+</button></div>` +
-    field("totalXp", L.xp, s.status.totalXp, 1, 0) +
+    // XP mirrors the level row's shape — where that reads [−][value][+], this
+    // reads [min][value][max], so the band the current level allows is visible
+    // in the same place the buttons sit one row above.
+    `<div class="pm-cheat-xp"><span>${L.xp}</span>` +
+    `<output class="pm-cheat-bound" data-cheat-out="xpMin" title="${L.xpMin}" aria-label="${L.xpMin}"></output>` +
+    `<input type="number" data-cheat="totalXp" value="${s.status.totalXp}" step="1">` +
+    `<output class="pm-cheat-bound" data-cheat-out="xpMax" title="${L.xpMax}" aria-label="${L.xpMax}"></output></div>` +
     field("days", L.days, s.status.days, 1, 0) +
     field("seeds", L.seeds, s.status.seeds, 1, 0) +
     `</div>` +
@@ -5762,23 +5780,71 @@ function buildCheatPanel() {
     collapseBtn.setAttribute("title", label);
   });
 
+  const xpInput = panel.querySelector('input[data-cheat="totalXp"]');
+  const xpMinOut = panel.querySelector('[data-cheat-out="xpMin"]');
+  const xpMaxOut = panel.querySelector('[data-cheat-out="xpMax"]');
+
+  /** Point the XP field at the band `level` owns and pull `xp` inside it.
+   *  Repaints the two bound readouts and the input's own min/max (so the
+   *  spinner and browser validation agree with what is shown). */
+  function retuneXpToLevel(level, xp) {
+    const { min, max } = cheatXpBounds(level);
+    const clamped = Math.min(max, Math.max(min, Math.round(Number(xp)) || 0));
+    if (xpMinOut) xpMinOut.textContent = String(min);
+    if (xpMaxOut) xpMaxOut.textContent = String(max);
+    if (xpInput) {
+      xpInput.min = String(min);
+      xpInput.max = String(max);
+    }
+    return clamped;
+  }
+
+  const clampXp = (xp) => retuneXpToLevel(Number(window.PMCheat.get("status.level", 1)) || 1, xp);
+
+  // Paint the initial band, and pull a seeded XP inside it (activation clones
+  // real progress, which is already consistent, but the store is editable).
+  const seededXp = clampXp(s.status.totalXp);
+  if (xpInput) xpInput.value = String(seededXp);
+  if (seededXp !== s.status.totalXp) window.PMCheat.set({ status: { totalXp: seededXp } });
+
   const STATUS_KEYS = { totalXp: 1, days: 1, seeds: 1 };
   panel.querySelectorAll("input[data-cheat]").forEach((input) => {
+    const key = input.getAttribute("data-cheat");
     input.addEventListener("input", () => {
-      const key = input.getAttribute("data-cheat");
       const num = Number(input.value);
       if (!Number.isFinite(num)) return;
-      if (key in STATUS_KEYS) window.PMCheat.set({ status: { [key]: num } });
-      else window.PMCheat.set({ vitals: { [key]: num } });
+      if (key === "totalXp") {
+        // Clamp what the sandbox stores, but leave the half-typed text alone:
+        // rewriting the field on every keystroke makes 105 unreachable at
+        // Lv.4, whose band starts at 90 — the first "1" would snap to it.
+        window.PMCheat.set({ status: { totalXp: clampXp(num) } });
+      } else if (key in STATUS_KEYS) {
+        window.PMCheat.set({ status: { [key]: num } });
+      } else {
+        window.PMCheat.set({ vitals: { [key]: num } });
+      }
       applyCheatFarm();
     });
+    if (key === "totalXp") {
+      // Editing done (blur / Enter / spinner): settle the field onto the value
+      // the sandbox actually holds, so an out-of-band entry visibly corrects.
+      input.addEventListener("change", () => {
+        input.value = String(Number(window.PMCheat.get("status.totalXp", 0)) || 0);
+      });
+    }
   });
   panel.querySelectorAll("button[data-cheat-level]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const delta = Number(btn.getAttribute("data-cheat-level")) || 0;
       const cur = Number(window.PMCheat.get("status.level", 1)) || 1;
       const next = Math.max(1, cur + delta);
-      window.PMCheat.set({ status: { level: next } });
+      // The level owns the band, so stepping it carries XP along at the SAME
+      // progress within the level — Lv.2 at 12/30 becomes Lv.3 at 12/30, not a
+      // snap back to the floor that would undo the bar mid-demo.
+      const within = (Number(window.PMCheat.get("status.totalXp", 0)) || 0) % XP_PER_LEVEL;
+      const nextXp = retuneXpToLevel(next, cheatXpBounds(next).min + Math.max(0, within));
+      window.PMCheat.set({ status: { level: next, totalXp: nextXp } });
+      if (xpInput) xpInput.value = String(nextXp);
       const out = panel.querySelector('[data-cheat-out="level"]');
       if (out) out.textContent = String(next);
       applyCheatFarm();
