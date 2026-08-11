@@ -556,42 +556,27 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "wisdom" && (
         <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
-          <p className="mb-3 text-center text-xs font-medium" style={{ color: INK_MUTED }}>
-            {copy.wisdomIntro}
-          </p>
-          <ul className="flex flex-col gap-3">
+          <div className="pm-wisdom-hero" role="status">
+            <span className="pm-wisdom-hero-icon" aria-hidden="true">🎮</span>
+            <div><b>{locale === "id" ? "PILIH MISI TANAMAN" : "PICK A PLANT MISSION"}</b><p>{locale === "id" ? "Baca petunjuk singkat → pilih jawaban → dapatkan umpan balik." : "Read the clue → pick an answer → get instant feedback."}</p></div>
+          </div>
+          <ul className="pm-wisdom-grid">
             {wisdom.map((entry, index) => (
               <li
                 key={entry.id}
-                className="pm-panel pm-card-cascade"
+                className="pm-panel pm-wisdom-card pm-card-cascade"
                 style={{ borderColor: "#A9D2F2", ...cascadeStyle(index) }}
               >
-                <p className="text-sm font-semibold italic leading-5" style={{ color: "var(--color-text)" }}>
-                  &ldquo;{entry.saying}&rdquo;
-                </p>
-                <p className="mt-2 text-xs leading-5" style={{ color: INK_MUTED }}>
-                  {entry.translation}
-                </p>
-                <div
-                  className="mt-2 rounded-xl border-2 px-3 py-2"
-                  style={{ background: "var(--color-bg)", borderColor: "var(--color-border)" }}
-                >
-                  <p className="pm-heading text-[8px] uppercase tracking-wide" style={{ color: "#2F6FAE" }}>
-                    {entry.metric}
-                  </p>
-                  <p className="mt-1 text-[11px] leading-4" style={{ color: INK_MUTED }}>
-                    {entry.example}
-                  </p>
-                </div>
-                <p className="mt-2 text-[10px] font-medium leading-4" style={{ color: INK_FAINT }}>
-                  {entry.source}
-                </p>
-                <button type="button" className="pm-btn mt-3 w-full cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
-                  🔍 {copy.challenge}
+                <div className="pm-wisdom-card-head"><span className="pm-wisdom-number">{String(index + 1).padStart(2, "0")}</span><span className="pm-wisdom-metric">📡 {entry.metric}</span></div>
+                <p className="pm-wisdom-saying">“{entry.saying}”</p>
+                <div className="pm-wisdom-clue"><span aria-hidden="true">🧩</span><p>{entry.example}</p></div>
+                <button type="button" className="pm-btn pm-btn-primary mt-3 w-full cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
+                  🎯 {copy.challenge}
                 </button>
+                <details className="pm-wisdom-details"><summary>💡 {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary><p>{entry.translation}</p><small>{entry.source}</small></details>
                 {wisdomTrial === entry.id && WISDOM_TRIALS[entry.id] && (
                   <div className="pm-wisdom-trial mt-3 rounded-xl border-2 border-[#A9D2F2] bg-[#EEF8FF] p-3" aria-live="polite">
-                    <p className="text-sm font-bold leading-5">{WISDOM_TRIALS[entry.id].prompt[locale]}</p>
+                    <div className="pm-wisdom-trial-label">⚡ {locale === "id" ? "CEPAT, PILIH!" : "QUICK PICK!"}</div><p className="mt-1 text-sm font-bold leading-5">{WISDOM_TRIALS[entry.id].prompt[locale]}</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       {WISDOM_TRIALS[entry.id].choices[locale].map((choice, choiceIndex) => {
                         const answered = wisdomAnswer !== null;
