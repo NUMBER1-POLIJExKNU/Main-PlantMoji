@@ -4,7 +4,9 @@
 import type { Metadata } from "next";
 import MonitoringLive from "@/components/monitoring-live";
 import CheatSensorPanel from "@/components/cheat-sensor-panel";
+import NpcBadge from "@/components/npc-badge";
 import PageHeader from "@/components/page-header";
+import { npcTagline } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
 import { getPlant } from "@/lib/queries";
@@ -61,6 +63,9 @@ export default async function MonitoringPage() {
         description={locale === "id"
           ? "Pembacaan langsung dari sensor tanaman, diperbarui setiap 10 detik."
           : "Live readings from the plant's sensors, refreshed every 10 seconds."}
+        // Botanis (designer NPC cast) watches the readings with the player —
+        // a header accent, the dashboard below is untouched.
+        meta={<NpcBadge npc="botanis" locale={locale} note={npcTagline(locale, "botanis")} />}
       />
 
       {/* Cheat-mode sensor editor (feature 6) — self-hides unless the demo

@@ -5,10 +5,12 @@
 // (same contract as the quiz.js migration copy).
 
 import "./shop.css";
+import NpcBadge from "@/components/npc-badge";
 import PageHeader from "@/components/page-header";
 import ShopGrid, { type ShopGridItem, type ShopPurchaseRow } from "@/components/shop-grid";
 import Notice from "@/components/notice";
 import { SHOP_CATALOG, SHOP_UI_COPY } from "@/game/economy/shop-catalog";
+import { npcTagline } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
@@ -68,7 +70,15 @@ export default async function ShopPage() {
 
   return (
     <main className="pm-shop w-full">
-      <PageHeader icon="🛒" eyebrow={copy.eyebrow} title={copy.title} description={copy.subtitle} />
+      <PageHeader
+        icon="🛒"
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        description={copy.subtitle}
+        // Pedagang (designer NPC cast) keeps the shop — a header greeting,
+        // not a layout change.
+        meta={<NpcBadge npc="pedagang" locale={locale} note={npcTagline(locale, "pedagang")} />}
+      />
       <ShopGrid
         locale={locale}
         plantId={PLANT_ID}

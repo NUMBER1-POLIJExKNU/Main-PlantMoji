@@ -303,6 +303,15 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .farm-guide-card li { border:2px solid #bcd3b4; border-radius:10px; background:#f4faf1; padding:10px 12px; font-size:13px; line-height:1.5; }
 .farm-guide-card p { font-size:13px; line-height:1.5; }
 .farm-guide-card .pixel-btn { width:100%; margin-top:10px; }
+/* Guide extras (kiki design integration): "how I grow" row + full-cast idle
+   footer. GIFs are ambient-only — reduced motion swaps the growth art to
+   the static grown sprite (<picture> source in the markup) and hides the
+   cast strip entirely (the designer drew no static strip). */
+.farm-guide-grow { display:flex; align-items:center; gap:12px; border:2px solid #bcd3b4; border-radius:10px; background:#f4faf1; padding:8px 12px; }
+.farm-guide-grow img { display:block; width:64px; height:64px; flex:none; image-rendering:pixelated; }
+.farm-guide-grow span { font-size:13px; line-height:1.5; }
+.farm-guide-cast { display:block; width:min(100%, 288px); margin:14px auto 0; image-rendering:pixelated; }
+@media (prefers-reduced-motion: reduce) { .farm-guide-cast { display:none; } }
 
 .user-gamification {
     display: flex;
@@ -844,40 +853,23 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    reserving space when live.js hides it (pre-milestone16, missing ladder). */
 .companion-next { margin-top: 3px; font: 7px/1.5 var(--font-pixel); color: #6b7a61; letter-spacing: .05em; }
 .companion-next:empty { display: none; }
-.mascot-svg.companion-Sprout .animated-leaves { transform: scale(1.03); transform-origin: 150px 140px; }
-.mascot-svg.companion-Bud .animated-leaves { transform: scale(1.08); transform-origin: 150px 140px; }
-.mascot-svg.companion-Bloom .animated-leaves { transform: scale(1.13); transform-origin: 150px 140px; filter: saturate(1.15); }
-.mascot-svg.companion-Guardian .animated-leaves { transform: scale(1.18); transform-origin: 150px 140px; filter: saturate(1.3) drop-shadow(0 0 5px #f5c94a); }
-/* Evolution-ladder scale rungs for the five NEW stages (evolution-ladder
-   plan, Task 6) — same mechanism as the four originals above, which are
-   kept verbatim. Static transforms/filters only: reduced-motion safe. */
-.mascot-svg.companion-Seedling .animated-leaves { transform: scale(1.05); transform-origin: 150px 140px; }
-.mascot-svg.companion-Fruit .animated-leaves { transform: scale(1.15); transform-origin: 150px 140px; filter: saturate(1.2); }
-.mascot-svg.companion-Elder .animated-leaves { transform: scale(1.2); transform-origin: 150px 140px; filter: saturate(1.3); }
-.mascot-svg.companion-Radiant .animated-leaves { transform: scale(1.22); transform-origin: 150px 140px; filter: saturate(1.35) drop-shadow(0 0 6px #f5c94a); }
-.mascot-svg.companion-Legend .animated-leaves { transform: scale(1.25); transform-origin: 150px 140px; filter: saturate(1.4) drop-shadow(0 0 8px #f5c94a); }
-
-/* Stage accent groups (index.html .stage-extra, inside .animated-leaves):
-   hidden by default, shown CUMULATIVELY per companion-<Stage> class — a
-   stage keeps every mark it earned, so all ten stages read distinct:
-   Seed = bare · Sprout = scale · Seedling = +sproutlets · Bud = +bud ·
-   Bloom = bud opens into petals · Fruit = +berries · Guardian = +gold glow
-   (scale rung above) · Elder = +woody branches · Radiant = +halo ring ·
-   Legend = +crown. Purely class-driven presentation; no animation. */
-.mascot-svg .stage-extra { display: none; }
-.mascot-svg.companion-Seedling .stage-seedling { display: block; }
-.mascot-svg.companion-Bud .stage-seedling, .mascot-svg.companion-Bud .stage-bud { display: block; }
-.mascot-svg.companion-Bloom .stage-seedling, .mascot-svg.companion-Bloom .stage-bloom { display: block; }
-.mascot-svg.companion-Fruit .stage-seedling, .mascot-svg.companion-Fruit .stage-bloom, .mascot-svg.companion-Fruit .stage-fruit { display: block; }
-.mascot-svg.companion-Guardian .stage-seedling, .mascot-svg.companion-Guardian .stage-bloom, .mascot-svg.companion-Guardian .stage-fruit { display: block; }
-.mascot-svg.companion-Elder .stage-seedling, .mascot-svg.companion-Elder .stage-bloom, .mascot-svg.companion-Elder .stage-fruit, .mascot-svg.companion-Elder .stage-elder { display: block; }
-.mascot-svg.companion-Radiant .stage-seedling, .mascot-svg.companion-Radiant .stage-bloom, .mascot-svg.companion-Radiant .stage-fruit, .mascot-svg.companion-Radiant .stage-elder, .mascot-svg.companion-Radiant .stage-radiant { display: block; }
-.mascot-svg.companion-Legend .stage-seedling, .mascot-svg.companion-Legend .stage-bloom, .mascot-svg.companion-Legend .stage-fruit, .mascot-svg.companion-Legend .stage-elder, .mascot-svg.companion-Legend .stage-radiant, .mascot-svg.companion-Legend .stage-legend { display: block; }
+/* Late-stage differentiation on the designer sprite (kiki design
+   integration): the drawn PHASE carries growth (stage→phase table in
+   jamkachu-sprite.js — the old .animated-leaves scale rungs and cumulative
+   .stage-extra accent groups retired with the inline SVG); the upper-ladder
+   stages keep reading distinct via a saturation ramp + a --companion-accent
+   aura glow on the sprite img. Static filters only: reduced-motion safe. */
+.mascot-svg.companion-Bloom #jamkachu-sprite { filter: saturate(1.12); }
+.mascot-svg.companion-Fruit #jamkachu-sprite { filter: saturate(1.18); }
+.mascot-svg.companion-Guardian #jamkachu-sprite { filter: saturate(1.25) drop-shadow(0 0 6px var(--companion-accent, #f5c94a)); }
+.mascot-svg.companion-Elder #jamkachu-sprite { filter: saturate(1.28) drop-shadow(0 0 6px var(--companion-accent, #f5c94a)); }
+.mascot-svg.companion-Radiant #jamkachu-sprite { filter: saturate(1.32) drop-shadow(0 0 8px var(--companion-accent, #f5c94a)); }
+.mascot-svg.companion-Legend #jamkachu-sprite { filter: saturate(1.38) drop-shadow(0 0 10px var(--companion-accent, #f5c94a)); }
 
 /* Care-affinity form tint (audit fix: form_key finally shows on the
-   character). Sets the SAME --companion-accent custom property the accent
-   shapes above consume as fill/stroke; unknown forms fall back to each
-   shape's inline default. data-companion-form is set by renderCompanion. */
+   character). Sets the SAME --companion-accent custom property the aura
+   glows above consume; unknown forms fall back to the gold default.
+   data-companion-form is set by renderCompanion. */
 .mascot-svg[data-companion-form="cool"] { --companion-accent: #7FD0E8; }
 .mascot-svg[data-companion-form="air"] { --companion-accent: #B7E3CC; }
 .mascot-svg[data-companion-form="light"] { --companion-accent: #FFDE6A; }
@@ -886,68 +878,15 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg[data-companion-form="balanced"] { --companion-accent: #F7A6C1; }
 
 /* ── Cosmetic companion skins (milestone20, display-only) ────────────────
-   renderCompanion swaps ONE .skin-<key> class on .mascot-svg from
-   companion_state.skin_key (missing/unknown key → jamkachu, the default
-   look). 2026-08-11 directive: outfit color changes the POT, never the
-   plant. Each skin re-tokens ONLY the pot palette — --color-soil (pot
-   body: .pot-body, the big rect), --color-soil-light (pot rim: .pot-rim,
-   the thin top band), --color-soil-dark (pot shadow strip: .pot-shadow) —
-   scoped to the mascot SVG, so:
-   · the PLANT always keeps its natural green look — --color-grass (leaves),
-     --color-grass-light (head/body), --color-forest (stem, sproutlets,
-     elder branches) are NEVER touched here, so every skin renders the same
-     green leaves/head/stem the default look has;
-   · all ten companion-<Stage> scale rungs + cumulative stage-part reveals
-     above keep working (they are class/scale-driven, palette-independent);
-   · the 12 shop-* pot/accessory cosmetics (milestone18, literal hex, a
-     separate purchase-gated system) still layer on top when equipped — a
-     skin's pot color only shows through the clay pot underneath;
-   · outlines (--color-outline), cheeks and the care-affinity form tint
-     (--companion-accent, which keeps coloring the stage accents and evo
-     backdrop) are untouched.
-   Body = each skin's catalog accent (companion-skins.js — the same hex the
-   wardrobe swatch shows, so pot and swatch always agree); rim is a 30%
-   white tint and shadow a 30% black shade of that same accent, matching
-   the ratio the default clay pot's soil → soil-light/-dark already uses.
-   jamkachu keeps the literal default clay-pot hex — no visual change for
-   the default skin.
-   Static custom-property overrides only: no new animation, reduced-motion
-   safe, and never part of any celebration. */
-.mascot-svg.skin-jamkachu { /* Classic Jamkachu — the default clay pot, spelled out */
-    --color-soil: #AA7E55;
-    --color-soil-light: #C9A075;
-    --color-soil-dark: #825C37;
-}
-.mascot-svg.skin-edamame { /* Edamame Buddy — soft olive pod green pot */
-    --color-soil: #9CCB5D;
-    --color-soil-light: #BADB8E;
-    --color-soil-dark: #6D8E41;
-}
-.mascot-svg.skin-padi { /* Golden Rice — straw-gold pot */
-    --color-soil: #E8C95A;
-    --color-soil-light: #EFD98C;
-    --color-soil-dark: #A28D3F;
-}
-.mascot-svg.skin-jagung { /* Sweet Corn — golden cob pot */
-    --color-soil: #F5B93F;
-    --color-soil-light: #F8CE79;
-    --color-soil-dark: #AC822C;
-}
-.mascot-svg.skin-kopi { /* Robusta Coffee — roasted-bean pot */
-    --color-soil: #8A5A3B;
-    --color-soil-light: #AD8C76;
-    --color-soil-dark: #613F29;
-}
-.mascot-svg.skin-kakao { /* Cacao Pod — warm cacao-pod pot */
-    --color-soil: #B0693C;
-    --color-soil-light: #C89677;
-    --color-soil-dark: #7B4A2A;
-}
-.mascot-svg.skin-buah_naga { /* Dragon Fruit — vivid pink pot */
-    --color-soil: #E85FA2;
-    --color-soil-light: #EF8FBE;
-    --color-soil-dark: #A24371;
-}
+   The visible skin is a POT-PIXEL palette swap on the designer sprite now:
+   jamkachu-sprite.js SKIN_RAMPS carries the per-skin pot ramps (the same
+   hex families the retired .skin-<key> --color-soil* token blocks used —
+   body = catalog accent, rim = 30% white tint, dark = 30% black shade;
+   "jamkachu" keeps the designer's own pot untouched). applySkinClass still
+   swaps ONE .skin-<key> class on .mascot-svg as a harmless state channel,
+   and feeds PMSprite the key that actually recolors the pot. Outfit color
+   changes the POT, never the plant — the swap is constrained to the pot
+   rows and the exact designer pot hexes. */
 
 /* Wardrobe picker (milestone20): small chip under the stage label + a
    compact dialog reusing the .farm-guide card chrome. Static styles only —
@@ -969,6 +908,11 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 }
 .wardrobe-open:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-outline); }
 .wardrobe-card { max-height: min(560px, 84dvh); overflow-y: auto; }
+/* Wardrobe mascot (kiki design integration): moods-p4 GIF (or its static
+   reduced-motion twin) for the CURRENT accessory tier — live.js's
+   renderWardrobeMascot sets the src and unhides it. */
+.wardrobe-mascot { display: block; width: 96px; height: 96px; margin: 0 auto 10px; image-rendering: pixelated; }
+.wardrobe-mascot[hidden] { display: none; }
 .wardrobe-list { display: grid; gap: 7px; margin: 0 0 4px; }
 .wardrobe-skin {
     display: grid;
@@ -1002,14 +946,21 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    never tweened; transform/opacity are the only animated values). See
    docs/superpowers/plans/2026-08-09-pokemon-style-transformation-fx.md. */
 
-/* Solid-white silhouette: raster filter flattens the whole inline SVG incl.
-   strokes. Toggled as a discrete state, never tweened (mobile GPU filter
-   traps). */
+/* Solid-white silhouette: raster filter flattens the whole mascot div —
+   sprite img and accessory overlay together. Toggled as a discrete state,
+   never tweened (mobile GPU filter traps). */
 .mascot-svg.evo-sil { filter: brightness(0) invert(1); transition: none !important; }
-/* The strobe's form swaps read through leaf scale — the infinite smoothBreath
-   animation on .animated-leaves would override those transforms and make the
-   silhouette alternation visually inert, so the silhouette state kills it. */
-.mascot-svg.evo-sil .animated-leaves { animation: none !important; }
+/* The strobe swaps drawn phase frames on the img — the infinite breath
+   bob would wobble the silhouette mid-strobe, so the silhouette state
+   kills it (setBreathPaused's inline play-state also targets the img). */
+.mascot-svg.evo-sil #jamkachu-sprite { animation: none !important; }
+/* Same-phase evolutions (e.g. Sprout→Seedling) draw byte-identical sprite
+   frames — the stage→phase table buckets several ladder stages onto one
+   drawn phase — so the sequencer marks every new-stage strobe beat with
+   .evo-sil-alt and this stretch gives it a second distinct silhouette
+   shape. Discrete toggle, transform-only, scoped under .evo-sil (the
+   reduced-motion path never strobes; img transform-origin is the pot base). */
+.mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.14) scaleX(0.92); }
 
 /* Full-screen flash: opacity-only, fires ONCE per sequence (WCAG 2.3.1).
    Sits above .mascot-stage (z 5) and .evo-tint (z 4) below; doesn't need to
@@ -1092,26 +1043,65 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     -webkit-user-select: none;
 }
 .mascot-wrapper:active { cursor: grabbing; }
-/* overflow: visible — the straw-hat accessory sits at y=0-24 inside
-   .animated-leaves, which companion stages scale up to 1.18; the SVG's
-   default hidden overflow clipped a PAID cosmetic to invisibility at
-   Bud/Bloom/Guardian. All art is inside the viewBox at rest, so nothing
-   relies on clipping. */
-.mascot-svg { width: 100%; height: auto; overflow: visible; }
-.mascot-svg .crop-variant { display:none; pointer-events:none; }
-.mascot-svg .crop-fruit-detail { opacity:0; transition:opacity .25s steps(2,end); }
-.mascot-svg.companion-Fruit .crop-fruit-detail,
-.mascot-svg.companion-Guardian .crop-fruit-detail,
-.mascot-svg.companion-Elder .crop-fruit-detail,
-.mascot-svg.companion-Radiant .crop-fruit-detail,
-.mascot-svg.companion-Legend .crop-fruit-detail { opacity:1; }
-.mascot-svg.crop-strawberry .crop-form-strawberry,
-.mascot-svg.crop-blueberry .crop-form-blueberry,
-.mascot-svg.crop-soybean .crop-form-soybean,
-.mascot-svg.crop-cayenne-pepper .crop-form-cayenne-pepper { display:block; }
-.mascot-svg.crop-blueberry .animated-leaves { filter:saturate(.82) hue-rotate(12deg); }
-.mascot-svg.crop-soybean .animated-leaves { filter:saturate(.92) hue-rotate(28deg); }
-.mascot-svg.crop-cayenne-pepper .animated-leaves { filter:saturate(1.08) hue-rotate(-8deg); }
+/* Designer sprite stage (kiki design integration): .mascot-svg is a DIV
+   now — it keeps the old inline SVG's 300×350 footprint inside the
+   .mascot-wrapper (all the responsive wrapper widths below keep working),
+   with the square sprite img anchored to the BOTTOM of that box and the
+   thin accessory/decor overlay SVG stretched over the whole box in the
+   same 300×350 coordinate space. Crop-variant silhouettes retired with
+   the inline SVG (crop identity lives in skins/pot + text; the crop-*
+   classes still land here as a harmless state channel). */
+.mascot-svg { position: relative; width: 100%; aspect-ratio: 300 / 350; overflow: visible; }
+#jamkachu-sprite {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    image-rendering: pixelated;
+    transform-origin: 50% 100%; /* whole-body breath bob grows from the pot base */
+    -webkit-user-drag: none;
+    user-select: none;
+}
+.mascot-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none; /* taps keep landing on the wrapper pipeline */
+}
+/* Head-anchored overlay art (shop hats/glasses + Lv.7 ribbon keepsake)
+   tracks the drawn head per growth phase: measured content tops of the
+   committed 4x PNGs sit at y≈158 (p1 seed), y≈134 (p2 sprout), y≈97 (p3),
+   y≈78 (p4) in the 300×350 box, so the small phases pull the crown anchor
+   down ~25px above their head start. jamkachu-sprite.js stamps
+   .sprite-phase-N from the stage→phase table on every repaint; p3/p4 keep
+   the markup's translate(0 72) calibration. */
+.mascot-svg.sprite-phase-1 .acc-anchor { transform: translate(0px, 133px); }
+.mascot-svg.sprite-phase-2 .acc-anchor { transform: translate(0px, 109px); }
+/* Plain-mood status chip (🥶/💦/🧪): floats by the sprite head; PMSprite
+   writes the glyph, :empty keeps it out of the layout otherwise. Static —
+   the float drift below is reduced-motion gated. */
+#mood-status-chip {
+    position: absolute;
+    top: 13%;
+    right: 4%;
+    font-size: 28px;
+    line-height: 1;
+    pointer-events: none;
+    filter: drop-shadow(2px 3px 0 rgba(36, 52, 33, 0.24));
+    z-index: 2;
+}
+#mood-status-chip:empty { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+    #mood-status-chip { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
+}
+@keyframes pm-chip-float {
+    from { transform: translateY(0); }
+    to { transform: translateY(-6px); }
+}
 .badge-tap-particle {
     position: fixed; z-index: 1005; pointer-events: none; font-size: 30px; line-height: 1;
     transform: translate(-50%,-50%); filter: drop-shadow(2px 3px 0 rgba(36,52,33,.24));
@@ -1126,39 +1116,10 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     .badge-tap-particle { animation: none; opacity: 1; transform: translate(-50%,-50%); }
 }
 
-/* Jamkachu mood faces (spec §2.2): one body, six swappable face groups.
-   Variants are hidden until the matching face-* class lands on .mascot-svg;
-   the default happy group shows whenever no variant class is set. */
-.mascot-face[data-face] { display: none; }
-.mascot-svg.face-hot [data-face="hot"] { display: block; }
-.mascot-svg.face-cold [data-face="cold"] { display: block; }
-.mascot-svg.face-dry [data-face="dry"] { display: block; }
-.mascot-svg.face-humid [data-face="humid"] { display: block; }
-.mascot-svg.face-sleepy [data-face="sleepy"] { display: block; }
-.mascot-svg.face-acidic [data-face="acidic"] { display: block; }
-.mascot-svg.face-alkaline [data-face="alkaline"] { display: block; }
-.mascot-svg.expr-curious .mascot-face[data-face],
-.mascot-svg.expr-proud .mascot-face[data-face],
-.mascot-svg.expr-giggle .mascot-face[data-face] { display:none; }
-.mascot-svg.expr-curious [data-face="curious"],
-.mascot-svg.expr-proud [data-face="proud"],
-.mascot-svg.expr-giggle [data-face="giggle"] { display: block; }
-.mascot-svg.expr-curious .face-default,
-.mascot-svg.expr-proud .face-default,
-.mascot-svg.expr-giggle .face-default { display:none; }
-.mascot-svg.face-hot .face-default,
-.mascot-svg.face-cold .face-default,
-.mascot-svg.face-dry .face-default,
-.mascot-svg.face-humid .face-default,
-.mascot-svg.face-sleepy .face-default,
-.mascot-svg.face-acidic .face-default,
-.mascot-svg.face-alkaline .face-default { display: none; }
-
-/* Night sleep face (spec §6.2): live.js toggles .face-asleep only while the
-   sleep presentation is active (18:00–06:00 WIB AND mood Happy) — problem
-   moods keep their own face, so this never coexists with a variant class. */
-.mascot-svg.face-asleep [data-face="asleep"] { display: block; }
-.mascot-svg.face-asleep .face-default { display: none; }
+/* Jamkachu mood expressions (spec §2.2): drawn INTO the designer sprite
+   frames now — jamkachu-sprite.js maps mood→frame (plan mood table) and
+   night sleep→the sleepy body. The face-* / face-asleep classes still land
+   on .mascot-svg as a harmless state channel; no CSS reads them. */
 
 /* Level decorations (spec §6.4): pure presentation from bond_level.
    live.js applies .decor-lv* idempotently on every renderBond — the
@@ -1189,59 +1150,38 @@ body.room-warm {
 }
 .bff-token[hidden] { display: none; }
 
-/* Idle life: gentle breath sway + eye blink — both gated so reduced-motion
-   users get a calm, static character. */
+/* Idle life: gentle whole-body breath bob on the sprite img (scaleY from
+   the pot base — subtle, the pot pixels barely move) — gated so
+   reduced-motion users get a calm, static character. The old eye-blink loop
+   retired with the inline-SVG eyes. setBreathPaused (live.js) freezes this
+   via inline animation-play-state on the img; .idle-bob is the idle-variety
+   tilt flash (maybeIdleExpression). */
 @media (prefers-reduced-motion: no-preference) {
-    .animated-breath .animated-leaves {
-        transform-origin: center bottom;
+    .animated-breath #jamkachu-sprite {
         animation: smoothBreath 3s ease-in-out infinite alternate;
     }
-    .mascot-svg .eyes {
-        transform-box: fill-box;
-        transform-origin: center;
-        animation: pm-blink 5s linear infinite;
-    }
-    /* Night sleep (spec §6.2): slower, deeper breath while asleep, and the
-       tiny zZ gently pulses. Reduced motion keeps both static. */
-    .animated-breath.breath-slow .animated-leaves { animation-duration: 7s; }
-    .mascot-svg .asleep-zz { animation: pm-zz-drift 3s steps(3, end) infinite; }
+    /* Night sleep (spec §6.2): slower, deeper breath while asleep. */
+    .animated-breath.breath-slow #jamkachu-sprite { animation-duration: 7s; }
+    .mascot-svg.idle-bob #jamkachu-sprite { animation: pm-idle-bob 0.8s steps(6, end) 1; }
 }
 @keyframes smoothBreath {
     from { transform: scaleY(1) scaleX(1); }
-    to { transform: scaleY(1.04) scaleX(1.02); }
+    to { transform: scaleY(1.03) scaleX(1.012); }
 }
-@keyframes pm-blink {
-    0%, 96%, 100% { transform: scaleY(1); }
-    98% { transform: scaleY(0.1); }
-}
-@keyframes pm-zz-drift {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
+@keyframes pm-idle-bob {
+    0% { transform: translateY(0) rotate(0deg); }
+    30% { transform: translateY(-4px) rotate(-1.5deg); }
+    65% { transform: translateY(-2px) rotate(1.2deg); }
+    100% { transform: translateY(0) rotate(0deg); }
 }
 
-/* ── Tactile interactions (curious gaze / hop / lean-in / lullaby) ─────── */
+/* ── Tactile interactions (hop / lean-in / lullaby) ─────────────────────
+   (The pupil-tracking curious-gaze and wide-eye rules retired with the
+   inline-SVG eyes; the eyes-wide/lean-cheeks classes still land as a
+   harmless state channel.) */
 
-/* Curious gaze: live.js nudges the .pupils group up to 3px toward the
-   pointer (inline transform, rAF-throttled); this transition is the
-   ease-back-to-center. Reduced motion: live.js never moves the pupils. */
-@media (prefers-reduced-motion: no-preference) {
-    .mascot-svg .pupils { transition: transform 0.3s ease-out; will-change: transform; }
-}
-
-/* Double-tap surprise: wide-eye pupils for a beat. A static style swap on
-   purpose — reduced-motion users keep the eye swap while the hop itself
-   is skipped by live.js. */
-.mascot-svg.eyes-wide .pupils rect {
-    transform: scale(1.6);
-    transform-box: fill-box;
-    transform-origin: center;
-}
-
-/* Long-press lean-in: Jamkachu slowly tilts ~3deg toward the pressing hand
-   with deepened cheeks while held (the cheek rects read --color-cheek, so
-   scoping the token to the face groups deepens only the face). Reduced
-   motion: cheeks only, no tilt. */
-.mascot-svg.lean-cheeks .mascot-face { --color-cheek: #FF8383; }
+/* Long-press lean-in: Jamkachu slowly tilts ~3deg toward the pressing
+   hand while held. Reduced motion: no tilt. */
 @media (prefers-reduced-motion: no-preference) {
     .mascot-wrapper.lean-left,
     .mascot-wrapper.lean-right {
@@ -1256,11 +1196,11 @@ body.room-warm {
    (live.js toggles .breath-deep). Inert under reduced motion — the breath
    animation itself is disabled there. */
 @media (prefers-reduced-motion: no-preference) {
-    .animated-breath.breath-deep .animated-leaves { animation-name: pm-breath-deep; }
+    .animated-breath.breath-deep #jamkachu-sprite { animation-name: pm-breath-deep; }
 }
 @keyframes pm-breath-deep {
     from { transform: scaleY(1) scaleX(1); }
-    to { transform: scaleY(1.044) scaleX(1.022); }
+    to { transform: scaleY(1.033) scaleX(1.013); }
 }
 
 /* Tap-to-Claim Reward Pod (pixel seed pod, CSS art via layered box-shadows).
@@ -1384,9 +1324,13 @@ body.room-warm {
     padding: 10px 16px;
 }
 
-/* Step 1: only the pot on stage (plant + name + bubble hidden). */
-.mascot-svg.hatch-pre .mascot-stem,
-.mascot-svg.hatch-pre .animated-leaves { display: none; }
+/* Step 1: only the pot on stage (plant + name + bubble hidden). The plant
+   is baked into the sprite now, so the pre state clips the img to its pot
+   rows (bottom 24/64 of the square grid → top inset 62.5%) and hides the
+   accessory overlay + status chip. Static clip — reduced-motion safe. */
+.mascot-svg.hatch-pre #jamkachu-sprite { clip-path: inset(62.5% 0 0 0); animation: none; }
+.mascot-svg.hatch-pre .mascot-overlay,
+.mascot-svg.hatch-pre #mood-status-chip { visibility: hidden; }
 .mascot-container.hatch-hidden .speech-bubble,
 .mascot-container.hatch-hidden .char-id { visibility: hidden; }
 
@@ -1705,13 +1649,14 @@ body.env-hot .env-haze { opacity: 1; }
     body.fx-wind .env-clouds { transform: skewX(-5deg) translateX(14px); }
 }
 
-/* (7) Farmer grandpa NPC. Box-shadow pixel sprite on a 4px grid (~44×52px
-   drawn area — Jamkachu stays the hero): straw hat, white beard, work
-   shirt. ::before/::after are the two walk frames, swapped with steps(1);
-   a long keyframe loop wanders him along the grass with scaleX direction
-   flips and baked-in pauses. z-index 1 keeps him BEHIND the mascot (z 2)
-   and above the grass floor (z 0); pointer-events only on his own sprite.
-   Reduced motion: he stands still. At night the same sprite lies in bed. */
+/* (7) Farmer grandpa NPC — the designer's Mbah Tani sprite (kiki design
+   integration, 2026-08-11). The old ~90-layer box-shadow walk frames
+   retired: the button now holds a <picture> whose idle GIF animates the
+   sprite (ambient-only) and whose source swaps in the static 2x PNG under
+   prefers-reduced-motion. live.js still moves the BUTTON (WAAPI wander,
+   drag, night bed); the walk direction is a plain scaleX(-1) on the button
+   that the img inherits — no per-frame art. At night the same button
+   rotates into the bed (the img lies down with it). */
 .npc-farmer {
     position: fixed;
     left: 300px;
@@ -1811,100 +1756,25 @@ body.farmer-dragging {
     transform: rotate(-4deg) scale(1.08) !important;
 }
 .npc-farmer.npc-landing { pointer-events: none; }
-.npc-farmer::before,
-.npc-farmer::after {
-    content: "";
-    position: absolute;
-    left: 2px;
-    top: 0;
-    width: 4px;
-    height: 4px;
-    background: transparent;
-    box-shadow:
-        /* straw hat */
-        16px 0 0 var(--color-yellow), 20px 0 0 var(--color-yellow), 24px 0 0 var(--color-yellow),
-        12px 4px 0 var(--color-yellow), 16px 4px 0 var(--color-yellow), 20px 4px 0 var(--color-yellow),
-        24px 4px 0 var(--color-yellow), 28px 4px 0 var(--color-yellow),
-        4px 8px 0 #E8C46B, 8px 8px 0 #E8C46B, 12px 8px 0 #E8C46B, 16px 8px 0 #E8C46B,
-        20px 8px 0 #E8C46B, 24px 8px 0 #E8C46B, 28px 8px 0 #E8C46B, 32px 8px 0 #E8C46B, 36px 8px 0 #E8C46B,
-        /* face + eyes */
-        12px 12px 0 #F2C592, 16px 12px 0 var(--color-outline), 20px 12px 0 #F2C592,
-        24px 12px 0 var(--color-outline), 28px 12px 0 #F2C592,
-        12px 16px 0 #F2C592, 16px 16px 0 #F2C592, 20px 16px 0 #F2C592, 24px 16px 0 #F2C592, 28px 16px 0 #F2C592,
-        /* white beard */
-        8px 20px 0 #F7F3E7, 12px 20px 0 #F7F3E7, 16px 20px 0 #F7F3E7, 20px 20px 0 #F7F3E7,
-        24px 20px 0 #F7F3E7, 28px 20px 0 #F7F3E7, 32px 20px 0 #F7F3E7,
-        /* shoulders + beard tip */
-        12px 24px 0 var(--color-soil-light), 16px 24px 0 var(--color-soil-light), 20px 24px 0 #F7F3E7,
-        24px 24px 0 var(--color-soil-light), 28px 24px 0 var(--color-soil-light),
-        /* arms + torso */
-        8px 28px 0 #F2C592, 12px 28px 0 var(--color-soil-light), 16px 28px 0 var(--color-soil-light),
-        20px 28px 0 var(--color-soil-light), 24px 28px 0 var(--color-soil-light),
-        28px 28px 0 var(--color-soil-light), 32px 28px 0 #F2C592,
-        12px 32px 0 var(--color-soil-light), 16px 32px 0 var(--color-soil-light),
-        20px 32px 0 var(--color-soil-light), 24px 32px 0 var(--color-soil-light), 28px 32px 0 var(--color-soil-light),
-        /* belt */
-        12px 36px 0 var(--color-soil-dark), 16px 36px 0 var(--color-soil-dark), 20px 36px 0 var(--color-soil-dark),
-        24px 36px 0 var(--color-soil-dark), 28px 36px 0 var(--color-soil-dark),
-        /* trousers */
-        12px 40px 0 var(--color-soil-dark), 16px 40px 0 var(--color-soil-dark),
-        24px 40px 0 var(--color-soil-dark), 28px 40px 0 var(--color-soil-dark),
-        /* legs + boots, frame A (standing) */
-        16px 44px 0 var(--color-soil-dark), 24px 44px 0 var(--color-soil-dark),
-        12px 48px 0 var(--color-outline), 16px 48px 0 var(--color-outline),
-        24px 48px 0 var(--color-outline), 28px 48px 0 var(--color-outline);
+/* Sprite art: the <picture>/<img> fill the button box, feet on its bottom
+   edge (same footprint the box-shadow frames used, so the wander lane,
+   drag math, and bed pose in live.js are untouched). pointer-events stays
+   on the BUTTON — the img must never swallow taps or the drag. The button's
+   scaleX(-1) walk flip mirrors the img for free; only the .npc-ai-tag needs
+   the counter-flip above. .npc-walking/.npc-talking need no art rules now —
+   the GIF is a designer idle loop, not a two-frame walk cycle. */
+.npc-farmer-art,
+.npc-farmer-img {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
-.npc-farmer::after {
-    opacity: 0;
-    box-shadow:
-        /* straw hat */
-        16px 0 0 var(--color-yellow), 20px 0 0 var(--color-yellow), 24px 0 0 var(--color-yellow),
-        12px 4px 0 var(--color-yellow), 16px 4px 0 var(--color-yellow), 20px 4px 0 var(--color-yellow),
-        24px 4px 0 var(--color-yellow), 28px 4px 0 var(--color-yellow),
-        4px 8px 0 #E8C46B, 8px 8px 0 #E8C46B, 12px 8px 0 #E8C46B, 16px 8px 0 #E8C46B,
-        20px 8px 0 #E8C46B, 24px 8px 0 #E8C46B, 28px 8px 0 #E8C46B, 32px 8px 0 #E8C46B, 36px 8px 0 #E8C46B,
-        /* face + eyes */
-        12px 12px 0 #F2C592, 16px 12px 0 var(--color-outline), 20px 12px 0 #F2C592,
-        24px 12px 0 var(--color-outline), 28px 12px 0 #F2C592,
-        12px 16px 0 #F2C592, 16px 16px 0 #F2C592, 20px 16px 0 #F2C592, 24px 16px 0 #F2C592, 28px 16px 0 #F2C592,
-        /* white beard */
-        8px 20px 0 #F7F3E7, 12px 20px 0 #F7F3E7, 16px 20px 0 #F7F3E7, 20px 20px 0 #F7F3E7,
-        24px 20px 0 #F7F3E7, 28px 20px 0 #F7F3E7, 32px 20px 0 #F7F3E7,
-        /* shoulders + beard tip */
-        12px 24px 0 var(--color-soil-light), 16px 24px 0 var(--color-soil-light), 20px 24px 0 #F7F3E7,
-        24px 24px 0 var(--color-soil-light), 28px 24px 0 var(--color-soil-light),
-        /* arms + torso */
-        8px 28px 0 #F2C592, 12px 28px 0 var(--color-soil-light), 16px 28px 0 var(--color-soil-light),
-        20px 28px 0 var(--color-soil-light), 24px 28px 0 var(--color-soil-light),
-        28px 28px 0 var(--color-soil-light), 32px 28px 0 #F2C592,
-        12px 32px 0 var(--color-soil-light), 16px 32px 0 var(--color-soil-light),
-        20px 32px 0 var(--color-soil-light), 24px 32px 0 var(--color-soil-light), 28px 32px 0 var(--color-soil-light),
-        /* belt */
-        12px 36px 0 var(--color-soil-dark), 16px 36px 0 var(--color-soil-dark), 20px 36px 0 var(--color-soil-dark),
-        24px 36px 0 var(--color-soil-dark), 28px 36px 0 var(--color-soil-dark),
-        /* trousers */
-        12px 40px 0 var(--color-soil-dark), 16px 40px 0 var(--color-soil-dark),
-        24px 40px 0 var(--color-soil-dark), 28px 40px 0 var(--color-soil-dark),
-        /* legs + boots, frame B (mid-stride) */
-        12px 44px 0 var(--color-soil-dark), 28px 44px 0 var(--color-soil-dark),
-        8px 48px 0 var(--color-outline), 12px 48px 0 var(--color-outline),
-        28px 48px 0 var(--color-outline), 32px 48px 0 var(--color-outline);
-}
-@media (prefers-reduced-motion: no-preference) {
-    .npc-farmer.npc-walking::before { animation: pm-npc-step-a 0.7s steps(1, end) infinite; }
-    .npc-farmer.npc-walking::after { animation: pm-npc-step-b 0.7s steps(1, end) infinite; }
-    /* He stops mid-stride while a speech bubble is up (live.js). */
-    .npc-farmer.npc-talking,
-    .npc-farmer.npc-talking::before,
-    .npc-farmer.npc-talking::after { animation-play-state: paused; }
-}
-@keyframes pm-npc-step-a {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-@keyframes pm-npc-step-b {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 1; }
+.npc-farmer-img {
+    object-fit: contain;
+    object-position: center bottom;
+    image-rendering: pixelated;
+    pointer-events: none;
+    -webkit-user-drag: none;
 }
 
 .npc-farmer-vine {
@@ -1974,7 +1844,8 @@ body.farmer-dragging {
 .farmer-chat form { pointer-events: auto; }
 .farmer-chat::backdrop { background: rgba(22,32,20,.48); backdrop-filter: blur(2px); }
 .farmer-chat-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 14px; background: var(--color-bg); border-bottom: 3px solid var(--color-border); }
-.farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; font: 28px/1 sans-serif; }
+.farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; overflow: hidden; }
+.farmer-chat-portrait img { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 .farmer-chat-top span { color: var(--color-forest); font: 7px/1.4 var(--font-heading); }
 .farmer-chat-top h2 { margin-top: 4px; font: 12px/1.5 var(--font-heading); }
 .farmer-chat-close { width: 44px; height: 44px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 22px/1 var(--font-body); cursor: pointer; }
@@ -2420,14 +2291,11 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
    Display-only: live.js renderShopPurchases toggles .shop-<item_key> on
    .mascot-svg (equipped pot/accessory) and .own-<item_key> on
    .shop-decor-layer (owned decor). Same idempotent mechanism as the level
-   decorations (.decor-lv*) above. */
+   decorations (.decor-lv*) above. Equipped POTS recolor the sprite's pot
+   pixels now (jamkachu-sprite.js POT_ITEM_RAMPS — the shop-g-pot_* overlay
+   groups retired with the inline SVG); ACCESSORIES stay overlay-SVG groups
+   above the img, shown by the class rules below. */
 .mascot-svg .shop-item { display: none; }
-.mascot-svg.shop-pot_terracotta .shop-g-pot_terracotta { display: block; }
-.mascot-svg.shop-pot_batik .shop-g-pot_batik { display: block; }
-.mascot-svg.shop-pot_tincan .shop-g-pot_tincan { display: block; }
-.mascot-svg.shop-pot_coffee_sack .shop-g-pot_coffee_sack { display: block; }
-.mascot-svg.shop-pot_bamboo .shop-g-pot_bamboo { display: block; }
-.mascot-svg.shop-pot_jember_mosaic .shop-g-pot_jember_mosaic { display: block; }
 .mascot-svg.shop-acc_strawhat .shop-g-acc_strawhat { display: block; }
 .mascot-svg.shop-acc_ribbon .shop-g-acc_ribbon { display: block; }
 .mascot-svg.shop-acc_glasses .shop-g-acc_glasses { display: block; }

@@ -79,19 +79,35 @@ describe("farm companion-skins mirror parity", () => {
 
 // ── The other two skin surfaces beyond the JS mirror ────────────────────
 // Same read-the-source style as tests/farm-mobile-nav.test.ts: the DB CHECK
-// constraint (supabase/milestone20-companion-skins.sql) and the farm CSS
-// palette blocks (public/farm/style.css) must also track COMPANION_SKIN_KEYS,
-// or a catalog edit would let the DB reject a real skin — or render one with
-// no palette.
+// constraint (supabase/milestone20-companion-skins.sql) and the sprite
+// driver's pot-ramp table (public/farm/jamkachu-sprite.js SKIN_RAMPS — the
+// kiki design integration replaced the old .skin-* CSS pot-token blocks
+// with canvas palette swaps of the designer sprite's pot pixels) must also
+// track COMPANION_SKIN_KEYS, or a catalog edit would let the DB reject a
+// real skin — or render one with no pot palette.
 
 const sql = readFileSync(
   path.resolve(here, "../supabase/milestone20-companion-skins.sql"),
   "utf8",
 );
-const farmCss = readFileSync(
-  path.resolve(here, "../public/farm/style.css"),
-  "utf8",
-);
+const spriteJsPath = path.resolve(here, "../public/farm/jamkachu-sprite.js");
+const spriteJs = readFileSync(spriteJsPath, "utf8");
+
+interface SkinRamp {
+  body: string;
+  rim: string;
+  dark?: string;
+}
+
+function loadSkinRamps(): Record<string, SkinRamp | null> {
+  const stubWindow: { PMSprite?: { tables: { SKIN_RAMPS: Record<string, SkinRamp | null> } } } = {};
+  const context = vm.createContext({ window: stubWindow });
+  vm.runInContext(spriteJs, context, { filename: spriteJsPath });
+  if (!stubWindow.PMSprite) {
+    throw new Error("jamkachu-sprite.js did not assign window.PMSprite");
+  }
+  return stubWindow.PMSprite.tables.SKIN_RAMPS;
+}
 
 describe("milestone20 skin surfaces track COMPANION_SKIN_KEYS", () => {
   it("SQL skin_key CHECK constraint allows exactly the catalog keys", () => {
@@ -117,21 +133,43 @@ describe("milestone20 skin surfaces track COMPANION_SKIN_KEYS", () => {
     expect(demo).toMatch(/\["K",\s*"cycle companion skin/);
   });
 
-  it("farm CSS defines a .mascot-svg.skin-<key> palette block for every catalog key", () => {
-    // style.css spells the default jamkachu palette out as an explicit
-    // .skin-jamkachu block (rather than leaving the default look to the
-    // base rules), so ALL catalog keys — not just the non-default six —
-    // must have a selector. If that authoring choice ever changes, drop
-    // jamkachu from this loop alongside its CSS block, not silently.
-    expect(
-      farmCss,
-      "style.css no longer spells out the default .skin-jamkachu block",
-    ).toMatch(/\.mascot-svg\.skin-jamkachu(?![\w-])/);
-    for (const key of COMPANION_SKIN_KEYS) {
-      expect(
-        farmCss,
-        `style.css lost its .mascot-svg.skin-${key} palette block`,
-      ).toMatch(new RegExp(`\\.mascot-svg\\.skin-${key}(?![\\w-])`));
+  it("jamkachu-sprite.js defines a pot ramp entry for every catalog key", () => {
+    const ramps = loadSkinRamps();
+    // Same members (as a set) AND same count — a missing, extra, or
+    // renamed key in the ramp table all fail.
+    expect(Object.keys(ramps)).toHaveLength(COMPANION_SKIN_KEYS.length);
+    expect(new Set(Object.keys(ramps))).toEqual(new Set(COMPANION_SKIN_KEYS));
+  });
+
+  it("keeps the designer's own pot for the default skin, valid ramps elsewhere", () => {
+    const ramps = loadSkinRamps();
+    // jamkachu is null ON PURPOSE: the designer's drawn pot IS the default
+    // look now — no recolor may touch it. If this ever changes, change it
+    // deliberately alongside the sprite driver, not silently.
+    expect(ramps.jamkachu).toBeNull();
+    for (const skin of farmSkins) {
+      if (skin.key === "jamkachu") continue;
+      const ramp = ramps[skin.key];
+      expect(ramp, `skin ${skin.key} lost its pot ramp`).not.toBeNull();
+      expect(ramp!.body, `${skin.key} body hex`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(ramp!.rim, `${skin.key} rim hex`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      expect(ramp!.dark, `${skin.key} dark hex`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+      // Pot body = the skin's catalog accent — the wardrobe swatch and the
+      // recolored pot must always agree (same contract the old CSS blocks
+      // carried: body = accent, rim = white tint, dark = black shade).
+      expect(ramp!.body.toUpperCase(), `${skin.key} pot body ≠ catalog accent`).toBe(skin.accent.toUpperCase());
     }
+  });
+
+  it("constrains the swap to the designer pot hexes and pot rows only", () => {
+    // The palette swap may only rewrite the six sampled designer pot fills,
+    // below the sampled pot-top row — leaves/face/outline stay untouched.
+    expect(spriteJs).toContain('body: "#B08968"');
+    expect(spriteJs).toContain('shade: "#926C4E"');
+    expect(spriteJs).toContain('rim: "#DEBA60"');
+    expect(spriteJs).toContain("var POT_TOP_FRACTION = 40 / 64");
+    expect(spriteJs).toMatch(/if \(!repl\) continue; \/\/ exact ramp hexes only/);
+    // Canvas failure falls back to the plain sprite — never a blank mascot.
+    expect(spriteJs).toMatch(/resolve\(null\); \/\/ tainted canvas/);
   });
 });

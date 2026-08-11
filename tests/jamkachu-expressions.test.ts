@@ -2,28 +2,46 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Source-contract guard for Jamkachu's tap-reaction expression variety
-// (farm-wave item 18 — the direct user request: "표정 더 다양하게, 터치하면
-// 표정이 달라진다던가"). Same read-the-source style as
-// tests/farm-onboarding-tour.test.ts — the farm layer is plain JS/HTML.
+// Source-contract guard for Jamkachu's tap-reaction expression variety,
+// re-seated on the kiki designer sprites (2026-08-11 design integration).
+// Same read-the-source style as tests/farm-onboarding-tour.test.ts — the
+// farm layer is plain JS/HTML.
 //
-// The contract: every mood owns a pool of ≥3 tap-reaction faces, taps CYCLE
-// the pool (consecutive spam-taps always visibly differ), the reaction is a
-// short flash that reverts to the deterministic mood face, the idle variety
-// loop is skipped entirely under prefers-reduced-motion, the quiet gates
-// (night sleep / hatch intro / first-day tour) are respected, and the whole
-// system grants NOTHING — reactions, never rewards.
+// The contract: every mood owns a pool of ≥3 DISTINCT {spriteMood,
+// emojiBurst} reaction pairs, taps CYCLE the pool (consecutive spam-taps
+// always visibly differ), a reaction flashes an ALTERNATE designer-sprite
+// mood via PMSprite for ~1.2s then reverts to the deterministic mood frame,
+// plus one emoji burst rides the existing particle styling. The idle
+// variety loop is a bob/tilt class flash + occasional sparkle (no more
+// pupil/blink DOM writes), skipped entirely under prefers-reduced-motion.
+// The quiet gates (night sleep / hatch intro / first-day tour / PMSprite
+// absent) are respected, and the whole system grants NOTHING — reactions,
+// never rewards.
 
 const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
-const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
+const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 
 const MOOD_KEYS = ["Happy", "Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "SoilAcidic", "SoilAlkaline"];
-// The three shipped micro-expression groups reuse their original data-face
-// names; every other pool face is a new "tap-<key>" SVG group.
-const LEGACY_FACES = new Set(["curious", "proud", "giggle"]);
+/** The 5 expressions the designer drew per phase (plan mood table). */
+const SPRITE_MOODS = new Set(["happy", "plain", "thirsty", "sleepy", "overheat"]);
+/** Mood→sprite mapping (plan table) — the honest "own body" per mood. */
+const OWN_SPRITE: Record<string, string> = {
+  Overheating: "overheat",
+  TooCold: "plain",
+  DryAir: "thirsty",
+  HumidAir: "plain",
+  Sleepy: "sleepy",
+  SoilAcidic: "plain",
+  SoilAlkaline: "plain",
+};
 
-/** The whole expression block: pools + show/clear + the idle variety loop.
- *  It sits between the petting constants and the tactile-interactions
+interface ReactionPair {
+  spriteMood: string;
+  emojiBurst: string;
+}
+
+/** The whole expression block: pools + burst/show/clear + the idle variety
+ *  loop. It sits between the petting constants and the tactile-interactions
  *  section, so slicing to that landmark keeps it self-contained. */
 function expressionSection(): string {
   const start = live.indexOf("const PET_EXPRESSION_POOLS");
@@ -34,54 +52,60 @@ function expressionSection(): string {
 }
 
 /** Evaluate the PET_EXPRESSION_POOLS object literal from source. */
-function loadPools(): Record<string, string[]> {
+function loadPools(): Record<string, ReactionPair[]> {
   const section = expressionSection();
   const eq = section.indexOf("= {");
-  const close = section.indexOf("};", eq);
+  const close = section.indexOf("\n};", eq);
   expect(eq, "pools literal start").toBeGreaterThan(-1);
   expect(close, "pools literal end").toBeGreaterThan(eq);
-  const literal = section.slice(eq + 2, close + 1);
-  return new Function(`return (${literal});`)() as Record<string, string[]>;
+  const literal = section.slice(eq + 2, close + 2);
+  return new Function(`return (${literal});`)() as Record<string, ReactionPair[]>;
 }
 
-describe("per-mood tap-reaction face pools", () => {
+describe("per-mood tap-reaction pair pools", () => {
   const pools = loadPools();
 
-  it("covers every mood with at least 3 distinct faces", () => {
+  it("covers every mood with at least 3 distinct {spriteMood, emojiBurst} pairs", () => {
     for (const mood of MOOD_KEYS) {
       const pool = pools[mood];
       expect(Array.isArray(pool), `${mood} pool should be an array`).toBe(true);
-      expect(new Set(pool).size, `${mood} pool needs ≥3 DISTINCT faces`).toBeGreaterThanOrEqual(3);
-      for (const face of pool) expect(typeof face, `${mood} pool entry`).toBe("string");
+      const distinct = new Set(pool.map((pair) => `${pair.spriteMood}|${pair.emojiBurst}`));
+      expect(distinct.size, `${mood} pool needs ≥3 DISTINCT pairs`).toBeGreaterThanOrEqual(3);
     }
     expect(Object.keys(pools).sort()).toEqual([...MOOD_KEYS].sort());
   });
 
-  it("backs every pool face with real SVG art and a tap-face show rule", () => {
-    const faces = new Set(Object.values(pools).flat());
-    for (const face of faces) {
-      const dataFace = LEGACY_FACES.has(face) ? face : `tap-${face}`;
-      expect(html, `index.html lost the ${dataFace} face art`).toContain(`data-face="${dataFace}"`);
-      expect(html, `index.html lost the tapface-${face} show rule`).toContain(`tapface-${face}`);
+  it("only flashes sprite moods the designer actually drew, with a real emoji burst", () => {
+    for (const mood of MOOD_KEYS) {
+      for (const pair of pools[mood]) {
+        expect(SPRITE_MOODS.has(pair.spriteMood), `${mood} flashes unknown sprite mood '${pair.spriteMood}'`).toBe(true);
+        expect(typeof pair.emojiBurst, `${mood} pair emojiBurst`).toBe("string");
+        expect(pair.emojiBurst.length, `${mood} pair emojiBurst empty`).toBeGreaterThan(0);
+      }
     }
-    // The reaction layer must win over whichever mood face is showing.
-    expect(html).toContain(".mascot-svg.is-tapface .mascot-face { display: none; }");
   });
 
-  it("problem-mood taps stay encouraging but never pure-party, and keep concern faces", () => {
-    // Redesigned contract (2026-08-11): the MOOD face carries the honest
-    // status; tap reactions answer the affection, so warm faces are welcome
-    // on problem moods too (~3:1 positive). Two lines still hold: the
-    // giddiest party faces stay Happy-only, and every problem pool keeps
-    // at least two concern faces so struggle never fully disappears.
+  it("problem-mood taps stay encouraging but keep honest concern flashes", () => {
+    // The MOOD frame carries the honest status; tap reactions answer the
+    // affection, so warm happy-flashes are welcome on problem moods too.
+    // Two lines hold: every problem pool keeps ≥2 entries flashing the
+    // mood's OWN drawn body (struggle never fully disappears), and every
+    // pool keeps ≥2 warm happy-flashes (a tap always feels answered).
     for (const mood of MOOD_KEYS) {
+      const pool = pools[mood];
+      const warm = pool.filter((pair) => pair.spriteMood === "happy");
+      expect(warm.length, `${mood} lost its warm happy flashes`).toBeGreaterThanOrEqual(2);
       if (mood === "Happy") continue;
-      for (const face of pools[mood]) {
-        expect(["blep", "giggle", "proud"], `${mood} shows pure-party face '${face}'`).not.toContain(face);
-      }
-      const concern = pools[mood].filter((face: string) => ["teary", "grit", "sweat", "blink"].includes(face));
-      expect(concern.length, `${mood} lost its concern faces`).toBeGreaterThanOrEqual(2);
+      const honest = pool.filter((pair) => pair.spriteMood === OWN_SPRITE[mood]);
+      expect(honest.length, `${mood} lost its honest own-body flashes`).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it("keeps named reactions for the explicit callers (drowsy blink, hop giggle)", () => {
+    const section = expressionSection();
+    expect(section).toContain("const PET_NAMED_REACTIONS");
+    expect(section).toMatch(/blink: \{ spriteMood: "sleepy"/);
+    expect(section).toMatch(/giggle: \{ spriteMood: "happy"/);
   });
 });
 
@@ -90,20 +114,30 @@ describe("tap handler behavior", () => {
     const section = expressionSection();
     expect(section).toContain("pool[petExpressionIndex % pool.length]");
     expect(section).toContain("petExpressionIndex += 1");
-    // Back-to-back taps restart cleanly (old face swapped out immediately).
+    // Back-to-back taps restart cleanly (old flash swapped out immediately).
     expect(section).toMatch(/clearPetExpression\(\); \/\/ restart cleanly/);
   });
 
-  it("flashes ~1.2s then reverts to the mood face", () => {
+  it("flashes the alternate sprite mood via PMSprite plus one emoji burst", () => {
+    const section = expressionSection();
+    expect(section).toContain("window.PMSprite.set({ flashMood: reaction.spriteMood })");
+    expect(section).toContain("spawnPetEmojiBurst(reaction.emojiBurst)");
+    // The burst rides the shipped badge-tap particle styling.
+    expect(section).toContain('el.className = "badge-tap-particle"');
+  });
+
+  it("flashes ~1.2s then reverts to the mood frame (flashMood cleared)", () => {
     const section = expressionSection();
     expect(section).toContain("const PET_EXPRESSION_MS = 1200");
     expect(section).toMatch(/petExpressionTimer = setTimeout\([\s\S]{0,120}?clearPetExpression\(\);/);
+    expect(section).toContain("window.PMSprite?.set({ flashMood: null })");
   });
 
-  it("respects the quiet gates: night sleep, hatch intro, first-day tour", () => {
+  it("respects the quiet gates: night sleep, hatch intro, tour, PMSprite absent", () => {
     const section = expressionSection();
     expect(section).toMatch(/function showPetExpression[\s\S]{0,200}?if \(sleepShown \|\| hatchActive \|\| tourActive\) return;/);
-    // Mood renders and sleep entry sweep any stale reaction face.
+    expect(section).toMatch(/if \(!window\.PMSprite\) return;/);
+    // Mood renders and sleep entry sweep any stale reaction flash.
     expect(live).toMatch(/function setMascotMood\(state\) \{\s*\n\s*clearPetExpression\(\);/);
     expect(live).toMatch(/if \(sleepNow\) \{[\s\S]{0,300}?clearPetExpression\(\);/);
   });
@@ -125,6 +159,19 @@ describe("idle expression variety", () => {
     expect(section).toContain("const IDLE_EXPRESSION_MAX_MS = 45_000");
     expect(section).toContain("const IDLE_EXPRESSION_MS = 800");
     expect(section).toMatch(/IDLE_EXPRESSION_MIN_MS \+ Math\.random\(\) \* \(IDLE_EXPRESSION_MAX_MS - IDLE_EXPRESSION_MIN_MS\)/);
+  });
+
+  it("bobs/tilts the sprite container or spawns a quiet sparkle (no pupil writes)", () => {
+    const section = expressionSection();
+    expect(section).toContain('svg.classList.add("idle-bob")');
+    expect(section).toContain("spawnSparkles(mascotRect(), 3)");
+    expect(section).not.toContain(".pupils");
+    // style.css backs the class flash with a one-shot keyframe on the img,
+    // inside the reduced-motion-gated block.
+    expect(css).toMatch(/\.mascot-svg\.idle-bob #jamkachu-sprite \{ animation: pm-idle-bob/);
+    const gate = css.indexOf(".mascot-svg.idle-bob #jamkachu-sprite");
+    const media = css.lastIndexOf("@media (prefers-reduced-motion: no-preference)", gate);
+    expect(media, "idle-bob rule must sit under a no-preference gate").toBeGreaterThan(-1);
   });
 
   it("is skipped ENTIRELY under prefers-reduced-motion (matchMedia check)", () => {

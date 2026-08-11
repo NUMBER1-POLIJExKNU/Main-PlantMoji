@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -7,8 +7,42 @@ const html = source("public/farm/index.html");
 const live = source("public/farm/live.js");
 const css = source("public/farm/style.css");
 const strings = source("public/farm/strings.js");
+const assetExists = (publicPath: string) =>
+  existsSync(resolve(process.cwd(), "public", publicPath.replace(/^\//, "")));
 
 describe("Grandpa Tani living-world UI", () => {
+  it("draws Grandpa with the designer Mbah Tani sprite, not box-shadow art", () => {
+    // Art contract (kiki design integration, 2026-08-11): idle GIF inside
+    // the button; the <picture> source swaps in the static 2x PNG under
+    // prefers-reduced-motion (a static grandpa, never a frozen broken one).
+    expect(html).toContain('class="npc-farmer-img"');
+    expect(html).toContain('src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
+    expect(html).toMatch(
+      /<source media="\(prefers-reduced-motion: reduce\)" srcset="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png">/,
+    );
+    // The chat dialog portrait shows the same character's static art.
+    expect(html).toMatch(
+      /class="farmer-chat-portrait"[^>]*><img src="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png" alt=""/,
+    );
+    // The retired ~90-layer box-shadow walk frames and their steps() cycle.
+    expect(css).not.toContain(".npc-farmer::before");
+    expect(css).not.toContain(".npc-farmer::after");
+    expect(css).not.toContain("pm-npc-step-a");
+    expect(css).not.toContain("pm-npc-step-b");
+    // Sprite img: pixelated, feet on the button's bottom edge, and never
+    // swallowing pointer events (drag/click targets stay on the button).
+    expect(css).toMatch(/\.npc-farmer-img \{[\s\S]*?image-rendering: pixelated/);
+    expect(css).toMatch(/\.npc-farmer-img \{[\s\S]*?pointer-events: none/);
+    expect(css).toMatch(/\.npc-farmer-img \{[\s\S]*?object-position: center bottom/);
+    // Facing flip: live.js writes scaleX(±1) on the BUTTON and the img
+    // inherits the mirror — the img itself must never counter-flip (only
+    // the AI-CHAT tag does, pinned in the walk-label test below).
+    expect(css).not.toMatch(/\.npc-farmer-img[^{]*\{[^}]*scaleX/);
+    // Both referenced files ship with the page.
+    expect(assetExists("farm/assets/npc/gif/npc-06-mbah-tani.gif")).toBe(true);
+    expect(assetExists("farm/assets/npc/2x/npc-06-mbah-tani.png")).toBe(true);
+  });
+
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
@@ -152,17 +186,85 @@ describe("Grandpa Tani living-world UI", () => {
     expect(css).toContain("body.night .env-sun");
   });
 
-  it("gives comfortable Jamkachu several grounded micro expressions", () => {
-    expect(html).toContain('data-face="curious"');
-    expect(html).toContain('data-face="proud"');
-    expect(html).toContain('data-face="giggle"');
-    expect(live).toContain('careMood !== "Happy"');
-    expect(css).toContain(".mascot-svg.expr-giggle");
+  it("gives comfortable Jamkachu grounded idle micro expressions", () => {
+    // Kiki design integration (2026-08-11): the curious/proud/giggle SVG
+    // face groups retired with the inline SVG — a comfortable idle
+    // Jamkachu now flashes a happy-pool sprite reaction instead (same
+    // Happy-only + awake gate as before).
+    expect(live).toMatch(/function idleHappyExpression\(\) \{\s*\n\s*if \(careMood !== "Happy" \|\| sleepShown\) return;/);
+    expect(live).toMatch(/function idleHappyExpression\(\) \{[\s\S]{0,400}?showPetExpression\(/);
   });
 
   it("uses a characterful double-tap move instead of the placeholder Whee line", () => {
     expect(strings).toContain('petSurprise: "Secret move: LEAF SPRING!"');
     expect(strings).toContain('petSurprise: "Jurus rahasia: LOMPAT DAUN!"');
     expect(live).not.toContain('PET_SURPRISE_FALLBACK = "Whee!"');
+  });
+});
+
+describe("Farm-layer NPC gif placements (kiki design integration)", () => {
+  it("gives the CARA BERMAIN guide a how-I-grow row and a cast footer", () => {
+    // Growth row: designer growth GIF, static grown sprite under
+    // prefers-reduced-motion via the <picture> source; the art stays
+    // decorative behind the localized label.
+    expect(html).toContain('class="farm-guide-grow"');
+    expect(html).toContain('src="/farm/assets/jamkachu/gif/growth-happy.gif"');
+    expect(html).toMatch(
+      /<source media="\(prefers-reduced-motion: reduce\)" srcset="\/farm\/assets\/jamkachu\/4x\/plant-p4-fruit-happy\.png">/,
+    );
+    expect(html).toContain('data-i18n="guide.grow"');
+    // Label ships with exact en+id parity via the live.js COPY table.
+    expect(live).toContain('"guide.grow": "Rawat aku — aku tumbuh dari benih sampai berbuah!"');
+    expect(live).toContain('"guide.grow": "Care for me — I grow from a seed all the way to fruit!"');
+    // Cast footer: aria-hidden strip; no static strip exists, so reduced
+    // motion hides it outright.
+    expect(html).toMatch(/class="farm-guide-cast" src="\/farm\/assets\/npc\/gif\/npc-cast-idle\.gif" alt="" aria-hidden="true"/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.farm-guide-cast \{ display:none; \} \}/);
+    expect(css).toMatch(/\.farm-guide-grow img \{[^}]*image-rendering:pixelated/);
+    expect(assetExists("farm/assets/npc/gif/npc-cast-idle.gif")).toBe(true);
+    expect(assetExists("farm/assets/jamkachu/gif/growth-happy.gif")).toBe(true);
+    expect(assetExists("farm/assets/jamkachu/4x/plant-p4-fruit-happy.png")).toBe(true);
+  });
+
+  it("re-points the how-I-grow strip at the live mood + tier on every guide open", () => {
+    // The markup's growth-happy default is only a fallback: renderGuideGrowth
+    // re-targets the art at the CURRENT accessory tier and at the calm strip
+    // whenever Jamkachu is not happily awake, so every designer growth
+    // variant (plain + bow/ribbon) is reachable in play — none orphaned.
+    expect(live).toContain("function renderGuideGrowth()");
+    expect(live).toContain("/farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif");
+    // The reduced-motion <picture> source follows the same mood + tier.
+    expect(live).toContain("/farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png");
+    // Re-rendered on every open, before the dialog shows.
+    expect(live).toMatch(/renderGuideGrowth\(\);\s*\n\s*farmGuide\.showModal\(\)/);
+    // Every variant the renderer can point at ships on disk.
+    for (const strip of ["happy", "plain"]) {
+      for (const suffix of ["", "-bow", "-ribbon"]) {
+        expect(assetExists(`farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif`)).toBe(true);
+        expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png`)).toBe(true);
+      }
+    }
+  });
+
+  it("crowns the wardrobe with the moods-p4 gif for the CURRENT accessory tier", () => {
+    expect(html).toContain('id="wardrobe-mascot"');
+    // Tier comes from PMSprite state (thresholds + phase clamps stay in
+    // jamkachu-sprite.js — the wardrobe never re-derives them), bare when
+    // the driver is absent.
+    expect(live).toContain("function renderWardrobeMascot()");
+    expect(live).toContain(
+      "window.PMSprite?.accessoryTier?.(spriteState.bondLevel, window.PMSprite?.stagePhase?.(spriteState.stage))",
+    );
+    expect(live).toContain("/farm/assets/jamkachu/gif/moods-p4${suffix}.gif");
+    // Reduced motion: the static grown sprite of the same tier.
+    expect(live).toMatch(/prefersReducedMotion\(\)\s*\n?\s*\? `\/farm\/assets\/jamkachu\/4x\/plant-p4-fruit-happy\$\{suffix\}\.png`/);
+    // Rides every list repaint so bond level-ups refresh the tier live.
+    expect(live).toMatch(/function renderWardrobeList\(\) \{[\s\S]{0,400}?renderWardrobeMascot\(\);/);
+    expect(css).toMatch(/\.wardrobe-mascot \{[^}]*image-rendering: pixelated/);
+    // Every tier variant the renderer can point at ships on disk.
+    for (const suffix of ["", "-bow", "-ribbon"]) {
+      expect(assetExists(`farm/assets/jamkachu/gif/moods-p4${suffix}.gif`)).toBe(true);
+      expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-happy${suffix}.png`)).toBe(true);
+    }
   });
 });

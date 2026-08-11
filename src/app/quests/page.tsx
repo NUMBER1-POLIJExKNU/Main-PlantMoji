@@ -5,6 +5,7 @@
 
 import type { CSSProperties } from "react";
 import Notice from "@/components/notice";
+import NpcBadge from "@/components/npc-badge";
 import PageHeader from "@/components/page-header";
 import QuestCelebration from "@/components/quest-celebration";
 import QuestDonePill from "@/components/quest-done-pill";
@@ -18,7 +19,7 @@ import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
 import { getDailyEvent, type DailyEvent } from "@/game/random/daily-events";
 import { getServerSupabase } from "@/lib/supabase/server";
-import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, type AppLocale } from "@/lib/i18n";
+import { DAILY_EVENT_COPY_ID, MOOD_COPY, QUEST_COPY_ID, npcTagline, type AppLocale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS } from "@/types/events";
@@ -398,6 +399,9 @@ export default async function QuestsPage() {
         description={locale === "id"
           ? "Perawatan nyata yang diverifikasi sensor — bukan sekadar menekan tombol."
           : "Real care, verified by sensors — no tap-to-win."}
+        // Pak Tani (designer NPC cast) hands out the missions — a header
+        // accent only, the quest cards below are untouched.
+        meta={<NpcBadge npc="pak-tani" locale={locale} note={npcTagline(locale, "pak-tani")} />}
       />
 
       <CheatQuestPanel locale={locale} quests={cheatQuests} cropProfile={cropProfile} />

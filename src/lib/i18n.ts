@@ -233,3 +233,35 @@ export function companionStageLabel(locale: AppLocale, stage: string): string {
 export function companionFormLabel(locale: AppLocale, form: string): string {
   return (companionFormNames as Record<string, { en: string; id: string }>)[form]?.[locale] ?? form;
 }
+
+// ── NPC cast (kiki design integration) ───────────────────────────────────
+// The designer's pixel-art cast (public/farm/assets/npc). Their Indonesian
+// names are proper nouns and stay identical in BOTH locales by design
+// (docs/superpowers/plans/2026-08-11-kiki-design-integration.md) — the
+// en/id pair still exists so every consumer goes through the same
+// locale-aware lookup as all other player copy.
+export type NpcKey = "pak-tani" | "botanis" | "penjelajah" | "pedagang" | "moji-bot" | "mbah-tani";
+
+export const npcNames: Record<NpcKey, { en: string; id: string }> = {
+  "pak-tani": { en: "Pak Tani", id: "Pak Tani" },
+  botanis: { en: "Botanis", id: "Botanis" },
+  penjelajah: { en: "Penjelajah", id: "Penjelajah" },
+  pedagang: { en: "Pedagang", id: "Pedagang" },
+  "moji-bot": { en: "Moji-Bot", id: "Moji-Bot" },
+  "mbah-tani": { en: "Mbah Tani", id: "Mbah Tani" },
+};
+
+/** One-line greetings for the cast members that host a route header. */
+export const npcTaglines: Partial<Record<NpcKey, { en: string; id: string }>> = {
+  pedagang: { en: "Welcome to my stall!", id: "Selamat datang di lapakku!" },
+  "pak-tani": { en: "Let's care for the plant together!", id: "Ayo rawat tanaman bersama!" },
+  botanis: { en: "I'm reading the garden with you.", id: "Aku ikut membaca kondisi kebunmu." },
+};
+
+export function npcNameLabel(locale: AppLocale, npc: NpcKey): string {
+  return npcNames[npc][locale];
+}
+
+export function npcTagline(locale: AppLocale, npc: NpcKey): string | undefined {
+  return npcTaglines[npc]?.[locale];
+}

@@ -75,14 +75,18 @@ describe("shared PlantMoji application shell", () => {
     expect(reactCss).toContain('html[data-theme="night"] .pm-home-bond');
   });
 
-  it("cycles several mood-safe Jamkachu micro expressions", () => {
+  it("renders the designer's Jamkachu sprite with mood-safe presentation", () => {
     const mascot = source("src/components/mascot.tsx");
-    expect(mascot).toContain("MicroExpressions");
-    for (const frame of ["pm-expression-blink", "pm-expression-look", "pm-expression-mouth", "pm-expression-accent"]) {
-      expect(mascot).toContain(frame);
-      expect(reactCss).toContain(`.${frame}`);
-    }
-    expect(reactCss).toContain("@keyframes pm-face-look");
+    // The sprite mapping module is the single mood/stage/bond → art channel.
+    expect(mascot).toContain('from "@/lib/jamkachu-sprite"');
+    expect(mascot).toContain("spriteSrc({ stage, mood, bondLevel, sleeping })");
+    // The mood stays accessible as text while the art itself is decorative.
+    expect(mascot).toContain("MOOD_LABELS[mood]");
+    expect(mascot).toContain('aria-hidden="true"');
+    // Plain-body moods keep a visible differentiator.
+    expect(mascot).toContain("MOOD_STATUS_CHIP");
+    expect(reactCss).toMatch(/\.pm-mascot-sprite\s*\{[^}]*image-rendering:\s*pixelated/);
+    expect(reactCss).toContain(".pm-mascot-chip");
   });
 
   it("shows Jember local time in the My Garden HUD", () => {

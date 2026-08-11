@@ -5,7 +5,8 @@ import { useSearchParams } from "next/navigation";
 import IntelligenceConsole, { TypewriterText, type IntelligenceLine } from "@/components/intelligence-console";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import type { EnvironmentAnalysis } from "@/lib/environment-analyzer";
-import type { AppLocale } from "@/lib/i18n";
+import { npcIdleGifSrc, npcSpriteSrcSet } from "@/components/npc-badge";
+import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { ExplorerCrop } from "@/lib/jember-crop-catalog";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 import type { EnvironmentDemoPreset } from "@/lib/environment-demo";
@@ -118,7 +119,11 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
   }, [data, scanning, explaining, explanation]);
 
   return <section className="pm-crop-explorer mb-6" aria-labelledby="crop-explorer-title">
-    <div className="pm-crop-scan-hero"><div className="pm-crop-radar" aria-hidden="true"><span>🌱</span></div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
+    {/* Penjelajah (designer NPC cast) hosts the explorer from inside the
+        scan radar — the ambient idle GIF plays in the porthole, reduced
+        motion swaps in the static sprite (all four export scales offered
+        via srcSet); the alt carries the cast name for assistive tech. */}
+    <div className="pm-crop-scan-hero"><div className="pm-crop-radar"><picture><source media="(prefers-reduced-motion: reduce)" srcSet={npcSpriteSrcSet("penjelajah")} sizes="68px" /><img src={npcIdleGifSrc("penjelajah")} alt={npcNameLabel(locale, "penjelajah")} width={68} height={68} /></picture></div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
     {presentationMode && <label className="pm-crop-demo-toggle"><input type="checkbox" checked={demoMode} onChange={(event) => { setDemoMode(event.target.checked); setData(null); setError(false); setExplanation(""); }} /> <span>{c.demoMode}</span></label>}
     {presentationMode && (scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
     {error && <p role="alert" className="mt-4 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] p-3 text-sm">{c.noData}</p>}

@@ -10,4 +10,18 @@ describe("Weekly report Jamkachu note", () => {
     expect(page).toContain("pm-report-speech");
     expect(css).toContain(".pm-report-jamkachu");
   });
+
+  it("draws the designer sprite with a tone that follows the report", () => {
+    const page = readFileSync(resolve(process.cwd(), "src/app/reports/page.tsx"), "utf8");
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    // The mini-mascot is the drawn p4 sprite, not CSS box art.
+    expect(page).toMatch(/<img\s[^>]*className="pm-report-jamkachu"/);
+    expect(page).toContain("spriteAssetPath");
+    // Tone mirrors the next-goal logic: rough (hot) week → plain face,
+    // otherwise happy.
+    expect(page).toContain('report.overheatingEvents > 0 ? "plain" : "happy"');
+    // Pixel art must never be smoothed, and the old box-shadow body is gone.
+    expect(css).toMatch(/\.pm-report-jamkachu\s*\{[^}]*image-rendering:\s*pixelated/);
+    expect(css).not.toContain(".pm-report-jamkachu::after");
+  });
 });

@@ -12,6 +12,7 @@ import {
 } from "@/app/settings/actions";
 import type { AppLocale } from "@/lib/i18n";
 import GrowthShowcase from "@/components/growth-showcase";
+import NpcBadge from "@/components/npc-badge";
 
 const INITIAL_STATE: DemoActionState = { status: "idle", message: "" };
 
@@ -51,6 +52,7 @@ const COPY = {
     director: "PENGARAH SIARAN",
     presentation: "⛶ Mode presentasi",
     ending: "Tampilkan penutup",
+    mascotLine: "Siap membantu presentasimu!",
   },
   en: {
     code: "Demo code",
@@ -77,6 +79,7 @@ const COPY = {
     director: "BROADCAST DIRECTOR",
     presentation: "⛶ Presentation mode",
     ending: "Show ending",
+    mascotLine: "Ready to help your show!",
   },
 } as const;
 
@@ -135,6 +138,9 @@ export default function DemoControlCenter({
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Moji-Bot (designer NPC cast) fronts the demo panel — static PNG,
+          so no motion and no reduced-motion concern. */}
+      <NpcBadge npc="moji-bot" locale={locale} note={copy.mascotLine} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {stats.map(([label, value]) => (
           <div key={label} className="rounded-xl border border-amber-200/70 bg-white/80 px-2 py-2 text-center dark:border-amber-900 dark:bg-zinc-900/70">

@@ -1,85 +1,99 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 import { COMPANION_STAGES } from "@/types/game";
 
-// Source-contract guard for the evolution-ladder farm layer (plan Tasks 6+7):
-// per-stage mascot visuals + form tint (index.html/style.css) and the
-// ceremony trigger + demo hotkey (live.js/demo.js). Same read-the-source
-// style as tests/farm-shop-layer.test.ts — the farm layer is plain JS/CSS
-// with no module exports to import.
+// Source-contract guard for the evolution farm layer, re-seated on the kiki
+// designer sprites (2026-08-11): the ten companion stages bucket into the
+// four drawn growth phases (jamkachu-sprite.js STAGE_PHASE — plan table,
+// decided, do not redesign), late-stage differentiation rides the
+// --companion-accent aura on the sprite img, and the ceremony sequencer
+// swaps sprite frames per strobe step via PMSprite. Same read-the-source
+// style as tests/farm-shop-layer.test.ts.
 
-const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
 const demo = readFileSync(resolve(process.cwd(), "public/farm/demo.js"), "utf8");
-
-const ACCENT_STAGES = [
-  "stage-seedling",
-  "stage-bud",
-  "stage-bloom",
-  "stage-fruit",
-  "stage-elder",
-  "stage-radiant",
-  "stage-legend",
-] as const;
+const spriteJs = readFileSync(resolve(process.cwd(), "public/farm/jamkachu-sprite.js"), "utf8");
 
 const FORM_KEYS = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
 
-describe("per-stage mascot visuals (Task 6)", () => {
-  it("index.html carries one hidden accent group per accent stage", () => {
-    for (const cls of ACCENT_STAGES) {
-      expect(html).toContain(`class="stage-extra ${cls}"`);
+interface SpriteTables {
+  STAGE_PHASE: Record<string, number>;
+  PHASE_SLUG: Record<number, string>;
+}
+
+function loadSpriteTables(): SpriteTables {
+  const stubWindow: { PMSprite?: { tables: SpriteTables } } = {};
+  const context = vm.createContext({ window: stubWindow });
+  vm.runInContext(spriteJs, context, { filename: "jamkachu-sprite.js" });
+  if (!stubWindow.PMSprite) throw new Error("jamkachu-sprite.js did not assign window.PMSprite");
+  return stubWindow.PMSprite.tables;
+}
+
+describe("stage→phase mapping on the designer sprite (plan table)", () => {
+  const tables = loadSpriteTables();
+
+  it("buckets all ten companion stages into the four drawn phases exactly as decided", () => {
+    expect(tables.STAGE_PHASE).toEqual({
+      Seed: 1,
+      Sprout: 2,
+      Seedling: 2,
+      Bud: 3,
+      Bloom: 3,
+      Fruit: 4,
+      Guardian: 4,
+      Elder: 4,
+      Radiant: 4,
+      Legend: 4,
+    });
+    // Every engine stage is covered — no stage can fall through to a guess.
+    for (const stage of COMPANION_STAGES) {
+      expect(tables.STAGE_PHASE[stage], `stage ${stage} unmapped`).toBeGreaterThanOrEqual(1);
     }
-    // Accents live inside .animated-leaves (they must scale with the head)
-    // and BEFORE the face groups (faces always draw on top).
-    const leavesIdx = html.indexOf('<g class="animated-leaves">');
-    const accentIdx = html.indexOf('class="stage-extra');
-    const faceIdx = html.indexOf('class="mascot-face face-default"');
-    expect(leavesIdx).toBeGreaterThan(-1);
-    expect(accentIdx).toBeGreaterThan(leavesIdx);
-    expect(faceIdx).toBeGreaterThan(accentIdx);
+    expect(tables.PHASE_SLUG).toEqual({ 1: "seed", 2: "sprout", 3: "flower", 4: "fruit" });
   });
 
-  it("style.css hides accents until renderCompanion's companion-<Stage> class shows them", () => {
-    expect(css).toContain(".mascot-svg .stage-extra { display: none; }");
-    // Every stage past Seed has a visual rule of its own (Seed is the bare
-    // base body) — all ten stages render distinct.
-    for (const stage of COMPANION_STAGES.slice(1)) {
-      expect(css).toContain(`.mascot-svg.companion-${stage} `);
-    }
-  });
-
-  it("shows accents cumulatively — Legend keeps every earned mark", () => {
-    for (const cls of ["stage-seedling", "stage-bloom", "stage-fruit", "stage-elder", "stage-radiant", "stage-legend"]) {
-      expect(css).toContain(`.mascot-svg.companion-Legend .${cls}`);
-    }
-    // The bud opens into the bloom: Bloom+ shows petals, not the closed bud.
-    expect(css).toContain(".mascot-svg.companion-Bud .stage-bud");
-    expect(css).not.toContain(".mascot-svg.companion-Bloom .stage-bud");
-  });
-
-  it("keeps the original five stages' scale rungs and extends the ladder", () => {
-    // Originals untouched (Task 6 must not break the shipped five).
-    expect(css).toContain(".mascot-svg.companion-Sprout .animated-leaves { transform: scale(1.03);");
-    expect(css).toContain(".mascot-svg.companion-Guardian .animated-leaves { transform: scale(1.18);");
-    // New rungs exist and stay monotonic at the top.
-    expect(css).toContain(".mascot-svg.companion-Seedling .animated-leaves { transform: scale(1.05);");
-    expect(css).toContain(".mascot-svg.companion-Legend .animated-leaves { transform: scale(1.25);");
-  });
-
-  it("tints accents per care-affinity form via --companion-accent", () => {
-    for (const form of FORM_KEYS) {
-      expect(css).toContain(`.mascot-svg[data-companion-form="${form}"] { --companion-accent:`);
-    }
-    // The accent shapes actually consume the property (with a fallback).
-    expect(html).toContain("var(--companion-accent,");
-    // live.js sets the attribute the tint selectors key on.
-    expect(live).toContain("svg.dataset.companionForm = form");
+  it("live.js renderCompanion feeds the stage into PMSprite", () => {
+    const fn = live.slice(live.indexOf("function renderCompanion"), live.indexOf("const $ ="));
+    expect(fn).toContain("window.PMSprite?.set({ stage })");
   });
 });
 
-describe("evolution ceremony trigger + demo hotkey (Task 7)", () => {
+describe("late-stage differentiation (aura + form tint, stage-extras retired)", () => {
+  it("upper-ladder stages glow via --companion-accent drop-shadow on the sprite img", () => {
+    for (const stage of ["Guardian", "Radiant", "Legend"]) {
+      expect(css).toMatch(
+        new RegExp(`\\.mascot-svg\\.companion-${stage} #jamkachu-sprite \\{ filter:[^}]*drop-shadow\\([^)]*var\\(--companion-accent`),
+      );
+    }
+    // Saturation ramps monotonically upward at the top of the ladder.
+    const sat = (stage: string) => {
+      const match = css.match(new RegExp(`\\.mascot-svg\\.companion-${stage} #jamkachu-sprite \\{ filter: saturate\\(([\\d.]+)\\)`));
+      expect(match, `${stage} lost its saturation rung`).not.toBeNull();
+      return Number(match![1]);
+    };
+    expect(sat("Fruit")).toBeGreaterThan(sat("Bloom"));
+    expect(sat("Legend")).toBeGreaterThan(sat("Radiant"));
+    expect(sat("Radiant")).toBeGreaterThan(sat("Guardian"));
+  });
+
+  it("keeps the care-affinity form tint feeding the aura", () => {
+    for (const form of FORM_KEYS) {
+      expect(css).toContain(`.mascot-svg[data-companion-form="${form}"] { --companion-accent:`);
+    }
+    // live.js sets the attribute the tint selectors key on.
+    expect(live).toContain("svg.dataset.companionForm = form");
+  });
+
+  it("the old stage-extra accent groups are fully retired", () => {
+    expect(css).not.toContain(".stage-extra {");
+    expect(css).not.toContain(".mascot-svg.companion-Legend .stage-legend");
+  });
+});
+
+describe("evolution ceremony trigger + sequencer", () => {
   it("live.js stage-order fallback lists all ten stages in engine order", () => {
     const literal = COMPANION_STAGES.map((stage) => `"${stage}"`).join(", ");
     expect(live).toContain(`[${literal}]`);
@@ -101,19 +115,48 @@ describe("evolution ceremony trigger + demo hotkey (Task 7)", () => {
     expect(enqueueIdx).toBeGreaterThan(setIdx); // crash-safe: marked first
   });
 
-  it("routes the trigger into the existing sequencer, generic over stage names", () => {
-    expect(live).toContain("function runEvolutionSequence(oldStage, newStage)");
-    // The sequencer applies stages via template classes — no hard-coded
-    // five-stage mapping anywhere in the swap path.
-    expect(live).toContain("svg.classList.add(`companion-${stage}`)");
+  it("the strobe's setStage swaps both the class AND the drawn sprite frame", () => {
+    const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
+    expect(seq).toContain("svg.classList.add(`companion-${stage}`)");
+    expect(seq).toContain("window.PMSprite?.set({ stage })");
+  });
+
+  it("same-phase strobes still alternate two visibly distinct silhouettes", () => {
+    // 6 of the 9 ladder transitions bucket onto ONE drawn phase (e.g.
+    // Sprout→Seedling — pinned here from the decided table), so oldStage
+    // and newStage render byte-identical sprite frames. The ceremony marks
+    // the new-stage strobe beats with .evo-sil-alt and style.css stretches
+    // that silhouette into a second shape — without this pair the suspense
+    // strobe freezes into a static white cutout for two-thirds of all
+    // evolutions.
+    const tables = loadSpriteTables();
+    expect(tables.STAGE_PHASE.Sprout).toBe(tables.STAGE_PHASE.Seedling);
+    const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
+    expect(seq).toContain("window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage)");
+    expect(seq).toContain('svg.classList.toggle("evo-sil-alt", strobeSamePhase && stage === newStage');
+    expect(css).toContain(".mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.14) scaleX(0.92); }");
+    // Both the payoff reveal and the finally-cleanup clear the alt marker
+    // together with the silhouette, so no stretch can leak past the show.
+    expect(seq).toContain('svg.classList.remove("evo-sil", "evo-sil-alt")');
+    expect(seq).toContain('svg.classList.remove("evo-sil", "evo-sil-alt", "evo-reveal-bounce", "evo-xfade")');
+  });
+
+  it("the ceremony filters land on the div/img (selectors still match)", () => {
+    // Silhouette on the container div flattens img + overlay together…
+    expect(css).toContain(".mascot-svg.evo-sil { filter: brightness(0) invert(1); transition: none !important; }");
+    // …and the breath bob on the img is killed so the silhouette holds still.
+    expect(css).toContain(".mascot-svg.evo-sil #jamkachu-sprite { animation: none !important; }");
+    // Reduced motion: crossfade only, silhouette/flash/tint disabled.
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.mascot-svg\.evo-sil \{ filter: none; \}/);
+    expect(css).toMatch(/\.mascot-svg\.evo-xfade \{ transition: opacity/);
+    // The hitstop freeze targets the img's animation now.
+    expect(live).toMatch(/function setBreathPaused[\s\S]{0,200}?#jamkachu-sprite/);
   });
 
   it("PMFx.evolve walks the ladder so all ten stages can be demonstrated", () => {
     expect(live).toContain("evolve()");
-    // Cursor advances at enqueue time and resets on any real data render.
     expect(live).toContain("evoDemoStage = newStage");
     expect(live).toContain("evoDemoStage = null; // real data render");
-    // Legend wraps the demo pair forward (never reads as de-evolution).
     expect(live).toContain("STAGE_ORDER[1]");
   });
 
@@ -122,7 +165,6 @@ describe("evolution ceremony trigger + demo hotkey (Task 7)", () => {
     expect(demo).toContain('case "E":');
     expect(demo).toContain('fireFx("evolve")');
     expect(demo).toContain('typeof window.PMFx?.evolve === "function"');
-    // Legend row tells presenters repeat-pressing walks the ladder.
     expect(demo).toMatch(/\["E", "evolution ceremony[^"]*"\]/);
   });
 });

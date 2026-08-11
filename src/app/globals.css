@@ -41,17 +41,7 @@ html[lang="id"] .pm-i18n-id { display: inline; }
 .pm-loading-toy { position: absolute; inset: 0; z-index: 1; appearance: none; border: 0; padding: 0; margin: 0; display: grid; place-items: center; background: transparent; color: inherit; cursor: pointer; border-radius: 18px; }
 .pm-loading-toy:focus-visible { outline: 4px solid #4da1ed; outline-offset: -6px; }
 .pm-loading-scene { position: relative; display: block; width: 112px; height: 132px; image-rendering: pixelated; }
-.pm-loading-face { position: absolute; left: 32px; top: 38px; width: 48px; height: 42px; background: #8fd36f; border: 4px solid #243421; box-shadow: inset 0 -7px #69b957; }
-.pm-loading-face i { position: absolute; top: 14px; width: 7px; height: 9px; background: #243421; }
-.pm-loading-face i:first-child { left: 9px; }
-.pm-loading-face i:last-child { right: 9px; }
-.pm-loading-sprout { position: absolute; z-index: 2; left: 52px; top: 14px; width: 8px; height: 28px; background: #397a2b; }
-.pm-loading-sprout i { position: absolute; top: -3px; width: 24px; height: 14px; background: #69b957; border: 4px solid #243421; }
-.pm-loading-sprout i:first-child { right: 5px; transform: rotate(12deg); }
-.pm-loading-sprout i:last-child { left: 5px; transform: rotate(-12deg); }
-.pm-loading-pot { position: absolute; z-index: 3; left: 25px; bottom: 14px; width: 62px; height: 49px; background: #c98452; border: 4px solid #243421; border-top-width: 10px; }
-.pm-loading-pot i { position: absolute; left: -10px; top: -13px; width: 74px; height: 12px; background: #e5a06b; border: 4px solid #243421; }
-.pm-loading-dirt { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 14px; background: #6f9f48; border: 4px solid #243421; }
+.pm-loading-jamkachu { position: absolute; left: 50%; bottom: 8px; width: 104px; height: auto; transform: translateX(-50%); image-rendering: pixelated; user-select: none; }
 .pm-loading-heart { position: absolute; z-index: 8; top: 18px; right: 4px; color: #e5697c; font: 24px/1 monospace; opacity: 0; transform: translateY(8px) scale(.5); }
 .pm-loading-prop { position: absolute; z-index: 5; right: -5px; top: 55px; width: 34px; height: 34px; }
 .pm-loading-prop i { position: absolute; display: block; }
@@ -74,8 +64,6 @@ html[lang="id"] .pm-i18n-id { display: inline; }
 .pm-loading-prop[data-variant="diary"] i:first-child { left: 4px; top: 7px; width: 15px; height: 3px; background: #4da1ed; box-shadow: 0 8px #4da1ed, 0 16px #4da1ed; }
 @media (prefers-reduced-motion: no-preference) {
   .pm-loading-scene { animation: pm-loading-hop .8s steps(2, end) infinite; }
-  .pm-loading-face i { animation: pm-loading-blink 1.6s steps(1, end) infinite; }
-  .pm-loading-sprout { animation: pm-loading-sway .8s steps(2, end) infinite alternate; transform-origin: 50% 100%; }
   .pm-loading-prop[data-variant="quests"], .pm-loading-prop[data-variant="diary"] { animation: pm-loading-page .8s steps(2, end) infinite alternate; }
   .pm-loading-prop[data-variant="plants"] { animation: pm-loading-grow 1s steps(3, end) infinite alternate; transform-origin: 50% 100%; }
   .pm-loading-prop[data-variant="monitoring"] i, .pm-loading-prop[data-variant="reports"] i { animation: pm-loading-bars .9s steps(2, end) infinite alternate; transform-origin: 50% 100%; }
@@ -86,8 +74,6 @@ html[lang="id"] .pm-i18n-id { display: inline; }
   .pm-loading-toy.is-poked .pm-loading-heart { animation: pm-loading-heart-pop .48s steps(3, end); }
 }
 @keyframes pm-loading-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-@keyframes pm-loading-blink { 0%, 42%, 50%, 100% { transform: scaleY(1); } 45%, 48% { transform: scaleY(.2); } }
-@keyframes pm-loading-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
 @keyframes pm-loading-page { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 @keyframes pm-loading-grow { from { transform: scale(.72) rotate(-8deg); } to { transform: scale(1) rotate(-8deg); } }
 @keyframes pm-loading-bars { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
@@ -96,7 +82,7 @@ html[lang="id"] .pm-i18n-id { display: inline; }
 @keyframes pm-loading-poke { 0%, 100% { transform: translateY(0) scale(1); } 45% { transform: translateY(-13px) scale(1.04); } 70% { transform: translateY(2px) scale(.98); } }
 @keyframes pm-loading-heart-pop { 0% { opacity: 0; transform: translateY(8px) scale(.5); } 35%, 75% { opacity: 1; transform: translateY(-5px) scale(1); } 100% { opacity: 0; transform: translateY(-13px) scale(.8); } }
 @media (prefers-reduced-motion: reduce) {
-  .pm-loading-toy.is-poked .pm-loading-face { background: #a9df8f; }
+  .pm-loading-toy.is-poked .pm-loading-jamkachu { filter: brightness(1.14); }
   .pm-loading-toy.is-poked .pm-loading-heart { opacity: 1; transform: none; }
 }
 
@@ -555,11 +541,14 @@ html[data-theme="night"] .pm-wisdom-trial { color:#243421; }
   width: 0;
 }
 
-/* Mascot */
+/* Mascot — the designer's Jamkachu sprite (src/components/mascot.tsx). */
 .pm-mascot {
+  position: relative;
   filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.15));
 }
-.pm-expression-frame { opacity: 0; pointer-events: none; }
+.pm-mascot-sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; user-select: none; }
+/* Status chip: keeps the moods that share the "plain" body distinguishable. */
+.pm-mascot-chip { position: absolute; top: 4%; right: 8%; font-size: 26px; line-height: 1; filter: drop-shadow(2px 2px 0 rgba(36, 52, 33, 0.25)); }
 
 /* Motion — every scene animation is opt-in behind reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
@@ -567,17 +556,6 @@ html[data-theme="night"] .pm-wisdom-trial { color:#243421; }
     animation: pm-breath 3s ease-in-out infinite alternate;
     transform-origin: 50% 100%;
   }
-  .pm-leaves {
-    animation: pm-sway 4s ease-in-out infinite alternate;
-    transform-box: fill-box;
-    transform-origin: 50% 100%;
-  }
-  /* Four small expressions rotate every ~10s. Their windows never overlap,
-     so the face remains crisp and mood-appropriate between changes. */
-  .pm-expression-blink { animation: pm-face-blink 9.6s steps(1,end) infinite; }
-  .pm-expression-look { animation: pm-face-look 9.6s steps(1,end) infinite; }
-  .pm-expression-mouth { animation: pm-face-mouth 9.6s steps(1,end) infinite; }
-  .pm-expression-accent { animation: pm-face-accent 9.6s steps(1,end) infinite; }
   .pm-bounce {
     animation: pm-float 3s ease-in-out infinite alternate;
   }
@@ -592,18 +570,9 @@ html[data-theme="night"] .pm-wisdom-trial { color:#243421; }
   .pm-cloud-3 { animation: pm-cloud-drift 55s linear -22s infinite; }
 }
 
-@keyframes pm-face-blink { 0%,12%,100%{opacity:0} 13%,18%{opacity:1} }
-@keyframes pm-face-look { 0%,31%,47%,100%{opacity:0} 32%,46%{opacity:1} }
-@keyframes pm-face-mouth { 0%,57%,73%,100%{opacity:0} 58%,72%{opacity:1} }
-@keyframes pm-face-accent { 0%,81%,95%,100%{opacity:0} 82%,94%{opacity:1} }
-
 @keyframes pm-breath {
   from { transform: scaleY(1) scaleX(1); }
   to { transform: scaleY(1.04) scaleX(1.02); }
-}
-@keyframes pm-sway {
-  from { transform: rotate(-1.5deg); }
-  to { transform: rotate(1.5deg); }
 }
 @keyframes pm-float {
   from { transform: translateY(0); }
@@ -798,7 +767,7 @@ html[data-theme="night"] .pm-scene .pm-cloud { opacity: .24; filter: brightness(
 html[data-theme="night"] .pm-scene .pm-grass { box-shadow: inset 0 10px 22px rgba(255,255,255,.07); }
 html[data-theme="night"] .pm-scene .pm-bubble { border: 2px solid var(--color-border); background: var(--color-surface); color: var(--color-text); box-shadow: 0 10px 30px rgba(0,0,0,.32); }
 html[data-theme="night"] .pm-scene .pm-bubble::after { border-top-color: var(--color-surface); }
-.pm-react-farmer{position:fixed;right:clamp(22px,6vw,90px);bottom:110px;z-index:40;pointer-events:none}.pm-react-farmer>button{position:fixed;right:clamp(48px,8vw,116px);bottom:118px;width:52px;height:62px;border:0;padding:0;background:transparent;cursor:grab;touch-action:none;pointer-events:auto;z-index:2}.pm-react-farmer>button:active{cursor:grabbing}.pm-react-farmer-label{position:absolute;left:50%;bottom:calc(100% + 7px);min-width:max-content;transform:translateX(-50%);padding:5px 7px;border:2px solid #243421;border-radius:7px;color:#243421;background:#ffde6a;box-shadow:0 2px 0 #243421;font:6px var(--pm-font-pixel)}.pm-react-farmer-sprite{position:absolute;inset:0;filter:drop-shadow(3px 4px 0 rgba(36,52,33,.22))}.pm-react-farmer-sprite i{position:absolute;left:9px;top:4px;width:35px;height:12px;border:4px solid #243421;background:#e8c46b;box-shadow:7px -8px 0 -2px #e8c46b}.pm-react-farmer-sprite b{position:absolute;left:14px;top:18px;width:25px;height:25px;border:4px solid #243421;background:#f2c592}.pm-react-farmer-sprite b::after{content:"";position:absolute;left:2px;top:13px;width:17px;height:13px;background:#f7f3e7;clip-path:polygon(0 0,100% 0,85% 100%,50% 72%,15% 100%)}.pm-react-farmer-sprite em{position:absolute;left:10px;top:43px;width:33px;height:18px;border:4px solid #243421;background:#aa7e55}.pm-react-farmer-bed{display:none;position:fixed;right:clamp(20px,5vw,80px);bottom:103px;width:140px;height:60px;border:4px solid #243421;border-radius:6px;background:#8f563b;box-shadow:inset 0 -9px #6f3f2d,6px 6px 0 rgba(0,0,0,.2)}.pm-react-farmer-bed i{position:absolute;left:8px;top:8px;width:45px;height:25px;border:3px solid #243421;border-radius:7px;background:#f7edc8}.pm-react-farmer-bed b{position:absolute;right:7px;bottom:7px;width:78px;height:38px;border:3px solid #243421;background:repeating-linear-gradient(90deg,#4f8764 0 13px,#6da479 13px 26px)}.pm-react-farmer.is-night.is-sleeping .pm-react-farmer-bed{display:block}.pm-react-farmer.is-night.is-sleeping>button{right:clamp(68px,9vw,126px);bottom:126px;transform:rotate(90deg) scale(.78)}.pm-react-farmer.is-night.is-sleeping .pm-react-farmer-label{color:#f8e68e;background:#354463}.pm-react-farmer.is-night.is-awake .pm-react-farmer-bed{display:none}.pm-react-farmer.is-night.is-awake>button{transform:none;z-index:950}.pm-react-farmer.is-night.is-awake .pm-react-farmer-label{display:none}@media(max-width:800px){.pm-react-farmer{bottom:100px}.pm-react-farmer-bed{right:12px;bottom:94px;transform:scale(.78);transform-origin:right bottom}.pm-react-farmer.is-night.is-sleeping>button{right:48px;bottom:113px;transform:rotate(90deg) scale(.64)}.pm-react-farmer:not(.is-night)>button{right:18px;bottom:112px;transform:scale(.78)}}
+.pm-react-farmer{position:fixed;right:clamp(22px,6vw,90px);bottom:110px;z-index:40;pointer-events:none}.pm-react-farmer>button{position:fixed;right:clamp(48px,8vw,116px);bottom:118px;width:52px;height:62px;border:0;padding:0;background:transparent;cursor:grab;touch-action:none;pointer-events:auto;z-index:2}.pm-react-farmer>button:active{cursor:grabbing}.pm-react-farmer-label{position:absolute;left:50%;bottom:calc(100% + 7px);min-width:max-content;transform:translateX(-50%);padding:5px 7px;border:2px solid #243421;border-radius:7px;color:#243421;background:#ffde6a;box-shadow:0 2px 0 #243421;font:6px var(--pm-font-pixel)}.pm-react-farmer-sprite{position:absolute;inset:0;filter:drop-shadow(3px 4px 0 rgba(36,52,33,.22))}.pm-react-farmer-sprite picture{position:absolute;inset:0;display:block}.pm-react-farmer-sprite img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.pm-react-farmer-bed{display:none;position:fixed;right:clamp(20px,5vw,80px);bottom:103px;width:140px;height:60px;border:4px solid #243421;border-radius:6px;background:#8f563b;box-shadow:inset 0 -9px #6f3f2d,6px 6px 0 rgba(0,0,0,.2)}.pm-react-farmer-bed i{position:absolute;left:8px;top:8px;width:45px;height:25px;border:3px solid #243421;border-radius:7px;background:#f7edc8}.pm-react-farmer-bed b{position:absolute;right:7px;bottom:7px;width:78px;height:38px;border:3px solid #243421;background:repeating-linear-gradient(90deg,#4f8764 0 13px,#6da479 13px 26px)}.pm-react-farmer.is-night.is-sleeping .pm-react-farmer-bed{display:block}.pm-react-farmer.is-night.is-sleeping>button{right:clamp(68px,9vw,126px);bottom:126px;transform:rotate(90deg) scale(.78)}.pm-react-farmer.is-night.is-sleeping .pm-react-farmer-label{color:#f8e68e;background:#354463}.pm-react-farmer.is-night.is-awake .pm-react-farmer-bed{display:none}.pm-react-farmer.is-night.is-awake>button{transform:none;z-index:950}.pm-react-farmer.is-night.is-awake .pm-react-farmer-label{display:none}@media(max-width:800px){.pm-react-farmer{bottom:100px}.pm-react-farmer-bed{right:12px;bottom:94px;transform:scale(.78);transform-origin:right bottom}.pm-react-farmer.is-night.is-sleeping>button{right:48px;bottom:113px;transform:rotate(90deg) scale(.64)}.pm-react-farmer:not(.is-night)>button{right:18px;bottom:112px;transform:scale(.78)}}
 html[data-theme="night"] .pm-home-mood-badge { border: 1px solid rgba(255,255,255,.28); filter: brightness(.78) saturate(.82); }
 /* React NPC is anchored to the lawn. These overrides intentionally come
    after the legacy fixed-position rules above so the visible sprite and its
@@ -1539,12 +1508,7 @@ html[data-theme="night"] .pm-story-stage-head b { background:#29452e; color:#9cd
 .pm-memory-snapshot { position:relative; margin:12px 0 4px; overflow:hidden; border:3px solid #243421; background:#e9f4e4; box-shadow:0 5px 0 rgba(36,52,33,.18); }.pm-memory-snapshot img { display:block; width:100%; max-height:310px; aspect-ratio:16/8; object-fit:cover; }.pm-memory-snapshot figcaption { position:absolute; left:10px; right:10px; bottom:10px; display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 10px; border:2px solid #243421; color:#243421; background:rgba(255,253,244,.92); }.pm-memory-snapshot figcaption b { font:7px/1.4 var(--font-heading); }.pm-memory-snapshot figcaption span { font-size:11px; }
 .pm-memory-kicker { color:#397a2b; font:8px/1.4 var(--font-heading); letter-spacing:.08em; }
 .pm-memory-scene { display:grid; grid-template-columns:92px minmax(0,1fr); align-items:center; gap:14px; margin-top:12px; }
-.pm-memory-jamkachu { position:relative; width:72px; height:78px; margin:auto; border:4px solid #243421; background:#8fd36f; box-shadow:inset 0 -10px #69b957,5px 5px 0 rgba(36,52,33,.14); image-rendering:pixelated; }
-.pm-memory-jamkachu::before { content:""; position:absolute; left:30px; top:-26px; width:8px; height:28px; background:#397a2b; }
-.pm-memory-jamkachu::after { content:""; position:absolute; left:12px; top:-24px; width:24px; height:14px; border:4px solid #243421; background:#69b957; box-shadow:28px 5px 0 -4px #69b957,28px 5px 0 0 #243421; transform:rotate(10deg); }
-.pm-memory-jamkachu i { position:absolute; top:25px; width:7px; height:9px; background:#243421; }
-.pm-memory-jamkachu i:first-of-type { left:15px; }.pm-memory-jamkachu i:last-of-type { right:15px; }
-.pm-memory-jamkachu b { position:absolute; top:42px; width:10px; height:7px; background:#f49b93; }.pm-memory-jamkachu b:first-of-type { left:7px; }.pm-memory-jamkachu b:last-of-type { right:7px; }
+.pm-memory-jamkachu { display:block; width:82px; height:auto; margin:auto; image-rendering:pixelated; user-select:none; filter:drop-shadow(4px 4px 0 rgba(36,52,33,.14)); }
 .pm-memory-bubble { position:relative; min-height:96px; display:flex; flex-direction:column; justify-content:center; border:3px solid #bcd3b4; border-radius:16px; padding:14px 16px; background:#fff; box-shadow:0 5px 0 rgba(36,52,33,.12); }
 .pm-memory-bubble::before { content:""; position:absolute; left:-12px; bottom:22px; width:20px; height:20px; border-left:3px solid #bcd3b4; border-bottom:3px solid #bcd3b4; background:#fff; transform:rotate(45deg); }
 .pm-memory-bubble p { position:relative; z-index:1; color:#243421; font-size:15px; line-height:1.55; }
@@ -1659,7 +1623,7 @@ html[data-theme="night"] .pm-crop-snapshot-head b { color:#f6dda2; background:#3
 .pm-quest-why summary,.pm-quest-history-more summary { width:max-content; max-width:100%; cursor:pointer; color:var(--color-forest); font:8px/1.6 var(--pm-font-pixel); }.pm-daily-event { transform:scale(.98); box-shadow:0 3px 0 rgba(36,52,33,.12); }.pm-quest-history-more { border:2px dashed var(--color-border); border-radius:12px; padding:12px; }
 @media(max-width:540px){.pm-quest-action-well{grid-template-columns:1fr}.pm-quest-target{border-left:0;border-top:2px dashed var(--color-border);padding:9px 0 0;text-align:left}.pm-quest-steps small{font-size:5px}.pm-quest-hero{padding-inline:14px}}
 
-.pm-report-jam-note { display:grid; justify-items:center; padding-top:8px; }.pm-report-jamkachu { position:relative; z-index:2; width:72px; height:64px; margin-bottom:9px; border:4px solid var(--color-outline); background:var(--color-grass-light); box-shadow:inset 0 -9px var(--color-grass),0 5px 0 rgba(36,52,33,.14); image-rendering:pixelated; }.pm-report-jamkachu::before { content:""; position:absolute; left:30px; top:-27px; width:8px; height:28px; background:var(--color-forest); }.pm-report-jamkachu::after { content:""; position:absolute; left:10px; top:-25px; width:25px; height:14px; border:4px solid var(--color-outline); background:var(--color-grass); box-shadow:31px 5px 0 -4px var(--color-grass),31px 5px 0 0 var(--color-outline); transform:rotate(9deg); }.pm-report-jamkachu i { position:absolute; top:24px; width:7px; height:8px; background:var(--color-outline); }.pm-report-jamkachu i:first-of-type { left:14px; }.pm-report-jamkachu i:last-of-type { right:14px; }.pm-report-jamkachu b { position:absolute; top:41px; width:11px; height:7px; background:var(--color-cheek); }.pm-report-jamkachu b:first-of-type { left:6px; }.pm-report-jamkachu b:last-of-type { right:6px; }.pm-report-speech { position:relative; width:100%; }.pm-report-speech::before { content:""; position:absolute; left:50%; top:-10px; width:18px; height:18px; border-left:3px solid var(--color-grass-light); border-top:3px solid var(--color-grass-light); background:var(--color-surface); transform:translateX(-50%) rotate(45deg); }
+.pm-report-jam-note { display:grid; justify-items:center; padding-top:8px; }.pm-report-jamkachu { position:relative; z-index:2; display:block; width:82px; height:auto; margin-bottom:9px; image-rendering:pixelated; user-select:none; filter:drop-shadow(0 5px 0 rgba(36,52,33,.14)); }.pm-report-speech { position:relative; width:100%; }.pm-report-speech::before { content:""; position:absolute; left:50%; top:-10px; width:18px; height:18px; border-left:3px solid var(--color-grass-light); border-top:3px solid var(--color-grass-light); background:var(--color-surface); transform:translateX(-50%) rotate(45deg); }
 @media(prefers-reduced-motion:no-preference){.pm-report-jamkachu{animation:pm-report-listen 2.2s steps(2,end) infinite}}@keyframes pm-report-listen{50%{transform:translateY(-3px)}}
 
 /* Camera-facing presentation tools: broad shapes and stable type avoid moire. */
@@ -1678,8 +1642,8 @@ html[data-theme="night"] .pm-crop-snapshot-head b { color:#f6dda2; background:#3
 @media(max-width:760px){.pm-process-rail,.pm-cam .pm-process-rail{grid-template-columns:repeat(2,minmax(0,1fr))}.pm-analysis-authority{grid-template-columns:1fr}.pm-demo-director{left:8px;right:8px;bottom:calc(94px + env(safe-area-inset-bottom));overflow-x:auto;transform:none}.pm-director-long-label{display:none}.pm-broadcast-status{display:none}.pm-demo-scene-card{top:10px}.pm-demo-director button{padding-inline:9px}}
 @media(prefers-reduced-motion:reduce){.pm-demo-director,.pm-process-rail li{scroll-behavior:auto}}
 
-/* The showcase reuses the real Jamkachu SVG; only this wrapper owns ceremony FX. */
-.pm-growth-jamkachu{position:relative;z-index:2;width:min(330px,68vw);margin-top:8px;animation:pm-growth-evolution 1.55s ease-in-out}.pm-growth-jamkachu .pm-mascot{width:100%}.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{content:"";position:absolute;z-index:-1;left:50%;top:48%;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.pm-growth-jamkachu::before{width:310px;height:310px;border:12px solid rgba(255,222,106,.9);box-shadow:0 0 0 18px rgba(255,255,255,.3),0 0 45px #fff5a8;animation:pm-evolution-ring 1.55s ease-out}.pm-growth-jamkachu::after{width:370px;height:370px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.78) 0 3deg,transparent 3deg 24deg);animation:pm-evolution-rays 1.55s ease-out}.pm-stage-seed .pm-micro-expressions,.pm-stage-sprout .pm-micro-expressions{display:none}@media(prefers-reduced-motion:reduce){.pm-growth-jamkachu,.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{animation:none}.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{display:none}}
+/* The showcase reuses the real Jamkachu sprite; only this wrapper owns ceremony FX. */
+.pm-growth-jamkachu{position:relative;z-index:2;width:min(330px,68vw);margin-top:8px;animation:pm-growth-evolution 1.55s ease-in-out}.pm-growth-jamkachu .pm-mascot{width:100%}.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{content:"";position:absolute;z-index:-1;left:50%;top:48%;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.pm-growth-jamkachu::before{width:310px;height:310px;border:12px solid rgba(255,222,106,.9);box-shadow:0 0 0 18px rgba(255,255,255,.3),0 0 45px #fff5a8;animation:pm-evolution-ring 1.55s ease-out}.pm-growth-jamkachu::after{width:370px;height:370px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.78) 0 3deg,transparent 3deg 24deg);animation:pm-evolution-rays 1.55s ease-out}@media(prefers-reduced-motion:reduce){.pm-growth-jamkachu,.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{animation:none}.pm-growth-jamkachu::before,.pm-growth-jamkachu::after{display:none}}
 
 /* Evolution ceremony: slow silhouette pulses remain stable on a filmed display. */
 .pm-growth-evolving{position:absolute;z-index:6;top:45%;padding:9px 15px;border:3px solid #fff;border-radius:9px;color:#fff;background:#397a2b;font:11px var(--pm-font-pixel);text-shadow:2px 2px 0 #243421;opacity:0;animation:pm-evolution-label 1.55s ease-out}.pm-growth-showcase .pm-growth-plant{animation:pm-growth-evolution 1.55s ease-in-out}.pm-growth-plant::before,.pm-growth-plant::after{content:"";position:absolute;z-index:-1;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}.pm-growth-plant::before{width:250px;height:250px;border:12px solid rgba(255,222,106,.9);box-shadow:0 0 0 18px rgba(255,255,255,.3),0 0 45px #fff5a8;animation:pm-evolution-ring 1.55s ease-out}.pm-growth-plant::after{width:310px;height:310px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.8) 0 3deg,transparent 3deg 24deg);animation:pm-evolution-rays 1.55s ease-out}@keyframes pm-growth-evolution{0%{transform:scale(.92);filter:brightness(1)}18%,40%{transform:scale(1.02);filter:brightness(.12) saturate(0) drop-shadow(0 0 24px #fff)}62%{transform:scale(1.13);filter:brightness(4) saturate(0) drop-shadow(0 0 38px #fff)}78%{transform:scale(.98);filter:brightness(1.7) drop-shadow(0 0 20px #ffde6a)}100%{transform:scale(1);filter:brightness(1)}}@keyframes pm-evolution-ring{0%{opacity:0;transform:translate(-50%,-50%) scale(1.5)}22%,66%{opacity:1}66%{transform:translate(-50%,-50%) scale(.55)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}@keyframes pm-evolution-rays{0%,20%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.6)}48%{opacity:.75}100%{opacity:0;transform:translate(-50%,-50%) rotate(35deg) scale(1.25)}}@keyframes pm-evolution-label{0%,58%{opacity:0;transform:translateY(18px) scale(.8)}70%,88%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-8px)}}@media(prefers-reduced-motion:reduce){.pm-growth-showcase .pm-growth-plant,.pm-growth-plant::before,.pm-growth-plant::after,.pm-growth-evolving{animation:none}.pm-growth-plant::before,.pm-growth-plant::after,.pm-growth-evolving{display:none}}
@@ -1703,3 +1667,24 @@ html[data-theme="night"] .pm-crop-snapshot-head b { color:#f6dda2; background:#3
 
 /* Ten-stage presenter-only growth showcase. Pure presentation: no game writes. */
 .pm-growth-showcase{position:fixed;inset:0;z-index:2500;display:grid;grid-template-rows:minmax(0,1fr) auto auto;overflow:auto;color:#243421;background:#10251a}.pm-growth-sky{position:relative;display:grid;place-content:center;justify-items:center;min-height:500px;overflow:hidden;padding:42px 20px 20px;background:radial-gradient(circle at 50% 32%,#fff8bd 0 3%,#a3e4ff 4% 54%,#69b957 55% 70%,#397a2b 71%)}.pm-growth-sky>p{color:#245f35;font:9px/1.4 var(--pm-font-pixel)}.pm-growth-sky>h2{margin-top:9px;color:#fff;font:clamp(30px,6vw,58px)/1 var(--pm-font-game);text-shadow:4px 4px 0 #243421}.pm-growth-sky>strong{margin-top:8px;padding:7px 10px;border:3px solid #243421;border-radius:9px;background:#fff7cf;font:9px var(--pm-font-pixel)}.pm-growth-close{position:absolute;right:18px;top:18px;z-index:3;width:44px;height:44px;border:3px solid #243421;border-radius:50%;background:#fff;font-size:25px;cursor:pointer}.pm-growth-stars{position:absolute;top:15%;color:#fff;font-size:24px;animation:pm-growth-twinkle 1.2s steps(2,end) infinite}.pm-growth-plant{position:relative;width:210px;height:245px;margin-top:18px;filter:drop-shadow(0 8px 0 rgba(36,52,33,.2));animation:pm-growth-reveal .7s steps(5,end)}.pm-growth-plant>div{position:absolute;left:52px;bottom:0;width:106px;height:66px;border:7px solid #243421;background:#c98452;clip-path:polygon(8% 0,92% 0,82% 100%,18% 100%)}.pm-growth-plant .stem{position:absolute;left:99px;bottom:60px;width:13px;height:82px;background:#397a2b}.pm-growth-plant>span{position:absolute;left:59px;bottom:116px;width:92px;height:76px;border:7px solid #243421;border-radius:42%;background:#89d974;box-shadow:inset 0 -13px #69c455}.pm-growth-plant>span b{position:absolute;top:27px;width:9px;height:11px;background:#243421}.pm-growth-plant>span b:first-child{left:22px}.pm-growth-plant>span b:nth-child(2){right:22px}.pm-growth-plant>span em{position:absolute;left:37px;top:48px;width:18px;height:7px;background:#243421}.pm-growth-plant .leaf{position:absolute;display:none;width:42px;height:23px;border:6px solid #243421;background:#69c455}.pm-growth-plant .leaf-a{left:60px;bottom:101px;transform:rotate(18deg)}.pm-growth-plant .leaf-b{right:57px;bottom:91px;transform:rotate(-18deg)}.pm-growth-plant .leaf-c{left:50px;bottom:142px}.pm-growth-plant .leaf-d{right:48px;bottom:146px}.pm-growth-plant .bud,.pm-growth-plant .flower,.pm-growth-plant .fruit{position:absolute;display:none;z-index:2;left:87px;bottom:181px;width:36px;height:34px;border:6px solid #243421}.pm-growth-plant .bud{border-radius:50%;background:#ff9e9e}.pm-growth-plant .flower{width:42px;height:42px;border-radius:50%;background:#fff;box-shadow:-20px 8px 0 -8px #fff,20px 8px 0 -8px #fff}.pm-growth-plant .fruit{border-radius:45% 45% 55% 55%;background:#f26b5b}.pm-growth-plant .aura{position:absolute;display:none;inset:20px 12px 38px;border:8px solid #ffde6a;border-radius:50%;box-shadow:0 0 30px #fff4a8}.pm-growth-plant .crown{position:absolute;display:none;z-index:4;left:78px;bottom:207px;color:#ffde6a;font:55px/1 serif;text-shadow:3px 3px 0 #243421}.pm-growth-plant.stage-seed>span{transform:scale(.55) translateY(72px)}.pm-growth-plant.stage-sprout>span{transform:scale(.68) translateY(42px)}.pm-growth-plant.stage-seedling .leaf-a,.pm-growth-plant.stage-seedling .leaf-b,.pm-growth-plant.stage-bud .leaf-a,.pm-growth-plant.stage-bud .leaf-b,.pm-growth-plant.stage-bloom .leaf,.pm-growth-plant.stage-fruit .leaf,.pm-growth-plant.stage-guardian .leaf,.pm-growth-plant.stage-elder .leaf,.pm-growth-plant.stage-radiant .leaf,.pm-growth-plant.stage-legend .leaf{display:block}.pm-growth-plant.stage-bud .bud{display:block}.pm-growth-plant.stage-bloom .flower,.pm-growth-plant.stage-guardian .flower,.pm-growth-plant.stage-elder .flower,.pm-growth-plant.stage-radiant .flower,.pm-growth-plant.stage-legend .flower{display:block}.pm-growth-plant.stage-fruit .fruit,.pm-growth-plant.stage-guardian .fruit,.pm-growth-plant.stage-elder .fruit,.pm-growth-plant.stage-radiant .fruit,.pm-growth-plant.stage-legend .fruit{display:block}.pm-growth-plant.stage-guardian{transform:scale(1.08)}.pm-growth-plant.stage-elder>span{background:#79c96b}.pm-growth-plant.stage-radiant .aura,.pm-growth-plant.stage-legend .aura{display:block}.pm-growth-plant.stage-legend .crown{display:block}.pm-growth-burst{height:22px;color:#fff;font-size:20px}.pm-growth-ladder{display:grid;grid-template-columns:repeat(10,minmax(80px,1fr));gap:4px;overflow-x:auto;margin:0;padding:12px;background:#173323;list-style:none}.pm-growth-ladder button{width:100%;min-height:60px;border:2px solid #315b42;border-radius:8px;color:#a5c9ae;background:#10251a;cursor:pointer}.pm-growth-ladder span,.pm-growth-ladder small{display:block}.pm-growth-ladder span{font:bold 13px var(--pm-font-game)}.pm-growth-ladder small{margin-top:4px;font-size:10px}.pm-growth-ladder .is-seen button{color:#baffca;border-color:#3f7d53}.pm-growth-ladder .is-current button{color:#243421;border-color:#243421;background:#ffde6a;box-shadow:0 3px 0 #243421}.pm-growth-controls{display:flex;justify-content:center;gap:8px;padding:13px;background:#07110b}.pm-growth-controls button{min-width:140px;border:2px solid #3f7d53;border-radius:9px;padding:11px;color:#d8ffe0;background:#173323;font:9px var(--pm-font-pixel);cursor:pointer}.pm-growth-controls .is-primary{color:#243421;border-color:#ffde6a;background:#ffde6a}.pm-growth-controls button:disabled{opacity:.35}@keyframes pm-growth-reveal{0%{opacity:.2;transform:scale(.72);filter:brightness(4)}100%{opacity:1;transform:scale(1)}}@keyframes pm-growth-twinkle{50%{opacity:.35;transform:scale(.92)}}@media(max-width:600px){.pm-growth-sky{min-height:430px}.pm-growth-controls button{min-width:0;flex:1;font-size:7px}.pm-growth-ladder{grid-template-columns:repeat(10,84px)}}@media(prefers-reduced-motion:reduce){.pm-growth-plant,.pm-growth-stars{animation:none}}
+
+/* NPC cast badges (kiki design integration) — the designer's pixel cast as
+   small header/avatar accents, never layout owners. 4x sprites shown at
+   64 CSS px keep the 32px grid on integer device pixels at 1x and 2x DPR. */
+.pm-npc-badge{display:inline-flex;align-items:center;gap:10px;max-width:100%}
+.pm-npc-badge picture{flex:none;display:block}
+/* 70×63 keeps the idle GIF's 10:9 diorama frame; the reduced-motion static
+   square letterboxes inside the same box (object-fit keeps both undistorted). */
+.pm-npc-badge img{flex:none;display:block;width:70px;height:63px;object-fit:contain;object-position:center bottom;border-radius:8px;image-rendering:pixelated;filter:drop-shadow(2px 3px 0 rgba(36,52,33,.16))}
+.pm-npc-badge>span{display:grid;gap:3px;min-width:0}
+.pm-npc-badge b{color:var(--color-forest);font:8px/1.5 var(--pm-font-pixel);letter-spacing:.08em;text-transform:uppercase}
+.pm-npc-badge small{color:#57684f;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+html[data-theme="night"] .pm-npc-badge small{color:var(--color-text);opacity:.75}
+/* Compact inline avatar (camera advisory rows): 2x sprite at 32 CSS px. */
+.pm-npc-avatar{flex:none;width:32px;height:32px;image-rendering:pixelated}
+/* Penjelajah hosts the crop explorer's scan radar circle. */
+/* Penjelajah porthole: the idle GIF's grass diorama fills the radar circle
+   (cover crops the 160×144 loop to the round frame); the reduced-motion
+   static square covers it exactly, transparency letting the rings show. */
+.pm-crop-radar picture{display:contents}
+.pm-crop-radar img{width:100%;height:100%;object-fit:cover;object-position:center bottom;border-radius:50%;image-rendering:pixelated;filter:drop-shadow(2px 3px 0 rgba(36,52,33,.18))}

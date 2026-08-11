@@ -56,7 +56,7 @@ const COPY = {
     "focus.healthy.title": "Jamkachu nyaman", "focus.healthy.summary": "Semua kondisi aman. Tidak ada tindakan yang perlu dilakukan sekarang.",
     "focus.action.title": "Bantu Jamkachu sekarang", "focus.action.summary": "Lakukan satu tindakan di bawah, lalu biarkan sensor melihat perubahannya.",
     "focus.verifying.title": "Pertahankan kondisinya", "focus.verifying.summary": "Perawatanmu terlihat. Jangan ubah apa pun dulu saat sensor memeriksa.",
-    "guide.title": "CARA BERMAIN", "guide.sense": "1 · Lihat sensor", "guide.understand": "2 · Dengar Jamkachu", "guide.act": "3 · Ubah satu hal kecil", "guide.verify": "4 · Sensor cek, hadiah tumbuh", "guide.start": "AYO MULAI!",
+    "guide.title": "CARA BERMAIN", "guide.sense": "1 · Lihat sensor", "guide.understand": "2 · Dengar Jamkachu", "guide.act": "3 · Ubah satu hal kecil", "guide.verify": "4 · Sensor cek, hadiah tumbuh", "guide.grow": "Rawat aku — aku tumbuh dari benih sampai berbuah!", "guide.start": "AYO MULAI!",
     "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ok": "Aman", "env.check": "Perlu dicek", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Misi muncul saat sensorku merasakan perubahan",
     "quest.verifying": "memverifikasi…",
@@ -104,7 +104,7 @@ const COPY = {
     "focus.healthy.title": "Jamkachu is comfortable", "focus.healthy.summary": "Every condition is safe. Nothing needs changing right now.",
     "focus.action.title": "Help Jamkachu now", "focus.action.summary": "Do the one action below, then let the sensors see the change.",
     "focus.verifying.title": "Keep it steady", "focus.verifying.summary": "Your care was noticed. Do not change anything while the sensors check.",
-    "guide.title": "HOW TO PLAY", "guide.sense": "1 · Check the sensors", "guide.understand": "2 · Listen to Jamkachu", "guide.act": "3 · Change one small thing", "guide.verify": "4 · Sensors check, rewards grow", "guide.start": "LET'S GROW!",
+    "guide.title": "HOW TO PLAY", "guide.sense": "1 · Check the sensors", "guide.understand": "2 · Listen to Jamkachu", "guide.act": "3 · Change one small thing", "guide.verify": "4 · Sensors check, rewards grow", "guide.grow": "Care for me — I grow from a seed all the way to fruit!", "guide.start": "LET'S GROW!",
     "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ok": "OK", "env.check": "Check", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "Missions appear when my sensors feel a change",
     "quest.verifying": "verifying…",
@@ -340,16 +340,20 @@ function applyMoodPulse(mood) {
   }
 }
 
-/** Swap Jamkachu's face group + identity line (#char-mood) to the given mood.
- *  Same body, same pot — only the expression changes (spec §2.2). */
+/** Swap Jamkachu's drawn expression + identity line (#char-mood) to the
+ *  given mood. Same body, same pot — only the expression changes (spec
+ *  §2.2). The face-* classes stay on the container as the state channel;
+ *  the visible face is the designer sprite via PMSprite (kiki design
+ *  integration — jamkachu-sprite.js maps mood→drawn frame). */
 function setMascotMood(state) {
-  clearPetExpression(); // a stale tap-reaction face never outlives a mood change
+  clearPetExpression(); // a stale tap-reaction flash never outlives a mood change
   const svg = $(".mascot-svg");
   if (svg) {
     svg.classList.remove("expr-curious", "expr-proud", "expr-giggle");
     for (const cls of Object.values(MOOD_FACE)) svg.classList.remove(cls);
     svg.classList.add(MOOD_FACE[state] ?? "face-happy");
   }
+  window.PMSprite?.set({ mood: MOODS[state] ? state : "Happy" });
   const moodEl = $("#char-mood");
   if (moodEl) {
     // Mood word goes through the active locale dictionary first; unknown
@@ -470,6 +474,10 @@ function applySkinClass(key) {
     }
     svg.classList.add(`skin-${next}`);
   }
+  // The visible skin is a pot-palette swap on the designer sprite now
+  // (jamkachu-sprite.js SKIN_RAMPS); the skin-<key> class above stays as a
+  // harmless state channel.
+  window.PMSprite?.set({ skinKey: next });
   // Only a REAL change repaints an open wardrobe list (selection marker) —
   // the 15s poll re-confirming the same skin must not rebuild the buttons
   // under the user's finger.
@@ -552,6 +560,10 @@ function renderCompanion(state) {
     svg.classList.add(`companion-${stage}`);
     svg.dataset.companionForm = form;
   }
+  // Designer sprite: the stage picks the drawn growth phase (stage→phase
+  // table in jamkachu-sprite.js); late-stage differentiation stays via the
+  // --companion-accent aura + decor + ceremony.
+  window.PMSprite?.set({ stage });
   // Cosmetic skin (milestone20): swap the skin-<key> palette class from
   // companion_state.skin_key. An undefined skin_key (pre-milestone20 DB or
   // the legacy column fallback select) behaves exactly like "jamkachu".
@@ -635,7 +647,12 @@ function pmMarkSeen(id) {
 // One small first-use guide, always reopenable with ?. Imperative dialog
 // state keeps it independent of sensor/network initialization.
 const farmGuide = $("#farm-guide");
-const openFarmGuide = () => typeof farmGuide?.showModal === "function" && farmGuide.showModal();
+const openFarmGuide = () => {
+  if (typeof farmGuide?.showModal !== "function") return;
+  // The "how I grow" art follows the live tier + mood on every open.
+  renderGuideGrowth();
+  farmGuide.showModal();
+};
 $("#farm-guide-open")?.addEventListener("click", openFarmGuide);
 $("#farm-guide-close")?.addEventListener("click", () => { pmMarkSeen("guide.farm"); farmGuide?.close(); });
 // Coach dare hook: the first-day tour's final card dares the kid to open
@@ -674,9 +691,67 @@ function showWardrobeNote(text) {
   note.textContent = text ?? "";
 }
 
+/** CURRENT bond accessory tier ("" | "bow" | "ribbon") from PMSprite state
+ *  (the tier thresholds and phase clamps live in jamkachu-sprite.js — the
+ *  farm layer never re-derives them). Bare when the driver is absent. */
+function currentSpriteTier() {
+  try {
+    const spriteState = window.PMSprite?.getState?.();
+    if (!spriteState) return "";
+    return window.PMSprite?.accessoryTier?.(spriteState.bondLevel, window.PMSprite?.stagePhase?.(spriteState.stage)) || "";
+  } catch {
+    return "";
+  }
+}
+
+/** Wardrobe header mascot (kiki design integration): the moods-p4 GIF whose
+ *  bow/ribbon variant matches the CURRENT accessory tier from PMSprite
+ *  state. Fallback bare when the sprite driver is absent. Reduced motion:
+ *  the static grown sprite of the same tier instead of the animated strip.
+ *  Decorative either way (aria-hidden img in the markup). */
+function renderWardrobeMascot() {
+  const img = $("#wardrobe-mascot");
+  if (!img) return;
+  const tier = currentSpriteTier();
+  const suffix = tier ? `-${tier}` : "";
+  img.src = prefersReducedMotion()
+    ? `/farm/assets/jamkachu/4x/plant-p4-fruit-happy${suffix}.png`
+    : `/farm/assets/jamkachu/gif/moods-p4${suffix}.gif`;
+  img.hidden = false;
+}
+
+/** Guide "how I grow" art (kiki design integration): re-points the growth
+ *  strip at the CURRENT accessory tier, and at the calm strip whenever
+ *  Jamkachu is not actually happy and awake — so every designer growth
+ *  variant (plain + bow/ribbon tiers) is reachable in play, not just the
+ *  bare happy strip the markup defaults to. The <picture> source keeps
+ *  owning reduced motion; it is re-pointed at the static grown sprite of
+ *  the same mood + tier. Purely decorative (aria-hidden picture); when the
+ *  sprite driver is absent the markup default stands. */
+function renderGuideGrowth() {
+  const img = $("#farm-guide .farm-guide-grow img");
+  const staticSource = $("#farm-guide .farm-guide-grow source");
+  if (!img || !window.PMSprite) return;
+  const tier = currentSpriteTier();
+  const suffix = tier ? `-${tier}` : "";
+  let strip = "plain";
+  try {
+    const spriteState = window.PMSprite?.getState?.();
+    const drawnMood = window.PMSprite?.tables?.MOOD_SPRITE?.[spriteState?.mood];
+    if (spriteState && !spriteState.sleeping && drawnMood === "happy") strip = "happy";
+  } catch {
+    strip = "plain";
+  }
+  img.src = `/farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif`;
+  if (staticSource) staticSource.srcset = `/farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png`;
+}
+
 function renderWardrobeList() {
   const list = $("#wardrobe-list");
   if (!list) return;
+  // The header mascot rides every list repaint: open, skin echo, and the
+  // bond level-ups that can change the accessory tier (refreshWardrobeIfOpen).
+  renderWardrobeMascot();
   // Defensive catalog read — a missing companion-skins.js tag simply leaves
   // the panel empty rather than breaking the page (same contract as PM()).
   const skins = window.PM_SKINS?.skins ?? [];
@@ -1986,6 +2061,8 @@ function updateCareUi() {
   applyNightUi();
   $(".mascot-svg")?.classList.toggle("face-asleep", sleepNow);
   $(".mascot-wrapper")?.classList.toggle("breath-slow", sleepNow);
+  // Designer sprite: night sleep forces the sleepy body (plan mood table).
+  window.PMSprite?.set({ sleeping: sleepNow });
   if (!changed) return;
   const bubble = $(".speech-bubble");
   if (sleepNow) {
@@ -2062,15 +2139,14 @@ function mascotBounce() {
   );
 }
 
-/** Hitstop: freeze/resume the idle breathing loop. The animation actually
- *  runs on `.animated-leaves` (a `<g>` inside the SVG, driven by
- *  `.animated-breath .animated-leaves` in style.css) — not on
- *  `.mascot-wrapper` itself — so that's the element whose
- *  animation-play-state we need to toggle for a real freeze. Used by both
- *  the evolution ceremony (Task 4) and the level-up re-stage (Task 5). */
+/** Hitstop: freeze/resume the idle breathing loop. The whole-body breath
+ *  bob runs on the sprite img (`.animated-breath #jamkachu-sprite` in
+ *  style.css) — not on `.mascot-wrapper` itself — so that's the element
+ *  whose animation-play-state we need to toggle for a real freeze. Used by
+ *  both the evolution ceremony (Task 4) and the level-up re-stage (Task 5). */
 function setBreathPaused(paused) {
-  const leaves = $(".mascot-svg .animated-leaves");
-  if (leaves) leaves.style.animationPlayState = paused ? "paused" : "";
+  const spriteEl = $("#jamkachu-sprite");
+  if (spriteEl) spriteEl.style.animationPlayState = paused ? "paused" : "";
 }
 
 // Petting — in-memory fiction only. Every 5th pet inside a rolling 30s
@@ -2093,65 +2169,134 @@ let petLineIndex = 0;
 let petExpressionIndex = 0;
 
 // ── Tap-reaction expression variety (2026-08-10 headline request:
-// "표정 더 다양하게, 터치하면 표정이 달라진다던가") ──────────────────────
-// Every tap answers with a DIFFERENT face. Pool keys are data-face variants
-// in index.html's mascot SVG (love/star/wink/blep/surprised/grit/teary/
-// blink are new pixel-art groups; curious/proud/giggle reuse the shipped
-// micro-expression art) — the inline tap-face stylesheet in index.html maps
-// tapface-<key> classes onto them, layered OVER the deterministic mood
-// face. ≥3 faces per mood: Happy gets the full party set, problem moods
-// stay honest (grateful/teary/determined — never a celebration face over a
-// struggling plant). Cycled by a tap counter so consecutive spam-taps
-// always visibly differ. Pure presentation: zero XP, zero writes, no
-// counters beyond the cycle index.
-// ("surprised" and "dizzy" were cut by user decision 2026-08-11 — the round-eye
-// gasp and X-eye KO faces read as scary, not cute. Don't re-add them.)
+// "표정 더 다양하게, 터치하면 표정이 달라진다던가"; re-seated on the kiki
+// designer sprites 2026-08-11) ───────────────────────────────────────────
+// Every tap answers with a DIFFERENT {spriteMood, emojiBurst} pair: the
+// sprite flashes an alternate drawn mood for ~1.2s (via PMSprite.set
+// flashMood — designer art stays the face), plus one emoji burst rides the
+// existing particle system. ≥3 distinct pairs per mood: Happy taps skew
+// warm/party; problem moods stay honest — every problem pool keeps at
+// least two entries flashing the mood's OWN drawn body so struggle never
+// fully disappears under affection. Cycled by a tap counter so consecutive
+// spam-taps always visibly differ. Pure presentation: zero XP, zero
+// writes, no counters beyond the cycle index.
 const PET_EXPRESSION_POOLS = {
-  // Positive reactions intentionally outnumber concern faces (about 3:1),
+  // Positive reactions intentionally outnumber concern flashes (about 3:1),
   // so a tap feels encouraging even while the sensor mood remains honest.
-  Happy: ["love", "star", "wink", "blep", "giggle", "proud", "heart", "shy", "love", "star"],
-  Overheating: ["wink", "heart", "shy", "love", "star", "teary", "grit"],
-  TooCold: ["wink", "shy", "love", "heart", "star", "grit", "teary"],
-  DryAir: ["wink", "shy", "love", "heart", "star", "teary", "grit"],
-  HumidAir: ["wink", "heart", "love", "star", "shy", "grit", "teary"],
-  Sleepy: ["shy", "love", "heart", "star", "wink", "blink", "teary"],
-  SoilAcidic: ["wink", "heart", "love", "shy", "star", "teary", "grit"],
-  SoilAlkaline: ["wink", "heart", "love", "star", "shy", "grit", "teary"],
+  Happy: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "happy", emojiBurst: "🎵" },
+    { spriteMood: "plain", emojiBurst: "😮" },
+    { spriteMood: "happy", emojiBurst: "✨" },
+    { spriteMood: "sleepy", emojiBurst: "💛" },
+    { spriteMood: "happy", emojiBurst: "🌈" },
+  ],
+  Overheating: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "overheat", emojiBurst: "💦" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "overheat", emojiBurst: "🥵" },
+  ],
+  TooCold: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "plain", emojiBurst: "🥶" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "❄️" },
+  ],
+  DryAir: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "thirsty", emojiBurst: "💧" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "thirsty", emojiBurst: "💦" },
+  ],
+  HumidAir: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "plain", emojiBurst: "💦" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🌬️" },
+  ],
+  Sleepy: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "sleepy", emojiBurst: "💤" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "🌙" },
+    { spriteMood: "sleepy", emojiBurst: "😌" },
+  ],
+  SoilAcidic: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "plain", emojiBurst: "🧪" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🌱" },
+  ],
+  SoilAlkaline: [
+    { spriteMood: "happy", emojiBurst: "💖" },
+    { spriteMood: "plain", emojiBurst: "🧪" },
+    { spriteMood: "happy", emojiBurst: "⭐" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🪴" },
+  ],
 };
-const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood face returns
-const PET_EXPRESSION_CLASSES = [...new Set(Object.values(PET_EXPRESSION_POOLS).flat())].map((face) => `tapface-${face}`);
+// Named reactions for the explicit callers (drowsy blink, surprise-hop
+// giggle) — sprite-mood flavors of the retired face keys, same call sites.
+const PET_NAMED_REACTIONS = {
+  blink: { spriteMood: "sleepy", emojiBurst: "😌" },
+  giggle: { spriteMood: "happy", emojiBurst: "😄" },
+};
+const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood frame returns
 let petExpressionTimer = null;
 
-/** Drop any active tap-reaction face — the deterministic mood face under it
- *  returns instantly. Mood renders and sleep entry call this so a stale
+/** One emoji rises off the sprite head — the tap reaction's burst half,
+ *  riding the shipped .badge-tap-particle pixel-pop styling. */
+function spawnPetEmojiBurst(glyph) {
+  if (!glyph) return;
+  const rect = mascotRect();
+  const el = document.createElement("span");
+  el.className = "badge-tap-particle";
+  el.textContent = glyph;
+  el.style.left = `${rect.left + rect.width / 2 + (Math.random() * 28 - 14)}px`;
+  el.style.top = `${rect.top + rect.height * 0.3}px`;
+  el.style.setProperty("--tap-x", `${Math.random() < 0.5 ? -22 : 22}px`);
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+/** Drop any active tap-reaction flash — the deterministic mood frame under
+ *  it returns instantly. Mood renders and sleep entry call this so a stale
  *  grin can never sit over fresh truth. */
 function clearPetExpression() {
   if (petExpressionTimer !== null) {
     clearTimeout(petExpressionTimer);
     petExpressionTimer = null;
   }
-  const svg = $(".mascot-svg");
-  if (svg) svg.classList.remove("is-tapface", ...PET_EXPRESSION_CLASSES);
+  window.PMSprite?.set({ flashMood: null });
 }
 
-/** Flash one tap-reaction face, then revert to the mood face. `face` picks
- *  an explicit variant (drowsy blink, surprise hop); omitted, the per-mood
- *  pool cycles via the tap counter so consecutive taps always differ.
- *  Quiet gates: never over night sleep (sleepShown — drowsy taps route
- *  through the explicit blink), the hatch intro, or the first-day tour.
- *  Reaction only — grants nothing, ever. */
+/** Flash one tap-reaction pair (alternate sprite mood + emoji burst), then
+ *  revert to the mood frame. `face` picks an explicit named reaction
+ *  (drowsy blink, surprise hop); omitted, the per-mood pool cycles via the
+ *  tap counter so consecutive taps always differ. Quiet gates: never over
+ *  night sleep (sleepShown — drowsy taps route through the explicit
+ *  blink), the hatch intro, or the first-day tour. PMSprite absent → the
+ *  whole reaction no-ops safely. Reaction only — grants nothing, ever. */
 function showPetExpression(face, ms = PET_EXPRESSION_MS) {
   if (sleepShown || hatchActive || tourActive) return; // quiet gates
-  const svg = $(".mascot-svg");
-  if (!svg) return;
-  let selected = face;
-  if (!selected) {
+  if (!window.PMSprite) return; // sprite driver absent: no-op, never throw
+  let reaction = face ? PET_NAMED_REACTIONS[face] : null;
+  if (!reaction) {
     const pool = PET_EXPRESSION_POOLS[careMood] ?? PET_EXPRESSION_POOLS.Happy;
-    selected = pool[petExpressionIndex % pool.length];
+    reaction = pool[petExpressionIndex % pool.length];
     petExpressionIndex += 1;
   }
   clearPetExpression(); // restart cleanly so back-to-back taps visibly swap
-  svg.classList.add("is-tapface", `tapface-${selected}`);
+  window.PMSprite.set({ flashMood: reaction.spriteMood });
+  spawnPetEmojiBurst(reaction.emojiBurst);
   petExpressionTimer = setTimeout(() => {
     petExpressionTimer = null;
     clearPetExpression();
@@ -2159,12 +2304,15 @@ function showPetExpression(face, ms = PET_EXPRESSION_MS) {
 }
 
 // Idle expression variety: every 25–45s (randomized) with no interaction, a
-// brief subtle blink or pupil glance (~0.8s) keeps Jamkachu feeling alive
-// between visits. Skipped ENTIRELY under prefers-reduced-motion (the
-// matchMedia check inside prefersReducedMotion) and behind the same quiet
-// gates as tap reactions. Grants nothing. (`lastPointerAt`, `mascotDown`,
-// and `gazeActive` are declared later in this file — the first timer tick
-// fires long after module evaluation, so the bindings are live by then.)
+// brief idle bob/tilt of the sprite (~0.8s) or an occasional quiet sparkle
+// keeps Jamkachu feeling alive between visits. (The old pupil-glance/blink
+// DOM writes retired with the inline-SVG face — the designer sprite has no
+// separately addressable pupils.) Skipped ENTIRELY under
+// prefers-reduced-motion (the matchMedia check inside prefersReducedMotion)
+// and behind the same quiet gates as tap reactions. Grants nothing.
+// (`lastPointerAt` and `mascotDown` are declared later in this file — the
+// first timer tick fires long after module evaluation, so the bindings are
+// live by then.)
 const IDLE_EXPRESSION_MIN_MS = 25_000;
 const IDLE_EXPRESSION_MAX_MS = 45_000;
 const IDLE_EXPRESSION_MS = 800;
@@ -2177,17 +2325,15 @@ function maybeIdleExpression() {
   if (Date.now() - lastPointerAt < IDLE_EXPRESSION_MIN_MS) return; // user is around
   if (petExpressionTimer !== null) return; // a tap reaction is mid-flight
   if (Math.random() < 0.5) {
-    showPetExpression("blink", IDLE_EXPRESSION_MS);
-  } else if (!gazeActive) {
-    // Glance: small pupil shift-and-return on the curious-gaze pupils.
-    const pupils = $(".mascot-svg .pupils");
-    if (!pupils) return;
-    pupils.style.transform = `translate(${Math.random() < 0.5 ? -2 : 2}px, ${Math.random() < 0.5 ? -1 : 1}px)`;
-    setTimeout(() => {
-      if (gazeActive) return; // the pointer gaze took the pupils meanwhile
-      const el = $(".mascot-svg .pupils");
-      if (el) el.style.transform = "";
-    }, IDLE_EXPRESSION_MS);
+    // Idle bob/tilt: a short class flash on the container; style.css runs
+    // the one-shot keyframes on the sprite img (reduced-motion gated there
+    // too, belt-and-suspenders with the guard above).
+    const svg = $(".mascot-svg");
+    if (!svg) return;
+    svg.classList.add("idle-bob");
+    setTimeout(() => $(".mascot-svg")?.classList.remove("idle-bob"), IDLE_EXPRESSION_MS);
+  } else {
+    spawnSparkles(mascotRect(), 3); // occasional sparkle — quiet, tiny
   }
 }
 
@@ -2544,11 +2690,13 @@ function surpriseHop(now) {
   showTransientBubble(PM().petSurprise ?? PET_SURPRISE_FALLBACK, PET_BUBBLE_RESTORE_MS);
 }
 
-/** Pot knock (item 3): shakes ONLY the pot group; the line swaps when the
- *  Lv.2 heart-sticker decoration is visible on the pot. */
+/** Pot knock (item 3): a small side-to-side rattle. The pot is baked into
+ *  the designer sprite now, so the whole img rattles a few px (the closest
+ *  honest read of "knocking the pot"); the line still swaps when the Lv.2
+ *  heart-sticker decoration is visible on the pot. */
 function potKnock(now) {
   window.PMSfx?.play("knock");
-  const pot = $(".mascot-pot");
+  const pot = $("#jamkachu-sprite");
   if (pot && !prefersReducedMotion()) {
     animateSafe(
       pot,
@@ -2601,8 +2749,11 @@ function mascotPartAt(clientX, clientY) {
   if (!rect.width || !rect.height) return "head";
   const x = ((clientX - rect.left) / rect.width) * 300;
   const y = ((clientY - rect.top) / rect.height) * 350;
-  if (y >= 190) return "pot"; // pot rim (y=190) downward
-  if (y > 120 && x >= 125 && x <= 175) return "stem"; // stem column below head
+  // Sprite geometry (kiki pack): pot rim starts at y≈238 in the 300×350
+  // box (row 40 of the 64px grid, img bottom-anchored); the stem column
+  // sits center x 150 between the head block and the rim.
+  if (y >= 238) return "pot"; // pot rim downward
+  if (y > 170 && x >= 125 && x <= 175) return "stem"; // stem column below head
   return "head"; // head block + leaves keep the shipped petting
 }
 
@@ -2812,6 +2963,10 @@ function cancelMascotPointer(event) {
 // pointer while Jamkachu is awake. rAF-throttled, transform-only; eases
 // back to center on leave or after 3s idle (CSS transition). Skipped while
 // asleep or hatching; fully static under reduced motion. No audio.
+// NOTE (kiki sprites, 2026-08-11): the designer sprite has no separately
+// addressable pupils, so the pipeline below quietly no-ops on its null
+// checks — kept because the gazeReset/gazeActive contracts are shared with
+// the sleep path and the idle behaviors above.
 
 const GAZE_MAX_PX = 3;
 const GAZE_IDLE_MS = 3000;
@@ -3167,21 +3322,25 @@ const notePointerActivity = () => {
 document.addEventListener("pointerdown", notePointerActivity, { capture: true, passive: true });
 document.addEventListener("pointermove", notePointerActivity, { capture: true, passive: true });
 
-/** Pupil shift-and-hold glance (reuses the tactile stage's .pupils group +
- *  its 0.3s ease-back transition). Never fights the curious gaze. */
+/** Look-around glance: the sprite has no separately addressable pupils, so
+ *  the whole body shifts a couple of px, holds, and eases home (WAAPI —
+ *  animateSafe is a no-op where unsupported). Never fights the gaze state. */
 function idleLookAround() {
-  if (gazeActive) return; // the curious gaze owns the pupils right now
-  const pupils = $(".mascot-svg .pupils");
-  if (!pupils) return;
-  const tx = Math.random() < 0.5 ? -2 : 2;
-  const ty = Math.random() < 0.5 ? -1 : 1;
-  pupils.style.transform = `translate(${tx}px, ${ty}px)`; // shift…
-  setTimeout(() => {
-    // …hold, then ease home — unless the gaze took over meanwhile.
-    if (gazeActive) return;
-    const el = $(".mascot-svg .pupils");
-    if (el) el.style.transform = "";
-  }, 1200 + Math.random() * 900);
+  if (gazeActive) return; // the pointer gaze owns the mascot right now
+  const spriteEl = $("#jamkachu-sprite");
+  if (!spriteEl) return;
+  const tx = Math.random() < 0.5 ? -3 : 3;
+  const hold = 1200 + Math.random() * 900;
+  animateSafe(
+    spriteEl,
+    [
+      { transform: "translate(0, 0)" },
+      { transform: `translate(${tx}px, -1px)`, offset: 0.15 },
+      { transform: `translate(${tx}px, -1px)`, offset: 0.85 },
+      { transform: "translate(0, 0)" },
+    ],
+    { duration: hold, easing: "steps(6, end)" },
+  );
 }
 
 function idleSquashStretch() {
@@ -3200,7 +3359,7 @@ function idleSquashStretch() {
 }
 
 function idleLeafRuffle() {
-  const leaves = $(".animated-leaves");
+  const leaves = $("#jamkachu-sprite"); // whole-sprite ruffle (leaves are baked in)
   if (!leaves) return;
   animateSafe(
     leaves,
@@ -3217,13 +3376,10 @@ function idleLeafRuffle() {
 
 function idleHappyExpression() {
   if (careMood !== "Happy" || sleepShown) return;
-  const svg = $(".mascot-svg");
-  if (!svg) return;
-  const expressions = ["expr-curious", "expr-proud", "expr-giggle"];
-  const selected = expressions[Math.floor(Math.random() * expressions.length)];
-  svg.classList.remove(...expressions);
-  svg.classList.add(selected);
-  window.setTimeout(() => svg.classList.remove(selected), 1900);
+  // The old expr-curious/proud/giggle face groups retired with the inline
+  // SVG — a comfortable idle Jamkachu now flashes a happy-pool reaction
+  // pair for a beat (same quiet gates inside showPetExpression).
+  showPetExpression(undefined, 1900);
 }
 
 function maybeIdleBehavior() {
@@ -3296,10 +3452,10 @@ function maybeWindGust() {
   if (fxPlaying || fxQueue.length > 0 || hatchActive || tourActive) return;
   document.body?.classList.add("fx-wind");
   setTimeout(() => document.body?.classList.remove("fx-wind"), WIND_GUST_MS);
-  const leaves = $(".animated-leaves");
+  const leaves = $("#jamkachu-sprite");
   if (leaves) {
     // WAAPI wins over the CSS breath animation for the gust's duration, so
-    // the leaves lean the same direction as the grass/cloud containers.
+    // the sprite leans the same direction as the grass/cloud containers.
     animateSafe(
       leaves,
       [
@@ -4321,9 +4477,23 @@ async function runEvolutionSequence(oldStage, newStage) {
   evoFastForward = ffTap;
   document.addEventListener("pointerdown", ffTap, { capture: true });
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, Math.min(ms, 4000)));
+  // Same-phase evolutions (stage→phase table in jamkachu-sprite.js buckets
+  // e.g. Sprout+Seedling onto one drawn frame) render byte-identical sprites
+  // for oldStage and newStage — under the .evo-sil white-silhouette filter
+  // the strobe would freeze into a static shape. .evo-sil-alt marks the
+  // new-stage beats so style.css can stretch the silhouette upward, keeping
+  // two visibly distinct shapes alternating on every transition pair.
+  const strobeSamePhase =
+    typeof window.PMSprite?.stagePhase === "function" &&
+    window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage);
   const setStage = (stage) => {
     for (const cls of [...svg.classList]) if (cls.startsWith("companion-")) svg.classList.remove(cls);
     svg.classList.add(`companion-${stage}`);
+    svg.classList.toggle("evo-sil-alt", strobeSamePhase && stage === newStage && svg.classList.contains("evo-sil"));
+    // Designer sprite: each strobe step swaps the drawn phase frame too
+    // (stage→phase table in jamkachu-sprite.js), so the silhouette
+    // alternation stays visible on the img.
+    window.PMSprite?.set({ stage });
   };
   const tint = ensureEvoTint();
   let riser = null;
@@ -4368,7 +4538,7 @@ async function runEvolutionSequence(oldStage, newStage) {
       setBreathPaused(true); // hitstop: freeze idle breathing
       await sleep(50);
       setBreathPaused(false);
-      svg.classList.remove("evo-sil");
+      svg.classList.remove("evo-sil", "evo-sil-alt");
       wrap.classList.add("evo-shake-lg");
       svg.classList.add("evo-reveal-bounce");
       window.PMSfx?.cry();
@@ -4393,7 +4563,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     svg.style.willChange = "auto";
     tint?.classList.remove("on");
     wrap.classList.remove("evo-pulse", "evo-shake-lg");
-    svg.classList.remove("evo-sil", "evo-reveal-bounce", "evo-xfade");
+    svg.classList.remove("evo-sil", "evo-sil-alt", "evo-reveal-bounce", "evo-xfade");
     // real companion_state re-asserts stage classes on the next data render
   }
 }
@@ -4505,6 +4675,10 @@ function applyDecorations(level) {
     svg.classList.toggle("decor-lv10", lv >= 10);
   }
   document.body?.classList.toggle("room-warm", lv >= 5);
+  // Designer sprite: bond level also picks the automatic accessory tier
+  // (bare → head bow ≥4 → prize ribbon ≥8, clamped by growth phase) — the
+  // bond→tier table lives in jamkachu-sprite.js.
+  window.PMSprite?.set({ bondLevel: lv });
   const token = $("#bff-token");
   if (token) {
     token.hidden = lv < 10;
@@ -4557,6 +4731,10 @@ function renderShopPurchases(rows) {
     SHOP_POT_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedPot));
     SHOP_ACC_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedAcc));
   }
+  // Designer sprite: the equipped pot recolors the sprite's pot pixels
+  // (jamkachu-sprite.js POT_ITEM_RAMPS; precedence pot item > skin > none).
+  // Accessories stay overlay-SVG groups driven by the classes above.
+  window.PMSprite?.set({ potItemKey: equippedPot });
   if (layer) {
     SHOP_DECOR_KEYS.forEach((key) => layer.classList.toggle(`own-${key}`, ownedDecor.has(key)));
   }
@@ -5972,7 +6150,6 @@ function renderOfflineHome() {
   // this early — prevCompanionStage is still null, so the evolution
   // ceremony's rank-increase check can never fire off a fabricated state.
   renderCompanion({ stage: "Seed" });
-  $(".mascot-svg")?.classList.add("crop-strawberry");
   // Sensor tiles: the same honest localized "waiting…" state a configured-
   // but-empty backend shows (renderSensorsWaiting), never raw "--".
   renderSensorsWaiting();

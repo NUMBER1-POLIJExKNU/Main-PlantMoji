@@ -26,7 +26,7 @@ import {
   toGrayscale,
   type MotionEvent,
 } from "@/lib/motion-detect";
-import type { AppLocale } from "@/lib/i18n";
+import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 
 export interface GuardianFeedItem {
@@ -459,7 +459,23 @@ export default function CameraGuardian({
           <ul className="pm-cam-feed">
             {feed.map((item, index) => (
               <li key={`${item.at}-${index}`} className={`pm-panel pm-cam-event is-${item.kind}`}>
-                <span aria-hidden="true">{item.kind === "touch" ? "✋" : "🐛"}</span>
+                {item.kind === "touch" ? (
+                  <span aria-hidden="true">✋</span>
+                ) : (
+                  // Moji-Bot (designer NPC cast) is the face of the AI
+                  // advisory line — its name is the alt, so screen readers
+                  // hear who is speaking before the advisory text.
+                  // eslint-disable-next-line @next/next/no-img-element -- static pixel-art sprite; next/image resampling would blur it
+                  <img
+                    className="pm-npc-avatar"
+                    src="/farm/assets/npc/2x/npc-05-moji-bot.png"
+                    srcSet="/farm/assets/npc/1x/npc-05-moji-bot.png 32w, /farm/assets/npc/2x/npc-05-moji-bot.png 64w, /farm/assets/npc/4x/npc-05-moji-bot.png 128w"
+                    sizes="32px"
+                    alt={npcNameLabel(locale, "moji-bot")}
+                    width={32}
+                    height={32}
+                  />
+                )}
                 <span>{item.kind === "touch" ? copy.eventTouch : (item.message ?? copy.eventPest)}</span>
                 <time dateTime={item.at}>{new Date(item.at).toLocaleTimeString()}</time>
               </li>

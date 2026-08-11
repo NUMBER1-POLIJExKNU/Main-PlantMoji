@@ -26,10 +26,8 @@ export default function PixelLoadingToy({ variant }: { variant: PixelLoadingVari
         <span className="pm-i18n-en">Tap Jamkachu</span>
       </span>
       <span className="pm-loading-scene" aria-hidden="true">
-        <span className="pm-loading-sprout"><i /><i /></span>
-        <span className="pm-loading-face"><i /><i /></span>
-        <span className="pm-loading-pot"><i /></span>
-        <span className="pm-loading-dirt" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+        <img className="pm-loading-jamkachu" src="/farm/assets/jamkachu/2x/plant-p2-sprout-happy.png" alt="" draggable={false} />
         <span className="pm-loading-prop" data-variant={variant}><i /><i /><i /></span>
         <span className="pm-loading-heart">♥</span>
       </span>

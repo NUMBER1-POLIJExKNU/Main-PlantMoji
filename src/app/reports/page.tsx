@@ -7,6 +7,7 @@ import PageHeader from "@/components/page-header";
 import WeeklyNarrationLive from "@/components/weekly-narration-live";
 import { fetchPlant, type PlantFetchResult } from "@/lib/plants";
 import { getWeeklyReportFallback } from "@/lib/plant-messages";
+import { spriteAssetPath } from "@/lib/jamkachu-sprite";
 import { computeWeeklyReport } from "@/lib/weekly-report";
 import { getServerSupabase } from "@/lib/supabase/server";
 import type { AppLocale } from "@/lib/i18n";
@@ -158,7 +159,16 @@ export default async function ReportsPage() {
 
       {fallbackNarration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="pm-report-jam-note mb-6">
-          <div className="pm-report-jamkachu" aria-hidden="true"><i /><i /><b /><b /></div>
+          {/* Report tone mirrors the next-goal logic: a heat-troubled week
+              gets the plain face, an easy week keeps the happy one. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+          <img
+            className="pm-report-jamkachu"
+            src={spriteAssetPath(4, report.overheatingEvents > 0 ? "plain" : "happy", "", "2x")}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
           <p className="pm-heading mb-2 text-center text-[9px] uppercase" style={{ color: INK_MUTED }}>
             {locale === "id"
               ? `Sepatah kata dari ${plantResult.plant.name}`

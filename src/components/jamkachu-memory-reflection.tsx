@@ -46,7 +46,8 @@ export default function JamkachuMemoryReflection({ memories, locale, snapshot }:
         <figcaption><b>{locale === "id" ? "JEPRET! SNAPSHOT TERBARU" : "SNAP! LATEST SNAPSHOT"}</b><span>{snapshot.date} · {snapshot.stage}</span></figcaption>
       </figure>}
       <div className="pm-memory-scene">
-        <div className="pm-memory-jamkachu" aria-hidden="true"><i /><i /><b /><b /></div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+        <img className="pm-memory-jamkachu" src="/farm/assets/jamkachu/2x/plant-p3-flower-happy.png" alt="" aria-hidden="true" draggable={false} />
         <div className={`pm-memory-bubble${thinking ? " is-thinking" : ""}`} role="status" aria-live="polite">
           <p>{reflection}</p>
           {thinking && <span>{locale === "id" ? "Jamkachu sedang mengingat…" : "Jamkachu is remembering…"}</span>}
