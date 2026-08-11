@@ -75,4 +75,24 @@ describe("farm shell appearance controls", () => {
     expect(live).toContain("root.dataset.farmSkin = readFarmSkin();");
     expect(live).toContain("initFarmAppearance();");
   });
+
+  it("initialises only after the consts applyNightUi reads exist", () => {
+    // Called next to applyLocale() this threw a temporal-dead-zone
+    // ReferenceError on SLEEP_START_HOUR, which killed the whole module and
+    // left every panel on My Garden showing its markup defaults. It has to run
+    // at the bottom of the file, and nothing may move it back up.
+    expect(live.indexOf("initFarmAppearance();")).toBeGreaterThan(live.indexOf("const SLEEP_START_HOUR"));
+    expect(live.indexOf("initFarmAppearance();")).toBeGreaterThan(live.indexOf("function applyNightUi"));
+    expect(live).toMatch(/initFarmAppearance\(\);\s*\n\s*\n?main\(\)\.catch/);
+  });
+
+  it("writes its own row captions instead of a missing string key", () => {
+    // data-i18n here printed the raw "appearance.theme" on screen: strings.js
+    // has no appearance group, and applyLocale falls back to the key.
+    expect(html).not.toContain('data-i18n="appearance.');
+    expect(html).toContain('data-appearance-label="theme"');
+    expect(html).toContain('data-appearance-label="skin"');
+    expect(live).toContain("const APPEARANCE_LABELS = {");
+    expect(live).toContain('document.querySelectorAll("[data-appearance-label]")');
+  });
 });

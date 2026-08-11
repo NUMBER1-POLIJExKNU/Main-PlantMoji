@@ -130,12 +130,15 @@
                  and localStorage keys the React side writes, so a choice made
                  on either side holds on the other. -->
             <div class="farm-appearance" role="group" aria-label="Appearance">
+                <!-- No data-i18n on these: strings.js has no appearance group,
+                     so applyLocale would print the raw key. live.js already
+                     knows the locale and writes both labels itself. -->
                 <label class="farm-appearance-row">
-                    <span data-i18n="appearance.theme">WAKTU</span>
+                    <span data-appearance-label="theme">WAKTU</span>
                     <select id="farm-theme"></select>
                 </label>
                 <label class="farm-appearance-row">
-                    <span data-i18n="appearance.skin">LATAR</span>
+                    <span data-appearance-label="skin">LATAR</span>
                     <select id="farm-skin"></select>
                 </label>
             </div>

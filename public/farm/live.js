@@ -158,6 +158,11 @@ const THEME_LABELS = {
   id: { auto: "Otomatis", day: "Siang", night: "Malam" },
   en: { auto: "Auto", day: "Day", night: "Night" },
 };
+// Row captions. Matches AppearanceControls' wording on the React routes.
+const APPEARANCE_LABELS = {
+  id: { theme: "WAKTU", skin: "LATAR" },
+  en: { theme: "THEME", skin: "SKIN" },
+};
 const FARM_SKIN_CATALOG = [
   { key: "jember-farm", icon: "🌱", id: "Kebun Jember", en: "Jember Farm" },
   { key: "coffee-hills", icon: "☕", id: "Bukit Kopi", en: "Coffee Hills" },
@@ -197,6 +202,11 @@ function initFarmAppearance() {
   const themeSelect = $("#farm-theme");
   const skinSelect = $("#farm-skin");
   const labels = THEME_LABELS[appLocale] ?? THEME_LABELS.en;
+  const captions = APPEARANCE_LABELS[appLocale] ?? APPEARANCE_LABELS.en;
+  for (const el of document.querySelectorAll("[data-appearance-label]")) {
+    const caption = captions[el.getAttribute("data-appearance-label")];
+    if (caption) el.textContent = caption;
+  }
   if (themeSelect) {
     themeSelect.innerHTML = FARM_THEMES
       .map((value) => `<option value="${value}">${labels[value]}</option>`)
@@ -703,7 +713,11 @@ document.querySelectorAll("[data-locale]").forEach((button) => {
   });
 });
 applyLocale();
-initFarmAppearance();
+// initFarmAppearance() is deliberately NOT called here: it ends up in
+// applyNightUi, which reads consts declared much further down this file, and
+// calling it this early threw a temporal-dead-zone ReferenceError that killed
+// the whole module — every screen on My Garden stayed on its markup defaults.
+// It runs at the bottom instead, once everything exists.
 
 // ── Unified seen-store bridge (public/farm/seen.js → window.PMSeen) ─────
 // Every one-time moment on the farm (hatch "hatch", tour "tour", guide
@@ -6968,6 +6982,9 @@ async function main() {
 // no unhandled rejection here can ever strand the page mid-load — any
 // escaped error still falls back to the same offline path (defaults render,
 // hatching still runs) and gets logged instead of silently hanging.
+// Safe here and nowhere earlier: every const applyNightUi reads now exists.
+initFarmAppearance();
+
 main().catch((error) => {
   // Real data already painted → only log; repainting offline defaults here
   // would mask a live distressed plant with a fabricated Happy home.
