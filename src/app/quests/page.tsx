@@ -362,7 +362,7 @@ export default async function QuestsPage() {
           : "Real care, verified by sensors — no tap-to-win."}
       />
 
-      <CheatQuestPanel locale={locale} quests={cheatQuests} />
+      <CheatQuestPanel locale={locale} quests={cheatQuests} cropProfile={cropProfile} />
 
       <section aria-label="Active quests" className="flex flex-col gap-3">
         {active.length === 0 ? (

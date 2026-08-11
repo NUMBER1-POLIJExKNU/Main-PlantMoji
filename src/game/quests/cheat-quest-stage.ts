@@ -17,6 +17,7 @@
 // REWARD stays reachable, but only by deliberately forcing it on the board.
 
 import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
+import { SENSOR_LIMITS } from "@/types/raw-sensors";
 import { QUEST_DEFINITIONS } from "./quest-definitions";
 import { sensorBlocksRecovery } from "./sensor-recovery";
 import type { QuestKey } from "@/types/game";
@@ -68,6 +69,73 @@ export function stageFromSensors(
   return sensorBlocksRecovery(def, toSensorData(vitals), profile) ? STAGE_ACT : STAGE_VERIFY;
 }
 
+const mid = (range: { min: number; max: number }) => (range.min + range.max) / 2;
+const round1 = (value: number) => Math.round(value * 10) / 10;
+
+function clampVitals(vitals: CheatSensorValues): CheatSensorValues {
+  const fit = (value: number, limit: { min: number; max: number }) =>
+    Math.min(limit.max, Math.max(limit.min, value));
+  return {
+    temperature: round1(fit(vitals.temperature, SENSOR_LIMITS.temperature)),
+    humidity: Math.round(fit(vitals.humidity, SENSOR_LIMITS.humidity)),
+    light: Math.round(fit(vitals.light, SENSOR_LIMITS.light)),
+    soilPh: round1(fit(vitals.soilPh, SENSOR_LIMITS.soilPH)),
+  };
+}
+
+/** Every reading in its comfortable band for this crop — the state a healthy
+ *  plant reports, and the baseline every quest scenario deviates from. */
+export function comfortableVitals(profile: CropProfile = getCropProfile(null)): CheatSensorValues {
+  return clampVitals({
+    temperature: mid(profile.temperature.recommended),
+    humidity: mid(profile.airHumidity.recommended),
+    light: profile.light.minimumPercentDuringLightingHours + 25,
+    soilPh: mid(profile.soilPh.recommended),
+  });
+}
+
+/**
+ * The readings that MAKE a quest's stage true, so the board can move the world
+ * instead of only the card. Jumping to SENSE/ACT reproduces the problem the
+ * quest exists for; VERIFY/REWARD reports it fixed.
+ *
+ * Exactly one reading ever leaves its comfortable band, because mood is a
+ * priority ladder: nudging two at once would hand the mascot a face from a
+ * different quest than the one being demonstrated. Thresholds come from the
+ * crop profile — the same numbers the engine verifies against — so the sensor
+ * state and the stage can never contradict each other.
+ */
+export function sensorsForStage(
+  key: QuestKey,
+  stage: number,
+  profile: CropProfile = getCropProfile(null),
+): CheatSensorValues {
+  const comfy = comfortableVitals(profile);
+  // A maintain quest is about holding a good state, so comfortable IS its
+  // scenario at every stage.
+  if (stage > STAGE_ACT || QUEST_DEFINITIONS[key]?.kind !== "recovery") return comfy;
+
+  const { temperature, airHumidity, soilPh, light } = profile;
+  switch (key) {
+    case "COOL_ME_DOWN":
+      return clampVitals({ ...comfy, temperature: temperature.overheating.enterAtOrAbove + 2 });
+    case "WARM_ME_UP":
+      return clampVitals({ ...comfy, temperature: temperature.cold.enterAtOrBelow - 2 });
+    case "HUMIDIFY_MY_AIR":
+      return clampVitals({ ...comfy, humidity: airHumidity.dryAir.enterBelow - 5 });
+    case "DEHUMIDIFY_MY_AIR":
+      return clampVitals({ ...comfy, humidity: airHumidity.humidAir.enterAbove + 5 });
+    case "BALANCE_SOIL_ACIDIC":
+      return clampVitals({ ...comfy, soilPh: soilPh.recommended.min - 1.3 });
+    case "BALANCE_SOIL_ALKALINE":
+      return clampVitals({ ...comfy, soilPh: soilPh.recommended.max + 1.3 });
+    case "GIVE_ME_MORE_LIGHT":
+      return clampVitals({ ...comfy, light: light.minimumPercentDuringLightingHours - 15 });
+    default:
+      return comfy;
+  }
+}
+
 /** Stage the presenter pinned on the board, or 0 when untouched. */
 export function stageFromBoard(quests: Record<string, unknown> | undefined, key: QuestKey): number {
   const raw = Number(quests?.[key]);
@@ -76,10 +144,19 @@ export function stageFromBoard(quests: Record<string, unknown> | undefined, key:
 }
 
 /**
- * The stage to paint. Takes the furthest of the three sources so neither way
- * of advancing can walk the card backwards mid-demo — a presenter who forces
- * REWARD keeps it while nudging sensors, and fixing the soil still moves a
- * card the board never touched.
+ * The stage to paint, by precedence: the board, then the sensors, then the
+ * real row.
+ *
+ * The board is ABSOLUTE, not a floor. Taking the furthest of the three read
+ * well on paper and was useless in the room: the live row already floors every
+ * quest at ACT, and a comfortable sandbox floors a recovery quest at VERIFY,
+ * so three of the four buttons changed nothing and the board felt dead. "Jump
+ * to this stage" has to mean it, backwards included — that is the whole point
+ * of a cheat control.
+ *
+ * Clearing a quest's entry (stage 0) hands it back to the sensors, so a
+ * presenter can pin a stage for one beat and then go back to demonstrating
+ * that fixing the soil is what really moves the card.
  */
 export function cheatQuestStage(input: {
   key: QuestKey;
@@ -88,10 +165,11 @@ export function cheatQuestStage(input: {
   vitals?: CheatSensorValues | null;
   profile?: CropProfile;
 }): number {
-  const stages = [
-    stageFromQuestStatus(input.questStatus),
-    stageFromBoard(input.quests, input.key),
-    input.vitals ? stageFromSensors(input.key, input.vitals, input.profile) : 0,
-  ];
-  return Math.min(QUEST_STAGE_COUNT, Math.max(...stages));
+  const board = stageFromBoard(input.quests, input.key);
+  if (board > 0) return Math.min(QUEST_STAGE_COUNT, board);
+
+  const sensors = input.vitals ? stageFromSensors(input.key, input.vitals, input.profile) : 0;
+  if (sensors > 0) return sensors;
+
+  return stageFromQuestStatus(input.questStatus);
 }

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   cheatQuestStage,
+  comfortableVitals,
+  sensorsForStage,
   stageFromBoard,
   stageFromQuestStatus,
   stageFromSensors,
@@ -10,6 +12,7 @@ import {
   STAGE_VERIFY,
   STAGE_REWARD,
 } from "@/game/quests/cheat-quest-stage";
+import { parseRawSensorReading } from "@/types/raw-sensors";
 import { sensorBlocksRecovery } from "@/game/quests/quest-engine";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getCropProfile } from "@/lib/crop-profiles";
@@ -106,14 +109,92 @@ describe("cheat quest stage", () => {
     expect(cheatQuestStage({ key: "KEEP_ME_HAPPY", questStatus: "ACTIVE", vitals: comfy, quests: { KEEP_ME_HAPPY: 3 } })).toBe(STAGE_VERIFY);
   });
 
-  it("takes the furthest source so neither path walks the card backwards", () => {
-    // Forced to REWARD, then a sensor nudge that alone would say ACT.
+  it("lets the board win outright, including backwards", () => {
+    // The regression this replaces: taking the furthest of the three sources
+    // meant the live row floored every quest at ACT and a comfortable sandbox
+    // floored a recovery quest at VERIFY, so three of the four buttons moved
+    // nothing and the board read as broken.
+    const comfortable = { key: "COOL_ME_DOWN", questStatus: "VERIFYING", vitals: comfy } as const;
+    expect(cheatQuestStage(comfortable)).toBe(STAGE_VERIFY);
+    for (const stage of [1, 2, 3, 4]) {
+      expect(cheatQuestStage({ ...comfortable, quests: { COOL_ME_DOWN: stage } })).toBe(stage);
+    }
+    // Pinned to REWARD, a sensor nudge that alone would say ACT is ignored.
     expect(cheatQuestStage({
       key: "COOL_ME_DOWN",
       questStatus: "ACTIVE",
       quests: { COOL_ME_DOWN: 4 },
       vitals: { ...comfy, temperature: 34 },
     })).toBe(STAGE_REWARD);
+  });
+
+  it("hands a quest back to the sensors when its pin is cleared", () => {
+    const released = { key: "COOL_ME_DOWN", questStatus: "ACTIVE", quests: { COOL_ME_DOWN: 0 } } as const;
+    expect(cheatQuestStage({ ...released, vitals: comfy })).toBe(STAGE_VERIFY);
+    expect(cheatQuestStage({ ...released, vitals: { ...comfy, temperature: 34 } })).toBe(STAGE_ACT);
+    // ...and with no sensors in play at all, back to the real row.
+    expect(cheatQuestStage(released)).toBe(STAGE_ACT);
+  });
+
+  it("writes sensor readings that actually make the jumped-to stage true", () => {
+    // The board moving the card while the mascot kept the old face was the
+    // whole complaint. Round-trip: the readings a stage writes must be the
+    // readings that stage would be derived FROM.
+    const profile = getCropProfile(null);
+    const recovery = (["COOL_ME_DOWN", "WARM_ME_UP", "HUMIDIFY_MY_AIR", "DEHUMIDIFY_MY_AIR", "BALANCE_SOIL_ACIDIC", "BALANCE_SOIL_ALKALINE"] as const);
+    for (const key of recovery) {
+      for (const stage of [STAGE_ACT, STAGE_VERIFY]) {
+        const vitals = sensorsForStage(key, stage, profile);
+        expect(stageFromSensors(key, vitals, profile)).toBe(stage);
+      }
+    }
+  });
+
+  it("moves exactly one reading, so the mascot shows the quest being demoed", () => {
+    // Mood is a priority ladder — two readings out of band at once would hand
+    // the mascot a face belonging to a different quest.
+    const profile = getCropProfile(null);
+    const comfy0 = comfortableVitals(profile);
+    for (const key of ["COOL_ME_DOWN", "HUMIDIFY_MY_AIR", "BALANCE_SOIL_ALKALINE", "GIVE_ME_MORE_LIGHT"] as const) {
+      const problem = sensorsForStage(key, STAGE_ACT, profile);
+      const changed = (Object.keys(comfy0) as (keyof typeof comfy0)[]).filter((k) => problem[k] !== comfy0[k]);
+      expect(changed).toHaveLength(1);
+    }
+    // VERIFY and REWARD are simply the comfortable state.
+    expect(sensorsForStage("COOL_ME_DOWN", STAGE_REWARD, profile)).toEqual(comfy0);
+    // A maintain quest has no problem state to reproduce.
+    expect(sensorsForStage("KEEP_ME_HAPPY", STAGE_ACT, profile)).toEqual(comfy0);
+  });
+
+  it("keeps every written reading physically possible", () => {
+    const profile = getCropProfile(null);
+    for (const key of Object.keys(QUEST_DEFINITIONS) as (keyof typeof QUEST_DEFINITIONS)[]) {
+      for (const stage of [1, 2, 3, 4]) {
+        const v = sensorsForStage(key, stage, profile);
+        expect(parseRawSensorReading({
+          plantId: "plant-01", temperature: v.temperature, humidity: v.humidity, soilPH: v.soilPh, light: v.light,
+        }).ok).toBe(true);
+      }
+    }
+  });
+
+  it("hands the board's crop profile through, not a default", () => {
+    const panel = readFileSync("src/components/cheat-quest-panel.tsx", "utf8");
+    expect(panel).toContain("vitals: sensorsForStage(key as QuestKey, step, cropProfile ?? undefined)");
+    const page = readFileSync("src/app/quests/page.tsx", "utf8");
+    expect(page).toContain("<CheatQuestPanel locale={locale} quests={cheatQuests} cropProfile={cropProfile} />");
+  });
+
+  it("clears the pin when the board re-clicks the stage it is already on", () => {
+    const panel = readFileSync("src/components/cheat-quest-panel.tsx", "utf8");
+    expect(panel).toMatch(/if \(stages\[key\] === step\) \{\s*\n\s*api\.set\(\{ quests: \{ \[key\]: 0 \} \}\);\s*\n\s*return;/);
+    // Releasing must NOT rewrite the sensors — the point is to let the sensor
+    // editor take over from wherever the readings currently sit.
+    expect(panel).not.toMatch(/quests: \{ \[key\]: 0 \} \},\s*vitals/);
+    // The note has to say both halves — a hidden toggle is not a feature.
+    expect(panel).toContain("the sensors move to match");
+    expect(panel).toContain("Click it again to hand the quest back to the sensor editor");
+    expect(panel).toContain("nilai sensor ikut menyesuaikan");
   });
 
   it("keeps the sensor rule out of the client bundle's server dependencies", () => {

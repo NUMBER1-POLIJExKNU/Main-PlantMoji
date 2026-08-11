@@ -7,7 +7,10 @@
 // active, so it sits harmlessly on the normal Quests page.
 
 import type { AppLocale } from "@/lib/i18n";
+import type { CropProfile } from "@/lib/crop-profiles";
 import { useCheat } from "@/lib/pm-cheat";
+import { sensorsForStage } from "@/game/quests/cheat-quest-stage";
+import type { QuestKey } from "@/types/game";
 
 export interface CheatQuestItem {
   key: string;
@@ -19,12 +22,12 @@ export interface CheatQuestItem {
 const COPY = {
   id: {
     title: "🎛️ Papan Misi (Mode Curang)",
-    note: "Klik sebuah tahap untuk melompat ke sana — hanya tampilan demo, misi asli tidak berubah.",
+    note: "Klik sebuah tahap untuk melompat ke sana — nilai sensor ikut menyesuaikan. Klik lagi untuk mengembalikannya ke editor sensor. Hanya tampilan demo; misi asli dan perangkat tidak berubah.",
     steps: ["RASAKAN", "BERTINDAK", "VERIFIKASI", "HADIAH"],
   },
   en: {
     title: "🎛️ Quest Board (Cheat Mode)",
-    note: "Click a stage to jump there — demo view only; real quests stay untouched.",
+    note: "Click a stage to jump there — the sensors move to match. Click it again to hand the quest back to the sensor editor. Demo view only; real quests and hardware stay untouched.",
     steps: ["SENSE", "ACT", "VERIFY", "REWARD"],
   },
 } as const;
@@ -32,9 +35,13 @@ const COPY = {
 export default function CheatQuestPanel({
   locale,
   quests,
+  cropProfile = null,
 }: {
   locale: AppLocale;
   quests: CheatQuestItem[];
+  /** Active crop profile, so a stage jump writes the thresholds this plant is
+   *  actually judged against. Null falls back to the default profile. */
+  cropProfile?: CropProfile | null;
 }) {
   const { active, api, state } = useCheat();
 
@@ -50,8 +57,24 @@ export default function CheatQuestPanel({
     if (Number.isFinite(step)) stages[key] = step;
   }
 
+  // A stage jump moves the world, not just the card: it also writes the sensor
+  // readings that make that stage true, so the mascot's face, the vitals tiles
+  // and the Monitoring cards all agree with the stage being shown. Values come
+  // from the crop profile, so they match what the engine verifies against.
+  //
+  // Clicking the stage a quest is already pinned to releases the pin (stage 0
+  // = "no opinion") and leaves the sensors where they are, handing that quest
+  // back to the sensor editor — otherwise pinning one quest for a beat would
+  // lock it out of the "watch it move when I fix the soil" demo.
   const jump = (key: string, step: number) => {
-    api.set({ quests: { [key]: step } });
+    if (stages[key] === step) {
+      api.set({ quests: { [key]: 0 } });
+      return;
+    }
+    api.set({
+      quests: { [key]: step },
+      vitals: sensorsForStage(key as QuestKey, step, cropProfile ?? undefined),
+    });
   };
 
   return (
