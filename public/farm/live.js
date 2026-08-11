@@ -144,6 +144,87 @@ const COPY = {
   },
 };
 
+// ── Appearance: theme + world skin ──────────────────────────────────────
+// The React routes render AppearanceControls for this; "/" is rewritten to
+// the static shell and never runs it, so My Garden — the screen the skin is
+// actually about — had neither the controls nor the effect. Same cookie and
+// localStorage keys as src/lib/appearance.ts, so a choice made on either side
+// holds on the other. Kept in step by tests/farm-appearance.test.ts.
+const THEME_KEY = "plantmoji_theme";
+const SKIN_KEY = "plantmoji_skin";
+const APPEARANCE_MAX_AGE = 31_536_000;
+const FARM_THEMES = ["auto", "day", "night"];
+const THEME_LABELS = {
+  id: { auto: "Otomatis", day: "Siang", night: "Malam" },
+  en: { auto: "Auto", day: "Day", night: "Night" },
+};
+const FARM_SKIN_CATALOG = [
+  { key: "jember-farm", icon: "🌱", id: "Kebun Jember", en: "Jember Farm" },
+  { key: "coffee-hills", icon: "☕", id: "Bukit Kopi", en: "Coffee Hills" },
+  { key: "greenhouse", icon: "🏡", id: "Rumah Kaca", en: "Greenhouse" },
+  { key: "tobacco-fields", icon: "🍃", id: "Ladang Tembakau", en: "Tobacco Fields" },
+  { key: "kakao-garden", icon: "🍫", id: "Kebun Kakao", en: "Kakao Garden" },
+  { key: "paddy-morning", icon: "🌾", id: "Pagi di Sawah", en: "Paddy Morning" },
+  { key: "puger-coast", icon: "🌊", id: "Pantai Puger", en: "Puger Coast" },
+  { key: "argopuro-highlands", icon: "⛰️", id: "Dataran Argopuro", en: "Argopuro Highlands" },
+];
+
+/** Cookie first (what the server rendered from), then localStorage. */
+function readAppearanceValue(key, allowed, fallback) {
+  try {
+    const cookie = document.cookie.split(";").map((v) => v.trim()).find((v) => v.startsWith(`${key}=`));
+    const fromCookie = cookie?.split("=")[1];
+    if (fromCookie && allowed.includes(fromCookie)) return fromCookie;
+    const stored = window.localStorage.getItem(key);
+    if (stored && allowed.includes(stored)) return stored;
+  } catch {}
+  return fallback;
+}
+
+function readFarmTheme() { return readAppearanceValue(THEME_KEY, FARM_THEMES, "auto"); }
+function readFarmSkin() { return readAppearanceValue(SKIN_KEY, FARM_SKIN_CATALOG.map((s) => s.key), "jember-farm"); }
+
+/** Paint the choice onto <html>, where style.css's skin blocks hang. */
+function applyFarmAppearance() {
+  const root = document.documentElement;
+  if (!root) return;
+  root.dataset.themePreference = readFarmTheme();
+  root.dataset.farmSkin = readFarmSkin();
+  applyNightUi(); // theme decides day/night, so the sky follows immediately
+}
+
+function initFarmAppearance() {
+  const themeSelect = $("#farm-theme");
+  const skinSelect = $("#farm-skin");
+  const labels = THEME_LABELS[appLocale] ?? THEME_LABELS.en;
+  if (themeSelect) {
+    themeSelect.innerHTML = FARM_THEMES
+      .map((value) => `<option value="${value}">${labels[value]}</option>`)
+      .join("");
+    themeSelect.value = readFarmTheme();
+    themeSelect.addEventListener("change", () => {
+      writeAppearance(THEME_KEY, themeSelect.value);
+      applyFarmAppearance();
+    });
+  }
+  if (skinSelect) {
+    skinSelect.innerHTML = FARM_SKIN_CATALOG
+      .map((skin) => `<option value="${skin.key}">${skin.icon} ${appLocale === "id" ? skin.id : skin.en}</option>`)
+      .join("");
+    skinSelect.value = readFarmSkin();
+    skinSelect.addEventListener("change", () => {
+      writeAppearance(SKIN_KEY, skinSelect.value);
+      applyFarmAppearance();
+    });
+  }
+  applyFarmAppearance();
+}
+
+function writeAppearance(key, value) {
+  document.cookie = `${key}=${value}; path=/; max-age=${APPEARANCE_MAX_AGE}; samesite=lax`;
+  try { window.localStorage.setItem(key, value); } catch {}
+}
+
 function initialLocale() {
   const cookie = document.cookie.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${LOCALE_KEY}=`));
   const fromCookie = cookie?.split("=")[1];
@@ -622,6 +703,7 @@ document.querySelectorAll("[data-locale]").forEach((button) => {
   });
 });
 applyLocale();
+initFarmAppearance();
 
 // ── Unified seen-store bridge (public/farm/seen.js → window.PMSeen) ─────
 // Every one-time moment on the farm (hatch "hatch", tour "tour", guide
@@ -3227,7 +3309,12 @@ function setupCareInteractions() {
 // them. Silent — no cue, no copy.
 function applyNightUi() {
   const now = wibNow();
-  const night = now ? now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR : false;
+  // "auto" keeps the honest WIB clock; an explicit Day/Night pick overrides
+  // it, which is what the sidebar's THEME control is for.
+  const theme = readFarmTheme();
+  const night = theme === "night" ? true
+    : theme === "day" ? false
+      : now ? now.hour >= SLEEP_START_HOUR || now.hour < SLEEP_END_HOUR : false;
   document.body?.classList.toggle("night", night);
   const farmerTag = $("#npc-farmer .npc-ai-tag");
   // Local COPY dictionary (id "CHAT AI") — strings.js has no npc group, so

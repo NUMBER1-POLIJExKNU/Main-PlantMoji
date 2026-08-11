@@ -122,6 +122,23 @@
                 <button type="button" data-locale="id" aria-pressed="true">ID</button>
                 <button type="button" data-locale="en" aria-pressed="false">EN</button>
             </div>
+            <!-- Theme + world skin. The React routes get these from
+                 AppearanceControls, but "/" is rewritten to this static shell
+                 and never runs that component, so My Garden — the one screen
+                 the skin is actually about — had neither the controls nor the
+                 effect. live.js fills the options and shares the exact cookie
+                 and localStorage keys the React side writes, so a choice made
+                 on either side holds on the other. -->
+            <div class="farm-appearance" role="group" aria-label="Appearance">
+                <label class="farm-appearance-row">
+                    <span data-i18n="appearance.theme">WAKTU</span>
+                    <select id="farm-theme"></select>
+                </label>
+                <label class="farm-appearance-row">
+                    <span data-i18n="appearance.skin">LATAR</span>
+                    <select id="farm-skin"></select>
+                </label>
+            </div>
         </aside>
 
         <!-- Main Content Area: The Game World.
