@@ -153,10 +153,16 @@ describe("shared PlantMoji application shell", () => {
     const settings = source("src/app/settings/page.tsx");
     const controls = source("src/components/demo-control-center.tsx");
     const actions = source("src/app/settings/actions.ts");
-    expect(settings).toContain('searchParams).demo === "1"');
+    expect(settings).toContain('params.demo === "1"');
     // Team-internal project: the demo gate is deliberately zero-friction —
     // "admin" works everywhere unless DEMO_CHEAT_CODE overrides it.
     expect(actions).toContain('process.env.DEMO_CHEAT_CODE?.trim() || "admin"');
+    // Developer mode is the other door and is NOT zero-friction: it writes
+    // arbitrary real values, so with no DEV_MODE_CODE set it does not exist.
+    const devActions = source("src/app/settings/dev-actions.ts");
+    expect(settings).toContain('params.dev === "1"');
+    expect(devActions).toContain("process.env.DEV_MODE_CODE?.trim()");
+    expect(devActions).toContain("code && code.length >= 8 ? code : null");
     expect(controls).toContain("prepareDemoLevelUp");
     expect(controls).toContain("grantDemoXp");
     expect(controls).toContain("evolveDemoCompanion");

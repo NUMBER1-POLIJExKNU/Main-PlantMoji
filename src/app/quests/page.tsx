@@ -109,8 +109,9 @@ function heroCatalogue(locale: AppLocale): Record<string, HeroQuestEntry> {
 function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }: { quest: QuestRow; locale: AppLocale; featured?: boolean; cropProfile?: CropProfile | null }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
+  // The hero card's target line now comes from the catalogue inside the
+  // client island, since the quest it shows can be swapped by the sandbox.
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
-  const target = questTarget(quest.quest_key, locale);
 
   return (
     // Active quests get the grass-green border accent — same white surface

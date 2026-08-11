@@ -6,6 +6,13 @@ import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
 import CheatModeToggle from "@/components/cheat-mode-toggle";
+import DevModePanel from "@/components/dev-mode-panel";
+import { isDevModeConfigured } from "@/app/settings/dev-actions";
+import { readDevSnapshot } from "@/game/dev/dev-mode";
+import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
+import { SHOP_CATALOG } from "@/game/economy/shop-catalog";
+import { QUEST_COPY_ID } from "@/lib/i18n";
+import type { QuestKey } from "@/types/game";
 import HowToPlayMap from "@/components/how-to-play-map";
 import { BADGE_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
@@ -56,7 +63,11 @@ export default async function SettingsPage({
 }) {
   // Presentation tooling stays out of the normal student UX (spec §2.3):
   // the Demo Control Center only renders on /settings?demo=1.
-  const showDemo = (await searchParams).demo === "1";
+  const params = await searchParams;
+  const showDemo = params.demo === "1";
+  // Developer mode is a separate door (/settings?dev=1) behind its own code:
+  // the presenter tools only unlock or reset, these write arbitrary values.
+  const showDev = params.dev === "1";
   const locale = await getRequestLocale();
   const supabase = getServerSupabase();
 
@@ -282,6 +293,21 @@ export default async function SettingsPage({
         </div>
         <DemoControlCenter locale={locale} progress={demoProgress} />
       </section>
+      )}
+
+      {/* Developer mode (/settings?dev=1) — writes real data, so it lives
+          behind DEV_MODE_CODE rather than the presenter's zero-friction gate. */}
+      {showDev && (
+        <DevModePanel
+          locale={locale}
+          configured={await isDevModeConfigured()}
+          snapshot={await readDevSnapshot(supabase, PLANT_ID)}
+          quests={(Object.keys(QUEST_DEFINITIONS) as QuestKey[]).map((key) => ({
+            key,
+            title: locale === "id" ? QUEST_COPY_ID[key].title : QUEST_DEFINITIONS[key].title,
+          }))}
+          shopItems={SHOP_CATALOG.map((item) => ({ key: item.key, category: item.category, name: item.name[locale] }))}
+        />
       )}
 
       {/* Classroom-demo cheat sandbox entry — always at the very bottom.
