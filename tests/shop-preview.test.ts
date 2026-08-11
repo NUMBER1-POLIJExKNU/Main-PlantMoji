@@ -29,10 +29,10 @@ describe("try-on preview strip renders in the shop page markup", () => {
   });
 
   it("tapping an item card selects it into the preview stage", () => {
-    expect(grid).toMatch(/<article[\s\S]{0,700}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
-    // The eye button stays an independent, keyboard-operable toggle — it
-    // must not also re-trigger the card's own select-on-click.
-    expect(grid).toContain("event.stopPropagation()");
+    // One control per card: the whole card is the button, so it is
+    // keyboard-operable without a second nested toggle to fight with.
+    expect(grid).toMatch(/<button[\s\S]{0,700}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
+    expect(grid).toContain("aria-pressed={isPreviewed}");
   });
 
   it("the stage is a sticky strip that sticks below the mobile top bar", () => {
@@ -183,12 +183,14 @@ describe("honest, non-gameplay preview copy — en+id parity", () => {
 
 describe("mobile: no page overflow, 44px controls, reduced motion respected", () => {
   it("collapses to a single column under 560px (no fixed-width overflow at 360-430px)", () => {
-    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{ grid-template-columns:1fr; \}/);
+    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{ grid-template-columns:1fr;/);
   });
 
   it("keeps the clear button and the buy/equip button at a 44px touch target", () => {
     expect(css).toMatch(/\.pm-shop-stage-clear\s*\{[^}]*width:44px;\s*height:44px;/);
-    expect(css).toMatch(/\.pm-shop-stage-copy > \.pm-btn\s*\{[^}]*min-height:44px;/);
+    const action = css.match(/\.pm-shop-stage-action\s*\{[^}]*\}/)?.[0] ?? "";
+    const minHeight = Number(action.match(/min-height:(\d+)px/)?.[1] ?? 0);
+    expect(minHeight, "buy/equip button touch target").toBeGreaterThanOrEqual(44);
   });
 
   it("ships no new always-on animation on the stage", () => {
@@ -203,13 +205,13 @@ describe("every rendered image is pixelated; decorative art is aria-hidden with 
   });
 
   it("the Jamkachu sprite is aria-hidden with the wrapper carrying the accessible name", () => {
-    expect(preview).toContain('role="img" aria-label="Jamkachu"');
+    expect(preview).toMatch(/role="img"\s+aria-label="Jamkachu"/);
     expect(preview).toMatch(/<img className="pm-shop-stage-sprite" src=\{spriteImgSrc\} alt="" aria-hidden="true"/);
   });
 
   it("the decor prop and accessory icon are decorative (aria-hidden) — the item name text is the signal", () => {
     expect(preview).toMatch(/className="pm-shop-stage-decor-prop" aria-hidden="true"/);
-    expect(preview).toMatch(/className="pm-shop-stage-acc-icon" aria-hidden="true"/);
+    expect(preview).toMatch(/className=\{`pm-shop-stage-acc-icon\$\{[^}]*\}`\} aria-hidden="true"/);
     expect(preview).toContain("<h2>{item.name}</h2>");
   });
 });
