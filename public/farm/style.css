@@ -1148,26 +1148,30 @@ body.evolution-active .fx-layer { z-index:1390; }
 }
 
 .speech-bubble {
-    background: var(--color-surface);
-    border: 3px solid var(--color-border);
-    padding: 14px 22px;
+    /* DESIGN/말풍선 디자인.png, top variant. Nine-slice keeps the leaves,
+       exclamation marks, outline and tail at their authored proportions while
+       only the white middle stretches with each line of dialogue. */
+    background: transparent;
+    border-style: solid;
+    border-width: 35px 48px 34px;
+    border-image-source: url('/farm/assets/ui/speech-bubble-jamkachu.png');
+    border-image-slice: 100 150 78 150 fill;
+    border-image-width: 35px 52px 30px;
+    border-image-repeat: stretch;
+    box-sizing: border-box;
+    inline-size: fit-content;
+    min-inline-size: 180px;
+    max-inline-size: min(520px, 44vw);
+    padding: 5px 12px 8px;
     font-size: 15px;
-    max-width: 400px;
     text-align: center;
     position: relative;
-    margin-bottom: 24px;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin: 0 auto 18px;
     line-height: 1.5;
-    color: #444;
+    color: #243421;
+    overflow-wrap: anywhere;
 }
-.speech-bubble::after {
-    content: ''; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
-    border-width: 12px 12px 0;
-    border-style: solid;
-    border-color: var(--color-white) transparent transparent transparent;
-    display: block; width: 0;
-}
+.speech-bubble::after { content: none; }
 .animated-bounce { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
     .animated-bounce { animation: gentleFloat 3s ease-in-out infinite alternate; }
@@ -2295,7 +2299,15 @@ body.farmer-dragging {
        first phone viewport instead of sitting below a presentation-scale
        mascot and several progression rows. */
     .mascot-wrapper { width:min(210px,60vw); }
-    .speech-bubble { max-width:calc(100vw - 48px); margin-bottom:10px; padding:10px 14px; font-size:13px; }
+    .speech-bubble {
+        min-inline-size:160px;
+        max-inline-size:calc(100vw - 36px);
+        margin-bottom:8px;
+        border-width:27px 34px 27px;
+        border-image-width:27px 36px 24px;
+        padding:3px 7px 5px;
+        font-size:13px;
+    }
     .char-id h2 { font-size:18px; }
     #char-mood { margin-top:4px; }
     .companion-next { display:none; }
@@ -2388,12 +2400,13 @@ body.farmer-dragging {
     .mascot-container { max-height: 100%; }
     .mascot-wrapper { width: min(300px, 34vh); }
     .speech-bubble {
-        width: min(400px, 38vw);
-        min-height: 58px;
-        max-height: 92px;
+        width: fit-content;
+        min-width: 180px;
+        max-width: min(520px, 44vw);
+        min-height: 0;
+        max-height: none;
         margin-bottom: clamp(8px, 1.5vh, 18px);
-        padding: 12px 18px;
-        overflow: hidden;
+        overflow: visible;
         display: grid;
         place-items: center;
     }
@@ -2541,7 +2554,7 @@ body.farmer-dragging {
        to tighten are now the defaults — the same numbers, applied everywhere. */
     .sidebar { padding-top: 14px; padding-bottom: 14px; }
     .mascot-wrapper { width: min(250px, 32vh); }
-    .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
+    .speech-bubble { min-height: 0; max-height: none; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
     .home-stack { margin-bottom:70px; padding-top:48px; gap:8px; }
     .user-gamification { padding: 8px 11px; }
