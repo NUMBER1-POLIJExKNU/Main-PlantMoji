@@ -5950,6 +5950,31 @@ function repaintCheatActions(panel) {
   });
 }
 
+/**
+ * Dock the panel just right of Jamkachu, at the inner edge of the character
+ * column — so a press and the Garden Vitals tile it moves sit side by side.
+ * Parked on the far left, the presenter changed something here and the number
+ * that answered was a whole screen away.
+ *
+ * Measured rather than a CSS constant because the character column is a grid
+ * track that resizes with the window (see farmerGround for the same reasoning).
+ * On a stage too narrow to hold the panel without covering the plant, this
+ * leaves the stylesheet's left dock alone.
+ */
+function positionCheatPanel() {
+  const panel = document.getElementById("pm-cheat-panel");
+  const stage = $(".mascot-stage");
+  if (!panel || !stage) return;
+  const rect = stage.getBoundingClientRect();
+  const width = panel.offsetWidth || 232;
+  // Room for the panel plus the plant it must not sit on top of.
+  if (rect.width < width + 250) {
+    panel.style.removeProperty("left");
+    return;
+  }
+  panel.style.left = `${Math.round(rect.right - width - 12)}px`;
+}
+
 function buildCheatPanel() {
   if (document.getElementById("pm-cheat-panel")) return;
   const s = window.PMCheat && window.PMCheat.getState();
@@ -6036,6 +6061,7 @@ function buildCheatPanel() {
     const label = collapsed ? L.expand : L.collapse;
     collapseBtn.setAttribute("aria-label", label);
     collapseBtn.setAttribute("title", label);
+    positionCheatPanel(); // collapsing changes the width it docks by
   });
 
   const xpInput = panel.querySelector('input[data-cheat="totalXp"]');
@@ -6121,6 +6147,10 @@ function buildCheatPanel() {
 
 function initCheatFarm() {
   buildCheatPanel();
+  positionCheatPanel();
+  // The character column is a grid track, so its right edge moves with the
+  // window; re-dock on resize rather than freezing a first-paint measurement.
+  window.addEventListener("resize", positionCheatPanel);
   // Apply now and again after the hatch reveal so the mascot exists.
   applyCheatFarm();
   setTimeout(applyCheatFarm, 400);

@@ -100,14 +100,22 @@ describe("the sandbox never shows demo and real numbers at once", () => {
 });
 
 describe("the sandbox panel stays clear of what it is demonstrating", () => {
-  it("docks the editor away from the status card and vitals tiles", () => {
-    // Those live in the right-hand .home-stack — the whole point is watching
-    // them react, so the editor must not sit on top of them.
+  it("docks the editor beside Jamkachu, next to the tiles it moves", () => {
+    // It must not cover the status card or the vitals tiles (those live in the
+    // right-hand .home-stack and are the whole point of watching), but parked
+    // on the far left the answer to a press was a screen away. So it docks at
+    // the inner edge of the character column — measured, because that column
+    // is a grid track that resizes.
     const start = css.indexOf("#pm-cheat-panel {");
     expect(start).toBeGreaterThanOrEqual(0);
     const block = css.slice(start, css.indexOf("}", start));
-    expect(block).toContain("left: 268px");
     expect(block).not.toContain("right:");
+    expect(live).toContain("function positionCheatPanel()");
+    expect(live).toContain("panel.style.left = `${Math.round(rect.right - width - 12)}px`;");
+    // Too narrow a stage would put the panel on top of the plant; there the
+    // stylesheet's own dock stands.
+    expect(live).toContain("if (rect.width < width + 250)");
+    expect(live).toContain('window.addEventListener("resize", positionCheatPanel)');
   });
 
   it("can be collapsed out of the way mid-demo", () => {
