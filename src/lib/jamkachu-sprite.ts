@@ -17,8 +17,8 @@ import { bandForLevel } from "@/game/progression/level-bands";
 export type SpritePhase = 1 | 2 | 3 | 4;
 export const SPRITE_PHASES = [1, 2, 3, 4] as const;
 
-/** The 5 expressions the designer drew per phase. */
-export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"] as const;
+/** Only runtime-selectable faces; care badges never swap in a sad face. */
+export const SPRITE_MOODS = ["happy", "overheat"] as const;
 export type SpriteMood = (typeof SPRITE_MOODS)[number];
 
 /** Automatic bond-level accessory rewards ("" = bare). */
@@ -46,21 +46,17 @@ export const PHASE_SLUG: Record<SpritePhase, string> = {
   4: "fruit",
 };
 
-/** Mood→sprite. The pack draws FOUR faces — happy, thirsty, sleepy,
- * overheat. The fifth file, "plain", is the designer's faceless decorative
- * body (their sheet-plain.png), NOT a neutral expression: leaf veins sit
- * where the face goes. No mood may map to it — a cold or off-pH plant must
- * still have a face. Care-needed moods share the softer sleepy face and are
- * told apart by the status badge (MOOD_STATUS_CHIP) and the mood text. */
+/** Mood→sprite. Care states retain the cheerful full-body frame and use the
+ * status badge plus accessible mood text for their condition. */
 export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
-  TooCold: "sleepy",
-  DryAir: "sleepy",
-  HumidAir: "sleepy",
-  Sleepy: "sleepy",
-  SoilAcidic: "sleepy",
-  SoilAlkaline: "sleepy",
+  TooCold: "happy",
+  DryAir: "happy",
+  HumidAir: "happy",
+  Sleepy: "happy",
+  SoilAcidic: "happy",
+  SoilAlkaline: "happy",
 };
 
 /** Chip floated near the sprite head for the moods that SHARE a drawn body
@@ -104,7 +100,7 @@ export function stagePhase(stage?: CompanionStage): SpritePhase {
 /** Picks the drawn expression; night sleep uses the peaceful smiling frame. */
 export function spriteMood(mood: PlantMood, sleeping = false): SpriteMood {
   if (sleeping) return "happy";
-  return MOOD_SPRITE[mood] ?? "plain";
+  return MOOD_SPRITE[mood] ?? "happy";
 }
 
 /** Accessory earned by bond level, clamped to what the phase can wear. */

@@ -38,30 +38,25 @@
   /** Filename fragment per phase (plant-p3-flower-….png). */
   var PHASE_SLUG = { 1: "seed", 2: "sprout", 3: "flower", 4: "fruit" };
 
-  /** The 5 expressions the designer drew per phase. The derived "unwell"
-   *  frown is intentionally retired: it read as deeply unhappy rather than
-   *  gently asking for care. */
-  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"];
+  /** Only faces that may be selected at runtime. Downturned care faces are
+   *  excluded; condition badges carry urgency without a miserable look. */
+  var SPRITE_MOODS = ["happy", "overheat"];
 
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
    *  (the accessible signal — all 8 moods must stay distinguishable). */
-  // The pack draws FOUR faces — happy, thirsty, sleepy, overheat. The fifth
-  // file, "plain", is the designer's faceless decorative body (their
-  // sheet-plain.png), NOT a neutral expression: it has leaf veins where the
-  // face goes. Never map a mood onto it — a plant that is cold or off-pH
-  // must still have a face. Care-needed moods share the softer sleepy face
-  // and are told apart by the condition badge beside the head and by the
-  // mood text, never by the body alone.
+  // Care states keep the cheerful full-body frame and are told apart by the
+  // badge beside the head and the accessible mood text. Heat keeps its
+  // energetic hot face; no sad/downturned face is reachable.
   var MOOD_SPRITE = {
     Happy: "happy",
     Overheating: "overheat",
-    TooCold: "sleepy", // cold plants hunker down; the 🥶 badge names it
-    DryAir: "sleepy",
-    HumidAir: "sleepy",
-    Sleepy: "sleepy",
-    SoilAcidic: "sleepy",
-    SoilAlkaline: "sleepy",
+    TooCold: "happy",
+    DryAir: "happy",
+    HumidAir: "happy",
+    Sleepy: "happy",
+    SoilAcidic: "happy",
+    SoilAlkaline: "happy",
   };
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods
@@ -222,7 +217,7 @@
    *  frame. The sleep badge and night scene keep the state unambiguous. */
   function spriteMoodFor() {
     if (state.sleeping) return "happy";
-    return MOOD_SPRITE[state.mood] || "plain";
+    return MOOD_SPRITE[state.mood] || "happy";
   }
 
   /** Accessory earned by bond level, clamped to what the phase can wear. */

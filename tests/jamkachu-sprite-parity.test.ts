@@ -68,12 +68,12 @@ describe("React sprite mapping pins the decided design tables", () => {
     expect(MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "sleepy",
-      DryAir: "sleepy",
-      HumidAir: "sleepy",
-      Sleepy: "sleepy",
-      SoilAcidic: "sleepy",
-      SoilAlkaline: "sleepy",
+      TooCold: "happy",
+      DryAir: "happy",
+      HumidAir: "happy",
+      Sleepy: "happy",
+      SoilAcidic: "happy",
+      SoilAlkaline: "happy",
     });
   });
 
@@ -101,7 +101,9 @@ describe("React sprite mapping pins the decided design tables", () => {
     const bodyCounts = new Map<string, number>();
     for (const mood of PLANT_MOODS) bodyCounts.set(MOOD_SPRITE[mood], (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) + 1);
     for (const mood of PLANT_MOODS) {
-      if ((bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
+      // Happy is the unbadged baseline. Care states sharing that friendly
+      // body must carry the chip that identifies their sensor condition.
+      if (mood !== "Happy" && (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
         expect(MOOD_STATUS_CHIP[mood], `${mood} shares a face but has no chip`).toBeTruthy();
       }
     }
@@ -143,15 +145,15 @@ describe("React sprite mapping pins the decided design tables", () => {
     // Bond level picks the look now — `stage` is passed by some callers and
     // deliberately ignored, so these cases vary the level, not the stage.
     expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 3 })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p2-sprout-sleepy.png",
+      "/farm/assets/jamkachu/4x/plant-p2-sprout-happy.png",
     );
     expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 24 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
     );
-    // Lv.9 is band 4 (p3 + bow); TooCold draws the sleepy body — the pack's
-    // "plain" file is the faceless decorative body and never renders a mood.
+    // Lv.9 is band 4 (p3 + bow); care states keep the cheerful full body and
+    // use their badge plus text to communicate the sensor condition.
     expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 9, scale: "2x" })).toBe(
-      "/farm/assets/jamkachu/2x/plant-p3-flower-sleepy-bow.png",
+      "/farm/assets/jamkachu/2x/plant-p3-flower-happy-bow.png",
     );
     expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 1 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p1-seed-overheat.png",

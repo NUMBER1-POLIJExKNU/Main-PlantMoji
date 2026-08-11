@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import vm from "node:vm";
 import { describe, expect, it } from "vitest";
@@ -67,8 +67,8 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
         }
       }
     }
-    // 4 phases × 5 moods × (1+1+2+3 tiers summed per phase) × 3 scales.
-    expect(checked).toBe((5 + 5 + 10 + 15) * 3);
+    // 4 phases × 2 selectable faces × (1+1+2+3 tiers) × 3 scales.
+    expect(checked).toBe((2 + 2 + 4 + 6) * 3);
   });
 
   it("the driver serves the 4x pack (image-rendering: pixelated does the rest)", () => {
@@ -78,12 +78,15 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
   });
 });
 
-describe("full designer pack ships (every delivered file reachable — plan contract)", () => {
-  // 105 plant PNGs (matrix above) + 9 jamkachu GIFs + 24 NPC PNGs
-  // + 7 NPC GIFs = the 145 files the designer delivered, every one asserted
-  // on disk. The retired derived "unwell" frown is deliberately not part of
-  // the runtime matrix; care-needed moods use a softer drawn face plus badges.
+describe("curated designer pack ships without the retired gloomy face", () => {
   const packFile = (rel: string) => resolve(process.cwd(), "public/farm/assets", rel);
+
+  it("physically removes the downturned care-face exports", () => {
+    for (const scale of SCALES) {
+      const files = readdirSync(packFile(`jamkachu/${scale}`));
+      expect(files.some((file) => /-(?:unwell|thirsty)(?:-|\.)/.test(file))).toBe(false);
+    }
+  });
 
   it("ships both growth strips and the moods strip across all three tiers", () => {
     const gifs = ["growth-happy", "growth-plain", "moods-p4"].flatMap((base) =>
@@ -155,12 +158,12 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     expect(tables.MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "sleepy",
-      DryAir: "sleepy",
-      HumidAir: "sleepy",
-      Sleepy: "sleepy",
-      SoilAcidic: "sleepy",
-      SoilAlkaline: "sleepy",
+      TooCold: "happy",
+      DryAir: "happy",
+      HumidAir: "happy",
+      Sleepy: "happy",
+      SoilAcidic: "happy",
+      SoilAlkaline: "happy",
     });
     // Moods that share a drawn face stay distinguishable via the chip
     // (aria-hidden; #char-mood text remains the accessible signal).
