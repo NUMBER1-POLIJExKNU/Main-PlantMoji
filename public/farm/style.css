@@ -540,27 +540,46 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    All three take the tile's own --hud-accent, so temperature reads warm,
    humidity blue, light amber and pH green without a second palette. */
 
-/* (A) Where the value came from, drawn along the gauge it moved on. */
+/* Rising and falling are told apart by SHAPE, never by a second hue. A rise
+   is not good news and a fall is not bad news — temperature climbing rescues
+   a cold plant and endangers a hot one — and that judgement already belongs
+   to .is-mood-pulse; a red/green reading of direction would contradict it and
+   would throw away the tile's own accent identity besides. Shape also survives
+   colour blindness and a washed-out projector. */
+
+/* (A) Where the value came from, drawn along the gauge it moved on. The trail
+   fades out at its origin and goes solid at the current reading, so the solid
+   end is always the head of the movement — direction read off the gauge
+   itself, in the place the eye is already looking. */
 .env-gauge-trail {
     position:absolute; top:0; height:100%;
     border-radius:2px;
-    background:color-mix(in srgb,var(--hud-accent) 70%,white);
-    box-shadow:0 0 0 1px var(--hud-accent) inset;
+    background:linear-gradient(to right,color-mix(in srgb,var(--hud-accent) 6%,transparent),color-mix(in srgb,var(--hud-accent) 85%,white));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--hud-accent) 55%,transparent) inset;
     pointer-events:none;
+}
+.env-gauge-trail.is-down {
+    background:linear-gradient(to left,color-mix(in srgb,var(--hud-accent) 6%,transparent),color-mix(in srgb,var(--hud-accent) 85%,white));
 }
 .env-gauge-trail[hidden] { display:none; }
 
-/* (B) How far it has moved, as a number — the lesson, not just a colour. */
+/* (B) How far it has moved, as a number — the lesson, not just a colour.
+   Rising fills the chip in; falling leaves it hollow behind a dashed frame,
+   so the two are apart at a glance even before the ▲/▼ is legible. */
 .env-hud-delta {
     position:absolute; top:6px; right:7px;
     padding:1px 5px;
     border:2px solid var(--hud-accent);
     border-radius:7px;
-    background:color-mix(in srgb,var(--hud-accent) 22%,white);
+    background:color-mix(in srgb,var(--hud-accent) 62%,white);
     color:var(--color-text);
     font:700 9px/1.35 var(--font-heading,ui-monospace,monospace);
     white-space:nowrap;
     pointer-events:none;
+}
+.env-hud-delta.is-down {
+    border-style:dashed;
+    background:var(--color-surface);
 }
 
 /* (C) Which tile answered, readable from the back of the room. */

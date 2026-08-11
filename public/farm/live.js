@@ -304,6 +304,10 @@ function emphasiseVital(kind, value, fromLeft, toLeft) {
     const to = Math.max(0, Math.min(100, toLeft));
     trail.style.left = `${Math.min(from, to)}%`;
     trail.style.width = `${Math.abs(to - from)}%`;
+    // Direction lives in the trail's shape, never in a second colour: it fades
+    // out at where the value started and goes solid at where it is now, so the
+    // solid end is always the head of the movement.
+    trail.classList.toggle("is-down", delta < 0);
     trail.hidden = false;
   }
 

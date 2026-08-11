@@ -131,6 +131,25 @@ describe("the tile that moved is findable at a glance", () => {
     expect(live).toContain('card.classList.add("is-changing")'); // (C) which tile
   });
 
+  it("tells rising from falling by shape, not by a second colour", () => {
+    // A rise is not good news and a fall is not bad news — climbing heat
+    // rescues a cold plant and endangers a hot one. That judgement belongs to
+    // .is-mood-pulse, so direction must never be read as red/green.
+    expect(live).toContain('trail.classList.toggle("is-down", delta < 0);');
+    expect(live).toContain('chip.classList.toggle("is-down", delta < 0);');
+    // Trail: the solid end is the head of the movement, so the gradient flips.
+    expect(css).toMatch(/\.env-gauge-trail \{[^}]*linear-gradient\(to right/);
+    expect(css).toMatch(/\.env-gauge-trail\.is-down \{[^}]*linear-gradient\(to left/);
+    // Chip: filled when rising, hollow and dashed when falling.
+    expect(css).toMatch(/\.env-hud-delta\.is-down \{[^}]*border-style:dashed/);
+    // Neither direction may introduce a hue of its own.
+    for (const selector of [".env-gauge-trail.is-down", ".env-hud-delta.is-down"]) {
+      const start = css.indexOf(`${selector} {`);
+      const block = css.slice(start, css.indexOf("}", start));
+      expect(block, `${selector} must stay on --hud-accent`).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+    }
+  });
+
   it("colours each channel from the tile's own accent", () => {
     for (const selector of [".env-gauge-trail", ".env-hud-delta", ".env-hud-card.is-changing"]) {
       const start = css.indexOf(`${selector} {`);
