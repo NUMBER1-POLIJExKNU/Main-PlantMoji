@@ -43,8 +43,8 @@ function formatWeekRange(report: WeeklyReport, locale: AppLocale): string {
 }
 
 // Muted ink tints derived from the farm text color #243421 (spec §2.5).
-const INK_MUTED = "#5B6B57";
-const INK_FAINT = "#93A08F";
+const INK_MUTED = "var(--pm-ink-muted)";
+const INK_FAINT = "var(--pm-ink-faint)";
 
 /** Farm surface tile: .pm-panel with a palette accent border and the big
  *  number in Press Start 2P. Accents are inline because the pm-* contract
@@ -87,6 +87,7 @@ export default async function ReportsPage() {
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -117,6 +118,7 @@ export default async function ReportsPage() {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
       <Notice
+        locale={locale}
         title="Couldn't load the weekly report"
         lines={[message, "Check that supabase/milestone3.sql has been run."]}
       />
@@ -129,7 +131,7 @@ export default async function ReportsPage() {
   // narration — the stat tiles below still render from `report`.
   const narration =
     plantResult.status === "ok"
-      ? await getWeeklyReportNarration(plantResult.plant, report)
+      ? await getWeeklyReportNarration(plantResult.plant, report, locale)
       : null;
   const nextGoal = report.overheatingEvents > 0
     ? (locale === "id" ? "Kurangi kejadian panas dan jaga tempat tetap teduh." : "Reduce heat events and keep the garden comfortably shaded.")

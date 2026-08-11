@@ -14,7 +14,7 @@ import PageHeader from "@/components/page-header";
 import JamkachuMemoryReflection from "@/components/jamkachu-memory-reflection";
 import { fetchGrowthRecords } from "@/lib/growth";
 import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
-import { companionFormLabel, companionStageLabel } from "@/lib/i18n";
+import { companionFormLabel, companionStageLabel, growthStageLabel } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
@@ -32,7 +32,7 @@ const PLANT_ID = "plant-01";
 // to src/app/settings/page.tsx's field classes.
 const fieldLabelClass = "pm-heading text-[10px] uppercase opacity-80";
 const fieldInputClass =
-  "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-sm text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
+  "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-base text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
 const fieldHelpClass = "text-[11px] leading-4 text-[#57684F]";
 
 export default async function DiaryPage() {
@@ -48,6 +48,7 @@ export default async function DiaryPage() {
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -69,6 +70,7 @@ export default async function DiaryPage() {
   if (result.status === "no-schema") {
     return (
       <Notice
+        locale={locale}
         title="Supabase tables don't exist yet"
         lines={[
           "Environment variables are connected, but the schema hasn't been run.",
@@ -83,6 +85,7 @@ export default async function DiaryPage() {
   if (result.status === "error") {
     return (
       <Notice
+        locale={locale}
         title="Supabase connection error"
         lines={[result.message, "Double-check your URL and key values."]}
       />
@@ -92,6 +95,7 @@ export default async function DiaryPage() {
   if (result.status === "not-found") {
     return (
       <Notice
+        locale={locale}
         title={`No data for ${PLANT_ID}`}
         lines={[
           "Run supabase/milestone1.sql in the Supabase SQL Editor",
@@ -133,11 +137,13 @@ export default async function DiaryPage() {
   return (
     <main className="mx-auto w-full">
       <PageHeader
-        icon="🌱"
+        icon="📖"
+        eyebrow={locale === "id" ? "KENANGAN TANAMAN" : "PLANT MEMORIES"}
         title={locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
+        description={locale === "id" ? "Foto dan catat perubahan kecil agar perjalanan tumbuhnya mudah diingat." : "Photograph and note small changes so the growth journey is easy to remember."}
       />
 
-      <div className="mx-auto w-full max-w-[640px]">
+      <div className="pm-diary-page mx-auto w-full max-w-[640px]">
         <JamkachuMemoryReflection memories={memories} locale={locale} snapshot={featuredSnapshot} />
         {companion && <div className="pm-diary-stage-stamp">{companionStageLabel(locale, String(companion.stage))} · {companionFormLabel(locale, String(companion.form_key))}</div>}
         <section className="pm-diary-notebook flex flex-col gap-5">
@@ -156,7 +162,7 @@ export default async function DiaryPage() {
               <select name="stage" defaultValue={currentStage} className={fieldInputClass}>
                 {GROWTH_STAGES.map((stage) => (
                   <option key={stage} value={stage}>
-                    {stage}
+                    {growthStageLabel(locale, stage)}
                   </option>
                 ))}
               </select>
@@ -216,7 +222,7 @@ export default async function DiaryPage() {
 
           <div className="pm-diary-print-grid">
             {growthRecords.length === 0 ? (
-              <p className="text-xs text-[#57684F]">
+              <p className="pm-panel col-span-full text-xs text-[#57684F]">
                 {locale === "id"
                   ? "Belum ada catatan. Tambahkan catatan pertumbuhan pertamamu."
                   : "No records yet. Add your first growth record."}
@@ -248,7 +254,7 @@ export default async function DiaryPage() {
                     {snapshotUrl && <b>{locale === "id" ? "JEPRET!" : "SNAP!"}</b>}
                   </div>
                   <div className="pm-growth-postcard-copy">
-                    <span>{dateLabel} · <strong>{record.stage}</strong></span>
+                    <span>{dateLabel} · <strong>{growthStageLabel(locale, record.stage)}</strong></span>
                     {details.length > 0 && <span>{details}</span>}
                     {record.note && <q>{record.note}</q>}
                     {record.photo_url && (

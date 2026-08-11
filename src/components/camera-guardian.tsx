@@ -379,6 +379,25 @@ export default function CameraGuardian({
     { key: "result", label: "RESULT", summary: localClassification ?? "WAITING", state: localClassification ? "complete" : "waiting" },
   ], [localClassification, localModelState, status]);
 
+  // The real plant in the video is Jamkachu on this screen. Keep its voice
+  // in the same short, friendly speech-bubble language as the farm view;
+  // status chips and the result card remain secondary diagnostics.
+  const cameraBubble = scanNote ?? (
+    status === "motion"
+      ? (locale === "id" ? "Hei! Aku merasakan gerakan di dekatku 👋" : "Hey! I felt a little movement near me 👋")
+      : status === "checking"
+        ? (locale === "id" ? "Aku sedang melihat lebih dekat…" : "I’m taking a closer look…")
+        : status === "suspended"
+          ? (locale === "id" ? "Aku tidur dulu ya. Tanaman juga perlu istirahat 🌙" : "I’m resting now. Plants need sleep too 🌙")
+          : status === "hidden"
+            ? (locale === "id" ? "Aku menunggumu kembali ke layar ini." : "I’m waiting for you to come back.")
+            : localClassification === "Foreign Environment"
+              ? (locale === "id" ? "Hmm… ada sesuatu yang belum kukenal di sini." : "Hmm… I see something I don’t recognize here.")
+              : localModelState === "loading"
+                ? (locale === "id" ? "Sebentar, aku sedang membuka mataku…" : "One moment, I’m opening my eyes…")
+                : (locale === "id" ? "Aku di sini! Temani aku menjaga tanaman ini 🌱" : "I’m here! Let’s take care of this plant together 🌱")
+  );
+
   return (
     <section className={`pm-cam${presentationMode ? " is-presentation" : ""}`}>
       {status === "denied" || status === "nocamera" ? (
@@ -390,6 +409,15 @@ export default function CameraGuardian({
       ) : (
         <div className="pm-cam-stage">
           <video ref={videoRef} className="pm-cam-video" muted playsInline aria-label={copy.title} />
+          <div
+            key={cameraBubble}
+            className={`pm-cam-speech${localClassification === "Foreign Environment" ? " is-alert" : ""}${tickle > 0 ? " is-tickled" : ""}`}
+            role="status"
+            aria-live="polite"
+          >
+            <span className="pm-cam-speech-name">JAMKACHU</span>
+            <span>{cameraBubble}</span>
+          </div>
           <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite">{statusLabel[status]}</div>
           <div className={`pm-cam-result is-${localClassification === "Foreign Environment" ? "foreign" : "safe"}`}><small>{locale === "id" ? "PENJAGA KEBUN" : "GARDEN GUARDIAN"}</small><strong>{localModelState === "loading" ? (locale === "id" ? "Jamkachu sedang melihat…" : "Jamkachu is looking…") : localModelState === "failed" ? (locale === "id" ? "Pengamatan gerak aktif" : "Motion watch is active") : localClassification ?? (locale === "id" ? "Lingkungan aman" : "Safe Environment")}</strong></div>
           <div

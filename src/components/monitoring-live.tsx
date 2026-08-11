@@ -24,7 +24,7 @@ const REFRESH_MS = 10_000;
 const LightChart = dynamic(() => import("@/components/light-chart"), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[260px] w-full animate-pulse items-center justify-center text-sm text-[#57684F]">
+    <div className="flex h-[260px] w-full motion-safe:animate-pulse items-center justify-center text-sm text-[#57684F]">
       …
     </div>
   ),
@@ -78,12 +78,12 @@ const COPY = {
   en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", idealRangesNote: "Shown as the green band on the chart below." },
 } as const;
 
-function ReadingCard({ icon, label, value, unit, accent, note }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string }) {
+function ReadingCard({ icon, label, value, unit, accent, note, liveNote }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string }) {
   return (
     <article className="pm-panel pm-monitor-reading" style={{ "--sensor-accent": accent } as CSSProperties}>
       <div className="pm-monitor-reading-head"><span aria-hidden="true">{icon}</span><h2>{label}</h2></div>
       <div className="pm-monitor-reading-value">{value == null ? "—" : value}<small>{value == null ? "" : unit}</small></div>
-      <div className="pm-monitor-reading-foot"><span className={value == null ? "is-waiting" : "is-live"} />{note ?? (value == null ? "No data" : "Live reading")}</div>
+      <div className="pm-monitor-reading-foot"><span className={value == null ? "is-waiting" : "is-live"} />{note ?? liveNote}</div>
     </article>
   );
 }
@@ -312,10 +312,12 @@ export default function MonitoringLive({
       <div className="pm-monitor-intro"><div><span>📡</span><div><h2>{c.real}</h2><p>{c.intro}</p></div></div></div>
 
       <div className="pm-monitor-reading-grid">
-        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" note={temperature == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" note={humidity == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" note={soilPh == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
+        {/* liveNote is the localized "live" footer (no hardcoded English);
+            readingNote overrides it with the demo-data note in demo mode. */}
+        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" liveNote={c.real} note={temperature == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" liveNote={c.real} note={humidity == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" liveNote={c.real} note={soilPh == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" liveNote={c.real} note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
       </div>
 
       {ranges && cropProfile && (

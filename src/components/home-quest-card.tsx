@@ -5,6 +5,7 @@
 // active. Both states link through to the full /quests screen.
 
 import Link from "next/link";
+import type { AppLocale } from "@/lib/i18n";
 
 export interface HomeQuestInfo {
   emoji: string;
@@ -17,16 +18,17 @@ export interface HomeQuestInfo {
 
 export interface HomeQuestCardProps {
   quest: HomeQuestInfo | null;
+  locale: AppLocale;
 }
 
-export default function HomeQuestCard({ quest }: HomeQuestCardProps) {
+export default function HomeQuestCard({ quest, locale }: HomeQuestCardProps) {
   if (!quest) {
     return (
       <Link
         href="/quests"
         className="pm-home-quest block w-full max-w-sm rounded-2xl bg-white/50 px-5 py-4 text-center text-sm text-zinc-500 shadow-sm backdrop-blur transition-colors hover:bg-white/70 dark:bg-zinc-900/40 dark:text-zinc-400 dark:hover:bg-zinc-900/60"
       >
-        No active quest — keep caring 🌿
+        {locale === "id" ? "Belum ada misi aktif — pilih langkah berikutnya 🌿" : "No active quest — choose your next step 🌿"}
       </Link>
     );
   }
@@ -38,7 +40,7 @@ export default function HomeQuestCard({ quest }: HomeQuestCardProps) {
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] font-bold tracking-widest text-zinc-400 dark:text-zinc-500">
-          CURRENT QUEST
+          {locale === "id" ? "MISI SEKARANG" : "CURRENT QUEST"}
         </span>
         <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-800 dark:bg-green-900/60 dark:text-green-200">
           {quest.statusLabel}
@@ -54,6 +56,7 @@ export default function HomeQuestCard({ quest }: HomeQuestCardProps) {
           <p className="text-sm text-zinc-500 dark:text-zinc-400">{quest.progressLabel}</p>
         </div>
       </div>
+      <span className="mt-3 block text-right text-xs font-bold text-green-800 dark:text-green-200">{locale === "id" ? "BUKA MISI →" : "OPEN QUEST →"}</span>
     </Link>
   );
 }

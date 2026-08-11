@@ -10,6 +10,7 @@ import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
 import BroadcastOverlay from "@/components/broadcast-overlay";
 import LiveActivityBar from "@/components/live-activity-bar";
+import NetworkStatus from "@/components/network-status";
 
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. Keep
@@ -65,6 +66,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
 
   return (
     <div className="reno-app-shell">
+      <NetworkStatus locale={locale} />
       <div className="reno-env-background" aria-hidden="true">
         <div className="reno-env-sun" />
         <div className="reno-env-cloud reno-env-cloud-1" />

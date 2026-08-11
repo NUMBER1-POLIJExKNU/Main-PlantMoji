@@ -79,8 +79,8 @@ export default function DesignSandboxPage() {
           title="HomeQuestCard"
           hint="Verifying-state example (static quest object) + no-active-quest (null) example"
         />
-        <HomeQuestCard quest={VERIFYING_QUEST} />
-        <HomeQuestCard quest={null} />
+        <HomeQuestCard quest={VERIFYING_QUEST} locale="en" />
+        <HomeQuestCard quest={null} locale="id" />
       </section>
 
       <section className="flex flex-col gap-6">

@@ -185,11 +185,13 @@ export default function DemoControlCenter({
 
       <section className="rounded-2xl border-2 border-emerald-700 bg-[#10251a] p-3 text-emerald-100 shadow-[0_5px_0_#07120c]">
         <p className="pm-heading text-[8px] text-emerald-300">{copy.director}</p>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           <Link className="pm-btn px-2 text-[8px]" href="/?presentation=1&amp;scene=1&amp;source=demo">START DEMO</Link>
-          <Link className="pm-btn px-2 text-[8px]" href="/plants?demo=hot">2 · EXPLAIN</Link>
-          <Link className="pm-btn px-2 text-[8px]" href="/camera?demo=1">3 · CAMERA</Link>
-          <Link className="pm-btn px-2 text-[8px]" href="/diary?demo=1">4 · MEMORY</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/plants?demo=hot&amp;presentation=1&amp;scene=2&amp;source=demo">2 · SCAN</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/plants?demo=hot&amp;presentation=1&amp;scene=3&amp;source=demo">3 · MATCH</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/quests?presentation=1&amp;scene=4&amp;source=demo">4 · VERIFY</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/camera?presentation=1&amp;scene=5&amp;source=demo">5 · CAMERA</Link>
+          <Link className="pm-btn px-2 text-[8px]" href="/?presentation=1&amp;scene=6&amp;source=demo">6 · GROWTH</Link>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button type="button" className="pm-btn pm-btn-primary w-full text-[8px]" onClick={openPresentation}>{copy.presentation}</button>

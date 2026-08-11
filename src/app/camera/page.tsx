@@ -29,6 +29,7 @@ export default async function CameraPage() {
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -43,6 +44,7 @@ export default async function CameraPage() {
   if (result.status === "no-schema") {
     return (
       <Notice
+        locale={locale}
         title="Supabase tables don't exist yet"
         lines={[
           "Environment variables are connected, but the schema hasn't been run.",
@@ -55,6 +57,7 @@ export default async function CameraPage() {
   if (result.status === "error") {
     return (
       <Notice
+        locale={locale}
         title="Supabase connection error"
         lines={[result.message, "Double-check your URL and key values."]}
       />
@@ -63,6 +66,7 @@ export default async function CameraPage() {
   if (result.status === "not-found") {
     return (
       <Notice
+        locale={locale}
         title={`No data for ${PLANT_ID}`}
         lines={["Run supabase/milestone1.sql in the Supabase SQL Editor."]}
       />
@@ -94,7 +98,7 @@ export default async function CameraPage() {
 
   return (
     <main className="mx-auto w-full">
-      <PageHeader icon="📷" title={copy.title} description={copy.description} />
+      <PageHeader icon="📷" eyebrow={locale === "id" ? "AMATI DENGAN AMAN" : "OBSERVE SAFELY"} title={copy.title} description={copy.description} />
       <div className="mx-auto w-full max-w-[720px]">
         <CameraGuardian
           locale={locale}

@@ -106,8 +106,8 @@ const WISDOM_TRIALS: Record<string, { prompt: { id: string; en: string }; choice
 };
 
 // Muted ink tints derived from the farm text color #243421 (spec §2.5).
-const INK_MUTED = "#5B6B57";
-const INK_FAINT = "#93A08F";
+const INK_MUTED = "var(--pm-ink-muted)";
+const INK_FAINT = "var(--pm-ink-faint)";
 const BADGE_WHEEL_BRANCHES = [
   { id: "bond", color: "#F4C95D", angle: 225, keys: ["FIRST_RESCUE", "LEVEL_5_BOND", "LEVEL_10_BOND"] },
   { id: "environment", color: "#74B9FF", angle: 315, keys: ["LIGHT_MASTER", "COOL_KEEPER", "HUMIDITY_HERO"] },
@@ -347,6 +347,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         .pm-wheel-node .pm-gem-socket { width: 100%; }
         .pm-wheel-center { position: absolute; left: 50%; top: 50%; z-index: 4; width: clamp(76px, 21vw, 98px); aspect-ratio: 1; transform: translate(-50%, -50%); }
         .pm-wheel-label { position: absolute; z-index: 2; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .05em; color: #57684F; }
+        .pm-badge-effect-icon { display: flex; align-items: center; justify-content: center; gap: 1px; }
+        .pm-badge-effect-icon i { display: block; max-width: 21px; font-style: normal; font-size: 18px; line-height: 1; }
+        @media (max-width: 480px) {
+          .pm-badge-effect-row { grid-template-columns: 48px minmax(0,1fr); }
+          .pm-badge-effect-row > button { grid-column: 1 / -1; width: 100%; }
+        }
       `}</style>
       <div
         role="tablist"
@@ -470,8 +476,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               <p className="mt-1 text-xs leading-5" style={{ color: INK_MUTED }}>{selectedBadge.description}</p>
               {selectedBadge.unlockedLabel && <p className="mt-2 text-[11px] font-semibold" style={{ color: "#A97B12" }}>{copy.unlockedOn} {selectedBadge.unlockedLabel}</p>}
               {selectedEffect && (
-                <div className="mx-auto mt-4 flex max-w-sm items-center gap-3 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
-                  <span className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-[#C99B32] bg-white text-xl" aria-hidden="true">{selectedEffect.particles.slice(0,2).join("")}</span>
+                <div className="pm-badge-effect-row mx-auto mt-4 grid max-w-sm grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
+                  <span className="pm-badge-effect-icon grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#C99B32] bg-white text-xl" aria-hidden="true">{selectedEffect.particles.slice(0,2).map((particle, index) => <i className="not-italic" key={`${particle}-${index}`}>{particle}</i>)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="pm-heading text-[8px] text-[#A97B12]">{copy.reward}</p>
                     <p className="mt-1 text-sm font-bold">{selectedEffect.name[locale]}</p>
@@ -560,7 +566,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   🔍 {copy.challenge}
                 </button>
                 {wisdomTrial === entry.id && WISDOM_TRIALS[entry.id] && (
-                  <div className="mt-3 rounded-xl border-2 border-[#A9D2F2] bg-[#EEF8FF] p-3" aria-live="polite">
+                  <div className="pm-wisdom-trial mt-3 rounded-xl border-2 border-[#A9D2F2] bg-[#EEF8FF] p-3" aria-live="polite">
                     <p className="text-sm font-bold leading-5">{WISDOM_TRIALS[entry.id].prompt[locale]}</p>
                     <div className="mt-2 grid gap-2 sm:grid-cols-2">
                       {WISDOM_TRIALS[entry.id].choices[locale].map((choice, choiceIndex) => {

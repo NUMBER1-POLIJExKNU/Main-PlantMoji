@@ -101,7 +101,7 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
   const locale = await getRequestLocale();
   const copy = PAGE_COPY[locale];
   const supabase = getServerSupabase();
-  if (!supabase) return <Notice title="Connecting..." lines={["Check your Supabase environment variables."]} />;
+  if (!supabase) return <Notice locale={locale} title="Connecting..." lines={["Check your Supabase environment variables."]} />;
   // Independent queries in parallel. Neither ever rejects (both map failures
   // to status objects / null), so the error Notice below still depends only
   // on getPlant — identical behavior, one round-trip instead of two.
@@ -112,7 +112,7 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
   ]);
   const snapshot = demoPreset ? getEnvironmentDemoPreset(demoPreset) : realSnapshot;
   if (result.status !== "ok") {
-    return <Notice title="Couldn't load crop info" lines={[result.status === "error" ? result.message : "Check the migrations and the plant-01 seed."]} />;
+    return <Notice locale={locale} title="Couldn't load crop info" lines={[result.status === "error" ? result.message : "Check the migrations and the plant-01 seed."]} />;
   }
 
   const profile = getCropProfile(result.plant.crop_profile_key);

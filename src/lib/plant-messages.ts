@@ -55,8 +55,8 @@ function evictOldest(): void {
 const reportSettledCache = new Map<string, string | null>();
 const reportInFlightCache = new Map<string, Promise<string | null>>();
 
-function reportCacheKey(plant: Plant, personality: string, report: WeeklyReport): string {
-  return `${plant.id}|${personality}|${report.weekStart}|${report.questsCompleted}|${report.bondLevel}`;
+function reportCacheKey(plant: Plant, personality: string, locale: AppLocale, report: WeeklyReport): string {
+  return `${plant.id}|${personality}|${locale}|${report.weekStart}|${report.questsCompleted}|${report.bondLevel}`;
 }
 
 function evictOldestReport(): void {
@@ -99,8 +99,17 @@ const WEEKLY_REPORT_TEMPLATES: Record<PersonalityId, (p: ReportFallbackParams) =
     `Um… I was healthy for ${p.healthyLabel} this week… we finished ${p.questsCompleted} ${p.questWord}… and our bond is Level ${p.bondLevel} now… thank you…`,
 };
 
-function buildWeeklyReportFallback(personality: PersonalityId, report: WeeklyReport): string {
-  return WEEKLY_REPORT_TEMPLATES[personality]({
+const WEEKLY_REPORT_TEMPLATES_ID: Record<PersonalityId, (p: ReportFallbackParams) => string> = {
+  cute: (p) => `Minggu ini aku sehat selama ${p.healthyLabel}, kita menyelesaikan ${p.questsCompleted} misi, dan ikatan kita sekarang Level ${p.bondLevel} — terima kasih sudah merawatku!`,
+  calm: (p) => `Minggu ini: sehat ${p.healthyLabel}, ${p.questsCompleted} misi selesai, dan ikatan kita Level ${p.bondLevel}.`,
+  funny: (p) => `Sehat ${p.healthyLabel}, ${p.questsCompleted} misi beres, dan ikatan Level ${p.bondLevel} — lumayan untuk tanaman yang tidak bisa jalan!`,
+  energetic: (p) => `Minggu yang hebat! Sehat ${p.healthyLabel}, ${p.questsCompleted} misi tuntas, ikatan Level ${p.bondLevel} — lanjutkan!`,
+  shy: (p) => `Hmm… minggu ini aku sehat selama ${p.healthyLabel}… kita menyelesaikan ${p.questsCompleted} misi… dan ikatan kita sekarang Level ${p.bondLevel}… terima kasih…`,
+};
+
+function buildWeeklyReportFallback(personality: PersonalityId, report: WeeklyReport, locale: AppLocale): string {
+  const templates = locale === "id" ? WEEKLY_REPORT_TEMPLATES_ID : WEEKLY_REPORT_TEMPLATES;
+  return templates[personality]({
     healthyLabel: healthyHoursLabel(report.healthySeconds),
     questsCompleted: report.questsCompleted,
     questWord: report.questsCompleted === 1 ? "quest" : "quests",
@@ -188,16 +197,17 @@ export async function getHomeMoodMessage(plant: Plant, locale: AppLocale = "en")
 export async function getWeeklyReportNarration(
   plant: Plant,
   report: WeeklyReport,
+  locale: AppLocale = "en",
 ): Promise<string> {
   const personality = normalizePersonality(plant.personality);
-  const fallback = buildWeeklyReportFallback(personality, report);
+  const fallback = buildWeeklyReportFallback(personality, report, locale);
 
   try {
     // generateAiMessage guards too, but returning here skips a pointless
     // await/cache round-trip in the common key-less (demo/offline) setup.
     if (!process.env.GEMINI_API_KEY) return fallback;
 
-    const key = reportCacheKey(plant, personality, report);
+    const key = reportCacheKey(plant, personality, locale, report);
 
     if (reportSettledCache.has(key)) {
       return reportSettledCache.get(key) ?? fallback;
@@ -210,6 +220,7 @@ export async function getWeeklyReportNarration(
         personality,
         plantName: plant.name,
         reportSummary: buildReportSummary(report),
+        locale,
       });
       reportInFlightCache.set(key, pending);
     }

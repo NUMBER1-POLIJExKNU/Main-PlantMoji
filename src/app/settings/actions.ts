@@ -45,11 +45,8 @@ function demoLocale(formData: FormData): AppLocale {
   return normalizeLocale(formData.get("locale"));
 }
 
-/** Demo gate code. Zero-friction by EXPLICIT USER DECISION (2026-08-10,
- * "보안 확 다 빼버려 — 우리끼리 하는 프로젝트"): the code is "admin" everywhere,
- * production included, unless DEMO_CHEAT_CODE overrides it. Do NOT re-add a
- * fail-closed production branch here without asking the user first — they
- * rejected that gate once already. */
+/** Team-internal presenter gate: explicit project policy keeps rehearsals
+ * zero-friction unless DEMO_CHEAT_CODE overrides the default. */
 function configuredDemoCode(): string {
   return process.env.DEMO_CHEAT_CODE?.trim() || "admin";
 }

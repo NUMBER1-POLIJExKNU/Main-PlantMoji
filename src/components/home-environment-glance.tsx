@@ -17,7 +17,7 @@ export default function HomeEnvironmentGlance({ snapshot, locale }: { snapshot: 
           <span className="pm-home-environment-kicker">{locale === "id" ? "SENSOR TERKINI" : "LATEST SENSORS"}</span>
           <h2 id="home-environment-title">{locale === "id" ? "Vital kebunku" : "Garden vitals"}</h2>
         </div>
-        <Link href="/plants">{locale === "id" ? "Jelajahi →" : "Explore →"}</Link>
+        <Link href="/monitoring">{locale === "id" ? "Lihat detail →" : "View details →"}</Link>
       </div>
       <div className="pm-home-environment-grid">
         {METRICS.map((metric) => {

@@ -24,7 +24,7 @@ export default async function ShopPage() {
   const supabase = getServerSupabase();
 
   if (!supabase) {
-    return <Notice title={copy.offlineTitle} lines={[...copy.offlineLines]} />;
+    return <Notice locale={locale} title={copy.offlineTitle} lines={[...copy.offlineLines]} />;
   }
 
   maybeScheduleGameTick(PLANT_ID);
@@ -43,7 +43,7 @@ export default async function ShopPage() {
   if (bondRes.error || purchasesRes.error) {
     // Missing migration (supabase/milestone18-seed-shop.sql) → graceful
     // "coming soon" panel, never a crash.
-    return <Notice title={copy.comingSoonTitle} lines={[...copy.comingSoonLines]} />;
+    return <Notice locale={locale} title={copy.comingSoonTitle} lines={[...copy.comingSoonLines]} />;
   }
 
   // Cheat sandbox (feature 3): own every item with a huge balance so the

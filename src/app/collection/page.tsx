@@ -59,6 +59,7 @@ export default async function CollectionPage() {
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -96,6 +97,7 @@ export default async function CollectionPage() {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
       <Notice
+        locale={locale}
         title="Couldn't load the collection"
         lines={[message, "Check that supabase/milestone3.sql has been run."]}
       />

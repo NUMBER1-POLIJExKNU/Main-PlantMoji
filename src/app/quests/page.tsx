@@ -175,7 +175,7 @@ function DailyEventBanner({ event, locale }: { event: DailyEvent; locale: AppLoc
     event.kind === "daily_challenge" && event.challengeXp
       ? `+${event.challengeXp} XP`
       : event.kind === "xp_boost" && event.xpMultiplier
-        ? `×${event.xpMultiplier} quest XP today`
+        ? locale === "id" ? `×${event.xpMultiplier} XP misi hari ini` : `×${event.xpMultiplier} quest XP today`
         : null;
 
   return (
@@ -255,6 +255,7 @@ export default async function QuestsPage() {
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -282,6 +283,7 @@ export default async function QuestsPage() {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
       <Notice
+        locale={locale}
         title="Couldn't load quests"
         lines={[message, "Check that supabase/milestone3.sql has been run."]}
       />

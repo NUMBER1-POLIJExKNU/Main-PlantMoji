@@ -189,16 +189,16 @@ export default function ShopGrid({
         </p>
       )}
 
-      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}`} aria-live="polite">
+      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}${busyKey === previewItem.key ? " is-busy" : ""}`} aria-live="polite" aria-busy={busyKey === previewItem.key}>
         <button type="button" onClick={() => setPreviewKey(null)} aria-label={copy.closePreview}>×</button>
         <div className="pm-shop-preview-scene"><span aria-hidden="true">{previewItem.category === "decor" ? "🌱" : "🪴"}</span><b aria-hidden="true">{previewItem.emoji}</b></div>
         <div className="pm-shop-preview-copy"><small>{copy.previewing}</small><h2>{previewItem.name}</h2><p>{previewItem.blurb}</p><strong>🌰 {previewItem.price}</strong>
-          {previewOwned ? (previewItem.category === "decor" ? <span className="pm-shop-preview-status">✓ {copy.owned}</span> : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null} onClick={() => equip(previewItem, !previewOwned.equipped)}>{previewOwned.equipped ? copy.unequip : copy.equip}</button>) : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null || !previewAffordable} onClick={(event) => buy(previewItem, event.currentTarget)}>{previewAffordable ? `${copy.buy} · ${previewItem.price}` : `${previewItem.price - seeds} ${copy.needMore}`}</button>}
+          {previewOwned ? (previewItem.category === "decor" ? <span className="pm-shop-preview-status">✓ {copy.owned}</span> : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null} onClick={() => equip(previewItem, !previewOwned.equipped)}>{busyKey === previewItem.key ? (locale === "id" ? "Memasang…" : "Equipping…") : previewOwned.equipped ? copy.unequip : copy.equip}</button>) : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null || !previewAffordable} onClick={(event) => buy(previewItem, event.currentTarget)}>{busyKey === previewItem.key ? (locale === "id" ? "Menanam…" : "Planting…") : previewAffordable ? `${copy.buy} · ${previewItem.price}` : `${previewItem.price - seeds} ${copy.needMore}`}</button>}
         </div>
       </section>}
 
-      <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
-      <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => setFilter(entry)}>{copy.filters[entry]}</button>)}</div>
+        <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
+      <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>{copy.filters[entry]}</button>)}</div>
 
       <div className="pm-shop-sections">
           <section aria-label={copy.categories[category]}>
@@ -207,7 +207,7 @@ export default function ShopGrid({
                   const owned = ownedRow(item.key);
                   const affordable = seeds >= item.price;
                   return (
-                    <article key={item.key} className="pm-panel pm-shop-card">
+                    <article key={item.key} className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}`} aria-busy={busyKey === item.key}>
                       <span className="pm-shop-emoji" aria-hidden="true">{item.emoji}</span>
                       <h3>{item.name}</h3>
                       <p>{item.blurb}</p>

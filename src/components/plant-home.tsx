@@ -265,8 +265,6 @@ export default function PlantHome({
         show={levelUp.show}
         onDone={() => setLevelUp((prev) => ({ ...prev, show: false }))}
       />
-      <FarmerNpc isNight={jemberHour >= 18 || jemberHour < 6} locale={locale} />
-
       {/* Sky stage: name, mood badge, speech bubble, mascot */}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-10">
         <div className="pm-home-clock" aria-label={`${locale === "id" ? "Waktu Jember" : "Jember time"} ${jemberTime}`}><span aria-hidden="true">{jemberHour >= 18 || jemberHour < 6 ? "🌙" : "☀️"}</span><div><small>{locale === "id" ? "WAKTU JEMBER · WIB" : "JEMBER TIME · WIB"}</small><strong>{jemberTime}</strong></div></div>
@@ -288,6 +286,7 @@ export default function PlantHome({
 
       {/* Grass floor — the panels sit on the lawn, glass-style */}
       <div className="pm-grass relative w-full pb-28">
+        <FarmerNpc isNight={jemberHour >= 18 || jemberHour < 6} locale={locale} />
         <div className="mx-auto flex w-full max-w-md flex-col items-center gap-5 px-6 pt-14">
           <HomeEnvironmentGlance snapshot={initialSnapshot} locale={locale} />
 
@@ -301,7 +300,7 @@ export default function PlantHome({
             />
           )}
 
-          <HomeQuestCard quest={questCardProps(quest, nowMs)} />
+          <HomeQuestCard quest={questCardProps(quest, nowMs)} locale={locale} />
           <WhatNow locale={locale} mood={plant.current_state} questStatus={quest?.status} />
           {presentationMode && quest?.status === "VERIFYING" && <div className="w-full"><IntelligenceConsole title="CARE VERIFICATION CORE" running lines={[
             { label: "SENSOR EVIDENCE", value: "OBSERVING", tone: "warn" },

@@ -2,16 +2,20 @@
 // measure as healthy routes so a transient backend problem never appears to
 // switch the user into a different application.
 
+import type { AppLocale } from "@/lib/i18n";
+
 export interface NoticeProps {
   title: string;
   lines: string[];
+  locale?: AppLocale;
 }
 
-export default function Notice({ title, lines }: NoticeProps) {
+export default function Notice({ title, lines, locale = "en" }: NoticeProps) {
+  const id = locale === "id";
   const technical = /supabase|postgrest|migration|milestone\d+|\.sql|environment variable|schema|plant-01|docs\//i;
-  const safeTitle = technical.test(title) ? "The garden is resting" : title;
+  const safeTitle = technical.test(title) ? (id ? "Kebun sedang beristirahat" : "The garden is resting") : title;
   const safeLines = lines.some((line) => technical.test(line))
-    ? ["PlantMoji could not load this garden right now.", "Please try again in a moment."]
+    ? (id ? ["PlantMoji belum bisa memuat kebun ini.", "Periksa koneksi, lalu coba lagi sebentar."] : ["PlantMoji could not load this garden right now.", "Check the connection, then try again in a moment."])
     : lines;
   return (
     <main className="reno-notice-page">
@@ -26,7 +30,7 @@ export default function Notice({ title, lines }: NoticeProps) {
             <p key={line}>{line}</p>
           ))}
         </div>
-        <a className="pm-btn pm-btn-primary mt-4" href="">Try again</a>
+        <a className="pm-btn pm-btn-primary mt-4" href="">{id ? "Coba lagi" : "Try again"}</a>
       </section>
     </main>
   );

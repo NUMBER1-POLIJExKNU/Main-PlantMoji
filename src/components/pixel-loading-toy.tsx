@@ -7,6 +7,7 @@ export default function PixelLoadingToy({ variant, label }: { variant: PixelLoad
   const [poked, setPoked] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const poke = () => {
+    window.PMSfx?.play("pet");
     if (timer.current) clearTimeout(timer.current);
     setPoked(false);
     requestAnimationFrame(() => {

@@ -10,6 +10,15 @@ export function normalizeLocale(value: unknown): AppLocale {
   return value === "en" ? "en" : DEFAULT_APP_LOCALE;
 }
 
+export const GROWTH_STAGE_COPY: Record<AppLocale, Record<string, string>> = {
+  id: { "New Plant": "Tanaman Baru", Settled: "Mulai Beradaptasi", Growing: "Sedang Tumbuh", Thriving: "Tumbuh Subur", Mature: "Dewasa" },
+  en: { "New Plant": "New Plant", Settled: "Settled", Growing: "Growing", Thriving: "Thriving", Mature: "Mature" },
+};
+
+export function growthStageLabel(locale: AppLocale, stage: string): string {
+  return GROWTH_STAGE_COPY[locale][stage] ?? stage;
+}
+
 export const MOOD_COPY: Record<AppLocale, Record<PlantMood, string>> = {
   id: {
     Happy: "Sehat",

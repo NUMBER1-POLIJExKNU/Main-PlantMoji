@@ -14,7 +14,7 @@ import { getBondState } from "@/game/progression/xp-engine";
 import { getPlant, getUnlockedBadges, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
-import type { AppLocale } from "@/lib/i18n";
+import { growthStageLabel, type AppLocale } from "@/lib/i18n";
 import { normalizePersonality, PERSONALITIES, type PersonalityId } from "@/types/game";
 import { updatePlantSettings } from "./actions";
 
@@ -47,7 +47,7 @@ const PERSONALITY_LABELS: Record<AppLocale, Record<PersonalityId, string>> = {
 // sprout-green bordered inputs on the solid white surface.
 const fieldLabelClass = "pm-heading text-[10px] uppercase opacity-80";
 const fieldInputClass =
-  "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-sm text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
+  "w-full rounded-[10px] border-2 border-[#BCD3B4] bg-white px-4 py-2.5 text-base text-[#243421] outline-none focus:ring-2 focus:ring-[#89D974]";
 const fieldHelpClass = "text-[11px] leading-4 text-[#57684F]";
 
 export default async function SettingsPage({
@@ -64,6 +64,7 @@ export default async function SettingsPage({
   if (!supabase) {
     return (
       <Notice
+        locale={locale}
         title="Connecting..."
         lines={[
           "Supabase environment variables are not set yet.",
@@ -79,6 +80,7 @@ export default async function SettingsPage({
   if (result.status === "no-schema") {
     return (
       <Notice
+        locale={locale}
         title="Supabase tables don't exist yet"
         lines={[
           "Environment variables are connected, but the schema hasn't been run.",
@@ -93,6 +95,7 @@ export default async function SettingsPage({
   if (result.status === "error") {
     return (
       <Notice
+        locale={locale}
         title="Supabase connection error"
         lines={[result.message, "Double-check your URL and key values."]}
       />
@@ -102,6 +105,7 @@ export default async function SettingsPage({
   if (result.status === "not-found") {
     return (
       <Notice
+        locale={locale}
         title={`No data for ${PLANT_ID}`}
         lines={[
           "Run supabase/milestone1.sql in the Supabase SQL Editor",
@@ -212,7 +216,7 @@ export default async function SettingsPage({
           <select name="growthStage" defaultValue={currentStage} className={fieldInputClass}>
             {GROWTH_STAGES.map((stage) => (
               <option key={stage} value={stage}>
-                {stage}
+                {growthStageLabel(locale, stage)}
               </option>
             ))}
           </select>

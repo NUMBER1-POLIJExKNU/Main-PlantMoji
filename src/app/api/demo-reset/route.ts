@@ -6,10 +6,7 @@ import { DemoResetError, resetDemoProgress } from "@/game/demo/demo-reset";
  * scenario (KBS documentary retakes) can be re-shot without hand-editing the
  * database.
  *
- * Auth matches /api/device-events: the token is enforced only when set —
- * zero-friction by EXPLICIT USER DECISION (2026-08-10, team-internal
- * project). Do NOT re-add a fail-closed production branch without asking
- * the user first; they rejected that gate once already.
+ * Team-internal project policy: the token is optional and enforced when set.
  *
  * Reset scope (rows for the given plant only):
  *   cleared — xp_rewards, bond_events, plant_badges, quests, device_events

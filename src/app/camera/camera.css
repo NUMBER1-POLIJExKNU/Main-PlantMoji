@@ -32,6 +32,59 @@
   object-fit: cover;
 }
 
+/* Jamkachu's voice sits on the live plant, just like the farm speech bubble.
+   It is intentionally above the video rather than in a separate card so the
+   camera view reads as one character moment. */
+.pm-cam-speech {
+  position: absolute;
+  left: 50%;
+  top: 18px;
+  z-index: 4;
+  width: min(78%, 390px);
+  transform: translateX(-50%);
+  padding: 11px 16px 13px;
+  border: 3px solid var(--color-border, #243421);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 7px 0 rgba(36, 52, 33, .2), 0 10px 24px rgba(0, 0, 0, .16);
+  color: #344131;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+.pm-cam-speech::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  width: 18px;
+  height: 18px;
+  border-right: 3px solid var(--color-border, #243421);
+  border-bottom: 3px solid var(--color-border, #243421);
+  background: rgba(255, 255, 255, .96);
+  transform: translateX(-50%) rotate(45deg);
+}
+.pm-cam-speech-name {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-forest, #35643c);
+  font: 8px/1.2 var(--pm-font-pixel, monospace);
+  letter-spacing: .08em;
+}
+.pm-cam-speech.is-alert { border-color: #9e3f2f; background: #fff0db; }
+.pm-cam-speech.is-alert::after { border-color: #9e3f2f; background: #fff0db; }
+.pm-cam-speech { animation: pm-cam-speech-in .22s steps(3, end); }
+.pm-cam-speech.is-tickled { animation: pm-cam-speech-pop .48s steps(3, end); }
+@keyframes pm-cam-speech-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-5px) scale(.97); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+@keyframes pm-cam-speech-pop {
+  0% { transform: translateX(-50%) scale(.96); }
+  55% { transform: translateX(-50%) scale(1.03); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
 /* Mini Jamkachu: plays the tickle reaction locally, zero network. */
 .pm-cam-jamkachu {
   position: absolute;
@@ -57,7 +110,9 @@
   100% { transform: scale(1, 1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pm-cam-jamkachu.is-tickled { animation: none; }
+  .pm-cam-jamkachu.is-tickled,
+  .pm-cam-speech,
+  .pm-cam-speech.is-tickled { animation: none; }
 }
 
 .pm-cam-note {
@@ -91,6 +146,10 @@ html[data-theme="night"] .pm-cam-chip {
   color: var(--color-text);
   background: var(--color-surface);
 }
+html[data-theme="night"] .pm-cam-speech { border-color: var(--color-border); color: var(--color-text); background: var(--color-surface); }
+html[data-theme="night"] .pm-cam-speech::after { border-color: var(--color-border); background: var(--color-surface); }
+html[data-theme="night"] .pm-cam-speech.is-alert { background: #3b2a21; }
+html[data-theme="night"] .pm-cam-speech.is-alert::after { background: #3b2a21; }
 html[data-theme="night"] .pm-cam-event time { color: #b8c9bb; opacity: 1; }
 html[data-theme="night"] .pm-cam-chip.is-motion { background: color-mix(in srgb,#ffde6a 18%,var(--color-surface)); }
 html[data-theme="night"] .pm-cam-chip.is-checking { background: color-mix(in srgb,#70a8e8 18%,var(--color-surface)); }
@@ -98,4 +157,4 @@ html[data-theme="night"] .pm-cam-chip.is-suspended,
 html[data-theme="night"] .pm-cam-chip.is-hidden { background: color-mix(in srgb,#8a83ba 18%,var(--color-surface)); opacity: 1; }
 html[data-theme="night"] .pm-cam-note { border-color:var(--color-border); color:var(--color-text); background:#332f1f; }
 html[data-theme="night"] .pm-cam-event.is-pest_advice { color:var(--color-text); background:#39331f; }
-@media(max-width:560px){.pm-cam-result{right:82px}.pm-cam-result strong{font-size:14px}.pm-cam-chip{font-size:10px;padding:7px 10px}.pm-cam.is-presentation .pm-cam-chip{font-size:16px}.pm-cam.is-presentation .pm-cam-result strong{font-size:18px}.pm-cam-jamkachu{width:62px;height:62px;font-size:34px}}
+@media(max-width:560px){.pm-cam-speech{top:12px;width:min(86%,330px);padding:9px 12px 11px;font-size:12px}.pm-cam-speech-name{font-size:7px}.pm-cam-result{right:82px}.pm-cam-result strong{font-size:14px}.pm-cam-chip{font-size:10px;padding:7px 10px}.pm-cam.is-presentation .pm-cam-chip{font-size:16px}.pm-cam.is-presentation .pm-cam-result strong{font-size:18px}.pm-cam-jamkachu{width:62px;height:62px;font-size:34px}}

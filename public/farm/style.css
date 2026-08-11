@@ -622,6 +622,8 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .quiz-modal { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 18px; }
 .quiz-backdrop { position: absolute; inset: 0; background: rgba(27,43,24,.63); backdrop-filter: blur(3px); }
 .quiz-card { position: relative; width: min(540px,100%); max-height: min(680px,92dvh); overflow-y: auto; border: 4px solid var(--color-outline); border-radius: 22px; background: #FFFDF2; padding: clamp(18px,4vw,28px); box-shadow: 0 10px 0 #172215, 0 24px 55px rgba(0,0,0,.3); }
+.quiz-card{max-width:100%;overflow-x:hidden}
+.quiz-card *{min-width:0}
 .quiz-card:focus { outline: none; }
 .quiz-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .quiz-card-head h2 { margin-top: 6px; font: 14px/1.4 var(--font-heading); color: var(--color-forest); }
@@ -629,7 +631,8 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .quiz-case { margin-top: 14px; border: 2px dashed #A7C99A; border-radius: 13px; background: #F1F9ED; padding: 11px 13px; }
 .quiz-case > strong { color: #397A2B; font: 9px/1.4 var(--font-heading); }
 .quiz-case > p { margin-top: 5px; color: #57684F; font-size: 13px; line-height: 1.35; }
-#quiz-case-phases { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; margin-top: 9px; }
+#quiz-case-phases { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin-top: 9px; }
+#quiz-case-phases{grid-template-columns:repeat(3,minmax(0,1fr))}
 #quiz-case-phases span { border: 2px solid #BAC8B5; border-radius: 8px; padding: 5px 3px; color: #7B8876; text-align: center; font: 7px/1.2 var(--font-heading); }
 #quiz-case-phases span.active { border-color: #4DA1ED; background: #E2F2FF; color: #245D91; }
 #quiz-case-phases span.done { border-color: #69B957; background: #E4F5DD; color: #397A2B; }
@@ -650,6 +653,7 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .quiz-question { min-height: 50px; font-size: 18px; font-weight: 700; line-height: 1.45; }
 .quiz-choices { display: grid; gap: 10px; margin-top: 18px; }
 .quiz-choice { width: 100%; min-height: 54px; border: 3px solid var(--color-border); border-radius: 14px; background: white; padding: 11px 14px; cursor: pointer; color: var(--color-text); text-align: left; font: inherit; font-weight: 650; box-shadow: 0 4px 0 #A7B4A2; }
+.quiz-choice,.quiz-feedback,.quiz-next{max-width:100%;overflow-wrap:anywhere;white-space:normal}
 .quiz-choice:hover:not(:disabled),.quiz-choice:focus-visible { border-color: var(--color-water); transform: translateY(-1px); outline: none; }
 .quiz-choice:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
 .quiz-choice.selected { border-color: var(--color-water); }
@@ -967,6 +971,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg.face-sleepy [data-face="sleepy"] { display: block; }
 .mascot-svg.face-acidic [data-face="acidic"] { display: block; }
 .mascot-svg.face-alkaline [data-face="alkaline"] { display: block; }
+.mascot-svg.expr-curious .mascot-face[data-face],
+.mascot-svg.expr-proud .mascot-face[data-face],
+.mascot-svg.expr-giggle .mascot-face[data-face] { display:none; }
 .mascot-svg.expr-curious [data-face="curious"],
 .mascot-svg.expr-proud [data-face="proud"],
 .mascot-svg.expr-giggle [data-face="giggle"] { display: block; }
@@ -1791,7 +1798,7 @@ body.farmer-dragging {
 .farmer-chat-portrait { display: grid; place-items: center; width: 48px; height: 48px; border: 3px solid var(--color-soil-dark); border-radius: 12px; background: #fff1bd; font: 28px/1 sans-serif; }
 .farmer-chat-top span { color: var(--color-forest); font: 7px/1.4 var(--font-heading); }
 .farmer-chat-top h2 { margin-top: 4px; font: 12px/1.5 var(--font-heading); }
-.farmer-chat-close { width: 38px; height: 38px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 22px/1 var(--font-body); cursor: pointer; }
+.farmer-chat-close { width: 44px; height: 44px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 22px/1 var(--font-body); cursor: pointer; }
 .farmer-chat-log { display: flex; flex-direction: column; gap: 9px; min-height: 190px; max-height: 310px; padding: 16px; overflow-y: auto; }
 .farmer-chat-message { max-width: 88%; padding: 10px 12px; border: 2px solid var(--color-border); border-radius: 14px; line-height: 1.5; }
 .farmer-chat-message.is-farmer { align-self: flex-start; border-bottom-left-radius: 4px; background: var(--color-bg); }
@@ -1799,10 +1806,10 @@ body.farmer-dragging {
 .farmer-chat-message.is-thinking { opacity: .65; }
 .farmer-chat-message.is-system { align-self: center; padding: 5px 8px; border-color: #e8c46b; border-radius: 999px; color: #7a5b12; background: #fff7df; font: 7px/1.4 var(--font-heading); text-align: center; }
 .farmer-chat-prompts { display: flex; gap: 7px; padding: 0 16px 12px; overflow-x: auto; }
-.farmer-chat-prompts button { flex: none; padding: 7px 9px; border: 2px solid var(--color-border); border-radius: 999px; color: var(--color-forest); background: var(--color-bg); font: 12px/1.3 var(--font-body); cursor: pointer; }
+.farmer-chat-prompts button { flex: none; min-height: 44px; padding: 8px 11px; border: 2px solid var(--color-border); border-radius: 999px; color: var(--color-forest); background: var(--color-bg); font: 12px/1.3 var(--font-body); cursor: pointer; }
 .farmer-chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 14px; border-top: 2px dashed var(--color-border); }
-.farmer-chat-form input { min-width: 0; padding: 10px 11px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 15px/1.4 var(--font-body); }
-.farmer-chat-form button { padding: 9px 12px; border: 3px solid var(--color-forest); border-radius: 10px; color: #fff; background: var(--color-grass); box-shadow: 0 3px 0 var(--color-forest); font: 8px/1.3 var(--font-heading); cursor: pointer; }
+.farmer-chat-form input { min-width: 0; min-height: 44px; padding: 10px 11px; border: 2px solid var(--color-border); border-radius: 10px; color: var(--color-text); background: var(--color-surface); font: 16px/1.4 var(--font-body); }
+.farmer-chat-form button { min-height: 44px; padding: 9px 12px; border: 3px solid var(--color-forest); border-radius: 10px; color: #fff; background: var(--color-grass); box-shadow: 0 3px 0 var(--color-forest); font: 8px/1.3 var(--font-heading); cursor: pointer; }
 .farmer-chat-form button:disabled { opacity: .55; cursor: wait; }
 .farmer-chat-note { padding: 0 14px 12px; opacity: .65; font-size: 11px; line-height: 1.4; }
 .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
@@ -1934,7 +1941,16 @@ body.farmer-dragging {
         padding: 4px 4px 104px;
         overflow-y: visible;
     }
-    .hud-top { justify-content: center; }
+    .hud-top { width:calc(100% - 60px); min-width:0; justify-content:center; }
+    .hud-top .jember-clock { flex:0 0 auto; }
+    .hud-top .weather-widget { flex:1 1 0; min-width:0; max-width:260px; overflow:hidden; }
+    .hud-top .weather-text { min-width:0; overflow:hidden; }
+    .hud-top .weather-text :is(.desc,.forecast-time,.indoor-reading) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hud-top .weather-text { flex-direction:row; align-items:center; }
+    .hud-top .weather-text .weather-source,
+    .hud-top .weather-text .desc,
+    .hud-top .weather-text .forecast-time,
+    .hud-top .weather-text .indoor-reading { display:none; }
     /* Guide button vs dock (milestone20 nav fix): the fixed ? button
        (right/bottom 18px, z 190) used to sit exactly ON the dock's
        right-most cell, eating the Toko/shop tap. Lift it clear: the dock
@@ -1953,7 +1969,7 @@ body.farmer-dragging {
    mobile query so desktop/tablet (>430px) is untouched — no class renames,
    no animation changes, only sizing/wrapping tweaks. */
 @media (max-width: 430px) {
-    .hud-top { width: 100%; gap: 6px; flex-wrap: nowrap; }
+    .hud-top { left:4px; right:52px; width:auto; min-width:0; gap:6px; flex-wrap:nowrap; }
     .jember-clock { min-width: 88px; gap: 5px; padding: 10px 8px; border-width: 2px; }
     .jember-clock-icon { font-size: 19px; }
     .jember-clock-copy small { display: none; }
@@ -1975,8 +1991,8 @@ body.farmer-dragging {
     /* Weather widget had only ~10px of slack at exactly 360px wide
        (32px icon + 16px gap + 190px min-width text + 48px panel padding
        ≈ 286px of ~296px available) — tighten it so it isn't a hairline. */
-    .weather-widget { padding: 12px 16px; gap: 10px; }
-    .weather-text { min-width: 140px; }
+    .weather-widget { min-width:0; max-width:100%; overflow:hidden; padding:12px 10px; gap:8px; }
+    .weather-text { min-width:0; overflow:hidden; }
     .weather-icon { font-size: 26px; }
 
     /* Press Start 2P below 10px is illegible on a phone screen. */

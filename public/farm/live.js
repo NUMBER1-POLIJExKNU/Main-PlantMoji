@@ -2123,8 +2123,34 @@ const PET_COMFORT_FALLBACK = {
 };
 let lastPetTapAt = 0; // double-tap detector (surprise hop)
 let petComfortIndex = 0; // comfort-line rotation (mood-aware petting)
+let petQuickIndex = 0; // short acknowledgement rotation for rapid taps
 let lullabyCardAt = 0; // 60s why-card gate (spec'd rate limit, not a counter)
 let lullabyBreathTimer = null;
+
+const PET_QUICK_FALLBACK = {
+  en: [
+    "Thanks! Your touch feels warm 💛",
+    "Aww, that feels cozy!",
+    "Thank you for checking on me 🌱",
+    "Your gentle tap made me smile!",
+  ],
+  id: [
+    "Makasih! Sentuhanmu hangat 💛",
+    "Aww, nyaman banget!",
+    "Makasih sudah menemaniku 🌱",
+    "Ketukan lembutmu bikin aku tersenyum!",
+  ],
+};
+
+function quickPetLine() {
+  const configured = PM().petting;
+  const lines = Array.isArray(configured) && configured.length > 0
+    ? configured
+    : (PET_QUICK_FALLBACK[appLocale] ?? PET_QUICK_FALLBACK.en);
+  const line = lines[petQuickIndex % lines.length];
+  petQuickIndex += 1;
+  return line;
+}
 
 /** Temporarily replace the speech bubble with `line`, restoring the saved
  *  mood bubble after `ms` — the petting mechanism, shared by the pressable
@@ -2180,6 +2206,10 @@ function quickPetResponse() {
     );
   }
   spawnHeart(wrapper ? wrapper.getBoundingClientRect() : null);
+  // Rapid taps used to show only the visual effect because the full pet path
+  // is paced. Keep the acknowledgement just as warm, without touching XP or
+  // satiation accounting.
+  showTransientBubble(quickPetLine(), PET_BUBBLE_RESTORE_MS);
   window.PMSfx?.play("pet");
 }
 
@@ -3215,7 +3245,7 @@ let farmerDragPleaTimer = null;
 
 const FARMER_CHAT_COPY = {
   id: {
-    kicker: "TEMAN KEBUN DENGAN AI", title: "Kakek Tani", close: "Tutup percakapan",
+    kicker: "TEMAN KEBUNMU", title: "Kakek Tani", close: "Tutup percakapan",
     hello: "Hoho… datanglah, Nak. Apa yang ingin kamu ketahui tentang tanaman kecil kita?",
     placeholder: "Tanya tentang tanaman atau sensor…", send: "TANYA",
     note: "Kakek menjelaskan data sensor. Untuk perubahan tanah, tanyakan juga kepada guru atau petani setempat.",
@@ -3224,7 +3254,7 @@ const FARMER_CHAT_COPY = {
     prompts: ["Bagaimana keadaan tanaman sekarang?", "Apakah cahayanya cukup?", "Apa arti pH tanah?"],
   },
   en: {
-    kicker: "AI-ASSISTED GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
+    kicker: "YOUR GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
     hello: "Hoho… come sit with me, my young friend. What would you like to know about our little plant?",
     placeholder: "Ask about the plant or sensors…", send: "ASK",
     note: "Grandpa explains sensor data. Ask a teacher or local farmer before changing the soil.",
@@ -3683,7 +3713,8 @@ function showFarmerIntelligence(running) {
   if (!panel) return;
   panel.hidden = false;
   const lines = appLocale === "id" ? ["membaca kondisi tanaman", "memuat sensor terbaru", "memeriksa misi aktif", "mengunci aturan keselamatan", running ? "menyusun jawaban ramah..." : "jawaban aman siap"] : ["reading plant mood", "loading latest sensors", "checking active quest", "locking safety rules", running ? "forming a friendly answer..." : "safe response ready"];
-  panel.innerHTML = `<b>GRANDPA TANI KNOWLEDGE LINK</b>${lines.map((line, index) => `<span style="--delay:${index * 90}ms">&gt; ${line}</span>`).join("")}`;
+  const title = appLocale === "id" ? "PANDUAN KAKEK TANI" : "GRANDPA'S GARDEN TIPS";
+  panel.innerHTML = `<b>${title}</b>${lines.map((line, index) => `<span style="--delay:${index * 90}ms">&gt; ${line}</span>`).join("")}`;
   panel.classList.toggle("is-running", running);
 }
 

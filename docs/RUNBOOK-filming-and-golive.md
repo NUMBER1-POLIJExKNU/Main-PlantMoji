@@ -17,7 +17,7 @@ Vercel → Project → **Settings → Environment Variables**. Set for **Product
 - [ ] `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — `sb_publishable_...` (browser-safe, read-only via RLS; legacy `anon` key also works)
 - [ ] `SUPABASE_SECRET_KEY` — `sb_secret_...` (**server only, never in browser code**; legacy `service_role` key also works)
 - [ ] `DEVICE_API_TOKEN` — shared token for the device endpoints. When set, Node-RED must send `Authorization: Bearer <value>`. Keep it set for go-live: when unset the endpoint accepts unauthenticated posts (local prototype mode only).
-- [ ] `DEMO_CHEAT_CODE` *(optional)* — code for Settings → Demo Control Center ("Unlock everything" = replay-safe Lv.10 showcase; "Reset to start" = back to Lv.1 / 0 XP). Defaults to `admin` when unset; set only if you want a different code. Checked server-side, never exposed to the browser.
+- [ ] `DEMO_CHEAT_CODE` — code for Settings → Demo Control Center ("Unlock everything" = replay-safe Lv.10 showcase; "Reset to start" = back to Lv.1 / 0 XP). Required in production; local development alone defaults to `admin`. Checked server-side, never exposed to the browser.
 - [ ] `GEMINI_API_KEY` *(optional)* — Gemini explanation layer, server-side only. When unset or when a call fails, deterministic templates take over automatically.
 - [ ] *(optional)* `BMKG_ADM4_CODE` — village forecast code; defaults to Tegalgede, Sumbersari, Jember (`35.09.21.1005`), so usually leave it alone.
 - [ ] **Redeploy** after saving. Environment variable changes only apply to a new deployment.

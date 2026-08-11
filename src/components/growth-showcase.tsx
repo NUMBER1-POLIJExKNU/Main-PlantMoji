@@ -24,7 +24,7 @@ export default function GrowthShowcase({ locale, onClose }: { locale: AppLocale;
   const move = (next: number) => { setPlaying(false); setIndex(Math.max(0, Math.min(COMPANION_STAGES.length - 1, next))); };
 
   return <div className="pm-growth-showcase" role="dialog" aria-modal="true" aria-labelledby="growth-showcase-title">
-    <div className="pm-growth-sky"><button type="button" className="pm-growth-close" onClick={onClose} aria-label={locale === "id" ? "Tutup" : "Close"}>×</button><div className="pm-growth-stars" aria-hidden="true">✦　·　✧　·　✦</div><p>{locale === "id" ? "PERJALANAN PERTUMBUHAN JAMKACHU" : "JAMKACHU GROWTH JOURNEY"}</p><h2 id="growth-showcase-title">{companionStageLabel(locale, stage)}</h2><strong>STAGE {index + 1} / {COMPANION_STAGES.length}</strong>
+    <div className="pm-growth-sky"><button type="button" className="pm-growth-close" onClick={onClose} aria-label={locale === "id" ? "Tutup" : "Close"}>×</button><div className="pm-growth-stars" aria-hidden="true">✦　·　✧　·　✦</div><p>{locale === "id" ? "PERJALANAN PERTUMBUHAN JAMKACHU" : "JAMKACHU GROWTH JOURNEY"}</p><h2 id="growth-showcase-title">{companionStageLabel(locale, stage)}</h2><strong>{locale === "id" ? "TAHAP" : "STAGE"} {index + 1} / {COMPANION_STAGES.length}</strong>
       <div key={`label-${stage}`} className="pm-growth-evolving">{index === 0 ? (locale === "id" ? "PERJALANAN DIMULAI" : "THE JOURNEY BEGINS") : (locale === "id" ? "EVOLUSI!" : "EVOLUTION!")}</div>
       <div key={stage} className="pm-growth-jamkachu"><Mascot mood="Happy" stage={stage} /></div>
       <div className="pm-growth-burst" aria-hidden="true">✦　✧　✦</div>
