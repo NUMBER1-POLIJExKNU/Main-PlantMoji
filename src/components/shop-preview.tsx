@@ -81,14 +81,17 @@ export default function ShopPreviewStage({
 
   const spriteImgSrc = recolor && recolor.key === rampKey ? recolor.url : baseSrc;
   const equipped = Boolean(owned?.equipped);
+  const decorArt = item?.category === "decor" ? shopItemArt(item.key) : null;
 
   return (
     <section
       className={`pm-shop-stage${item ? ` is-${item.category}` : ""}`}
       aria-label={copy.tryOnStage}
+      aria-live="polite"
     >
       <div className="pm-shop-stage-scene">
         <span className="pm-shop-stage-floor" aria-hidden="true" />
+        <span className="pm-shop-stage-sign" aria-hidden="true">SEED SHOP</span>
         <div className="pm-shop-stage-cast">
           <div className="pm-shop-stage-jamkachu" role="img" aria-label="Jamkachu">
             {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
@@ -108,7 +111,7 @@ export default function ShopPreviewStage({
               {/* The same sprite the farm will stand on the grass, so the
                   try-on is an honest promise rather than an emoji stand-in. */}
               {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-              {shopItemArt(item.key) ? <img src={shopItemArt(item.key) as string} alt="" draggable={false} /> : item.emoji}
+              {decorArt ? <img src={decorArt} alt="" draggable={false} /> : item.emoji}
             </span>
           )}
           <div className="pm-shop-stage-npc">
@@ -126,13 +129,14 @@ export default function ShopPreviewStage({
       </div>
 
       <div className="pm-shop-stage-copy">
-        <div className="pm-shop-stage-balance" aria-live="polite">
-          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-          <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} />
-          <span>
+        <header className="pm-shop-stage-header">
+          <span>{copy.tryOnStage}</span>
+          <strong className="pm-shop-stage-balance" aria-live="polite">
+            {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+            <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} />
             {seeds} {copy.balanceLabel}
-          </span>
-        </div>
+          </strong>
+        </header>
         <p className="pm-shop-stage-honest">{copy.tryOnNote}</p>
 
         {item ? (
@@ -145,50 +149,52 @@ export default function ShopPreviewStage({
             >
               ×
             </button>
+            <small className="pm-shop-stage-category">{copy.categories[item.category]}</small>
             <h2>{item.name}</h2>
-            <strong>
-              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-              <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
-            </strong>
+            <p className="pm-shop-stage-description">{item.blurb}</p>
+            <div className="pm-shop-stage-meta">
+              <strong className="pm-shop-stage-price">
+                {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
+              </strong>
+              {owned ? (
+                <span className="pm-shop-stage-status">✓ {equipped ? copy.equipped : copy.owned}</span>
+              ) : !affordable ? (
+                <span className="pm-shop-stage-short">+{item.price - seeds} {copy.needMore}</span>
+              ) : (
+                <span className="pm-shop-stage-ready">{copy.previewing}</span>
+              )}
+            </div>
             {item.category === "accessory" && (
               <p className="pm-shop-stage-acc-note">{copy.accessoryPreviewNote}</p>
             )}
             {item.category === "decor" && <p className="pm-shop-stage-acc-note">↳ {copy.decorAuto}</p>}
             {owned ? (
-              <>
-                <span className="pm-shop-stage-status">✓ {equipped ? copy.equipped : copy.owned}</span>
-                {item.category !== "decor" && (
-                  <button
-                    type="button"
-                    className="pm-btn pm-btn-primary"
-                    disabled={busy}
-                    onClick={() => onEquip(item, !equipped)}
-                  >
-                    {equipped ? copy.unequip : copy.equip}
-                  </button>
-                )}
-              </>
-            ) : (
-              <>
-                {!affordable && (
-                  <small className="pm-shop-stage-short">
-                    {item.price - seeds} {copy.needMore}
-                  </small>
-                )}
+              item.category !== "decor" && (
                 <button
                   type="button"
-                  className="pm-btn pm-btn-primary"
-                  disabled={busy || !affordable}
-                  onClick={(event) => onBuy(item, event.currentTarget)}
+                  className="pm-btn pm-btn-primary pm-shop-stage-action"
+                  disabled={busy}
+                  onClick={() => onEquip(item, !equipped)}
                 >
-                  {copy.buy} · {item.price}
+                  {busy ? (locale === "id" ? "Sebentar…" : "One moment…") : equipped ? copy.unequip : copy.equip}
                 </button>
-              </>
+              )
+            ) : (
+              <button
+                type="button"
+                className="pm-btn pm-btn-primary pm-shop-stage-action"
+                disabled={busy || !affordable}
+                onClick={(event) => onBuy(item, event.currentTarget)}
+              >
+                {busy ? (locale === "id" ? "Membeli…" : "Buying…") : affordable ? `${copy.buy} · ${item.price}` : copy.filters.affordable}
+              </button>
             )}
           </>
         ) : (
           <p className="pm-shop-stage-hint">{copy.tryOnHint}</p>
         )}
+        <p className="pm-shop-stage-honest">{copy.tryOnNote}</p>
       </div>
     </section>
   );

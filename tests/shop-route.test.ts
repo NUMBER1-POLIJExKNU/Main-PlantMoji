@@ -35,12 +35,12 @@ describe("/shop route", () => {
     expect(grid).not.toContain("seeds - item.price");
   });
 
-  it("shows a direct equip action and reconciles the RPC-confirmed state", () => {
-    expect(grid).toContain('className="pm-btn pm-shop-equip-btn"');
+  it("keeps equip on the single preview action surface and reconciles the RPC-confirmed state", () => {
+    expect(preview).toContain('className="pm-btn pm-btn-primary pm-shop-stage-action"');
+    expect(grid).not.toContain("pm-shop-equip-btn");
     expect(grid).toContain("result.equipped ?? nextEquipped");
     expect(grid).toContain("result.category ?? item.category");
-    expect(css).toContain(".pm-shop-card > .pm-shop-equip-btn");
-    expect(css).toMatch(/\.pm-shop-card > \.pm-shop-equip-btn\s*\{[^}]*display:inline-flex/);
+    expect(css).toMatch(/\.pm-shop-stage-action\s*\{[^}]*width:100%/);
   });
 
   it("re-reads purchases after realtime shop changes", () => {
@@ -58,12 +58,13 @@ describe("/shop route", () => {
 
   it("draws both Indonesia items as flags instead of the Windows ID glyph", () => {
     expect(grid).toContain('new Set(["decor_indonesia_flag", "acc_indonesia_sash"])');
+    expect(grid).toContain('pm-shop-visual${isIndonesiaFlag ? " is-indonesia-flag" : ""}');
     expect(grid).toContain("isIndonesiaFlag ? null : item.emoji");
     expect(preview).toContain('new Set(["decor_indonesia_flag", "acc_indonesia_sash"])');
     expect(preview).toContain('isIndonesiaFlag ? null : item.emoji');
     expect(preview).toContain('pm-shop-stage-acc-icon${isIndonesiaFlag ? " is-indonesia-flag" : ""}');
-    expect(grid).toContain("<ShopItemIcon item={item} />");
-    expect(css).toContain(".pm-shop-emoji.is-indonesia-flag");
+    expect(grid).toContain("<ShopItemVisual item={item} />");
+    expect(css).toContain(".pm-shop-visual.is-indonesia-flag::before");
     expect(css).toContain("background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%)");
     expect(css).toContain(".pm-shop-stage-acc-icon.is-indonesia-flag");
   });

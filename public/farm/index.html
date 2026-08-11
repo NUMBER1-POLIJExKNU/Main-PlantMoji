@@ -217,14 +217,14 @@
 
                 <!-- Farmer grandpa NPC (living world): the designer's Mbah
                      Tani sprite (npc pack, kiki design integration) replaces
-                     the old box-shadow walk frames. The idle GIF is ambient-
-                     only — the <picture> source swaps in the static 2x PNG
-                     under prefers-reduced-motion. live.js moves this BUTTON
+                     the old box-shadow walk frames. The transparent PNG
+                     exports replace the broken GIF's opaque later frames;
+                     the responsive srcset keeps them crisp. live.js moves this BUTTON
                      (WAAPI wander/drag/night bed); the walk direction is the
                      button's scaleX(-1), which the img simply inherits.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"><picture class="npc-farmer-art"><source media="(prefers-reduced-motion: reduce)" srcset="/farm/assets/npc/2x/npc-06-mbah-tani.png"><img class="npc-farmer-img" src="/farm/assets/npc/gif/npc-06-mbah-tani.gif" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"><picture class="npc-farmer-art"><source media="(prefers-reduced-motion: reduce)" srcset="/farm/assets/npc/2x/npc-06-mbah-tani.png"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcset="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
                 <div class="npc-farmer-bed" aria-hidden="true">
                     <span class="npc-bed-pillow"></span>
                     <span class="npc-bed-blanket"></span>
@@ -257,6 +257,14 @@
                         "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
                     </div>
                     <div class="mascot-wrapper animated-breath">
+                        <!-- Stable homepage portrait: the generated hero art is
+                             the primary desktop character image. The live
+                             sprite below remains mounted as a compact status
+                             badge so mood, evolution and equipped cosmetics
+                             keep their existing DOM/data channel. -->
+                        <figure class="jamkachu-home-portrait" aria-hidden="true">
+                            <img src="/farm/assets/jamkachu/jamkachu-home-portrait.png" alt="" width="1122" height="1408" draggable="false">
+                        </figure>
                         <!-- Designer sprite mascot (kiki design integration, 2026-08-11):
                              the pixel packs in assets/jamkachu/ ARE Jamkachu now.
                              jamkachu-sprite.js (window.PMSprite) owns the img src
@@ -268,7 +276,7 @@
                              state channel even where no CSS reads them anymore.
                              Crop silhouettes retired from the mascot: crop identity
                              lives in the skins/pot palette + text now. -->
-                        <div class="mascot-svg">
+                        <div class="mascot-svg" aria-label="Live Jamkachu status">
                             <!-- Decorative: #char-name/#char-mood below carry the
                                  accessible identity, so the img stays alt="". -->
                             <img id="jamkachu-sprite" alt="" draggable="false">

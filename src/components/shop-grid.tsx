@@ -37,6 +37,19 @@ const FILTER_ORDER: OwnershipFilter[] = ["all", "affordable", "owned"];
 // Windows commonly renders the Indonesia flag emoji as the regional code
 // "ID". These catalog entries use a CSS-drawn Merah Putih instead so the
 // item icon is a flag on every desktop platform and emoji font.
+const CSS_INDONESIA_FLAG_KEYS = new Set(["decor_indonesia_flag", "acc_indonesia_sash"]);
+
+function ShopItemVisual({ item }: { item: ShopGridItem }) {
+  const art = shopItemArt(item.key);
+  const isIndonesiaFlag = CSS_INDONESIA_FLAG_KEYS.has(item.key) && !art;
+  return (
+    <span className={`pm-shop-visual${isIndonesiaFlag ? " is-indonesia-flag" : ""}`} aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+      {art ? <img src={art} alt="" className="pm-shop-art" width={128} height={128} draggable={false} /> : isIndonesiaFlag ? null : item.emoji}
+    </span>
+  );
+}
+
 function popConfetti(anchor: HTMLElement) {
   const rect = anchor.getBoundingClientRect();
   const pieces = ["🌰", "✨", "🌱", "✨", "🌰"];
@@ -82,7 +95,7 @@ export default function ShopGrid({
   const [toast, setToast] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [category, setCategory] = useState<ShopCategory>("pot");
   const [filter, setFilter] = useState<OwnershipFilter>("all");
-  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState<string | null>(() => items.find((item) => item.category === "pot")?.key ?? null);
   // Cheat sandbox (feature 3): buy/equip stay client-only so a classroom demo
   // never writes purchases or equips to Supabase.
   const { active: cheatActive } = useCheat();
@@ -207,8 +220,14 @@ export default function ShopGrid({
     return true;
   });
 
+  const selectCategory = (nextCategory: ShopCategory) => {
+    setCategory(nextCategory);
+    setPreviewKey(items.find((item) => item.category === nextCategory)?.key ?? null);
+    window.PMSfx?.play("tick");
+  };
+
   return (
-    <div>
+    <div className="pm-shop-browser">
       {toast && (
         <p className={`pm-shop-toast${toast.kind === "error" ? " is-error" : ""}`} role="status">
           {toast.text}
@@ -228,90 +247,65 @@ export default function ShopGrid({
         onEquip={equip}
       />
 
+      <div className="pm-shop-controls">
         <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>
           {CATEGORY_ORDER.map((entry) => (
-            <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>
-              {/* The designer's tab art, so the three destinations look like
-                  what they sell instead of three unrelated emoji. */}
+            <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => selectCategory(entry)}>
               {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
               <img src={shopCategoryArt(entry)} alt="" className="pm-shop-tab-art" width={96} height={96} draggable={false} />
-              <span>{copy.categories[entry]}</span>
+              <b>{copy.categories[entry]}</b>
             </button>
           ))}
         </nav>
-      <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>{copy.filters[entry]}</button>)}</div>
+        <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>
+          {FILTER_ORDER.map((entry) => (
+            <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>
+              {copy.filters[entry]}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="pm-shop-sections">
-          <section aria-label={copy.categories[category]}>
-            <div className="pm-shop-grid">
-              {shownItems.map((item) => {
-                  const owned = ownedRow(item.key);
-                  const affordable = seeds >= item.price;
-                  const isPreviewed = previewKey === item.key;
-                  // A card used to show a picture, a name, a blurb and a
-                  // Preview button — no price, no idea whether you owned it,
-                  // no idea whether you could afford it. Buying rightly lives
-                  // on the stage above, but the browsing surface still has to
-                  // answer "what does this cost and do I have it".
-                  const owned = ownedRow(item.key);
-                  const affordable = seeds >= item.price;
-                  const art = shopItemArt(item.key);
-                  return (
-                    <article
-                      key={item.key}
-                      className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
-                      aria-busy={busyKey === item.key}
-                      // Tapping the card selects it into the try-on stage
-                      // above. Buying stays on that single purchase surface;
-                      // owned equippable items also keep a direct action so a
-                      // purchase never appears impossible to equip later.
-                      onClick={() => setPreviewKey(item.key)}
-                    >
-                      <span className="pm-shop-emoji" aria-hidden="true">
-                        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-                        {art ? <img src={art} alt="" className="pm-shop-art" width={128} height={128} draggable={false} /> : item.emoji}
-                      </span>
-                      <h3>{item.name}</h3>
-                      <p>{item.blurb}</p>
-                      {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
-                      <div className="pm-shop-card-foot">
-                        <span className="pm-shop-price">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-                          <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
-                        </span>
-                        {owned
-                          ? <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
-                          : !affordable && <span className="pm-shop-state is-short">{item.price - seeds} {copy.needMore}</span>}
-                      </div>
-                      <button type="button" className={`pm-shop-preview-btn${isPreviewed ? " is-active" : ""}`} onClick={(event) => { event.stopPropagation(); setPreviewKey(isPreviewed ? null : item.key); }}>{isPreviewed ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
-                      {owned ? (
-                        <>
-                          <span className="pm-shop-owned">
-                            {owned.equipped ? `✓ ${copy.equipped}` : `✓ ${copy.owned}`}
-                          </span>
-                          {item.category !== "decor" && (
-                            <button
-                              type="button"
-                              className="pm-btn pm-shop-equip-btn"
-                              disabled={busyKey !== null}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                equip(item, !owned.equipped);
-                              }}
-                            >
-                              {busyKey === item.key ? (locale === "id" ? "Memasang…" : "Equipping…") : owned.equipped ? copy.unequip : copy.equip}
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        !affordable && <small className="pm-shop-short">{item.price - seeds} {copy.needMore}</small>
-                      )}
-                    </article>
-                  );
-                })}
-              {shownItems.length === 0 && <p className="pm-shop-empty">{locale === "id" ? "Belum ada barang dalam filter ini." : "No items in this filter yet."}</p>}
-            </div>
-          </section>
+        <section aria-label={copy.categories[category]}>
+          <div className="pm-shop-grid">
+            {shownItems.map((item) => {
+              const owned = ownedRow(item.key);
+              const affordable = seeds >= item.price;
+              const isPreviewed = previewKey === item.key;
+              return (
+                <button
+                  type="button"
+                  key={item.key}
+                  className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
+                  aria-busy={busyKey === item.key}
+                  aria-pressed={isPreviewed}
+                  onClick={() => setPreviewKey(item.key)}
+                >
+                  <ShopItemVisual item={item} />
+                  <span className="pm-shop-card-copy">
+                    <strong>{item.name}</strong>
+                    <small>{item.blurb}</small>
+                  </span>
+                  <span className="pm-shop-card-foot">
+                    <span className="pm-shop-price">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                      <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
+                    </span>
+                    {owned ? (
+                      <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
+                    ) : affordable ? (
+                      <span className="pm-shop-state is-ready">{copy.preview} →</span>
+                    ) : (
+                      <span className="pm-shop-state is-short">+{item.price - seeds}</span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+            {shownItems.length === 0 && <p className="pm-shop-empty">{locale === "id" ? "Belum ada barang dalam filter ini." : "No items in this filter yet."}</p>}
+          </div>
+        </section>
       </div>
     </div>
   );

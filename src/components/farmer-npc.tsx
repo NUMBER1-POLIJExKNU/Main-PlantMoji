@@ -117,15 +117,15 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
           {(!isNight || awake) && <small>{dragging ? (locale === "id" ? "LEPAS DI SINI" : "DROP ME HERE") : locale === "id" ? "KETUK CHAT · GESER" : "TAP CHAT · DRAG"}</small>}
         </span>
         <span className="pm-react-farmer-sprite" aria-hidden="true">
-          {/* Designer art (kiki design integration): Mbah Tani idle GIF.
-              Reduced motion swaps the ambient loop for the static frame —
-              same sprite, no animation, all four export scales offered so
+          {/* Designer art (kiki design integration): the transparent Mbah Tani
+              PNG replaces the broken GIF whose later frames contained an
+              opaque green rectangle. All four export scales are offered so
               the browser picks the crispest for its density. The button's
               aria-label above stays the accessible name, so this art is
               purely decorative. */}
           <picture>
             <source srcSet="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" media="(prefers-reduced-motion: reduce)" />
-            <img src="/farm/assets/npc/gif/npc-06-mbah-tani.gif" alt="" />
+            <img src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcSet="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" />
           </picture>
         </span>
       </button>

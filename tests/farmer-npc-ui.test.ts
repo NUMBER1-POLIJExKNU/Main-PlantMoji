@@ -12,11 +12,11 @@ const assetExists = (publicPath: string) =>
 
 describe("Grandpa Tani living-world UI", () => {
   it("draws Grandpa with the designer Mbah Tani sprite, not box-shadow art", () => {
-    // Art contract (kiki design integration, 2026-08-11): idle GIF inside
-    // the button; the <picture> source swaps in the static 2x PNG under
-    // prefers-reduced-motion (a static grandpa, never a frozen broken one).
+    // The original GIF's later frames carried an opaque green rectangle.
+    // The farm therefore renders the designer's transparent responsive PNG.
     expect(html).toContain('class="npc-farmer-img"');
-    expect(html).toContain('src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
+    expect(html).toContain('src="/farm/assets/npc/2x/npc-06-mbah-tani.png"');
+    expect(html).not.toContain('class="npc-farmer-img" src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
     expect(html).toMatch(
       /<source media="\(prefers-reduced-motion: reduce\)" srcset="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png">/,
     );
@@ -38,8 +38,7 @@ describe("Grandpa Tani living-world UI", () => {
     // inherits the mirror — the img itself must never counter-flip (only
     // the AI-CHAT tag does, pinned in the walk-label test below).
     expect(css).not.toMatch(/\.npc-farmer-img[^{]*\{[^}]*scaleX/);
-    // Both referenced files ship with the page.
-    expect(assetExists("farm/assets/npc/gif/npc-06-mbah-tani.gif")).toBe(true);
+    // The referenced transparent fallback ships with the page.
     expect(assetExists("farm/assets/npc/2x/npc-06-mbah-tani.png")).toBe(true);
   });
 
@@ -48,6 +47,8 @@ describe("Grandpa Tani living-world UI", () => {
     expect(html).toContain('class="npc-sleep-zzz"');
     expect(css).toMatch(/body\.night:not\(\.farmer-night-awake\) \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
+    expect(css).toMatch(/\.npc-farmer-bed \{[\s\S]*?background:\s*transparent/);
+    expect(css).toContain(".npc-bed-blanket { display:none; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
     expect(live).toContain("function wakeFarmerAtNight()");

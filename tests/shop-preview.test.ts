@@ -29,10 +29,11 @@ describe("try-on preview strip renders in the shop page markup", () => {
   });
 
   it("tapping an item card selects it into the preview stage", () => {
-    expect(grid).toMatch(/<article[\s\S]{0,700}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
-    // The eye button stays an independent, keyboard-operable toggle — it
-    // must not also re-trigger the card's own select-on-click.
-    expect(grid).toContain("event.stopPropagation()");
+    expect(grid).toMatch(/<button[\s\S]{0,700}aria-pressed=\{isPreviewed\}[\s\S]{0,300}onClick=\{\(\) => setPreviewKey\(item\.key\)\}/);
+    // One semantic button owns selection; nested preview/equip controls were
+    // removed from cards so keyboard and pointer users get the same target.
+    expect(grid).not.toContain("pm-shop-preview-btn");
+    expect(grid).not.toContain("pm-shop-equip-btn");
   });
 
   it("the stage is a sticky strip that sticks below the mobile top bar", () => {
@@ -140,7 +141,7 @@ describe("bond Lv.10 keepsake: the preview always shows the gold pot, matching t
 
 describe("decor renders as a prop on the grass; accessories get an honest try-on note", () => {
   it("decor items render their catalog emoji beside the cast, aria-hidden", () => {
-    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className=\{`pm-shop-stage-decor-prop/);
+    expect(preview).toMatch(/item && item\.category === "decor" && \(\s*<span className="pm-shop-stage-decor-prop" aria-hidden="true"/);
   });
 
   it("accessory items show a large icon plus the honest 'arrives when equipped on the farm' note", () => {
@@ -176,12 +177,12 @@ describe("honest, non-gameplay preview copy — en+id parity", () => {
 
 describe("mobile: no page overflow, 44px controls, reduced motion respected", () => {
   it("collapses to a single column under 560px (no fixed-width overflow at 360-430px)", () => {
-    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{ grid-template-columns:1fr; \}/);
+    expect(css).toMatch(/@media \(max-width:560px\) \{[^]*?\.pm-shop-stage \{[^}]*grid-template-columns:1fr;/);
   });
 
   it("keeps the clear button and the buy/equip button at a 44px touch target", () => {
     expect(css).toMatch(/\.pm-shop-stage-clear\s*\{[^}]*width:44px;\s*height:44px;/);
-    expect(css).toMatch(/\.pm-shop-stage-copy > \.pm-btn\s*\{[^}]*min-height:44px;/);
+    expect(css).toMatch(/\.pm-shop-stage-action\s*\{[^}]*min-height:48px;/);
   });
 
   it("ships no new always-on animation on the stage", () => {
@@ -201,7 +202,7 @@ describe("every rendered image is pixelated; decorative art is aria-hidden with 
   });
 
   it("the decor prop and accessory icon are decorative (aria-hidden) — the item name text is the signal", () => {
-    expect(preview).toMatch(/className=\{`pm-shop-stage-decor-prop[\s\S]{0,100}?aria-hidden="true"/);
+    expect(preview).toContain('className="pm-shop-stage-decor-prop" aria-hidden="true"');
     expect(preview).toMatch(/className=\{`pm-shop-stage-acc-icon[\s\S]{0,100}?aria-hidden="true"/);
     expect(preview).toContain("<h2>{item.name}</h2>");
   });

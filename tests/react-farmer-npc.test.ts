@@ -19,13 +19,14 @@ describe("React My Garden farmer NPC", () => {
     expect(component).not.toContain("setPosition({ x: rect.left, y: rect.top })");
     expect(css).toMatch(/\.pm-grass \.pm-react-farmer>button\{[^}]*z-index:3[^}]*pointer-events:auto/);
     expect(css).toMatch(/\.pm-grass \.pm-react-farmer-bed\{[^}]*width:104px[^}]*pointer-events:none/);
+    expect(css).toMatch(/\.pm-react-farmer-bed\{[^}]*background:transparent[^}]*box-shadow:none/);
+    expect(css).toContain(".pm-react-farmer-bed i,.pm-react-farmer-bed b{display:none}");
   });
-  it("draws Grandpa with the designer Mbah Tani gif and a reduced-motion static frame", () => {
-    // Kiki design integration: the box-shadow art is replaced by the
-    // designer sprite; the idle GIF is ambient-only, so reduced motion
-    // swaps in the static PNG via the <picture> source — offered at all
-    // four committed export scales so the browser takes the crispest one.
-    expect(component).toContain('src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
+  it("draws Grandpa with the transparent responsive Mbah Tani PNG", () => {
+    // The GIF's later frames have an opaque background, so the living-world
+    // farmer uses the transparent PNG exports at every pixel density.
+    expect(component).toContain('src="/farm/assets/npc/2x/npc-06-mbah-tani.png"');
+    expect(component).not.toContain('src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
     expect(component).toContain("/farm/assets/npc/2x/npc-06-mbah-tani.png 64w");
     expect(component).toContain("/farm/assets/npc/8x/npc-06-mbah-tani.png 256w");
     expect(component).toContain('media="(prefers-reduced-motion: reduce)"');

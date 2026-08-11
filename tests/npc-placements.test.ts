@@ -97,7 +97,7 @@ describe("NPC cast placements", () => {
       );
     }
     const farmer = read("src/components/farmer-npc.tsx");
-    expect(farmer).toContain("/farm/assets/npc/gif/npc-06-mbah-tani.gif");
+    expect(farmer).not.toContain("/farm/assets/npc/gif/npc-06-mbah-tani.gif");
     expect(farmer).toContain("/farm/assets/npc/2x/npc-06-mbah-tani.png");
     // Every idle loop the badge helper can point at ships on disk, so all
     // six cast GIFs are reachable through their assigned placements

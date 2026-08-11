@@ -2,21 +2,19 @@
    workstream owns src/app/globals.css edits; these classes are namespaced
    pm-shop-* so they can be folded into the shared sheet later. */
 
-.pm-shop-sections { display: grid; gap: 20px; margin-top: 16px; }
-
-.pm-shop-category-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:18px; }
-.pm-shop-category-tabs button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; border:3px solid var(--color-border); border-radius:12px; color:var(--color-text); background:var(--color-surface); cursor:pointer; font-weight:800; }
-/* Designer tab art (a potted plant, a scarecrow, a ribbon) replaced the emoji
-   the tabs carried, so the three destinations look like the things they sell. */
-.pm-shop-tab-art { width:26px; height:26px; object-fit:contain; image-rendering:pixelated; }
-/* The seed currency, wherever a price or a balance is shown. Sized in em so it
-   tracks the type it sits beside instead of needing its own breakpoints. */
+.pm-shop-browser { width:100%; max-width:1120px; margin-inline:auto; }
+.pm-shop-sections { display:grid; gap:20px; margin-top:14px; }
+.pm-shop-controls { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:20px; padding:8px; border:2px solid var(--color-border); border-radius:18px; background:color-mix(in srgb,var(--color-surface) 92%,transparent); }
+.pm-shop-category-tabs { display:grid; grid-template-columns:repeat(3,minmax(118px,1fr)); gap:7px; flex:1; }
+.pm-shop-category-tabs button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:50px; border:0; border-radius:12px; padding:8px 12px; color:var(--color-text); background:transparent; cursor:pointer; font-size:13px; }
+.pm-shop-tab-art { width:28px; height:28px; object-fit:contain; image-rendering:pixelated; }
 .pm-seed-icon { width:1.25em; height:1.25em; object-fit:contain; image-rendering:pixelated; vertical-align:-0.25em; }
-.pm-shop-category-tabs button:active,.pm-shop-filter button:active,.pm-shop-preview-btn:active { transform:translateY(2px); box-shadow:none; }
-.pm-shop-category-tabs button.is-active { border-color:var(--color-forest); background:color-mix(in srgb,var(--color-grass-light) 18%,var(--color-surface)); box-shadow:0 4px 0 var(--color-forest); transform:translateY(-2px); }
-.pm-shop-filter { display:flex; gap:7px; margin-top:14px; overflow-x:auto; padding-bottom:3px; }
-.pm-shop-filter button { flex:none; min-height:44px; border:2px solid var(--color-border); border-radius:999px; padding:8px 13px; color:var(--color-text); background:var(--color-bg); cursor:pointer; font-size:11px; }
-.pm-shop-filter button.is-active { border-color:var(--color-forest); color:#fff; background:var(--color-forest); }
+.pm-shop-category-tabs button > b { font-weight:850; }
+.pm-shop-category-tabs button:active,.pm-shop-filter button:active { transform:translateY(1px); }
+.pm-shop-category-tabs button.is-active { color:#fff; background:var(--color-forest); box-shadow:0 4px 0 color-mix(in srgb,var(--color-outline,#243421) 60%,transparent); }
+.pm-shop-filter { display:flex; gap:6px; flex:none; overflow-x:auto; }
+.pm-shop-filter button { flex:none; min-height:42px; border:2px solid transparent; border-radius:999px; padding:8px 13px; color:var(--color-text); background:var(--color-bg); cursor:pointer; font-size:12px; font-weight:750; }
+.pm-shop-filter button.is-active { border-color:var(--color-forest); color:var(--color-forest); background:color-mix(in srgb,var(--color-grass-light) 18%,var(--color-surface)); }
 
 /* Try-on preview stage (Phase 1, kiki design integration) — a sticky mini
    farm diorama: sky above a grass-floor band that matches the farm layer's
@@ -33,95 +31,105 @@
   top: 0;
   z-index: 15;
   display: grid;
-  grid-template-columns: minmax(140px, 210px) minmax(0, 1fr);
-  margin: 14px 0;
+  grid-template-columns: minmax(260px, 1.05fr) minmax(300px, .95fr);
+  min-height: 216px;
+  margin: 16px 0;
   overflow: hidden;
-  border: 3px solid var(--color-forest);
-  border-radius: 16px;
-  background: linear-gradient(180deg, var(--color-sky-glow) 0%, var(--color-sky) 100%);
-  box-shadow: 0 5px 0 rgba(36,52,33,.2);
+  border: 3px solid var(--color-outline,#243421);
+  border-radius: 22px;
+  background:var(--color-surface);
+  box-shadow: 0 7px 0 rgba(36,52,33,.16), 0 18px 32px rgba(36,52,33,.12);
 }
 @media (max-width: 800px) { .pm-shop-stage { top: 70px; } }
 
-.pm-shop-stage-scene { position: relative; min-height: 128px; overflow: hidden; }
+.pm-shop-stage-scene { position:relative; min-height:216px; overflow:hidden; border-right:3px solid var(--color-outline,#243421); background:linear-gradient(180deg,var(--color-sky-glow) 0%,var(--color-sky) 70%); }
 .pm-shop-stage-floor {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   display: block;
-  height: 56%;
+  height: 47%;
   background: linear-gradient(180deg, var(--color-grass) 0%, var(--color-forest) 100%);
   border-top: 5px solid var(--color-grass-light);
   box-shadow: inset 0 8px 14px rgba(255,255,255,.2);
 }
-.pm-shop-stage-cast { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; gap:4px; padding:10px 6px 8px; }
-.pm-shop-stage-jamkachu { position:relative; flex:none; width:72px; height:72px; }
+.pm-shop-stage-sign { position:absolute; top:15px; left:16px; z-index:2; padding:7px 9px; border:2px solid var(--color-outline,#243421); border-radius:8px; color:#fff; background:var(--color-forest); font:8px/1 var(--font-heading); box-shadow:0 3px 0 rgba(36,52,33,.18); }
+.pm-shop-stage-cast { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; gap:12px; padding:38px 14px 17px; }
+.pm-shop-stage-jamkachu { position:relative; flex:none; width:118px; height:118px; }
 .pm-shop-stage-jamkachu img { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.22)); }
-.pm-shop-stage-acc-icon { position:absolute; top:-4px; right:-8px; font-size:24px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.3)); }
+.pm-shop-stage-acc-icon { position:absolute; top:2px; right:-7px; display:grid; place-items:center; width:42px; height:42px; border:2px solid rgba(36,52,33,.18); border-radius:50%; background:rgba(255,255,255,.86); font-size:25px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.22)); }
 .pm-shop-stage-acc-icon img { display:block; width:30px; height:30px; object-fit:contain; image-rendering:pixelated; }
-.pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:6px; font-size:28px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }
+.pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:8px; font-size:38px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }
 /* The real sprite, at the size it will stand on the farm grass. */
-.pm-shop-stage-decor-prop img { display:block; width:54px; height:54px; object-fit:contain; image-rendering:pixelated; }
+.pm-shop-stage-decor-prop img { display:block; width:76px; height:76px; object-fit:contain; image-rendering:pixelated; }
 .pm-shop-stage-acc-icon.is-indonesia-flag,
 .pm-shop-stage-decor-prop.is-indonesia-flag { width:38px; height:24px; border:2px solid rgba(36,52,33,.35); border-radius:2px; background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%); box-shadow:0 2px 0 rgba(36,52,33,.22); }
 .pm-shop-stage-acc-icon.is-indonesia-flag { top:-2px; right:-10px; }
 .pm-shop-stage-decor-prop.is-indonesia-flag { align-self:flex-end; margin-bottom:12px; }
 .pm-shop-stage-npc { position:relative; flex:none; display:flex; flex-direction:column; align-items:center; gap:2px; }
 .pm-shop-stage-npc picture { display:block; }
-.pm-shop-stage-npc img { display:block; width:46px; height:41px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.16)); }
-.pm-shop-stage-npc b { color:#fff; font:6px/1.4 var(--font-heading); text-shadow:1px 2px 0 #243421; }
+.pm-shop-stage-npc img { display:block; width:58px; height:52px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.16)); }
+.pm-shop-stage-npc b { color:#fff; font:7px/1.4 var(--font-heading); text-shadow:1px 2px 0 #243421; }
 
-.pm-shop-stage-copy { position:relative; display:grid; align-content:start; gap:5px; padding:12px 16px 14px 10px; }
-.pm-shop-stage-balance { display:inline-flex; align-items:center; gap:6px; width:max-content; padding:5px 10px; border:2px solid var(--color-outline,#243421); border-radius:999px; background:#fff; font-family:var(--font-heading,"Press Start 2P",monospace); font-size:9px; }
-.pm-shop-stage-honest { font-size:11px; opacity:.82; }
-.pm-shop-stage-hint { margin-top:4px; font-size:12px; opacity:.8; }
-.pm-shop-stage-clear { position:absolute; top:6px; right:6px; z-index:2; width:44px; height:44px; border:2px solid var(--color-outline,#243421); border-radius:50%; color:var(--color-text); background:var(--color-surface); cursor:pointer; font-size:20px; }
-.pm-shop-stage-copy h2 { margin-top:4px; padding-right:40px; font:16px/1.3 var(--font-display); }
-.pm-shop-stage-copy > strong { display:block; margin-top:2px; font-size:13px; }
-.pm-shop-stage-acc-note { margin-top:2px; color:var(--color-forest); font-size:10px; line-height:1.4; }
-.pm-shop-stage-status { display:inline-block; margin-top:4px; color:var(--color-forest); font-size:11px; font-weight:800; }
-.pm-shop-stage-short { display:block; color:#a84c3d; font-size:10px; }
-.pm-shop-stage-copy > .pm-btn { margin-top:6px; min-height:44px; width:max-content; }
+.pm-shop-stage-copy { position:relative; display:flex; min-width:0; flex-direction:column; align-items:flex-start; gap:7px; padding:16px 20px 16px; }
+.pm-shop-stage-header { display:flex; width:100%; align-items:center; justify-content:space-between; gap:10px; padding-right:40px; }
+.pm-shop-stage-header > span { color:var(--color-forest); font-size:11px; font-weight:850; letter-spacing:.04em; text-transform:uppercase; }
+.pm-shop-stage-balance { display:inline-flex; align-items:center; gap:5px; flex:none; padding:6px 10px; border:2px solid #E8C46B; border-radius:999px; color:#6B4F10; background:var(--color-yellow); font:800 12px/1 var(--font-body); }
+.pm-shop-stage-category { color:var(--color-forest); font-size:11px; font-weight:800; }
+.pm-shop-stage-copy h2 { max-width:100%; padding-right:42px; overflow-wrap:anywhere; font:18px/1.25 var(--font-display); }
+.pm-shop-stage-description { display:-webkit-box; overflow:hidden; color:color-mix(in srgb,var(--color-text) 78%,transparent); font-size:13px; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.pm-shop-stage-meta { display:flex; flex-wrap:wrap; align-items:center; gap:7px 12px; width:100%; }
+.pm-shop-stage-price { font-size:15px; }
+.pm-shop-stage-status,.pm-shop-stage-ready { color:var(--color-forest); font-size:12px; font-weight:800; }
+.pm-shop-stage-short { color:#a84c3d; font-size:11px; font-weight:800; }
+.pm-shop-stage-acc-note { color:var(--color-forest); font-size:11px; line-height:1.4; }
+.pm-shop-stage-honest { margin-top:auto; font-size:11px; opacity:.72; }
+.pm-shop-stage-hint { margin-block:auto; font-size:13px; opacity:.76; }
+.pm-shop-stage-clear { position:absolute; top:9px; right:9px; z-index:2; width:44px; height:44px; border:2px solid var(--color-border); border-radius:50%; color:var(--color-text); background:var(--color-bg); cursor:pointer; font-size:20px; }
+.pm-shop-stage-action { width:100%; min-height:48px; margin-top:2px; justify-content:center; font-size:14px; }
 html[data-theme="night"] .pm-shop-stage-balance { border-color:var(--color-border); color:var(--color-text); background:var(--color-surface); }
 
 .pm-shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 14px;
 }
 
 .pm-shop-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  text-align: center;
-  padding: 14px 12px;
+  position:relative;
+  display:grid;
+  grid-template-rows:104px minmax(66px,auto) auto;
+  gap:10px;
+  min-width:0;
+  min-height:232px;
+  padding:12px;
+  color:var(--color-text);
+  background:var(--color-surface);
+  text-align:left;
   cursor: pointer;
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
 }
-.pm-shop-card.is-previewed { border-color: var(--color-forest); box-shadow: 0 4px 0 var(--color-forest); }
+.pm-shop-card:hover { transform:translateY(-2px); border-color:var(--color-grass); box-shadow:0 6px 0 color-mix(in srgb,var(--color-forest) 28%,transparent); }
+.pm-shop-card:focus-visible { outline:4px solid color-mix(in srgb,var(--color-yellow) 70%,transparent); outline-offset:2px; }
+.pm-shop-card.is-previewed { border-color:var(--color-forest); background:color-mix(in srgb,var(--color-grass-light) 10%,var(--color-surface)); box-shadow:0 6px 0 var(--color-forest); transform:translateY(-2px); }
 
-.pm-shop-card .pm-shop-emoji { display:grid; place-items:center; min-height:52px; font-size: 34px; line-height: 1; }
+.pm-shop-visual { display:grid; place-items:center; width:100%; height:104px; overflow:hidden; border:2px solid color-mix(in srgb,var(--color-border) 70%,transparent); border-radius:13px; background:linear-gradient(155deg,color-mix(in srgb,var(--color-sky-glow) 75%,#fff),color-mix(in srgb,var(--color-grass-light) 22%,#fff)); font-size:46px; line-height:1; }
 /* Decorations ship as real sprites; the box is fixed so a card's height does
    not depend on which drawing landed in it. */
-.pm-shop-art { width:52px; height:52px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.22)); }
-.pm-shop-card h3 { font-size: 12px; }
-.pm-shop-card p { font-size: 11px; opacity: 0.8; min-height: 2.2em; }
-.pm-shop-auto { min-height:2.6em; color:var(--color-forest); font-size:9px; line-height:1.4; }
+.pm-shop-art { width:82px; height:82px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.2)); }
+.pm-shop-visual.is-indonesia-flag::before { content:""; width:58px; height:38px; border:3px solid var(--color-outline,#243421); border-radius:4px; background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%); box-shadow:0 4px 0 rgba(36,52,33,.16); }
+.pm-shop-card-copy { display:grid; align-content:start; gap:5px; min-width:0; }
+.pm-shop-card-copy strong { overflow:hidden; font-size:14px; line-height:1.3; text-overflow:ellipsis; white-space:nowrap; }
+.pm-shop-card-copy small { display:-webkit-box; overflow:hidden; font-size:12px; line-height:1.4; opacity:.72; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 
-/* Price and ownership. The card had neither: you could not tell what a thing
-   cost, whether you already owned it, or why it was out of reach — all three
-   answers lived on the try-on stage, one item at a time. */
-.pm-shop-card-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px 8px; margin-top:auto; padding-top:2px; }
-.pm-shop-price { display:inline-flex; align-items:center; gap:4px; border:2px solid #E8C46B; border-radius:999px; padding:3px 9px; color:#6B4F10; background:var(--color-yellow); font:bold 11px/1 var(--font-body); }
-.pm-shop-state { font-size:9px; font-weight:800; line-height:1.3; }
+.pm-shop-card-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; padding-top:8px; border-top:2px dashed color-mix(in srgb,var(--color-border) 65%,transparent); }
+.pm-shop-price { display:inline-flex; align-items:center; gap:4px; flex:none; border-radius:999px; padding:5px 9px; color:#6B4F10; background:var(--color-yellow); font:800 12px/1 var(--font-body); }
+.pm-shop-state { min-width:0; overflow:hidden; font-size:11px; font-weight:800; line-height:1.3; text-overflow:ellipsis; white-space:nowrap; }
 .pm-shop-state.is-owned { color:var(--color-forest); }
 .pm-shop-state.is-short { color:#B4573F; }
-/* Owned reads as achieved, not unavailable, so it brightens rather than dims.
-   Only genuinely out-of-reach items recede. */
+.pm-shop-state.is-ready { color:var(--color-forest); }
 .pm-shop-card.is-owned { border-color:var(--color-grass); }
-.pm-shop-card.is-locked .pm-shop-emoji,
-.pm-shop-card.is-locked h3,
-.pm-shop-card.is-locked p { opacity:.55; }
-.pm-shop-preview-btn { border:2px dashed var(--color-border); border-radius:8px; padding:6px 8px; color:var(--color-text); background:var(--color-bg); cursor:pointer; font-size:10px; font-weight:800; }.pm-shop-preview-btn.is-active { border-style:solid; border-color:var(--color-forest); color:var(--color-forest); }
+.pm-shop-card.is-owned::after { content:"✓"; position:absolute; top:18px; right:18px; display:grid; place-items:center; width:26px; height:26px; border:2px solid #fff; border-radius:50%; color:#fff; background:var(--color-forest); box-shadow:0 2px 0 rgba(36,52,33,.18); font-weight:900; }
+.pm-shop-card.is-locked .pm-shop-visual { filter:saturate(.5); opacity:.62; }
 .pm-shop-empty { grid-column:1/-1; padding:26px; border:2px dashed var(--color-border); border-radius:12px; text-align:center; opacity:.7; }
 
 .pm-shop-toast {
@@ -136,27 +144,6 @@ html[data-theme="night"] .pm-shop-stage-balance { border-color:var(--color-borde
 html[data-theme="night"] .pm-shop-toast { border-color:var(--color-border); color:var(--color-text); background:var(--color-surface); }html[data-theme="night"] .pm-shop-toast.is-error { background:#412827; }
 
 .pm-shop-card.is-busy { opacity:.72; }
-/* Buying stays on the preview stage, but owned equippable items must expose
-   their primary action directly. Hiding this button made purchases look
-   impossible to equip unless the user rediscovered the preview interaction. */
-.pm-shop-card > .pm-shop-owned {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:28px;
-  margin-top:auto;
-  padding:6px 8px;
-  border:2px solid color-mix(in srgb,#397a2b 45%,transparent);
-  border-radius:8px;
-  background:color-mix(in srgb,#8fd36f 18%,var(--color-surface));
-}
-.pm-shop-card > .pm-shop-equip-btn {
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  min-height:44px;
-}
 
 /* Small T2 celebration: a handful of seed emoji popping from the card —
    buying is frequent, keep it light (no full-screen ceremony). */
@@ -177,5 +164,6 @@ html[data-theme="night"] .pm-shop-toast { border-color:var(--color-border); colo
 @media (prefers-reduced-motion: reduce) {
   .pm-shop-confetti { animation: none; opacity: 0; }
 }
-@media (max-width:560px) { .pm-shop-category-tabs button { flex-direction:column; gap:2px; font-size:10px; }.pm-shop-stage { grid-template-columns:1fr; }.pm-shop-stage-scene { min-height:108px; }.pm-shop-stage-copy h2 { font-size:15px; }.pm-shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }.pm-shop-card { padding:11px 8px; }.pm-shop-card h3 { font-size:11px; } }
+@media (max-width:900px) { .pm-shop-controls { align-items:stretch; flex-direction:column; }.pm-shop-filter { justify-content:center; } }
+@media (max-width:560px) { .pm-shop-controls { margin-inline:-2px; padding:6px; }.pm-shop-category-tabs { grid-template-columns:repeat(3,minmax(0,1fr)); }.pm-shop-category-tabs button { flex-direction:column; gap:3px; min-width:0; padding-inline:4px; font-size:10px; }.pm-shop-category-tabs button > b { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.pm-shop-stage { grid-template-columns:1fr; min-height:0; }.pm-shop-stage-scene { min-height:132px; border-right:0; border-bottom:3px solid var(--color-outline,#243421); }.pm-shop-stage-sign { top:9px; left:10px; font-size:7px; }.pm-shop-stage-cast { gap:7px; padding:24px 10px 8px; }.pm-shop-stage-jamkachu { width:82px; height:82px; }.pm-shop-stage-decor-prop img { width:54px; height:54px; }.pm-shop-stage-npc img { width:46px; height:41px; }.pm-shop-stage-copy { gap:6px; padding:12px 14px 13px; }.pm-shop-stage-copy h2 { font-size:16px; }.pm-shop-stage-description { font-size:12px; -webkit-line-clamp:1; }.pm-shop-stage-honest { margin-top:3px; }.pm-shop-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }.pm-shop-card { grid-template-rows:84px minmax(62px,auto) auto; min-height:208px; padding:9px; }.pm-shop-visual { height:84px; font-size:38px; }.pm-shop-art { width:66px; height:66px; }.pm-shop-card-copy strong { font-size:12px; }.pm-shop-card-copy small { font-size:11px; }.pm-shop-card-foot { align-items:flex-start; flex-direction:column; gap:5px; }.pm-shop-card.is-owned::after { top:13px; right:13px; } }
 @media (max-width:370px) { .pm-shop-grid { grid-template-columns:1fr; } }
