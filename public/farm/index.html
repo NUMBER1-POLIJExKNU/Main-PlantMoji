@@ -293,12 +293,12 @@
                             <!-- Decorative: #char-name/#char-mood below carry the
                                  accessible identity, so the img stays alt="". -->
                             <img id="jamkachu-sprite" alt="" draggable="false">
-                            <!-- Plain-mood status chip: 🥶/💦/🧪 float near the head
-                                 for the four moods that share the sprite's calm
-                                 "plain" body (aria-hidden; the #char-mood text is
-                                 the accessible signal — all 8 moods stay
-                                 distinguishable). PMSprite writes it. -->
-                            <span id="mood-status-chip" aria-hidden="true"></span>
+                            <!-- Separate thought cloud: PMSprite puts only the
+                                 current condition badge (or sleep Zs) inside.
+                                 The main speech bubble above remains dialogue. -->
+                            <span id="mood-thought-bubble" class="mood-thought-bubble" aria-hidden="true" hidden>
+                                <span id="mood-status-chip"></span>
+                            </span>
                             <!-- THIN overlay: ONLY the shop accessory groups and the
                                  pot-anchored level keepsakes survive from the old
                                  inline SVG, repositioned onto the sprite. The square
@@ -431,35 +431,8 @@
                 </div>
             </div>
 
-            <!-- 3+) Decision-first stack below the character. The first card
-                 answers what is happening, what to do, and how the real
-                 sensors will prove it before progression or bonus content. -->
+            <!-- Main activity stack below the character. -->
             <div class="home-stack">
-
-                <section id="care-focus" class="care-focus panel-glass" data-care-state="waiting" aria-labelledby="care-focus-title">
-                    <div class="care-focus-heading">
-                        <span id="care-focus-icon" class="care-focus-icon" aria-hidden="true">📡</span>
-                        <div>
-                            <span class="care-focus-kicker" data-i18n="focus.now">SEKARANG</span>
-                            <h2 id="care-focus-title">Hubungkan sensor</h2>
-                            <p id="care-focus-summary" aria-live="polite">Nilai akan muncul otomatis saat perangkat tersambung.</p>
-                        </div>
-                    </div>
-                    <ol class="care-steps" aria-label="Alur perawatan">
-                        <li data-care-step="sense" data-step-state="current"><b>1</b><span><strong data-i18n="focus.step.sense">LIHAT</strong><small data-i18n="focus.step.senseHint">Baca kondisinya</small></span></li>
-                        <li data-care-step="act" data-step-state="todo"><b>2</b><span><strong data-i18n="focus.step.act">LAKUKAN</strong><small data-i18n="focus.step.actHint">Ubah satu hal</small></span></li>
-                        <li data-care-step="verify" data-step-state="todo"><b>3</b><span><strong data-i18n="focus.step.verify">CEK</strong><small data-i18n="focus.step.verifyHint">Sensor membuktikan</small></span></li>
-                    </ol>
-                    <!-- Contextual guidance only: the click grants nothing.
-                         Physical care must change a real reading before the
-                         quest engine can verify it and award a reward. -->
-                    <div class="actions-panel">
-                        <button id="care-action" class="pixel-btn" type="button">
-                            <span class="care-action-label">Elus aku — atau tulis buku harianku 📖</span>
-                        </button>
-                    </div>
-                    <p id="care-proof-note" class="care-proof-note" data-i18n="focus.proof">Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.</p>
-                </section>
 
                 <!-- Current Quest (fed by the existing quests query). The whole
                      panel is a REAL link to /quests (kid-guide Task 1): one big

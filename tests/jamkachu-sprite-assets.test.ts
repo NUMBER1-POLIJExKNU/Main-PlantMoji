@@ -177,8 +177,9 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     for (const mood of Object.keys(tables.MOOD_STATUS_CHIP)) {
       expect(bodyCounts[tables.MOOD_SPRITE[mood]], `${mood} chips but has its own face`).toBeGreaterThan(1);
     }
-    // Night sleep forces the sleepy body (sleepShown → sleeping: true).
-    expect(spriteJs).toMatch(/if \(state\.sleeping\) return "sleepy";/);
+    // Night sleep uses the smiling frame instead of the startled O-mouth.
+    expect(spriteJs).toMatch(/if \(state\.sleeping\) return "happy";/);
+    expect(spriteJs).toContain('chipEl.textContent = "💤"');
   });
 
   it("bond→tier thresholds sit at the band starts and clamp by phase", () => {
@@ -217,10 +218,15 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
 describe("driver wiring (index.html + live.js hooks)", () => {
   const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
   const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
+  const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 
   it("index.html carries the sprite img + chip and loads the driver before live.js", () => {
     expect(html).toContain('<img id="jamkachu-sprite" alt=""');
-    expect(html).toContain('<span id="mood-status-chip" aria-hidden="true">');
+    expect(html).toContain('id="mood-thought-bubble"');
+    expect(html).toContain('<span id="mood-status-chip"></span>');
+    expect(css).toContain(".mood-thought-bubble::before");
+    expect(css).toContain(".mood-thought-bubble::after");
+    expect(spriteJs).toContain('chipBubbleEl.hidden = !chipKey');
     const driverIdx = html.indexOf('<script defer src="/farm/jamkachu-sprite.js">');
     const liveIdx = html.indexOf('<script type="module" src="/farm/live.js">');
     expect(driverIdx).toBeGreaterThan(-1);

@@ -101,9 +101,9 @@ export function stagePhase(stage?: CompanionStage): SpritePhase {
   return STAGE_PHASE[stage] ?? 4;
 }
 
-/** Picks the drawn expression; night sleep overrides the live mood. */
+/** Picks the drawn expression; night sleep uses the peaceful smiling frame. */
 export function spriteMood(mood: PlantMood, sleeping = false): SpriteMood {
-  if (sleeping) return "sleepy";
+  if (sleeping) return "happy";
   return MOOD_SPRITE[mood] ?? "plain";
 }
 

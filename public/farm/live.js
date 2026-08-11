@@ -6378,7 +6378,6 @@ function runFirstDayTour() {
   const grandpa = T.grandpa ?? {};
   pmCoach(TOUR_SEEN_ID, [
     { target: "#env-strip", emoji: "👀", text: sensesText },
-    { target: "#care-action", emoji: "💛", text: T.care?.line ?? F.care.line },
     { target: "#daily-quiz-open", emoji: "🧠", text: T.quiz?.line ?? F.quiz.line },
     { target: "#current-quest", emoji: "🔥", text: T.quest?.line ?? F.quest.line },
     // Final card (kid-guide Task 5): Grandpa waves — the handoff to the

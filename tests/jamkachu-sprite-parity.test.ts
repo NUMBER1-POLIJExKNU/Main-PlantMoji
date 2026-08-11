@@ -107,9 +107,9 @@ describe("React sprite mapping pins the decided design tables", () => {
     }
   });
 
-  it("night sleep overrides any live mood with the sleepy sprite", () => {
+  it("night sleep overrides any live mood with the peaceful smiling sprite", () => {
     for (const mood of PLANT_MOODS) {
-      expect(spriteMood(mood, true)).toBe("sleepy");
+      expect(spriteMood(mood, true)).toBe("happy");
     }
   });
 
@@ -158,7 +158,7 @@ describe("React sprite mapping pins the decided design tables", () => {
     );
     // No bondLevel at all reads as Lv.0 → clamped to the first band.
     expect(spriteSrc({ mood: "Happy", sleeping: true })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p1-seed-sleepy.png",
+      "/farm/assets/jamkachu/4x/plant-p1-seed-happy.png",
     );
   });
 

@@ -220,10 +220,11 @@
     return STAGE_PHASE[stage] || 4;
   }
 
-  /** Night sleep (sleepShown) forces the sleepy body; unknown moods render
-   *  the calm plain body rather than a wrong celebration. */
+  /** Night sleep uses the happy frame: its raised, closed-looking eyes and
+   *  smile read as peaceful rest, unlike the pack's startled O-mouth sleepy
+   *  frame. The sleep badge and night scene keep the state unambiguous. */
   function spriteMoodFor() {
-    if (state.sleeping) return "sleepy";
+    if (state.sleeping) return "happy";
     return MOOD_SPRITE[state.mood] || "plain";
   }
 
@@ -403,12 +404,17 @@
       }
     }
     var chipEl = document.getElementById("mood-status-chip");
+    var chipBubbleEl = document.getElementById("mood-thought-bubble");
     if (chipEl) {
       var chipArt = state.sleeping ? "" : MOOD_CHIP_ART[state.mood] || "";
-      if (chipEl.dataset.pmChip !== chipArt) {
-        chipEl.dataset.pmChip = chipArt;
+      var chipKey = state.sleeping ? "sleeping" : chipArt;
+      if (chipEl.dataset.pmChip !== chipKey) {
+        chipEl.dataset.pmChip = chipKey;
+        if (chipBubbleEl) chipBubbleEl.hidden = !chipKey;
         chipEl.textContent = "";
-        if (chipArt) {
+        if (state.sleeping) {
+          chipEl.textContent = "💤";
+        } else if (chipArt) {
           var chipImg = document.createElement("img");
           chipImg.src = MOOD_BADGE_BASE + chipArt + ".png";
           chipImg.alt = "";

@@ -1090,7 +1090,7 @@ body.evolution-active .fx-layer { z-index:1390; }
   box-shadow:none;
 }
 .mascot-wrapper.evo-arena > .mascot-svg::before,
-.mascot-wrapper.evo-arena #mood-status-chip { display:none; }
+.mascot-wrapper.evo-arena #mood-thought-bubble { display:none; }
 .mascot-wrapper.evo-arena.evo-pulse { animation:none; }
 .mascot-wrapper.evo-arena.evo-pulse > .mascot-svg { animation:evoPulse .55s ease-in-out infinite; }
 .mascot-wrapper.evo-arena.evo-shake-lg { animation:none; }
@@ -1259,25 +1259,47 @@ body.evolution-active .fx-layer { z-index:1390; }
 .mascot-svg.sprite-phase-3 .acc-anchor-eyes { transform: translate(150px, 128px) scale(0.81) translate(-150px, 0px); }
 .mascot-svg.sprite-phase-2 .acc-anchor-eyes { transform: translate(150px, 159px) scale(0.62) translate(-150px, 0px); }
 .mascot-svg.sprite-phase-1 .acc-anchor-eyes { transform: translate(150px, 188px) scale(0.4) translate(-150px, 0px); }
-/* Plain-mood status chip (🥶/💦/🧪): floats by the sprite head; PMSprite
-   writes the glyph, :empty keeps it out of the layout otherwise. Static —
-   the float drift below is reduced-motion gated. */
-#mood-status-chip {
+/* Condition thought cloud: a separate, wordless bubble for the designer
+   mood badge (or 💤). Dialogue keeps its own speech bubble above. */
+.mood-thought-bubble {
     position: absolute;
-    top: 13%;
-    right: 4%;
+    top: 5%;
+    right: -3%;
+    z-index: 3;
+    display: grid;
+    width: 62px;
+    height: 56px;
+    place-items: center;
+    border: 3px solid var(--color-border);
+    border-radius: 48% 52% 46% 54%;
+    background: var(--color-surface);
+    box-shadow: 0 5px 0 rgba(36,52,33,.2), inset 0 0 0 3px rgba(255,255,255,.55);
+    pointer-events: none;
+}
+.mood-thought-bubble[hidden] { display: none; }
+.mood-thought-bubble::before,
+.mood-thought-bubble::after {
+    content: "";
+    position: absolute;
+    border: 3px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-surface);
+}
+.mood-thought-bubble::before { left: 9px; bottom: -13px; width: 13px; height: 13px; }
+.mood-thought-bubble::after { left: 0; bottom: -23px; width: 7px; height: 7px; }
+#mood-status-chip {
+    position: relative;
+    z-index: 1;
     font-size: 28px;
     line-height: 1;
-    pointer-events: none;
     filter: drop-shadow(2px 3px 0 rgba(36, 52, 33, 0.24));
-    z-index: 2;
 }
 #mood-status-chip:empty { display: none; }
 /* Designer mood badge (assets/moods): 128px art shown at 40px so the pixel
    grid stays crisp; the emoji fallback keeps the font-size above. */
 #mood-status-chip img { display: block; width: 40px; height: 40px; image-rendering: pixelated; }
 @media (prefers-reduced-motion: no-preference) {
-    #mood-status-chip { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
+    .mood-thought-bubble { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
 }
 @keyframes pm-chip-float {
     from { transform: translateY(0); }
@@ -1514,7 +1536,7 @@ body.room-warm {
    accessory overlay + status chip. Static clip — reduced-motion safe. */
 .mascot-svg.hatch-pre #jamkachu-sprite { clip-path: inset(62.5% 0 0 0); animation: none; }
 .mascot-svg.hatch-pre .mascot-overlay,
-.mascot-svg.hatch-pre #mood-status-chip { visibility: hidden; }
+.mascot-svg.hatch-pre #mood-thought-bubble { visibility: hidden; }
 .mascot-container.hatch-hidden .speech-bubble,
 .mascot-container.hatch-hidden .char-id { visibility: hidden; }
 
