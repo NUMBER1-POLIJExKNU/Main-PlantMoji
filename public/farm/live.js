@@ -3283,7 +3283,14 @@ function startFarmerDrag(event) {
   if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
   farmerRestartTimer = null;
   farmerMotionEpoch += 1;
-  try { farmerMotionAnimation?.cancel(); } catch {}
+  // Every farmerAnimate() runs with fill:"forwards" but only the newest is
+  // held in farmerMotionAnimation — which farmerAnimate itself nulls once the
+  // animation finishes. A finished forwards-filling animation keeps applying
+  // its end left/top from the animation origin, and that outranks the inline
+  // styles moveFarmerDrag writes, so the sprite refused to follow the pointer.
+  // Cancel every animation on the element, not just the tracked one. `rect` is
+  // measured above, while they still hold him, so he does not jump on grab.
+  try { farmer.getAnimations().forEach((animation) => animation.cancel()); } catch {}
   farmerMotionAnimation = null;
   clearFarmerBubble();
   farmer.style.left = `${rect.left}px`;

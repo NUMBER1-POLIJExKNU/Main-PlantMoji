@@ -118,6 +118,20 @@ describe("Grandpa Tani living-world UI", () => {
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
   });
 
+  it("clears every finished animation on grab so the drag can move him", () => {
+    // farmerAnimate runs with fill:"forwards" and nulls farmerMotionAnimation
+    // as soon as an animation finishes, so cancelling only the tracked one left
+    // finished animations pinning left/top from the animation origin — which
+    // outranks the inline styles moveFarmerDrag writes. Measured on the
+    // deployed build: 6px of sprite travel for 224px of pointer travel.
+    expect(live).toContain("farmer.getAnimations().forEach((animation) => animation.cancel())");
+    // The grab must still read the on-screen position BEFORE cancelling,
+    // otherwise he teleports to the last non-animated spot on pointerdown.
+    expect(live).toMatch(
+      /const rect = farmer\.getBoundingClientRect\(\);[\s\S]*?farmer\.getAnimations\(\)[\s\S]*?farmer\.style\.left = `\$\{rect\.left\}px`/,
+    );
+  });
+
   it("moves the sun and moon along a WIB time-based sky arc", () => {
     expect(live).toContain('minute: "2-digit"');
     expect(live).toContain('celestial.style.setProperty("--celestial-x"');
