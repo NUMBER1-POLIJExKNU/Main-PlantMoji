@@ -14,6 +14,8 @@ import { npcTagline } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
+import { normalizeMood } from "@/types/events";
+import { COMPANION_STAGES, type CompanionStage } from "@/types/game";
 import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -33,13 +35,18 @@ export default async function ShopPage() {
 
   // Selecting the seeds column fails while milestone18 is missing (unknown
   // column), as does the shop_purchases read (unknown table) — either error
-  // means "coming soon", never a crash.
-  const [bondRes, purchasesRes] = await Promise.all([
-    supabase.from("bond_state").select("seeds").eq("plant_id", PLANT_ID).maybeSingle(),
+  // means "coming soon", never a crash. plantRes/companionRes feed the
+  // try-on preview stage only (Phase 1, kiki design integration) — they
+  // never gate the page: any error there just falls back to the graceful
+  // "p4 happy bare" sprite default below, same as spriteSrc's own default.
+  const [bondRes, purchasesRes, plantRes, companionRes] = await Promise.all([
+    supabase.from("bond_state").select("seeds, bond_level").eq("plant_id", PLANT_ID).maybeSingle(),
     supabase
       .from("shop_purchases")
       .select("item_key, category, equipped")
       .eq("plant_id", PLANT_ID),
+    supabase.from("plants").select("current_state").eq("id", PLANT_ID).maybeSingle(),
+    supabase.from("companion_state").select("stage").eq("plant_id", PLANT_ID).maybeSingle(),
   ]);
 
   if (bondRes.error || purchasesRes.error) {
@@ -53,9 +60,21 @@ export default async function ShopPage() {
   // grid additionally short-circuits real buy/equip writes while active, so
   // nothing here reaches Supabase.
   const cheat = (await cookies()).get("pm_cheat")?.value === "1";
-  const seeds = cheat
-    ? 999999
-    : Number((bondRes.data as { seeds?: number } | null)?.seeds ?? 0);
+  const bondRow = bondRes.data as { seeds?: number; bond_level?: number } | null;
+  const seeds = cheat ? 999999 : Number(bondRow?.seeds ?? 0);
+  const mascotBondLevel = Number(bondRow?.bond_level ?? 0);
+  // Try-on preview stage (Phase 1): the same current-Jamkachu state the rest
+  // of the app reads (plants.current_state / companion_state.stage) — an
+  // unavailable or unrecognized value degrades to undefined/"Happy", which
+  // spriteSrc renders as the graceful p4 happy bare default.
+  const mascotMood =
+    normalizeMood((plantRes.data as { current_state?: string } | null)?.current_state) ?? "Happy";
+  const companionStageRaw = (companionRes.data as { stage?: string } | null)?.stage;
+  const mascotStage: CompanionStage | undefined = (
+    COMPANION_STAGES as readonly string[]
+  ).includes(companionStageRaw ?? "")
+    ? (companionStageRaw as CompanionStage)
+    : undefined;
   const items: ShopGridItem[] = SHOP_CATALOG.map((item) => ({
     key: item.key,
     category: item.category,
@@ -85,6 +104,9 @@ export default async function ShopPage() {
         initialSeeds={seeds}
         items={items}
         initialPurchases={purchases}
+        mascotMood={mascotMood}
+        mascotStage={mascotStage}
+        mascotBondLevel={mascotBondLevel}
       />
     </main>
   );

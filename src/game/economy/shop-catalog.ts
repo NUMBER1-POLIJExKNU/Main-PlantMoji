@@ -230,6 +230,10 @@ export const SHOP_UI_COPY = {
     decorAuto: "Appears automatically on My Garden",
     needMore: "more Seeds needed",
     categories: { pot: "Pots", decor: "Farm decorations", accessory: "Accessories" },
+    tryOnStage: "Try-on stage",
+    tryOnNote: "Try it on — seeds are only spent when you buy.",
+    tryOnHint: "Tap an item below to try it on.",
+    accessoryPreviewNote: "Accessories will show on Jamkachu once you wear them on the farm.",
     comingSoonTitle: "Coming soon at this school",
     comingSoonLines: [
       "The Seed Shop opens once the garden server learns about Seeds.",
@@ -261,6 +265,10 @@ export const SHOP_UI_COPY = {
     decorAuto: "Otomatis tampil di Kebun Saya",
     needMore: "Benih lagi dibutuhkan",
     categories: { pot: "Pot", decor: "Dekorasi kebun", accessory: "Aksesori" },
+    tryOnStage: "Panggung coba pakai",
+    tryOnNote: "Coba dulu — biji hanya terpakai saat membeli.",
+    tryOnHint: "Ketuk salah satu barang di bawah untuk mencobanya.",
+    accessoryPreviewNote: "Aksesori akan tampil di Jamkachu begitu kamu pakai di kebun.",
     comingSoonTitle: "Segera hadir di sekolah ini",
     comingSoonLines: [
       "Toko Benih akan buka setelah server kebun mengenal Benih.",

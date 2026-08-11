@@ -22,6 +22,7 @@ import {
   type SpritePhase,
   type SpriteTier,
 } from "@/lib/jamkachu-sprite";
+import { GOLDPOT_RAMP, POT_ITEM_RAMPS, POT_RAMP, POT_TOP_FRACTION, SKIN_RAMPS } from "@/lib/sprite-palette";
 
 // Guards the two halves of the Jamkachu sprite mapping against drift:
 // public/farm/jamkachu-sprite.js drives the production farm layer while
@@ -304,6 +305,57 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     for (const mood of Object.keys(MOOD_STATUS_CHIP) as PlantMood[]) {
       expect(farm.chipTable[mood]).toBe(MOOD_STATUS_CHIP[mood]);
     }
+  });
+
+  // Pot palette ramps (seed-shop try-on preview, Phase 1): src/lib/
+  // sprite-palette.ts ports the farm's canvas swap algorithm client-side —
+  // this pins its POT_RAMP/SKIN_RAMPS/POT_ITEM_RAMPS tables byte-identical
+  // to public/farm/jamkachu-sprite.js's, same guard as every other table in
+  // this file, so a recolored pot in the shop preview always matches what
+  // the farm would show once the item is actually equipped.
+  it("pot ramp tables (React sprite-palette mirror) are byte-identical to the farm's", () => {
+    const farm = loadFarmSprite();
+    const tables = (farm.pmSprite.tables ?? farm.pmSprite.TABLES) as AnyRecord;
+    expect(tables.POT_RAMP, "PMSprite.tables must expose POT_RAMP").toEqual(POT_RAMP);
+    expect(tables.SKIN_RAMPS, "PMSprite.tables must expose SKIN_RAMPS").toEqual(SKIN_RAMPS);
+    expect(tables.POT_ITEM_RAMPS, "PMSprite.tables must expose POT_ITEM_RAMPS").toEqual(POT_ITEM_RAMPS);
+  });
+
+  it("the React swap constrains to the same pot-row fraction the farm layer uses (row 40 of 64)", () => {
+    const source = readFileSync(farmSpritePath, "utf8");
+    expect(source).toContain("var POT_TOP_FRACTION = 40 / 64;");
+    expect(POT_TOP_FRACTION).toBe(40 / 64);
+  });
+
+  // Bond Lv.10 keepsake (docs/superpowers/specs/2026-08-07-dopamine-ux-
+  // reframe-design.md: "Lv.10 special pot"): GOLDPOT_RAMP is a closure-
+  // private var in the farm script — never exposed on PMSprite.tables, same
+  // as activeRamp() itself — so it can't be read through the vm sandbox like
+  // POT_RAMP/SKIN_RAMPS/POT_ITEM_RAMPS above. Pinned as a literal source
+  // string instead, same pattern as the POT_TOP_FRACTION line just above:
+  // any edit to the farm's Lv.10 keepsake colors breaks this test and the
+  // src/lib/sprite-palette.ts mirror (+ tests/shop-preview.test.ts) must be
+  // updated together.
+  it("GOLDPOT_RAMP is pinned byte-identical to the farm's Lv.10 keepsake literal", () => {
+    const source = readFileSync(farmSpritePath, "utf8");
+    expect(source).toContain(
+      'var GOLDPOT_RAMP = { body: "#D9A63C", shade: "#B0801F", rim: "#F2D268", rimLight: "#FBEBB4", rimHighlight: "#FFF6D8", glint: "#FFE79A" };',
+    );
+    // buildSwapMap() only ever reads ramp.body/ramp.rim/ramp.dark (never
+    // ramp.shade/rimLight/rimHighlight/glint) on EITHER side — so the React
+    // mirror only needs to carry body/rim to be pixel-identical.
+    expect(GOLDPOT_RAMP.body).toBe("#D9A63C");
+    expect(GOLDPOT_RAMP.rim).toBe("#F2D268");
+  });
+
+  it("activeRamp() checks bondLevel >= 10 before the equipped pot/skin, and the shop preview mirrors that priority", () => {
+    const source = readFileSync(farmSpritePath, "utf8");
+    expect(source).toMatch(
+      /function activeRamp\(\) \{\s*if \(Number\(state\.bondLevel\) >= 10\) return \{ key: "decor:goldpot", ramp: GOLDPOT_RAMP \};/,
+    );
+    const preview = readFileSync(path.resolve(repoRoot, "src/components/shop-preview.tsx"), "utf8");
+    expect(preview).toContain("const goldPot = mascot.bondLevel >= 10;");
+    expect(preview).toContain("GOLDPOT_RAMP");
   });
 
   it("behaves identically wherever the farm exposes the mapping functions", () => {

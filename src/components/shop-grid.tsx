@@ -11,7 +11,10 @@ import { equipShopItem, purchaseShopItem, type ShopActionResult } from "@/app/sh
 import { useCheat } from "@/lib/pm-cheat";
 import { SHOP_UI_COPY, type ShopCategory } from "@/game/economy/shop-catalog";
 import { getBrowserSupabase } from "@/lib/supabase/client";
+import ShopPreviewStage from "@/components/shop-preview";
 import type { AppLocale } from "@/lib/i18n";
+import type { PlantMood } from "@/types/events";
+import type { CompanionStage } from "@/types/game";
 
 export interface ShopGridItem {
   key: string;
@@ -53,12 +56,22 @@ export default function ShopGrid({
   initialSeeds,
   items,
   initialPurchases,
+  mascotMood,
+  mascotStage,
+  mascotBondLevel,
 }: {
   locale: AppLocale;
   plantId: string;
   initialSeeds: number;
   items: ShopGridItem[];
   initialPurchases: ShopPurchaseRow[];
+  /** Current companion state (kiki design integration §7) — feeds the
+   *  try-on preview stage. Defaults to "Happy"/undefined stage/level 0 when
+   *  the caller can't read it, which spriteSrc renders as p4 happy bare
+   *  (the same graceful default the rest of the app uses). */
+  mascotMood?: PlantMood;
+  mascotStage?: CompanionStage;
+  mascotBondLevel?: number;
 }) {
   const copy = SHOP_UI_COPY[locale];
   const [seeds, setSeeds] = useState(initialSeeds);
@@ -178,23 +191,24 @@ export default function ShopGrid({
 
   return (
     <div>
-      <div className="pm-shop-balance" aria-live="polite">
-        <span aria-hidden="true">🌰</span>
-        <span>{seeds} {copy.balanceLabel}</span>
-      </div>
       {toast && (
         <p className={`pm-shop-toast${toast.kind === "error" ? " is-error" : ""}`} role="status">
           {toast.text}
         </p>
       )}
 
-      {previewItem && <section className={`pm-shop-preview is-${previewItem.category}${busyKey === previewItem.key ? " is-busy" : ""}`} aria-live="polite" aria-busy={busyKey === previewItem.key}>
-        <button type="button" onClick={() => setPreviewKey(null)} aria-label={copy.closePreview}>×</button>
-        <div className="pm-shop-preview-scene"><span aria-hidden="true">{previewItem.category === "decor" ? "🌱" : "🪴"}</span><b aria-hidden="true">{previewItem.emoji}</b></div>
-        <div className="pm-shop-preview-copy"><small>{copy.previewing}</small><h2>{previewItem.name}</h2><p>{previewItem.blurb}</p><strong>🌰 {previewItem.price}</strong>
-          {previewOwned ? (previewItem.category === "decor" ? <span className="pm-shop-preview-status">✓ {copy.owned}</span> : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null} onClick={() => equip(previewItem, !previewOwned.equipped)}>{busyKey === previewItem.key ? (locale === "id" ? "Memasang…" : "Equipping…") : previewOwned.equipped ? copy.unequip : copy.equip}</button>) : <button type="button" className="pm-btn pm-btn-primary" disabled={busyKey !== null || !previewAffordable} onClick={(event) => buy(previewItem, event.currentTarget)}>{busyKey === previewItem.key ? (locale === "id" ? "Menanam…" : "Planting…") : previewAffordable ? `${copy.buy} · ${previewItem.price}` : `${previewItem.price - seeds} ${copy.needMore}`}</button>}
-        </div>
-      </section>}
+      <ShopPreviewStage
+        locale={locale}
+        mascot={{ mood: mascotMood ?? "Happy", stage: mascotStage, bondLevel: mascotBondLevel ?? 0 }}
+        seeds={seeds}
+        item={previewItem}
+        owned={previewOwned}
+        affordable={previewAffordable}
+        busy={previewItem !== null && busyKey === previewItem.key}
+        onClear={() => setPreviewKey(null)}
+        onBuy={buy}
+        onEquip={equip}
+      />
 
         <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
       <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>{copy.filters[entry]}</button>)}</div>
@@ -203,44 +217,24 @@ export default function ShopGrid({
           <section aria-label={copy.categories[category]}>
             <div className="pm-shop-grid">
               {shownItems.map((item) => {
-                  const owned = ownedRow(item.key);
-                  const affordable = seeds >= item.price;
+                  const isPreviewed = previewKey === item.key;
                   return (
-                    <article key={item.key} className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}`} aria-busy={busyKey === item.key}>
+                    <article
+                      key={item.key}
+                      className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}`}
+                      aria-busy={busyKey === item.key}
+                      // Tapping the card selects it into the try-on stage
+                      // above — buy/equip live exclusively on that stage now
+                      // (single coherent purchase surface). The eye button
+                      // below stays the keyboard-operable, independently
+                      // toggling control for the same selection.
+                      onClick={() => setPreviewKey(item.key)}
+                    >
                       <span className="pm-shop-emoji" aria-hidden="true">{item.emoji}</span>
                       <h3>{item.name}</h3>
                       <p>{item.blurb}</p>
                       {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
-                      <button type="button" className={`pm-shop-preview-btn${previewKey === item.key ? " is-active" : ""}`} onClick={() => setPreviewKey(previewKey === item.key ? null : item.key)}>{previewKey === item.key ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
-                      {owned ? (
-                        <>
-                          <span className="pm-shop-owned">
-                            {owned.equipped ? `✓ ${copy.equipped}` : `✓ ${copy.owned}`}
-                          </span>
-                          {item.category !== "decor" && (
-                            <button
-                              type="button"
-                              className="pm-btn"
-                              disabled={busyKey !== null}
-                              onClick={() => equip(item, !owned.equipped)}
-                            >
-                              {owned.equipped ? copy.unequip : copy.equip}
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          {!affordable && <small className="pm-shop-short">{item.price - seeds} {copy.needMore}</small>}
-                          <button
-                            type="button"
-                            className="pm-btn pm-btn-primary"
-                            disabled={busyKey !== null || !affordable}
-                            onClick={(event) => buy(item, event.currentTarget)}
-                          >
-                            {copy.buy} · {item.price}
-                          </button>
-                        </>
-                      )}
+                      <button type="button" className={`pm-shop-preview-btn${isPreviewed ? " is-active" : ""}`} onClick={(event) => { event.stopPropagation(); setPreviewKey(isPreviewed ? null : item.key); }}>{isPreviewed ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
                     </article>
                   );
                 })}
