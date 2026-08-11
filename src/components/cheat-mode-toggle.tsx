@@ -58,6 +58,7 @@ export default function CheatModeToggle({
     // be a full document load, not router.push: main() in public/farm/live.js
     // checks PMCheat.isActive() once at bootstrap, so a client-side transition
     // would leave the farm shell still wired to Supabase.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload is load-bearing here (see above)
     window.location.href = "/";
   }
 
