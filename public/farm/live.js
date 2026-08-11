@@ -214,6 +214,103 @@ const MOOD_FACE = { Happy: "face-happy", Overheating: "face-hot", TooCold: "face
 const MOOD_TILE_KIND = { Overheating: "temp", TooCold: "temp", DryAir: "hum", HumidAir: "hum", Sleepy: "light", SoilAcidic: "ph", SoilAlkaline: "ph" };
 const MOOD_TILE_COLOR = { Overheating: "#e2643c", TooCold: "#7fb8d6", DryAir: "#e2a23c", HumidAir: "#6fa89c", Sleepy: "#6f6ac2", SoilAcidic: "#8fae3f", SoilAlkaline: "#c2618a" };
 
+// ── "This one is moving" emphasis on the vitals tiles ───────────────────
+// A care action in the demo sandbox changes a reading, and the tile that
+// answered has to be findable at a glance from the back of a classroom.
+//
+// Deliberately NOT another blink: .is-mood-pulse already blinks a tile when
+// its reading is out of comfort, and a second blink would make both
+// meaningless — you could no longer tell "this is wrong" from "this is
+// moving". These use three channels that were free, all steady rather than
+// flashing, so a value easing for ten seconds looks calm instead of strobing:
+//   · a trail on the gauge from where the value started to where it is now
+//   · a chip with the running total change (▲ +2.4°C)
+//   · a steady glow on the card border
+//
+// One "episode" spans a whole movement: it begins on the first meaningful
+// change, keeps its starting point while the value keeps moving, and ends
+// after ~700ms of quiet. So a held toggle shows the total journey, and a
+// single press shows its one step.
+
+/** Smallest change worth shouting about, per tile — keeps a real sensor's
+ *  jitter from lighting the board up every ten seconds. */
+const VITAL_EMPHASIS_EPSILON = { temp: 0.2, hum: 1, light: 2, ph: 0.05 };
+const VITAL_EMPHASIS_UNIT = { temp: "°C", hum: "%", light: "%", ph: "" };
+const VITAL_EMPHASIS_DECIMALS = { temp: 1, hum: 0, light: 0, ph: 1 };
+const VITAL_EMPHASIS_END_MS = 700;
+const vitalEpisode = {}; // kind -> { base, baseLeft, last, timer }
+
+function formatVitalDelta(kind, delta) {
+  const digits = VITAL_EMPHASIS_DECIMALS[kind] ?? 1;
+  const arrow = delta > 0 ? "▲" : "▼";
+  return `${arrow} ${delta > 0 ? "+" : "−"}${Math.abs(delta).toFixed(digits)}${VITAL_EMPHASIS_UNIT[kind] ?? ""}`;
+}
+
+function endVitalEpisode(kind) {
+  const card = $(`[data-vital="${kind}"]`);
+  delete vitalEpisode[kind];
+  if (!card) return;
+  card.classList.remove("is-changing");
+  card.querySelector(".env-hud-delta")?.remove();
+  const trail = card.querySelector(".env-gauge-trail");
+  if (trail) trail.hidden = true;
+}
+
+/**
+ * Mark `kind` as moving. `fromLeft`/`toLeft` are the gauge marker's position
+ * before and after this update, in percent — taken from the marker itself so
+ * the trail never needs its own copy of the domain maths.
+ */
+function emphasiseVital(kind, value, fromLeft, toLeft) {
+  const card = $(`[data-vital="${kind}"]`);
+  if (!card || !Number.isFinite(value)) return;
+  const episode = vitalEpisode[kind];
+  const epsilon = VITAL_EMPHASIS_EPSILON[kind] ?? 0.1;
+  if (!episode) {
+    // Nothing to compare against yet: remember this reading and stay quiet.
+    vitalEpisode[kind] = { base: value, baseLeft: fromLeft, last: value, timer: null, live: false };
+    return;
+  }
+  if (Math.abs(value - episode.last) < epsilon) return; // jitter, or settled
+  episode.last = value;
+  if (!episode.live) {
+    // First real movement — this is where the journey started.
+    episode.live = true;
+    episode.base = episode.base ?? value;
+    episode.baseLeft = Number.isFinite(fromLeft) ? fromLeft : toLeft;
+  }
+
+  card.classList.add("is-changing");
+
+  const delta = value - episode.base;
+  let chip = card.querySelector(".env-hud-delta");
+  if (!chip) {
+    chip = document.createElement("b");
+    chip.className = "env-hud-delta";
+    card.appendChild(chip);
+  }
+  chip.textContent = formatVitalDelta(kind, delta);
+  chip.classList.toggle("is-down", delta < 0);
+
+  const gauge = card.querySelector(".env-gauge");
+  if (gauge && Number.isFinite(episode.baseLeft) && Number.isFinite(toLeft)) {
+    let trail = gauge.querySelector(".env-gauge-trail");
+    if (!trail) {
+      trail = document.createElement("i");
+      trail.className = "env-gauge-trail";
+      gauge.appendChild(trail);
+    }
+    const from = Math.max(0, Math.min(100, episode.baseLeft));
+    const to = Math.max(0, Math.min(100, toLeft));
+    trail.style.left = `${Math.min(from, to)}%`;
+    trail.style.width = `${Math.abs(to - from)}%`;
+    trail.hidden = false;
+  }
+
+  if (episode.timer) clearTimeout(episode.timer);
+  episode.timer = setTimeout(() => endVitalEpisode(kind), VITAL_EMPHASIS_END_MS);
+}
+
 /** Pulses the one env-hud-card matching `mood` (mascot's real mood) in that
  *  mood's color; clears the pulse from every other tile. Happy (or any mood
  *  with no tile mapping) clears all four — nothing pulses while comfortable. */
@@ -5272,7 +5369,13 @@ function renderSensors(reading) {
   const updateHud = (kind, value, status, alert) => {
     const card = $(`[data-vital="${kind}"]`);
     if (!card) return;
+    // Read the marker before and after so the movement trail can reuse
+    // renderGauge's own domain maths instead of repeating it.
+    const marker = card.querySelector(".env-gauge-marker");
+    const beforeLeft = marker && !marker.hidden ? Number.parseFloat(marker.style.left) : NaN;
     renderGauge(kind, value, cropProfile);
+    const afterLeft = marker ? Number.parseFloat(marker.style.left) : NaN;
+    emphasiseVital(kind, value, beforeLeft, afterLeft);
     card.classList.toggle("is-alert", alert);
     card.classList.toggle("is-stale", staleText != null);
     const label = card.querySelector(".env-status");

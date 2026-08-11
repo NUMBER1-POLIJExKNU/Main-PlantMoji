@@ -111,6 +111,55 @@ describe("both panels render one list", () => {
   });
 });
 
+describe("the tile that moved is findable at a glance", () => {
+  it("never adds a second blink, because the mood pulse already owns that", () => {
+    // .is-mood-pulse blinks a tile whose reading is out of comfort. A second
+    // blink for "this is moving" would make both unreadable, and would strobe
+    // four times a second under a held toggle.
+    expect(css).toContain(".env-hud-card.is-mood-pulse::after");
+    const start = css.indexOf(".env-hud-card.is-changing {");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const block = css.slice(start, css.indexOf("}", start));
+    expect(block).not.toContain("animation");
+    expect(css).not.toMatch(/\.env-gauge-trail \{[^}]*animation/);
+  });
+
+  it("marks the move on all three agreed channels", () => {
+    expect(live).toContain("function emphasiseVital(kind, value, fromLeft, toLeft)");
+    expect(css).toContain(".env-gauge-trail {"); // (A) where it came from
+    expect(live).toContain('chip.className = "env-hud-delta"'); // (B) how far
+    expect(live).toContain('card.classList.add("is-changing")'); // (C) which tile
+  });
+
+  it("colours each channel from the tile's own accent", () => {
+    for (const selector of [".env-gauge-trail", ".env-hud-delta", ".env-hud-card.is-changing"]) {
+      const start = css.indexOf(`${selector} {`);
+      expect(start, `${selector} must exist`).toBeGreaterThanOrEqual(0);
+      expect(css.slice(start, css.indexOf("}", start))).toContain("--hud-accent");
+    }
+  });
+
+  it("spans one whole movement rather than one tick", () => {
+    // A held toggle eases the value every quarter second; the chip must read
+    // the total change since the press, and the trail must span the journey.
+    expect(live).toContain("const delta = value - episode.base;");
+    expect(live).toContain("episode.baseLeft = Number.isFinite(fromLeft) ? fromLeft : toLeft;");
+    expect(live).toContain("episode.timer = setTimeout(() => endVitalEpisode(kind), VITAL_EMPHASIS_END_MS);");
+  });
+
+  it("stays quiet for sensor jitter", () => {
+    // Otherwise a real reading would light the board up every ten seconds.
+    expect(live).toContain("const VITAL_EMPHASIS_EPSILON = { temp: 0.2, hum: 1, light: 2, ph: 0.05 };");
+    expect(live).toContain("if (Math.abs(value - episode.last) < epsilon) return;");
+  });
+
+  it("reuses renderGauge's domain maths instead of repeating it", () => {
+    // The trail's endpoints come from the marker the gauge already positioned.
+    expect(live).toContain("const beforeLeft = marker && !marker.hidden ? Number.parseFloat(marker.style.left) : NaN;");
+    expect(live).toContain("emphasiseVital(kind, value, beforeLeft, afterLeft);");
+  });
+});
+
 describe("care actions stay physically possible", () => {
   it("clamps to the same range the real ingest endpoint accepts", () => {
     const start = store.indexOf("var VITAL_LIMITS = {");

@@ -532,6 +532,47 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .env-gauge-marker { position:absolute; top:-3px; width:3px; height:15px; background:var(--color-outline); transform:translateX(-50%); pointer-events:none; }
 .env-gauge-marker[hidden] { display:none; }
 
+/* ── "This tile is moving" emphasis (live.js emphasiseVital) ──────────────
+   Three steady channels, never a blink: .is-mood-pulse already blinks a tile
+   whose reading is out of comfort, and a second blink would make both
+   unreadable. Steady also survives a value that eases for ten seconds under a
+   held care action, where a one-shot flash would restart four times a second.
+   All three take the tile's own --hud-accent, so temperature reads warm,
+   humidity blue, light amber and pH green without a second palette. */
+
+/* (A) Where the value came from, drawn along the gauge it moved on. */
+.env-gauge-trail {
+    position:absolute; top:0; height:100%;
+    border-radius:2px;
+    background:color-mix(in srgb,var(--hud-accent) 70%,white);
+    box-shadow:0 0 0 1px var(--hud-accent) inset;
+    pointer-events:none;
+}
+.env-gauge-trail[hidden] { display:none; }
+
+/* (B) How far it has moved, as a number — the lesson, not just a colour. */
+.env-hud-delta {
+    position:absolute; top:6px; right:7px;
+    padding:1px 5px;
+    border:2px solid var(--hud-accent);
+    border-radius:7px;
+    background:color-mix(in srgb,var(--hud-accent) 22%,white);
+    color:var(--color-text);
+    font:700 9px/1.35 var(--font-heading,ui-monospace,monospace);
+    white-space:nowrap;
+    pointer-events:none;
+}
+
+/* (C) Which tile answered, readable from the back of the room. */
+.env-hud-card.is-changing {
+    border-color:var(--hud-accent);
+    box-shadow:0 4px 0 var(--color-outline), 0 0 0 3px color-mix(in srgb,var(--hud-accent) 45%,transparent);
+}
+@media (prefers-reduced-motion:no-preference) {
+    .env-gauge-trail, .env-hud-delta { transition:opacity .2s ease; }
+    .env-hud-card.is-changing { transition:box-shadow .18s ease, border-color .18s ease; }
+}
+
 /* Out-of-comfort pulse: driven by live.js's applyMoodPulse(mood) — the SAME
    mood the mascot face reads, never a client re-derivation from thresholds.
    Opacity-only (compositor animation); reduced motion keeps the tint static. */
