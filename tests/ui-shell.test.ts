@@ -177,6 +177,20 @@ describe("shared PlantMoji application shell", () => {
       expect(devActions).toContain(`export async function ${action}`);
     }
     expect(devActions).toContain("const { locale, error } = await authorise(formData);");
+
+    // One mode at a time. The cheat sandbox fakes what developer mode really
+    // writes, so having both on would show numbers that disagree with the rows
+    // behind them. Enforced at both doors AND on the panel itself, since the
+    // panel is reachable by typing the URL.
+    const devPanel = source("src/components/dev-mode-panel.tsx");
+    const cheatToggle = source("src/components/cheat-mode-toggle.tsx");
+    expect(devToggle).toContain("window.PMCheat?.deactivate()");
+    expect(devPanel).toContain("window.PMCheat?.deactivate()");
+    expect(cheatToggle).toContain('sessionStorage.removeItem("pm_dev_code")');
+    // And a way out that does not involve editing the URL.
+    expect(devPanel).toContain("function leave()");
+    expect(devPanel).toContain("sessionStorage.removeItem(DEV_CODE_STORAGE_KEY)");
+    expect(devPanel).toContain('router.push("/settings")');
     expect(controls).toContain("prepareDemoLevelUp");
     expect(controls).toContain("grantDemoXp");
     expect(controls).toContain("evolveDemoCompanion");

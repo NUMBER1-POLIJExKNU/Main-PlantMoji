@@ -12,6 +12,7 @@
 // sandbox; a developer editing them here would be writing fake readings into
 // the real history.
 
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import {
   devSetBadge,
@@ -23,6 +24,7 @@ import {
   type DevActionState,
 } from "@/app/settings/dev-actions";
 import { DEV_CODE_STORAGE_KEY } from "@/components/dev-mode-toggle";
+import "@/lib/pm-cheat"; // window.PMCheat global typing
 import type { AppLocale } from "@/lib/i18n";
 
 const INITIAL: DevActionState = { status: "idle", message: "" };
@@ -107,6 +109,7 @@ export default function DevModePanel({
   quests: readonly { key: string; title: string }[];
   shopItems: readonly DevShopItem[];
 }) {
+  const router = useRouter();
   const [code, setCode] = useState("");
   // Carried over from the door on the Settings page so it is not typed twice.
   // Every action still sends it back for a server-side check — arriving here
@@ -122,9 +125,18 @@ export default function DevModePanel({
         const saved = sessionStorage.getItem(DEV_CODE_STORAGE_KEY);
         if (saved) setCode(saved);
       } catch {}
+      // One mode at a time, enforced here too and not only at the door — this
+      // panel is reachable by typing the URL, and the cheat sandbox would sit
+      // on top of it showing numbers that disagree with the rows below.
+      try { window.PMCheat?.deactivate(); } catch {}
     });
     return () => { cancelled = true; };
   }, []);
+
+  function leave() {
+    try { sessionStorage.removeItem(DEV_CODE_STORAGE_KEY); } catch {}
+    router.push("/settings");
+  }
   const [progressState, progressAction] = useActionState(devSetProgress, INITIAL);
   const [questState, questAction] = useActionState(devSetQuest, INITIAL);
   const [moodState, moodAction] = useActionState(devSetMood, INITIAL);
@@ -139,9 +151,17 @@ export default function DevModePanel({
 
   return (
     <section className="mt-5 rounded-[16px] border-[3px] border-zinc-700 bg-zinc-50 p-5 dark:bg-zinc-900">
-      <h2 className="pm-heading text-xs">🛠️ DEVELOPER MODE</h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="pm-heading text-xs">🛠️ DEVELOPER MODE</h2>
+        {/* The way out. Clears the session code and drops back to plain
+            Settings — without it the only exit was editing the URL. */}
+        <button type="button" onClick={leave} className={`${BTN} shrink-0 border-zinc-700`}>
+          {locale === "id" ? "Keluar ✕" : "Exit ✕"}
+        </button>
+      </div>
       <p className="mt-1 text-[11px] leading-4 text-red-700 dark:text-red-400">
         Writes real data. Changes persist into normal mode. Sensor values are not editable here.
+        Cheat Mode is switched off while this is open — one mode at a time.
       </p>
 
       <label className="mt-3 flex flex-col gap-1">

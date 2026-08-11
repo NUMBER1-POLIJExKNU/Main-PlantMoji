@@ -13,6 +13,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { verifyDevCode } from "@/app/settings/dev-actions";
+import "@/lib/pm-cheat"; // window.PMCheat global typing
 import type { AppLocale } from "@/lib/i18n";
 
 export const DEV_CODE_STORAGE_KEY = "pm_dev_code";
@@ -51,6 +52,10 @@ export default function DevModeToggle({ locale }: { locale: AppLocale }) {
       setError(true);
       return;
     }
+    // One mode at a time. The cheat sandbox fakes what developer mode really
+    // writes, so together they would show numbers that disagree with the rows
+    // behind them — entering here switches the sandbox off.
+    try { window.PMCheat?.deactivate(); } catch {}
     // Hand the verified code to the panel so it is not typed twice. Session
     // storage, so closing the tab closes the door again.
     try { sessionStorage.setItem(DEV_CODE_STORAGE_KEY, code); } catch {}

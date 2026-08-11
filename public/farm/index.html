@@ -207,6 +207,28 @@
 
                 <!-- Mascot -->
                 <div class="mascot-container">
+                    <!-- Bond / XP / HP / Streak. Lives in the headroom ABOVE
+                         Jamkachu and above the speech bubble: on the right-hand
+                         stack it was a whole screen away from the character it
+                         describes. Identity diet: the old pixel CAT avatar and
+                         the duplicate name line are gone — #char-name under the
+                         mascot is the single name owner; the .username slot
+                         carries only the bond-level label ("Ikatan Lv.3"). -->
+                    <div class="user-gamification panel-glass">
+                        <span class="hud-section-label" data-i18n="hud.status">STATUS JAMKACHU</span>
+                        <div class="user-details">
+                            <span class="username">Ikatan Lv.1</span>
+                            <div class="xp-row">
+                                <div class="xp-bar-wrap"><div class="xp-bar" style="width: 0%;"></div></div>
+                                <span id="hp-inline">HP --</span>
+                            </div>
+                        </div>
+                        <div class="badges">
+                            <div class="badge coin"><i class="icon">⭐</i> -- XP</div>
+                            <div class="badge streak"><i class="icon">🔥</i> -- Days</div>
+                            <div class="badge seeds" hidden><i class="icon">🌰</i> <span data-seed-num>0</span> <span data-seed-label>Benih</span></div>
+                        </div>
+                    </div>
                     <div class="speech-bubble animated-bounce">
                         "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
                     </div>
@@ -394,26 +416,6 @@
                     <p id="env-waiting-note" class="env-waiting-note" hidden></p>
                 </section>
 
-                <!-- Bond / XP / HP / Streak (character state, moved down from
-                     hud-top). Identity diet: the old pixel CAT avatar and the
-                     duplicate name line are gone — #char-name under the mascot
-                     is the single name owner; the .username slot now carries
-                     only the bond-level label ("Ikatan Lv.3") above the bar. -->
-                <div class="user-gamification panel-glass">
-                    <span class="hud-section-label" data-i18n="hud.status">STATUS JAMKACHU</span>
-                    <div class="user-details">
-                        <span class="username">Ikatan Lv.1</span>
-                        <div class="xp-row">
-                            <div class="xp-bar-wrap"><div class="xp-bar" style="width: 0%;"></div></div>
-                            <span id="hp-inline">HP --</span>
-                        </div>
-                    </div>
-                    <div class="badges">
-                        <div class="badge coin"><i class="icon">⭐</i> -- XP</div>
-                        <div class="badge streak"><i class="icon">🔥</i> -- Days</div>
-                        <div class="badge seeds" hidden><i class="icon">🌰</i> <span data-seed-num>0</span> <span data-seed-label>Benih</span></div>
-                    </div>
-                </div>
 
                 <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
                     <span aria-hidden="true">🧠</span>

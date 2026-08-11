@@ -746,6 +746,27 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     pointer-events: auto;
 }
 
+/* Status panel in the headroom above Jamkachu (index.html moved it out of the
+   right-hand .home-stack, where it sat a screen away from the character it
+   describes). It is the first child of the flex column, so it stacks ABOVE the
+   speech bubble in normal flow — the two can never overlap at any width, which
+   no amount of absolute positioning would have guaranteed. Only the sizing is
+   restated here; the panel keeps every class live.js writes into. */
+.mascot-container > .user-gamification {
+    width: auto;
+    max-width: min(420px, 100%);
+    margin-bottom: 10px;
+    gap: 6px 14px;
+    justify-content: center;
+    padding: 8px 14px;
+}
+.mascot-container > .user-gamification > .hud-section-label { text-align: center; }
+.mascot-container > .user-gamification .user-details { flex: 0 1 auto; align-items: center; }
+.mascot-container > .user-gamification .badges { justify-content: center; }
+/* The bar is the only greedy child; without a cap it stretches the panel to
+   the full stage width and stops reading as a card over the plant. */
+.mascot-container > .user-gamification .xp-bar-wrap { width: 150px; }
+
 /* Character identity: big name + mood word under the mascot (spec §2.2) */
 .char-id {
     text-align: center;

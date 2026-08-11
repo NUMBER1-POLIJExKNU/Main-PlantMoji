@@ -53,6 +53,9 @@ export default function CheatModeToggle({
   function handleActivate() {
     const api = window.PMCheat;
     if (!api) return;
+    // One mode at a time: developer mode writes the real rows this sandbox
+    // only pretends to change, so entering the sandbox closes that door.
+    try { sessionStorage.removeItem("pm_dev_code"); } catch {}
     api.activate({ status: { ...(seed ?? {}) } });
     // Land on My Garden so the class immediately sees the sandbox. This has to
     // be a full document load, not router.push: main() in public/farm/live.js
