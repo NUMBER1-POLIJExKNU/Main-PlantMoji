@@ -10,6 +10,9 @@ import QuestCelebration from "@/components/quest-celebration";
 import QuestDonePill from "@/components/quest-done-pill";
 import QuestProgress from "@/components/quest-progress";
 import CheatQuestPanel, { type CheatQuestItem } from "@/components/cheat-quest-panel";
+import QuestHeroStages from "@/components/quest-hero-stages";
+import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
+import { getPlant } from "@/lib/queries";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { getActiveQuests, getQuestHistory } from "@/game/quests/quest-engine";
@@ -70,12 +73,10 @@ const STATUS_PILL: Partial<Record<QuestStatus, { label: string; style: CSSProper
   },
 };
 
-function ActiveQuestCard({ quest, locale, featured = false }: { quest: QuestRow; locale: AppLocale; featured?: boolean }) {
+function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }: { quest: QuestRow; locale: AppLocale; featured?: boolean; cropProfile?: CropProfile | null }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
-  const currentStep = verifying ? 2 : 1;
-  const steps = locale === "id" ? ["RASAKAN", "BERTINDAK", "VERIFIKASI", "HADIAH"] : ["SENSE", "ACT", "VERIFY", "REWARD"];
   const target = def.verifyTemperatureMax != null ? `≤ ${def.verifyTemperatureMax}°C`
     : def.verifyHumidityMin != null ? `≥ ${def.verifyHumidityMin}% RH`
       : def.verifyPhRange ? `pH ${def.verifyPhRange.min}–${def.verifyPhRange.max}`
@@ -103,14 +104,20 @@ function ActiveQuestCard({ quest, locale, featured = false }: { quest: QuestRow;
         </div>
       </div>
 
-      {featured && <div className="pm-quest-companion"><div className={`pm-quest-jam${verifying ? " is-watching" : ""}`} aria-hidden="true"><i /><i /></div><p>{verifying ? (locale === "id" ? "Aku sedang melihat sensornya… pertahankan sebentar lagi!" : "I'm watching the sensors… keep it steady a little longer!") : (locale === "id" ? "Kita lakukan bersama, ya! Setelah itu sensor akan memeriksanya." : "Let's do this together! Then the sensors will check our work.")}</p></div>}
-      {featured && <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>
-        {steps.map((step, index) => <li key={step} className={index < currentStep ? "is-done" : index === currentStep ? "is-current" : ""}><span>{index < currentStep ? "✓" : index + 1}</span><small>{step}</small></li>)}
-      </ol>}
-      {featured && <div className="pm-quest-action-well">
-        <div><small>{verifying ? (locale === "id" ? "SENSOR SEDANG MEMERIKSA" : "SENSOR CHECK") : (locale === "id" ? "YANG HARUS DILAKUKAN" : "WHAT TO DO")}</small><strong>{verifying ? (locale === "id" ? "Pertahankan kondisi ini" : "Keep this condition steady") : localized.description}</strong></div>
-        <div className="pm-quest-target"><small>TARGET</small><strong>{target}</strong></div>
-      </div>}
+      {/* Stage row + its copy live in a client island: the cheat sandbox drives
+          them off the board and the sensor editor, since the Supabase quest row
+          they otherwise read can never move during a classroom demo. With the
+          sandbox off it renders the real status, exactly as before. */}
+      {featured && (
+        <QuestHeroStages
+          questKey={quest.quest_key}
+          questStatus={verifying ? "VERIFYING" : quest.status}
+          locale={locale}
+          description={localized.description}
+          target={target}
+          cropProfile={cropProfile}
+        />
+      )}
 
       {quest.status === "ACTIVE" && def.kind === "maintain" && (
         <QuestProgress
@@ -272,13 +279,23 @@ export default async function QuestsPage() {
   // the next navigation surface its completions.
   maybeScheduleGameTick(PLANT_ID);
 
+  // The active crop profile carries the thresholds the engine verifies against
+  // (same source as /monitoring). The hero card hands it to the client island
+  // so a sandbox sensor edit is judged by the plant's real numbers, not a
+  // default. Never fatal: null falls back to the default profile.
+  let cropProfile: CropProfile | null = null;
+
   let active: QuestRow[];
   let history: QuestRow[];
   try {
-    [active, history] = await Promise.all([
+    const [quests, past, plant] = await Promise.all([
       getActiveQuests(supabase, PLANT_ID),
       getQuestHistory(supabase, PLANT_ID, 20),
+      getPlant(supabase, PLANT_ID).catch(() => null),
     ]);
+    active = quests;
+    history = past;
+    if (plant?.status === "ok") cropProfile = getCropProfile(plant.plant.crop_profile_key ?? null);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
@@ -355,7 +372,7 @@ export default async function QuestsPage() {
             </p>
           </div>
         ) : (
-          active.map((quest, index) => <ActiveQuestCard key={quest.id} quest={quest} locale={locale} featured={index === 0} />)
+          active.map((quest, index) => <ActiveQuestCard key={quest.id} quest={quest} locale={locale} featured={index === 0} cropProfile={cropProfile} />)
         )}
       </section>
 

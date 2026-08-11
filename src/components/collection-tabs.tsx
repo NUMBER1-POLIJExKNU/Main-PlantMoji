@@ -211,6 +211,20 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const [wisdomAnswer, setWisdomAnswer] = useState<number | null>(null);
   const [selectedChapterNumber, setSelectedChapterNumber] = useState(() => [...chapters].reverse().find((chapter) => chapter.unlocked)?.chapter ?? chapters[0]?.chapter ?? 1);
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const previewRef = useRef<HTMLElement | null>(null);
+
+  // The reward pop renders once, directly under the tab bar — but the buttons
+  // that fire it sit at the BOTTOM of their section (Story's "Play scene" is
+  // below the chapter map AND the chapter card). Landing off-screen above, the
+  // click read as a dead button. Bring the pop to the reader rather than
+  // moving it, so all three trigger sites keep sharing one slot.
+  useEffect(() => {
+    if (!preview || previewPulse === 0) return;
+    const node = previewRef.current;
+    if (!node) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    node.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  }, [preview, previewPulse]);
 
   useEffect(() => {
     // Degrades gracefully: without Supabase env the collection stays static.
@@ -394,7 +408,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
       </div>
 
       {preview && (
-        <section key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
+        <section ref={previewRef} key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
           <div className="relative mx-auto mt-2 grid size-24 place-items-center overflow-hidden rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
             <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
             {Array.from({ length: 9 }, (_, index) => (

@@ -4,10 +4,13 @@ import { describe, expect, it } from "vitest";
 
 const page = readFileSync(resolve(process.cwd(), "src/app/quests/page.tsx"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+// The hero card's stage row and its copy moved into a client island so the
+// classroom sandbox can drive them; the page still owns the target line.
+const heroStages = readFileSync(resolve(process.cwd(), "src/components/quest-hero-stages.tsx"), "utf8");
 
 describe("Quest game UI", () => {
   it("shows the deterministic care loop and engine-owned targets", () => {
-    expect(page).toContain('["SENSE", "ACT", "VERIFY", "REWARD"]');
+    expect(heroStages).toContain('["SENSE", "ACT", "VERIFY", "REWARD"]');
     expect(page).toContain("def.verifyTemperatureMax");
     expect(page).toContain("def.verifyHumidityMin");
     expect(page).toContain("def.verifyPhRange");
@@ -18,7 +21,7 @@ describe("Quest game UI", () => {
     expect(page).toContain("history.slice(0, 3)");
     expect(css).toContain(".pm-quest-hero");
     expect(page).toContain("featured={index === 0}");
-    expect(page).toContain("I'm watching the sensors");
+    expect(heroStages).toContain("I'm watching the sensors");
     expect(css).toContain(".pm-quest-jam");
   });
 });
