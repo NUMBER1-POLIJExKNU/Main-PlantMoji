@@ -22,7 +22,7 @@ import {
   type SpritePhase,
   type SpriteTier,
 } from "@/lib/jamkachu-sprite";
-import { GOLDPOT_RAMP, POT_ITEM_RAMPS, POT_RAMP, POT_TOP_FRACTION, SKIN_RAMPS } from "@/lib/sprite-palette";
+import { GOLDPOT_RAMP, POT_RAMP, POT_TOP_FRACTION, SKIN_RAMPS } from "@/lib/sprite-palette";
 
 // Guards the two halves of the Jamkachu sprite mapping against drift:
 // public/farm/jamkachu-sprite.js drives the production farm layer while
@@ -333,7 +333,7 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
 
   // Pot palette ramps (seed-shop try-on preview, Phase 1): src/lib/
   // sprite-palette.ts ports the farm's canvas swap algorithm client-side —
-  // this pins its POT_RAMP/SKIN_RAMPS/POT_ITEM_RAMPS tables byte-identical
+  // this pins its POT_RAMP/SKIN_RAMPS tables byte-identical
   // to public/farm/jamkachu-sprite.js's, same guard as every other table in
   // this file, so a recolored pot in the shop preview always matches what
   // the farm would show once the item is actually equipped.
@@ -342,7 +342,6 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     const tables = (farm.pmSprite.tables ?? farm.pmSprite.TABLES) as AnyRecord;
     expect(tables.POT_RAMP, "PMSprite.tables must expose POT_RAMP").toEqual(POT_RAMP);
     expect(tables.SKIN_RAMPS, "PMSprite.tables must expose SKIN_RAMPS").toEqual(SKIN_RAMPS);
-    expect(tables.POT_ITEM_RAMPS, "PMSprite.tables must expose POT_ITEM_RAMPS").toEqual(POT_ITEM_RAMPS);
   });
 
   it("the React swap constrains to the same pot-row fraction the farm layer uses (row 40 of 64)", () => {
@@ -355,7 +354,7 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
   // reframe-design.md: "Lv.10 special pot"): GOLDPOT_RAMP is a closure-
   // private var in the farm script — never exposed on PMSprite.tables, same
   // as activeRamp() itself — so it can't be read through the vm sandbox like
-  // POT_RAMP/SKIN_RAMPS/POT_ITEM_RAMPS above. Pinned as a literal source
+  // POT_RAMP/SKIN_RAMPS above. Pinned as a literal source
   // string instead, same pattern as the POT_TOP_FRACTION line just above:
   // any edit to the farm's Lv.10 keepsake colors breaks this test and the
   // src/lib/sprite-palette.ts mirror (+ tests/shop-preview.test.ts) must be

@@ -159,12 +159,12 @@ export default async function ReportsPage() {
 
       {fallbackNarration && plantResult.status === "ok" && (
         <section aria-label="Plant's note" className="pm-report-jam-note mb-6">
-          {/* Report tone mirrors the next-goal logic: a heat-troubled week
-              gets the plain face, an easy week keeps the happy one. */}
+          {/* The report keeps Jamkachu encouraging; the note itself carries
+              the week's care context without swapping in a gloomy face. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
           <img
             className="pm-report-jamkachu"
-            src={spriteAssetPath(4, report.overheatingEvents > 0 ? "plain" : "happy", "", "2x")}
+            src={spriteAssetPath(4, "happy", "", "2x")}
             alt=""
             aria-hidden="true"
             draggable={false}

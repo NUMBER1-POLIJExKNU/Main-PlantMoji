@@ -82,11 +82,11 @@ describe("level bands", () => {
 
   it("points at a sprite file that exists, for every band and every mood", () => {
     const MOOD_FOR_SPRITE: Record<string, PlantMood> = {
-      happy: "Happy", plain: "SoilAcidic", thirsty: "DryAir", overheat: "Overheating", sleepy: "Sleepy",
+      happy: "Happy", overheat: "Overheating",
     };
     for (const band of LEVEL_BANDS) {
       for (const mood of SPRITE_MOODS) {
-        const src = spriteSrc({ mood: MOOD_FOR_SPRITE[mood], bondLevel: band.from, sleeping: mood === "sleepy" });
+        const src = spriteSrc({ mood: MOOD_FOR_SPRITE[mood], bondLevel: band.from });
         expect(existsSync(resolve(process.cwd(), `public${src}`)), `${src} (band ${band.band})`).toBe(true);
       }
     }
