@@ -12,6 +12,7 @@ import type { LightMode, LightPoint } from "@/components/light-chart";
 import type { AppLocale } from "@/lib/i18n";
 import { hasSufficientLight, LIGHT_PERCENT_MAX } from "@/lib/light-sensor";
 import type { CropProfile } from "@/lib/crop-profiles";
+import { useCheat } from "@/lib/pm-cheat";
 
 const REFRESH_MS = 10_000;
 
@@ -73,8 +74,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", idealRangesNote: "Ditampilkan sebagai pita hijau pada grafik di bawah." },
-  en: { live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", idealRangesNote: "Shown as the green band on the chart below." },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", idealRangesNote: "Ditampilkan sebagai pita hijau pada grafik di bawah." },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", idealRangesNote: "Shown as the green band on the chart below." },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string }) {
@@ -273,11 +274,22 @@ export default function MonitoringLive({
     [cropProfile],
   );
   const c = COPY[locale];
-  const temperature = num(latest?.temperature);
-  const humidity = num(latest?.humidity);
-  const soilPh = num(latest?.soil_ph);
-  const light = num(latest?.light);
-  const statusLabel = state === "ok" ? c.live : state === "loading" ? c.connecting : c.retrying;
+  // Classroom sandbox: the editor above this panel was writing to the store
+  // while these cards kept rendering the real feed and labelling it "Live
+  // reading", so a demo showed two different temperatures at once. When the
+  // sandbox owns the screen it owns these cards too. Client-only — nothing
+  // here reaches Supabase or hardware, and the fetch loop is left running so
+  // exiting the sandbox snaps straight back to the real numbers.
+  const { active: cheatActive, state: cheatState } = useCheat();
+  const demo = cheatActive && cheatState ? cheatState.vitals : null;
+  const temperature = demo ? demo.temperature : num(latest?.temperature);
+  const humidity = demo ? demo.humidity : num(latest?.humidity);
+  const soilPh = demo ? demo.soilPh : num(latest?.soil_ph);
+  const light = demo ? demo.light : num(latest?.light);
+  const readingNote = demo ? c.demoNote : undefined;
+  const statusLabel = demo
+    ? c.demo
+    : state === "ok" ? c.live : state === "loading" ? c.connecting : c.retrying;
 
   return (
     <div className="pm-monitor-dashboard">
@@ -300,10 +312,10 @@ export default function MonitoringLive({
       <div className="pm-monitor-intro"><div><span>📡</span><div><h2>{c.real}</h2><p>{c.intro}</p></div></div></div>
 
       <div className="pm-monitor-reading-grid">
-        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" note={temperature == null ? c.noSensor : undefined} />
-        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" note={humidity == null ? c.noSensor : undefined} />
-        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" note={soilPh == null ? c.noSensor : undefined} />
-        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" note={light == null ? c.noSensor : hasSufficientLight(light) ? c.sufficient : c.low} />
+        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" note={temperature == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" note={humidity == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" note={soilPh == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
       </div>
 
       {ranges && cropProfile && (

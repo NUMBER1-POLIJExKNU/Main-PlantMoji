@@ -3460,6 +3460,10 @@ function startFarmerDrag(event) {
   farmer.style.transform = "none";
   setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
   farmer.classList.remove("npc-walking", "npc-talking");
+  // moveFarmerDrag's preventDefault only starts after the 6px slop, so without
+  // this the first few pixels of every grab swept a text selection across the
+  // name/mood lines behind him and left them highlighted blue.
+  document.body?.classList.add("farmer-dragging");
   farmer.setPointerCapture?.(event.pointerId);
   farmerDrag = {
     id: event.pointerId, startX: event.clientX, startY: event.clientY,
@@ -3503,6 +3507,7 @@ async function endFarmerDrag(event) {
   if (farmerDragPleaTimer !== null) window.clearTimeout(farmerDragPleaTimer);
   farmerDragPleaTimer = null;
   farmer.releasePointerCapture?.(event.pointerId);
+  document.body?.classList.remove("farmer-dragging"); // before the early return below
   if (!drag.moved) {
     restartFarmerMotion();
     if (isNightWIB()) scheduleFarmerNightSleep();
@@ -5656,8 +5661,8 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
 /** Mood the sandbox shows for a sensor set — mirrors determinePlantMood's
@@ -5700,9 +5705,18 @@ function applyCheatFarm() {
     light: s.vitals.light,
     recorded_at: null,
   });
+  const mood = cheatMoodFor(s.vitals, cropProfile);
   if (typeof window.setMascotMood === "function") {
-    window.setMascotMood(cheatMoodFor(s.vitals, cropProfile));
+    window.setMascotMood(mood);
   }
+  // The bubble has to move with the face. Without this it kept whatever line
+  // the pre-sandbox page had fetched from /api/mood-message — which the demo
+  // branch never calls again — so Jamkachu could show an Overheating face over
+  // "I'm feeling so healthy!", in whichever locale that stale fetch used.
+  // moodBubble reads the local strings table, so it also follows appLocale.
+  // Same sleepShown guard as renderOfflineHome: a night visit owns the bubble.
+  const bubble = $(".speech-bubble");
+  if (bubble && !sleepShown) bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy);
 }
 
 function buildCheatPanel() {
@@ -5716,6 +5730,12 @@ function buildCheatPanel() {
   const field = (key, label, value, step, min, max) =>
     `<label class="pm-cheat-field"><span>${label}</span><input type="number" data-cheat="${key}" value="${value}" step="${step}"${min != null ? ` min="${min}"` : ""}${max != null ? ` max="${max}"` : ""}></label>`;
   panel.innerHTML =
+    // Collapse control: the panel is docked over the sky beside the mascot, but
+    // a presenter on a short screen still needs a way to clear it off the
+    // stage mid-demo without leaving the sandbox.
+    `<header class="pm-cheat-head"><strong>🎛️ ${L.panelTitle}</strong>` +
+    `<button type="button" data-cheat-collapse aria-expanded="true" aria-label="${L.collapse}" title="${L.collapse}">−</button></header>` +
+    `<div class="pm-cheat-body">` +
     `<div class="pm-cheat-group"><h3>🎛️ ${L.statusTitle}</h3>` +
     `<div class="pm-cheat-level"><span>${L.level}</span><button type="button" data-cheat-level="-1">−</button><output data-cheat-out="level">${s.status.level}</output><button type="button" data-cheat-level="1">+</button></div>` +
     field("totalXp", L.xp, s.status.totalXp, 1, 0) +
@@ -5728,8 +5748,19 @@ function buildCheatPanel() {
     field("light", L.light, s.vitals.light, 1, 0, 100) +
     field("soilPh", L.ph, s.vitals.soilPh, 0.1, 0, 14) +
     `</div>` +
-    `<p class="pm-cheat-hint">${L.hint}</p>`;
+    `<p class="pm-cheat-hint">${L.hint}</p>` +
+    `</div>`;
   document.body.appendChild(panel);
+
+  const collapseBtn = panel.querySelector("[data-cheat-collapse]");
+  collapseBtn?.addEventListener("click", () => {
+    const collapsed = panel.classList.toggle("is-collapsed");
+    collapseBtn.textContent = collapsed ? "+" : "−";
+    collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    const label = collapsed ? L.expand : L.collapse;
+    collapseBtn.setAttribute("aria-label", label);
+    collapseBtn.setAttribute("title", label);
+  });
 
   const STATUS_KEYS = { totalXp: 1, days: 1, seeds: 1 };
   panel.querySelectorAll("input[data-cheat]").forEach((input) => {

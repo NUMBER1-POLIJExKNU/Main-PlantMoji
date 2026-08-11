@@ -14,7 +14,11 @@ import { describe, expect, it } from "vitest";
 const farmHtml = readFileSync("public/farm/index.html", "utf8");
 const layout = readFileSync("src/app/layout.tsx", "utf8");
 const live = readFileSync("public/farm/live.js", "utf8");
+const css = readFileSync("public/farm/style.css", "utf8");
 const nextConfig = readFileSync("next.config.ts", "utf8");
+const monitoringLive = readFileSync("src/components/monitoring-live.tsx", "utf8");
+const activityBar = readFileSync("src/components/live-activity-bar.tsx", "utf8");
+const questsPage = readFileSync("src/app/quests/page.tsx", "utf8");
 
 describe("classroom cheat sandbox wiring", () => {
   it("loads cheat.js on the farm home, which does not run the React layout", () => {
@@ -48,5 +52,75 @@ describe("classroom cheat sandbox wiring", () => {
     expect(branch).toContain("initCheatFarm()");
     // The early return is what guarantees no client is ever created below.
     expect(branch).toMatch(/initCheatFarm\(\);\s*\n\s*return;/);
+  });
+});
+
+describe("the sandbox never shows demo and real numbers at once", () => {
+  // A presenter editing sensors saw the sandbox value in the editor and the
+  // real hardware reading in the cards right below it, both on screen.
+  it("drives the Monitoring reading cards from the sandbox while it is active", () => {
+    expect(monitoringLive).toContain('import { useCheat } from "@/lib/pm-cheat"');
+    expect(monitoringLive).toContain("const demo = cheatActive && cheatState ? cheatState.vitals : null");
+    for (const line of [
+      "const temperature = demo ? demo.temperature : num(latest?.temperature)",
+      "const humidity = demo ? demo.humidity : num(latest?.humidity)",
+      "const soilPh = demo ? demo.soilPh : num(latest?.soil_ph)",
+      "const light = demo ? demo.light : num(latest?.light)",
+    ]) {
+      expect(monitoringLive).toContain(line);
+    }
+    // ...and stops calling them live readings.
+    expect(monitoringLive).toContain("const readingNote = demo ? c.demoNote : undefined");
+    expect(monitoringLive).toContain("const statusLabel = demo");
+  });
+
+  it("mirrors the sandbox in the activity strip above every React route", () => {
+    expect(activityBar).toContain('import { useCheat } from "@/lib/pm-cheat"');
+    expect(activityBar).toContain("const demo = cheatActive && cheatState ? cheatState.vitals : null");
+    expect(activityBar).toContain('demo ? demo.temperature : latest?.temperature');
+    expect(activityBar).toContain('demo ? demo.soilPh : latest?.soil_ph');
+    expect(activityBar).toMatch(/const label = demo\s*\n\s*\?\s*\(locale === "id" \? "MODE CURANG" : "CHEAT MODE"\)/);
+  });
+
+  it("moves Jamkachu's speech bubble with the cheated mood", () => {
+    // Otherwise an Overheating face kept the stale pre-sandbox line, and in
+    // whatever locale that fetch had used.
+    const start = live.indexOf("function applyCheatFarm()");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const body = live.slice(start, start + 1400);
+    expect(body).toContain("const mood = cheatMoodFor(s.vitals, cropProfile)");
+    expect(body).toContain("bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy)");
+    expect(body).toContain("!sleepShown");
+  });
+});
+
+describe("the sandbox panel stays clear of what it is demonstrating", () => {
+  it("docks the editor away from the status card and vitals tiles", () => {
+    // Those live in the right-hand .home-stack — the whole point is watching
+    // them react, so the editor must not sit on top of them.
+    const start = css.indexOf("#pm-cheat-panel {");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const block = css.slice(start, css.indexOf("}", start));
+    expect(block).toContain("left: 268px");
+    expect(block).not.toContain("right:");
+  });
+
+  it("can be collapsed out of the way mid-demo", () => {
+    expect(live).toContain("data-cheat-collapse");
+    expect(live).toContain('panel.classList.toggle("is-collapsed")');
+    expect(css).toContain("#pm-cheat-panel.is-collapsed .pm-cheat-body { display: none; }");
+  });
+
+  it("becomes a bottom sheet once the sidebar column is gone", () => {
+    expect(css).toMatch(/@media \(max-width: 900px\) \{\s*\n\s*#pm-cheat-panel \{[^}]*bottom: 6px/);
+  });
+});
+
+describe("cheat quest board", () => {
+  it("separates the two quests that share the Balance My Soil title", () => {
+    // BALANCE_SOIL_ACIDIC and BALANCE_SOIL_ALKALINE both render at once on the
+    // board, unlike the player-facing cards where only the triggered one shows.
+    expect(questsPage).toContain("cheatTitleCounts");
+    expect(questsPage).toContain("`${title} · ${QUEST_DEFINITIONS[key].triggerMood}`");
   });
 });

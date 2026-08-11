@@ -1541,6 +1541,8 @@ body.env-hot .env-haze { opacity: 1; }
     image-rendering: pixelated;
     transform-origin: 50% 100%;
     transition: opacity 2s ease;
+    -webkit-user-select: none;
+    user-select: none;
     will-change: left, top, transform;
     opacity: 0;
     touch-action: none;
@@ -1607,6 +1609,15 @@ body.night.farmer-night-awake .npc-farmer-bed { display:none; }
     body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; }
 }
 .npc-farmer.npc-falling { pointer-events: none; }
+/* Carrying grandpa must not sweep a text selection across the name/mood lines
+   he passes over — moveFarmerDrag's preventDefault only kicks in after the 6px
+   slop, so the guard has to live on the document for the whole gesture.
+   live.js adds/removes .farmer-dragging in startFarmerDrag/endFarmerDrag. */
+body.farmer-dragging {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grabbing;
+}
 .npc-farmer.npc-grabbed {
     cursor: grabbing;
     z-index: 950;
@@ -2228,14 +2239,20 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 /* ── Classroom cheat sandbox panel (public/farm/cheat.js + live.js) ────────
    Fixed docked editor shown only while the sandbox is active. Client-only,
    display-driving; it never persists anything to a backend. Sits below the
-   fixed CHEAT MODE banner. */
+   fixed CHEAT MODE banner.
+
+   Docked LEFT, not right: the whole point of the panel is watching the status
+   card and the Garden Vitals tiles react to an edit, and both of those live in
+   the right-hand .home-stack — parking the editor on top of them hid the very
+   thing being demonstrated. The strip between the nav sidebar and the mascot
+   is empty sky, so it anchors there and grows upward from the bottom. */
 #pm-cheat-panel {
   position: fixed;
-  top: 44px;
-  right: 12px;
+  bottom: 12px;
+  left: 268px;
   z-index: 99998;
   width: 232px;
-  max-height: calc(100vh - 60px);
+  max-height: calc(100vh - 68px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -2248,6 +2265,33 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
   font: 500 12px/1.3 var(--font-body, system-ui, sans-serif);
   color: #3a2600;
 }
+#pm-cheat-panel .pm-cheat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font: 700 11px/1.2 var(--font-heading, ui-monospace, monospace);
+  letter-spacing: .04em;
+  color: #8A2B5B;
+}
+#pm-cheat-panel .pm-cheat-head button {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  cursor: pointer;
+  border: 2px solid #8A2B5B;
+  border-radius: 8px;
+  background: #FFD86B;
+  color: #3a2600;
+  font: 700 15px/1 ui-monospace, monospace;
+}
+#pm-cheat-panel .pm-cheat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#pm-cheat-panel.is-collapsed .pm-cheat-body { display: none; }
+#pm-cheat-panel.is-collapsed { width: auto; }
 #pm-cheat-panel .pm-cheat-group {
   display: flex;
   flex-direction: column;
@@ -2307,6 +2351,10 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
   line-height: 1.4;
   color: #7A5B12;
 }
-@media (max-width: 760px) {
-  #pm-cheat-panel { width: 190px; top: 40px; right: 6px; }
+/* Below the two-column breakpoint the sidebar collapses, so the sky strip the
+   panel docks into is gone — become a bottom sheet instead of covering the
+   stage. */
+@media (max-width: 900px) {
+  #pm-cheat-panel { left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 52vh; }
+  #pm-cheat-panel.is-collapsed { width: auto; }
 }

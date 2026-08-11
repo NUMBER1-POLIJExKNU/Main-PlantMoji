@@ -132,6 +132,18 @@ describe("Grandpa Tani living-world UI", () => {
     );
   });
 
+  it("does not sweep a text selection across the page while he is carried", () => {
+    // moveFarmerDrag only preventDefaults after the 6px slop, so the opening
+    // pixels of a grab used to highlight the name/mood lines behind him.
+    expect(live).toContain('document.body?.classList.add("farmer-dragging")');
+    expect(live).toContain('document.body?.classList.remove("farmer-dragging")');
+    // Removal must precede endFarmerDrag's !drag.moved early return, or a
+    // simple tap would leave the whole document unselectable.
+    expect(live).toMatch(/classList\.remove\("farmer-dragging"\);[\s\S]{0,120}if \(!drag\.moved\)/);
+    expect(css).toMatch(/body\.farmer-dragging \{[\s\S]*?user-select: none/);
+    expect(css).toMatch(/\.npc-farmer \{[\s\S]*?user-select: none/);
+  });
+
   it("moves the sun and moon along a WIB time-based sky arc", () => {
     expect(live).toContain('minute: "2-digit"');
     expect(live).toContain('celestial.style.setProperty("--celestial-x"');

@@ -290,12 +290,29 @@ export default async function QuestsPage() {
 
   // Cheat quest board (feature 4): localized titles for every quest so the
   // presenter can jump stages. Client panel self-hides unless the sandbox is on.
-  const cheatQuests: CheatQuestItem[] = (Object.keys(QUEST_DEFINITIONS) as QuestKey[]).map((key) => ({
-    key,
-    title: locale === "id" ? QUEST_COPY_ID[key].title : QUEST_DEFINITIONS[key].title,
-    emoji: QUEST_DEFINITIONS[key].emoji,
-    xp: QUEST_DEFINITIONS[key].xpReward,
-  }));
+  const cheatKeys = Object.keys(QUEST_DEFINITIONS) as QuestKey[];
+  const cheatTitleFor = (key: QuestKey) =>
+    locale === "id" ? QUEST_COPY_ID[key].title : QUEST_DEFINITIONS[key].title;
+  // BALANCE_SOIL_ACIDIC and BALANCE_SOIL_ALKALINE deliberately share the title
+  // "Balance My Soil" — a player only ever sees the one that triggered. The
+  // board lists ALL of them at once, so identical rows left the presenter
+  // guessing which was which; the trigger mood is what actually separates them.
+  const cheatTitleCounts = new Map<string, number>();
+  for (const key of cheatKeys) {
+    const title = cheatTitleFor(key);
+    cheatTitleCounts.set(title, (cheatTitleCounts.get(title) ?? 0) + 1);
+  }
+  const cheatQuests: CheatQuestItem[] = cheatKeys.map((key) => {
+    const title = cheatTitleFor(key);
+    return {
+      key,
+      title: (cheatTitleCounts.get(title) ?? 0) > 1
+        ? `${title} · ${QUEST_DEFINITIONS[key].triggerMood}`
+        : title,
+      emoji: QUEST_DEFINITIONS[key].emoji,
+      xp: QUEST_DEFINITIONS[key].xpReward,
+    };
+  });
 
   // Measure/padding come from the shell contract (.reno-route-content > main).
   return (
