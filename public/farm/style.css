@@ -977,6 +977,14 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    Bud/Bloom/Guardian. All art is inside the viewBox at rest, so nothing
    relies on clipping. */
 .mascot-svg { width: 100%; height: auto; overflow: visible; }
+.mascot-svg .crop-variant { display:none; pointer-events:none; }
+.mascot-svg.crop-strawberry .crop-form-strawberry,
+.mascot-svg.crop-blueberry .crop-form-blueberry,
+.mascot-svg.crop-soybean .crop-form-soybean,
+.mascot-svg.crop-cayenne-pepper .crop-form-cayenne-pepper { display:block; }
+.mascot-svg.crop-blueberry .animated-leaves { filter:saturate(.82) hue-rotate(12deg); }
+.mascot-svg.crop-soybean .animated-leaves { filter:saturate(.92) hue-rotate(28deg); }
+.mascot-svg.crop-cayenne-pepper .animated-leaves { filter:saturate(1.08) hue-rotate(-8deg); }
 .badge-tap-particle {
     position: fixed; z-index: 1005; pointer-events: none; font-size: 30px; line-height: 1;
     transform: translate(-50%,-50%); filter: drop-shadow(2px 3px 0 rgba(36,52,33,.24));

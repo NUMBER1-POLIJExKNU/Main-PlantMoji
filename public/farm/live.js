@@ -4499,6 +4499,12 @@ function upsertQuestRow(row) {
 
 function renderPlant(plant) {
   if (!plant) return;
+  const svg = $(".mascot-svg");
+  if (svg) {
+    for (const cls of [...svg.classList]) if (cls.startsWith("crop-")) svg.classList.remove(cls);
+    const cropKey = typeof plant.crop_profile_key === "string" && plant.crop_profile_key.trim() ? plant.crop_profile_key : "strawberry";
+    svg.classList.add(`crop-${cropKey}`);
+  }
   const mood = MOODS[plant.current_state] ?? MOODS.Happy;
   // DEV ADDITION (speech bubble — personality/AI voice): paint the local
   // template instantly, then ask /api/mood-message for the personalized line
@@ -5715,6 +5721,22 @@ function runFirstDayTour() {
   ]);
 }
 
+// Boot-resilience timeouts (flaky school networks stall instead of cleanly
+// failing, which a plain fetch/await never notices): every network call this
+// module makes on the critical boot path gets a hard cap so a stall can
+// never hang main() forever and leave renderOfflineHome() unreached.
+const SUPABASE_FETCH_TIMEOUT_MS = 10_000;
+
+/** Every request the Supabase client issues (queries + realtime handshakes)
+ *  routes through this so a stalled request against the project's origin
+ *  rejects instead of hanging, same rationale as CONFIG_FETCH_TIMEOUT_MS
+ *  below. Shared by both createClient call sites in loadSupabaseClient. */
+const supabaseClientOptions = {
+  global: {
+    fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS) }),
+  },
+};
+
 /** Build the Supabase client. Prefers the vendored UMD bundle (loaded via a
  *  <script> tag in index.html before this module, exposing
  *  window.supabase.createClient synchronously) so the page never depends on
@@ -5726,14 +5748,14 @@ function runFirstDayTour() {
 async function loadSupabaseClient(url, key) {
   try {
     if (typeof window.supabase?.createClient === "function") {
-      return window.supabase.createClient(url, key);
+      return window.supabase.createClient(url, key, supabaseClientOptions);
     }
   } catch {
     // Fall through to the CDN fallback below.
   }
   try {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    return createClient(url, key);
+    return createClient(url, key, supabaseClientOptions);
   } catch {
     return null;
   }
@@ -5769,6 +5791,7 @@ function renderOfflineHome() {
   // this early — prevCompanionStage is still null, so the evolution
   // ceremony's rank-increase check can never fire off a fabricated state.
   renderCompanion({ stage: "Seed" });
+  $(".mascot-svg")?.classList.add("crop-strawberry");
   // Sensor tiles: the same honest localized "waiting…" state a configured-
   // but-empty backend shows (renderSensorsWaiting), never raw "--".
   renderSensorsWaiting();
@@ -6016,6 +6039,66 @@ function initCheatFarm() {
   if (window.PMCheat) window.PMCheat.onChange(applyCheatFarm);
 }
 
+// Hard cap for the config fetch itself, plus short backoff delays for up to
+// two retries — a network STALL (never resolves, never rejects) is what
+// actually strands main() forever on flaky Wi-Fi; a clean fetch failure was
+// already caught below.
+const CONFIG_FETCH_TIMEOUT_MS = 6_000;
+const CONFIG_RETRY_DELAYS_MS = [750, 1_500];
+// How long to wait before the ONE retry of a stalled/thrown first refresh()
+// inside main() (below) — separate from the 15s poll's in-flight guard.
+const FIRST_REFRESH_RETRY_DELAY_MS = 2_000;
+// visibilitychange catch-up (below): only worth an extra refresh if the
+// last successful one is older than this — avoids a redundant refresh on
+// every tab-switch when the 15s poll is already current.
+const VISIBILITY_STALE_REFRESH_MS = 20_000;
+
+/** Rejects with a timeout error if `promise` doesn't settle within `ms`.
+ *  Used for the <head> preconnect script's already-in-flight config fetch
+ *  (window.__pmConfigPromise), which was started with a plain fetch() and
+ *  so has no AbortSignal to cancel directly — racing it here still keeps it
+ *  inside the same boot budget every other attempt respects. */
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+/** Fetch /api/public-config with a hard timeout and up to two short-backoff
+ *  retries (750ms, 1500ms). The first attempt reuses the index.html <head>
+ *  script's already-in-flight request (window.__pmConfigPromise) when
+ *  present — the whole point of starting that fetch before ~341KB of
+ *  classic scripts even parse — racing it against the same timeout; every
+ *  other attempt fetches directly with an AbortSignal. */
+async function fetchPublicConfig() {
+  let lastError;
+  for (let attempt = 0; attempt < 1 + CONFIG_RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, CONFIG_RETRY_DELAYS_MS[attempt - 1]));
+    }
+    try {
+      const response =
+        attempt === 0 && window.__pmConfigPromise
+          ? await withTimeout(window.__pmConfigPromise, CONFIG_FETCH_TIMEOUT_MS)
+          : await fetch("/api/public-config", { signal: AbortSignal.timeout(CONFIG_FETCH_TIMEOUT_MS) });
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
 async function main() {
   refreshWeather();
   setInterval(refreshWeather, 30 * 60_000);
@@ -6030,7 +6113,7 @@ async function main() {
   }
   let config;
   try {
-    config = await (await fetch("/api/public-config")).json();
+    config = await fetchPublicConfig();
   } catch {
     window.__pmSupabaseConfigured = false; // demo.js QA overlay reads this
     renderOfflineHome(); // no dev "--" leaks while offline
@@ -6057,8 +6140,30 @@ async function main() {
   window.__pmSupabaseConfigured = true;
 
   let plantName = null;
+  // In-flight guard (15s poll + realtime reconnect + visibility catch-up all
+  // call the SAME refresh()): a flaky network can make one refresh overrun
+  // its own 15s cadence, and without this a slow tick and the next timer
+  // fire would race each other against the DOM. Also doubles as the "last
+  // successful refresh" clock the visibilitychange catch-up below reads.
+  let refreshInFlight = false;
+  let lastRefreshAt = 0;
+  // First SUBSCRIBED after page load is the normal boot handshake (the
+  // initial refresh() below already painted); only a LATER SUBSCRIBED —
+  // i.e. a reconnect after a drop — should trigger the gap-closing refresh.
+  let realtimeEverSubscribed = false;
 
   const refresh = async () => {
+    if (refreshInFlight) return; // skip this tick — the previous refresh hasn't settled yet
+    refreshInFlight = true;
+    try {
+      await runRefresh();
+      lastRefreshAt = Date.now();
+    } finally {
+      refreshInFlight = false;
+    }
+  };
+
+  const runRefresh = async () => {
     // Crop-profile ranges (sensor HUD stat tiles): fire-and-forget, cached
     // in `cropProfile`, refreshed on this SAME 15s poll cadence as the
     // sensor reading below — never awaited, so a slow/failed fetch can
@@ -6150,7 +6255,17 @@ async function main() {
     maybeShowMemory(); // hour-gated; only into an idle Happy bubble
   };
 
-  await refresh();
+  try {
+    await refresh();
+  } catch {
+    // The first refresh stalled/threw outright (not a normal per-query
+    // error — those resolve into {error} fields and never reach here): most
+    // classroom Wi-Fi drops are a transient blip, so give it ONE retry after
+    // a short delay before letting main().catch fall back to the offline
+    // defaults.
+    await new Promise((resolve) => setTimeout(resolve, FIRST_REFRESH_RETRY_DELAY_MS));
+    await refresh();
+  }
   firstOnlinePaint = true; // real data is on screen — the catch may not stomp it
   // Hatching intro (spec §6.3): once, after the first real render settles.
   scheduleHatch(plantName);
@@ -6183,7 +6298,17 @@ async function main() {
         upsertQuestRow(payload.new);
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      // Reconnecting after a drop (CHANNEL_ERROR/TIMED_OUT/CLOSED →
+      // SUBSCRIBED again) can leave a gap the postgres_changes payloads
+      // missed while disconnected — one refresh closes it. The FIRST
+      // SUBSCRIBED (page boot) is not a reconnect: the initial refresh()
+      // above already painted, so realtimeEverSubscribed skips it.
+      if (status === "SUBSCRIBED") {
+        if (realtimeEverSubscribed) refresh();
+        realtimeEverSubscribed = true;
+      }
+    });
 
   // Reason chips (Task 14): bond_events INSERTs carry {amount, reason} for
   // every XP award. Deliberately its OWN channel (same socket): until the
@@ -6247,6 +6372,18 @@ async function main() {
 
   // Polling fallback + sensor refresh (sensor_readings has no realtime).
   setInterval(refresh, 15_000);
+
+  // Coming back to a backgrounded tab: if the last successful refresh is
+  // stale enough that the 15s poll clearly missed ticks while hidden (a
+  // throttled/suspended background tab, or a network drop during that
+  // time), catch up immediately instead of waiting up to another 15s.
+  // refresh()'s own in-flight guard still applies — this can never overlap
+  // a poll that is already running.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && Date.now() - lastRefreshAt > VISIBILITY_STALE_REFRESH_MS) {
+      refresh();
+    }
+  });
 
   // Lazy game tick so time-window quests complete while parked on this page.
   setInterval(() => {
