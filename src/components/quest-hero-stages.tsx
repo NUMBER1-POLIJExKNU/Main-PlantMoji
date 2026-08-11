@@ -62,13 +62,13 @@ export default function QuestHeroStages({
       <div className="pm-quest-companion">
         <div className={`pm-quest-jam${verifying ? " is-watching" : ""}`} aria-hidden="true"><i /><i /></div>
         <p>
-          {verifying
-            ? (locale === "id"
-              ? "Aku sedang melihat sensornya… pertahankan sebentar lagi!"
-              : "I'm watching the sensors… keep it steady a little longer!")
-            : (locale === "id"
-              ? "Kita lakukan bersama, ya! Setelah itu sensor akan memeriksanya."
-              : "Let's do this together! Then the sensors will check our work.")}
+          {/* One verifying voice on the card (text diet): the rail highlight,
+              well label, and countdown already say "checking" — the bubble
+              keeps its warm invitation line in every state (the is-watching
+              class still animates the companion). */}
+          {locale === "id"
+            ? "Kita lakukan bersama, ya! Setelah itu sensor akan memeriksanya."
+            : "Let's do this together! Then the sensors will check our work."}
         </p>
       </div>
       <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>

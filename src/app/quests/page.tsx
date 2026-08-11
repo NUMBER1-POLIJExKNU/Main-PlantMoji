@@ -106,7 +106,6 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* Stage row + its copy live in a client island: the cheat sandbox drives
           them off the board and the sensor editor, since the Supabase quest row
           they otherwise read can never move during a classroom demo. With the
@@ -121,16 +120,6 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
           cropProfile={cropProfile}
         />
       )}
-=======
-      {featured && <div className="pm-quest-companion"><div className={`pm-quest-jam${verifying ? " is-watching" : ""}`} aria-hidden="true"><i /><i /></div><p>{locale === "id" ? "Kita lakukan bersama, ya! Setelah itu sensor akan memeriksanya." : "Let's do this together! Then the sensors will check our work."}</p></div>}
-      {featured && <ol className="pm-quest-steps" aria-label={locale === "id" ? "Tahap misi" : "Quest stages"}>
-        {steps.map((step, index) => <li key={step} className={index < currentStep ? "is-done" : index === currentStep ? "is-current" : ""}><span>{index < currentStep ? "✓" : index + 1}</span><small>{step}</small></li>)}
-      </ol>}
-      {featured && <div className="pm-quest-action-well">
-        <div><small>{verifying ? (locale === "id" ? "SENSOR SEDANG MEMERIKSA" : "SENSOR CHECK") : (locale === "id" ? "YANG HARUS DILAKUKAN" : "WHAT TO DO")}</small><strong>{verifying ? (locale === "id" ? "Pertahankan kondisi ini" : "Keep this condition steady") : localized.description}</strong></div>
-        <div className="pm-quest-target"><small>TARGET</small><strong>{target}</strong></div>
-      </div>}
->>>>>>> 0e170c2 (polish(ux): close the audit remainder — instant /plants, single-voice status, one-screen badges)
 
       {quest.status === "ACTIVE" && def.kind === "maintain" && (
         <QuestProgress
