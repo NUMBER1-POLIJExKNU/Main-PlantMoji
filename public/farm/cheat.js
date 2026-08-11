@@ -251,15 +251,26 @@
   // target is where it stops.
   var TICK_MS = 250;
   var TAU_MS = 6000;
+  // A tick that has drifted this far is a tab that was throttled or asleep;
+  // treat it as one ordinary step instead of teleporting to the target.
+  var MAX_STEP_MS = 1000;
   var ticker = null;
+  var lastTickAt = 0;
 
   function tick() {
     var state = read();
     if (!state) { stopTicking(); return; }
     var targets = activeTargets(state.actions);
     var axes = Object.keys(targets);
+    var now = Date.now();
+    var dt = Math.min(MAX_STEP_MS, Math.max(0, now - lastTickAt));
+    lastTickAt = now;
     if (axes.length === 0) return; // every toggle released: freeze in place
-    var ease = 1 - Math.exp(-TICK_MS / TAU_MS);
+    // Measured against the real clock, not the number of ticks: setInterval is
+    // throttled by browsers often enough that counting ticks made the pace
+    // wander (a held toggle ran ~3x slow on the deployed page). Elapsed time
+    // keeps the curve identical no matter how the timer actually fires.
+    var ease = 1 - Math.exp(-dt / TAU_MS);
     var changed = false;
     axes.forEach(function (axis) {
       var from = numOr(state.vitals[axis], 0);
@@ -273,6 +284,7 @@
 
   function startTicking() {
     if (ticker !== null || typeof window === "undefined") return;
+    lastTickAt = Date.now(); // so the first step is one interval, not since 1970
     ticker = window.setInterval(tick, TICK_MS);
   }
 

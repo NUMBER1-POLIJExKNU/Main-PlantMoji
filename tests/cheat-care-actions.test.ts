@@ -56,8 +56,11 @@ describe("care action catalogue", () => {
   it("eases toward a target instead of ramping without end", () => {
     // Newton's law of cooling: the target is also the ceiling, so nothing can
     // run away, and reaching a mood takes a few seconds of holding.
-    expect(store).toContain("var ease = 1 - Math.exp(-TICK_MS / TAU_MS);");
     expect(store).toContain("function toggleTargets(id)");
+    // Paced by the real clock, not by tick count — browsers throttle
+    // setInterval, and counting ticks ran ~3x slow on the deployed page.
+    expect(store).toContain("var ease = 1 - Math.exp(-dt / TAU_MS);");
+    expect(store).toContain("var dt = Math.min(MAX_STEP_MS, Math.max(0, now - lastTickAt));");
   });
 
   it("freezes the readings when every toggle is released", () => {
