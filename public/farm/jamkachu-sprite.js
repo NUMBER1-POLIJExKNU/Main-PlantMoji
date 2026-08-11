@@ -38,12 +38,10 @@
   /** Filename fragment per phase (plant-p3-flower-….png). */
   var PHASE_SLUG = { 1: "seed", 2: "sprout", 3: "flower", 4: "fruit" };
 
-  /** The 5 expressions the designer drew per phase. */
-  // "unwell" is ours, not the designer's: their thirsty frown wearing their
-  // sleepy lids (scripts/build-unwell-face.mjs). The thirsty face's big dark
-  // ovals read as sullen at mascot size, and four moods had to wear it.
-  // Replace these files if the designer draws a proper one.
-  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"];
+  /** The 5 expressions the designer drew per phase. The derived "unwell"
+   *  frown is intentionally retired: it read as deeply unhappy rather than
+   *  gently asking for care. */
+  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"];
 
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
@@ -52,18 +50,18 @@
   // file, "plain", is the designer's faceless decorative body (their
   // sheet-plain.png), NOT a neutral expression: it has leaf veins where the
   // face goes. Never map a mood onto it — a plant that is cold or off-pH
-  // must still have a face. The moods that share the frowning "thirsty"
-  // body are told apart by the status badge beside the head and by the
+  // must still have a face. Care-needed moods share the softer sleepy face
+  // and are told apart by the condition badge beside the head and by the
   // mood text, never by the body alone.
   var MOOD_SPRITE = {
     Happy: "happy",
     Overheating: "overheat",
     TooCold: "sleepy", // cold plants hunker down; the 🥶 badge names it
-    DryAir: "unwell",
-    HumidAir: "unwell",
+    DryAir: "sleepy",
+    HumidAir: "sleepy",
     Sleepy: "sleepy",
-    SoilAcidic: "unwell",
-    SoilAlkaline: "unwell",
+    SoilAcidic: "sleepy",
+    SoilAlkaline: "sleepy",
   };
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods

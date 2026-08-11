@@ -69,11 +69,11 @@ describe("React sprite mapping pins the decided design tables", () => {
       Happy: "happy",
       Overheating: "overheat",
       TooCold: "sleepy",
-      DryAir: "unwell",
-      HumidAir: "unwell",
+      DryAir: "sleepy",
+      HumidAir: "sleepy",
       Sleepy: "sleepy",
-      SoilAcidic: "unwell",
-      SoilAlkaline: "unwell",
+      SoilAcidic: "sleepy",
+      SoilAlkaline: "sleepy",
     });
   });
 
@@ -143,7 +143,7 @@ describe("React sprite mapping pins the decided design tables", () => {
     // Bond level picks the look now — `stage` is passed by some callers and
     // deliberately ignored, so these cases vary the level, not the stage.
     expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 3 })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p2-sprout-unwell.png",
+      "/farm/assets/jamkachu/4x/plant-p2-sprout-sleepy.png",
     );
     expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 24 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
@@ -377,7 +377,7 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     // the gold comes back.
     const source = readFileSync(farmSpritePath, "utf8");
     expect(source).toMatch(
-      /function activeRamp\(\) \{\s*if \(state\.potItemKey && POT_ITEM_RAMPS\[state\.potItemKey\]\)/,
+      /function activeRamp\(\) \{\s*if \(state\.potItemKey && POT_ITEM_ART\[state\.potItemKey\]\) return null;/,
     );
     // …and the keepsake still applies, just later, and still ahead of a skin.
     const body = source.slice(source.indexOf("function activeRamp()"));
@@ -390,8 +390,8 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
 
     // The stage mirrors it, or a Lv.10+ player previewing a pot sees gold.
     const preview = readFileSync(path.resolve(repoRoot, "src/components/shop-preview.tsx"), "utf8");
-    expect(preview).toContain("const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;");
-    expect(preview).toContain("const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);");
+    expect(preview).toContain("const goldPot = !hasShopPot && mascot.bondLevel >= GOLD_POT_LEVEL;");
+    expect(preview).toContain("const potRamp = goldPot ? GOLDPOT_RAMP : null;");
   });
 
   it("behaves identically wherever the farm exposes the mapping functions", () => {

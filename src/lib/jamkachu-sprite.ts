@@ -18,7 +18,7 @@ export type SpritePhase = 1 | 2 | 3 | 4;
 export const SPRITE_PHASES = [1, 2, 3, 4] as const;
 
 /** The 5 expressions the designer drew per phase. */
-export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"] as const;
+export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"] as const;
 export type SpriteMood = (typeof SPRITE_MOODS)[number];
 
 /** Automatic bond-level accessory rewards ("" = bare). */
@@ -50,17 +50,17 @@ export const PHASE_SLUG: Record<SpritePhase, string> = {
  * overheat. The fifth file, "plain", is the designer's faceless decorative
  * body (their sheet-plain.png), NOT a neutral expression: leaf veins sit
  * where the face goes. No mood may map to it — a cold or off-pH plant must
- * still have a face. Moods sharing the frowning "thirsty" body are told
- * apart by the status badge (MOOD_STATUS_CHIP) and the mood text. */
+ * still have a face. Care-needed moods share the softer sleepy face and are
+ * told apart by the status badge (MOOD_STATUS_CHIP) and the mood text. */
 export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
   TooCold: "sleepy",
-  DryAir: "unwell",
-  HumidAir: "unwell",
+  DryAir: "sleepy",
+  HumidAir: "sleepy",
   Sleepy: "sleepy",
-  SoilAcidic: "unwell",
-  SoilAlkaline: "unwell",
+  SoilAcidic: "sleepy",
+  SoilAlkaline: "sleepy",
 };
 
 /** Chip floated near the sprite head for the moods that SHARE a drawn body
