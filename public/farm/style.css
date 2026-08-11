@@ -269,11 +269,12 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
 }
 .nav-item .icon { font-size: 18px; font-style: normal; }
 
-/* Quests is a mid-green heart and the active pill is mid-green, so on the one
-   row where it matters the icon nearly disappears. Lifting brightness and
-   dropping saturation pushes it towards the pill's white text instead. Only
-   this destination: every other icon already reads on green. */
-.nav-item.active[href="/quests"] .icon img { filter: brightness(1.75) saturate(0.55); }
+/* Quests is a mid-green heart on a mid-green active pill. A white pixel halo
+   preserves the artwork's real colour while separating it from the active
+   background, so the rail and page header still show the same icon. */
+.nav-item.active[href="/quests"] .icon img {
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
 
 /* Main Game World — character-first vertical flow (spec §2.1) */
 .game-world {
