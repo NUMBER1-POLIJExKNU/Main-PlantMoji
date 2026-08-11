@@ -745,6 +745,13 @@
             <button id="wardrobe-close" class="pixel-btn" type="button">OK</button>
         </div>
     </dialog>
+    <!-- Classroom-demo sandbox (window.PMCheat). next.config.ts rewrites "/"
+         to this file, so the farm home never runs src/app/layout.tsx — the
+         Script tag there only covers the React routes. Without this tag
+         window.PMCheat is undefined here, the cheat banner never paints, and
+         live.js main()'s sandbox branch is unreachable on the main demo
+         screen. Classic script (not a module) so it runs before live.js. -->
+    <script src="/farm/cheat.js"></script>
     <script src="/farm/strings.js"></script>
     <script src="/farm/companion-ladder.js"></script>
     <script src="/farm/companion-skins.js"></script>
