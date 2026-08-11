@@ -19,4 +19,10 @@ describe("farm terrain continuity behind navigation", () => {
     expect(css).toContain(".grass-decor");
     expect(css).toContain("inset: 0 0 25px;");
   });
+
+  it("does not alter the phone composition", () => {
+    expect(css).toMatch(/@media \(max-width: 800px\) \{[\s\S]*?\.grass-floor::before,[\s\S]*?\.grass-floor::after \{ display: none; \}/);
+    expect(css).toMatch(/@media \(max-width: 800px\) \{[\s\S]*?\.grass-decor \{ inset: 0; z-index: auto; \}/);
+    expect(css).toMatch(/@media \(max-width: 800px\) \{[\s\S]*?\.shop-decor-layer \{ inset: 0; \}/);
+  });
 });

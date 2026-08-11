@@ -1840,9 +1840,8 @@ function takeReasonLabel(amount) {
 /** T3 gold "BONUS ×2" stamp: scale-slam + gold confetti + rising arpeggio
  *  + a firm buzz. Pure reveal of a server-granted bonus (spec D2) — the XP
  *  itself was already awarded and is presented by the gold orb cascade.
- *  Read "LUCKY! x2" on a cue named `jackpot` until now: the same slot-machine
- *  framing the evolution banner carried. Only the words and the cue name
- *  changed — the stamp, the confetti and the sound are untouched. */
+ *  The stamp uses plain bonus language; its confetti and sound stay focused
+ *  on the earned reward. */
 function fxLuckyStampNow(done) {
   const layer = ensureFxLayer();
   if (!layer) {
@@ -4511,6 +4510,25 @@ const EVO_FALLBACK = {
   finalForm: "FINAL FORM",
 };
 
+/** Every destination rung owns a palette, particle silhouette, and flight
+ * path. The spectacle can stay maximal without replaying the same show nine
+ * times; labels remain ordinary growth language throughout. */
+const EVO_THEMES = Object.freeze({
+  Sprout:   { key: "sprout",   motion: "rise",       a: "#74ef72", b: "#fff27a", c: "#2a9d55", burst: 34 },
+  Seedling: { key: "seedling", motion: "droplets",   a: "#7ee9ff", b: "#dffcff", c: "#36a9e8", burst: 36 },
+  Bud:      { key: "bud",      motion: "spiral",     a: "#db8cff", b: "#fff0a4", c: "#8958d4", burst: 38 },
+  Bloom:    { key: "bloom",    motion: "petals",     a: "#ff7eb6", b: "#fff1d2", c: "#ff4f73", burst: 42 },
+  Fruit:    { key: "fruit",    motion: "cascade",    a: "#ffb13b", b: "#fff18c", c: "#e9543f", burst: 44 },
+  Guardian: { key: "guardian", motion: "shield",     a: "#66e0c2", b: "#eafff8", c: "#237b6d", burst: 46 },
+  Elder:    { key: "elder",    motion: "runes",      a: "#c69cff", b: "#f6e9ff", c: "#6551b8", burst: 48 },
+  Radiant:  { key: "radiant",  motion: "solar",      a: "#fff36a", b: "#ffffff", c: "#ff922e", burst: 52 },
+  Legend:   { key: "legend",   motion: "aurora",     a: "#75f7ff", b: "#fff4a8", c: "#ff69d4", burst: 56 },
+});
+
+function evolutionTheme(stage) {
+  return EVO_THEMES[stage] ?? EVO_THEMES.Sprout;
+}
+
 /** Evolution-ceremony speech-bubble line — quoted like every other spoken
  *  line in this file (mood templates, sleep bubble, dialogue fetch), and
  *  cancels a stale petting-bubble restore so it can never stomp mid-scene. */
@@ -4532,25 +4550,35 @@ let evoTintEl = null;
 /** Lazily create (or reuse) the fixed radial stage-tint backdrop — a
  *  persistent singleton toggled via its `.on` class, same lazy-singleton
  *  pattern as ensureFxLayer(). */
-function ensureEvoTint() {
+function ensureEvoTint(theme) {
   if (!document.body) return null;
-  if (evoTintEl && evoTintEl.isConnected) return evoTintEl;
-  evoTintEl = document.createElement("div");
-  evoTintEl.className = "evo-tint";
-  evoTintEl.setAttribute("aria-hidden", "true");
-  document.body.appendChild(evoTintEl);
+  if (!evoTintEl || !evoTintEl.isConnected) {
+    evoTintEl = document.createElement("div");
+    evoTintEl.className = "evo-tint";
+    evoTintEl.setAttribute("aria-hidden", "true");
+    document.body.appendChild(evoTintEl);
+  }
+  evoTintEl.style.setProperty("--evo-a", theme.a);
+  evoTintEl.style.setProperty("--evo-b", theme.b);
+  evoTintEl.style.setProperty("--evo-c", theme.c);
   return evoTintEl;
 }
 
 /** Full-screen ceremony HUD. Visual labels stay aria-hidden while a single
  *  polite status node announces only the final result. */
-function createEvolutionHud(oldStage, newStage, grand) {
+function createEvolutionHud(oldStage, newStage, grand, theme) {
   if (!document.body) return null;
   const hud = document.createElement("div");
-  hud.className = `evo-ceremony-hud${grand ? " is-grand" : ""}`;
+  hud.className = `evo-ceremony-hud evo-theme-${theme.key}${grand ? " is-grand" : ""}`;
+  hud.style.setProperty("--evo-a", theme.a);
+  hud.style.setProperty("--evo-b", theme.b);
+  hud.style.setProperty("--evo-c", theme.c);
   const kicker = appLocale === "id" ? "LEVEL NAIK" : "LEVEL UP";
   const evolving = appLocale === "id" ? "EVOLUSI DIMULAI" : "EVOLUTION START";
   hud.innerHTML =
+    `<div class="evo-theme-rays" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>` +
+    `<div class="evo-theme-orbit" aria-hidden="true">${Array.from({ length: 8 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>` +
+    `<div class="evo-theme-emblem" aria-hidden="true"></div>` +
     `<div class="evo-ceremony-kicker" aria-hidden="true">${kicker}</div>` +
     `<div class="evo-ceremony-reel" aria-hidden="true"><span>${localizedStage(oldStage)}</span><b>◆</b><span>${localizedStage(newStage)}</span></div>` +
     `<div class="evo-ceremony-charge" aria-hidden="true">${evolving}</div>` +
@@ -4562,7 +4590,7 @@ function createEvolutionHud(oldStage, newStage, grand) {
 
 /** Energy pixels converge on Jamkachu during the riser. They share the
  *  global particle budget and animate only transform/opacity. */
-function spawnEvoChargeOrbs(n) {
+function spawnEvoChargeOrbs(n, theme) {
   if (prefersReducedMotion()) return;
   const layer = ensureFxLayer();
   if (!layer) return;
@@ -4580,6 +4608,8 @@ function spawnEvoChargeOrbs(n) {
     const sy = cy + Math.sin(angle) * distance;
     orb.style.left = `${sx}px`;
     orb.style.top = `${sy}px`;
+    orb.style.setProperty("--evo-a", theme.a);
+    orb.style.setProperty("--evo-b", theme.b);
     layer.appendChild(orb);
     liveParticles++;
     const delay = i * 38;
@@ -4597,16 +4627,107 @@ function spawnEvoChargeOrbs(n) {
   }
 }
 
-function spawnEvoShockwaves(grand) {
+function spawnEvoShockwaves(grand, theme) {
   if (prefersReducedMotion() || !document.body) return;
   const count = grand ? 3 : 2;
   for (let i = 0; i < count; i++) {
     const ring = document.createElement("div");
-    ring.className = "evo-shockwave";
+    ring.className = `evo-shockwave evo-theme-${theme.key}`;
+    ring.style.setProperty("--evo-a", theme.a);
+    ring.style.setProperty("--evo-b", theme.b);
     ring.style.animationDelay = `${i * 110}ms`;
     ring.setAttribute("aria-hidden", "true");
     document.body.appendChild(ring);
     removeLater(ring, 1050 + i * 110);
+  }
+}
+
+/** Nine distinct payoff choreographies. Each path is intentionally legible:
+ * leaves rise, dew arcs down, buds spiral, petals flutter, fruit cascades,
+ * shields lock outward, runes zig-zag, sunlight fires radially, and the final
+ * aurora sweeps upward. No gameplay state is written. */
+function evoBurstPath(motion, angle, distance) {
+  const x = Math.cos(angle) * distance;
+  const y = Math.sin(angle) * distance;
+  const tangentX = -Math.sin(angle) * distance;
+  const tangentY = Math.cos(angle) * distance;
+  const path = {
+    rise: [
+      { transform: "translate(0,20px) rotate(0deg) scale(.25)", opacity: 0 },
+      { transform: `translate(${x * .2}px,${-distance * .55}px) rotate(100deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x * .55}px,${-distance * 1.18}px) rotate(220deg) scale(.65)`, opacity: 0 },
+    ],
+    droplets: [
+      { transform: "translate(0,-10px) scale(.35)", opacity: 0 },
+      { transform: `translate(${x * .48}px,${-distance * .62}px) scale(1.15)`, opacity: 1 },
+      { transform: `translate(${x}px,${Math.abs(y) * .72 + 70}px) scale(.55)`, opacity: 0 },
+    ],
+    spiral: [
+      { transform: "translate(0,0) rotate(0deg) scale(.2)", opacity: 0 },
+      { transform: `translate(${tangentX * .38}px,${tangentY * .38}px) rotate(190deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x}px,${y}px) rotate(520deg) scale(.55)`, opacity: 0 },
+    ],
+    petals: [
+      { transform: "translate(0,-8px) rotate(-25deg) scale(.2)", opacity: 0 },
+      { transform: `translate(${x * .5 + tangentX * .18}px,${y * .42 - 28}px) rotate(55deg) scale(1.15)`, opacity: 1 },
+      { transform: `translate(${x + tangentX * .25}px,${y + 65}px) rotate(175deg) scale(.7)`, opacity: 0 },
+    ],
+    cascade: [
+      { transform: "translate(0,-80px) rotate(0deg) scale(.3)", opacity: 0 },
+      { transform: `translate(${x * .55}px,${-distance * .48}px) rotate(140deg) scale(1.2)`, opacity: 1 },
+      { transform: `translate(${x}px,${Math.abs(y) + 105}px) rotate(310deg) scale(.8)`, opacity: 0 },
+    ],
+    shield: [
+      { transform: "translate(0,0) scale(.1)", opacity: 0 },
+      { transform: `translate(${x * .52}px,${y * .52}px) scale(1.4)`, opacity: 1 },
+      { transform: `translate(${x * .82}px,${y * .82}px) scale(.9)`, opacity: 0 },
+    ],
+    runes: [
+      { transform: "translate(0,0) rotate(0deg) scale(.25)", opacity: 0 },
+      { transform: `translate(${x * .32 + tangentX * .28}px,${y * .32 + tangentY * .28}px) rotate(90deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x - tangentX * .22}px,${y - tangentY * .22}px) rotate(180deg) scale(.7)`, opacity: 0 },
+    ],
+    solar: [
+      { transform: "translate(0,0) scale(.1)", opacity: 0 },
+      { transform: `translate(${x * .38}px,${y * .38}px) scale(1.5)`, opacity: 1 },
+      { transform: `translate(${x * 1.45}px,${y * 1.45}px) scale(.35)`, opacity: 0 },
+    ],
+    aurora: [
+      { transform: `translate(${tangentX * .18}px,60px) rotate(-20deg) scale(.2)`, opacity: 0 },
+      { transform: `translate(${x * .35 - tangentX * .34}px,${-distance * .48}px) rotate(30deg) scale(1.35)`, opacity: 1 },
+      { transform: `translate(${x * .72 + tangentX * .28}px,${-distance * 1.15}px) rotate(110deg) scale(.6)`, opacity: 0 },
+    ],
+  };
+  return path[motion] ?? path.rise;
+}
+
+function spawnEvoThemeBurst(theme) {
+  if (prefersReducedMotion() || window.matchMedia?.("(max-width: 800px)").matches) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const rect = mascotRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * .38;
+  const total = Math.max(0, Math.min(theme.burst, MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < total; i++) {
+    const particle = document.createElement("i");
+    particle.className = `fx-evo-theme fx-evo-${theme.key}`;
+    particle.setAttribute("aria-hidden", "true");
+    particle.style.left = `${cx}px`;
+    particle.style.top = `${cy}px`;
+    particle.style.setProperty("--evo-a", theme.a);
+    particle.style.setProperty("--evo-b", theme.b);
+    particle.style.setProperty("--evo-c", theme.c);
+    layer.appendChild(particle);
+    liveParticles++;
+    const angle = Math.PI * 2 * i / Math.max(1, total) + (i % 3) * .08;
+    const distance = 105 + (i % 7) * 20 + Math.random() * 35;
+    const delay = (i % 6) * 22;
+    const duration = 850 + (i % 5) * 105;
+    animateSafe(particle, evoBurstPath(theme.motion, angle, distance), {
+      duration, delay, easing: "cubic-bezier(.16,.74,.28,1)", fill: "forwards",
+    });
+    removeLater(particle, delay + duration + 100, true);
   }
 }
 
@@ -4652,7 +4773,7 @@ function dismissOrTimeout(ms) {
  *  mascot, two spawned per ~33ms tick, WAAPI outward drift + fade
  *  (0.5-1.5s), a per-particle hue-rotate for the palette-cycling shimmer.
  *  Shares this file's global MAX_PARTICLES budget with every other FX. */
-function spawnEvoStars(n) {
+function spawnEvoStars(n, theme) {
   if (prefersReducedMotion()) return;
   const layer = ensureFxLayer();
   if (!layer) return;
@@ -4665,14 +4786,16 @@ function spawnEvoStars(n) {
     for (let k = 0; k < 2 && spawned < total; k++, spawned++) {
       const i = spawned;
       const star = document.createElement("div");
-      star.className = "fx-star";
+      star.className = `fx-star evo-star-${theme.key}`;
       star.setAttribute("aria-hidden", "true");
       const size = 8 + Math.floor(Math.random() * 6);
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
       star.style.left = `${cx}px`;
       star.style.top = `${cy}px`;
-      star.style.filter = `hue-rotate(${(i * 40) % 360}deg)`;
+      star.style.setProperty("--evo-a", theme.a);
+      star.style.setProperty("--evo-b", theme.b);
+      star.style.filter = `hue-rotate(${(i * 17) % 80 - 40}deg)`;
       layer.appendChild(star);
       liveParticles++;
       const angle = Math.random() * Math.PI * 2;
@@ -4715,6 +4838,7 @@ async function runEvolutionSequence(oldStage, newStage) {
   if (!svg || !wrap) return;
   const reduce = prefersReducedMotion();
   const grand = newStage === STAGE_ORDER.at(-1);
+  const theme = evolutionTheme(newStage);
   let ff = false; // fast-forward flag: a tap jumps the remaining strobe steps
   const ffTap = () => { ff = true; };
   evoFastForward = ffTap;
@@ -4738,8 +4862,8 @@ async function runEvolutionSequence(oldStage, newStage) {
     // alternation stays visible on the img.
     window.PMSprite?.set({ stage });
   };
-  const tint = ensureEvoTint();
-  const hud = createEvolutionHud(oldStage, newStage, grand);
+  const tint = ensureEvoTint(theme);
+  const hud = createEvolutionHud(oldStage, newStage, grand, theme);
   let riser = null;
   try {
     document.body?.classList.add("evolution-active");
@@ -4764,7 +4888,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     } else {
       wrap.classList.add("evo-pulse");
       riser = window.PMSfx?.evoRiser(6) ?? null;
-      spawnEvoChargeOrbs(grand ? 32 : 22);
+      spawnEvoChargeOrbs(grand ? 32 : 22, theme);
       await sleep(1300);
       // ── ACT 2: suspense — accelerating silhouette strobe (mascot-local)
       svg.classList.add("evo-sil");
@@ -4794,8 +4918,9 @@ async function runEvolutionSequence(oldStage, newStage) {
       window.PMSfx?.evoFanfare();
       window.PMSfx?.evoImpact?.({ grand });
       window.PMSfx?.buzz(grand ? [45, 30, 90] : [35, 25, 65]);
-      spawnEvoShockwaves(grand);
-      spawnEvoStars(grand ? 52 : 36);
+      spawnEvoShockwaves(grand, theme);
+      spawnEvoThemeBurst(theme);
+      spawnEvoStars(grand ? 52 : 36, theme);
     }
     // Announcement precedence: full evo line → strings.js companionEvolved
     // (still localized, stage-only) → hard-coded English EVO_FALLBACK.
@@ -4810,12 +4935,9 @@ async function runEvolutionSequence(oldStage, newStage) {
       const result = hud.querySelector(".evo-ceremony-result");
       const status = hud.querySelector(".evo-ceremony-status");
       const stageLabel = localizedStage(newStage);
-      // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of a
-      // growth arc a student spent days on. It used to be announced as "GRAND
-      // JACKPOT": slot-machine wording for the one thing here that is entirely
-      // earned, and the only line in this localized ceremony hard-coded to
-      // English. The staging below it — flash, hitstop, shake, shockwaves — is
-      // what carries the weight, and none of it changed.
+      // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of
+      // a growth arc a student spent days on. The staging carries the weight;
+      // the label simply names the earned final form.
       const finalFormLabel = PM().evo?.finalForm ?? EVO_FALLBACK.finalForm;
       if (result) result.textContent = grand ? `${finalFormLabel} · ${stageLabel}` : stageLabel;
       if (status) status.textContent = evolvedLine;

@@ -165,23 +165,48 @@ describe("evolution ceremony trigger + sequencer", () => {
   it("keeps the full-weight payoff without repeated full-screen flashes", () => {
     const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
     expect(seq.match(/flashOnce\(/g)).toHaveLength(1);
-    expect(seq).toContain("spawnEvoChargeOrbs(grand ? 32 : 22)");
-    expect(seq).toContain("spawnEvoShockwaves(grand)");
+    expect(seq).toContain("spawnEvoChargeOrbs(grand ? 32 : 22, theme)");
+    expect(seq).toContain("spawnEvoShockwaves(grand, theme)");
     expect(seq).toContain("window.PMSfx?.evoImpact?.({ grand })");
-    expect(seq).toContain("spawnEvoStars(grand ? 52 : 36)");
-    // The banner is localized now and says what actually happened. "GRAND
-    // JACKPOT" was hard-coded English AND casino wording for the one moment in
-    // this app that is entirely earned. The staging above is untouched.
+    expect(seq).toContain("spawnEvoThemeBurst(theme)");
+    expect(seq).toContain("spawnEvoStars(grand ? 52 : 36, theme)");
+    // The banner is localized and says what actually happened.
     expect(live).toContain('grand ? `${finalFormLabel} · ${stageLabel}` : stageLabel');
     expect(live).toContain("const finalFormLabel = PM().evo?.finalForm ?? EVO_FALLBACK.finalForm;");
-    expect(live).not.toContain("GRAND JACKPOT ·");
+    expect(live).not.toMatch(/jackpot|pachinko|casino|gambl/i);
     expect(css).toContain("@keyframes evoShockwave");
     expect(css).toContain("@keyframes evoResultSlam");
   });
 
   it("keeps the stronger ceremony safe under reduced motion", () => {
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.evo-shockwave,\.fx-evo-charge \{ display:none; \}/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.evo-shockwave,\.fx-evo-charge,\.fx-evo-theme,[\s\S]*?\{ display:none; \}/);
     expect(css).toContain(".evo-ceremony-hud * { animation:none !important; transition:none !important; }");
+  });
+
+  it("gives every destination stage its own polished visual language", () => {
+    const destinations = COMPANION_STAGES.slice(1);
+    const themeBlock = live.slice(live.indexOf("const EVO_THEMES"), live.indexOf("function evolutionTheme"));
+    const keys = [...themeBlock.matchAll(/key: "([a-z]+)"/g)].map((match) => match[1]);
+    const motions = [...themeBlock.matchAll(/motion: "([a-z]+)"/g)].map((match) => match[1]);
+    expect(keys).toHaveLength(destinations.length);
+    expect(new Set(keys).size).toBe(destinations.length);
+    expect(new Set(motions).size).toBe(destinations.length);
+    for (const stage of destinations) expect(themeBlock).toContain(`${stage}:`);
+    for (const key of keys) {
+      expect(css).toContain(`.evo-theme-${key}`);
+      expect(css).toContain(`.fx-evo-${key}`);
+    }
+    expect(live).toContain("function evoBurstPath(motion, angle, distance)");
+    expect(live).toContain('hud.className = `evo-ceremony-hud evo-theme-${theme.key}');
+    expect(css).toContain(".evo-theme-rays");
+    expect(css).toContain(".evo-theme-orbit");
+    expect(css).toContain(".evo-theme-emblem");
+  });
+
+  it("keeps the new ceremony language desktop-only", () => {
+    expect(live).toContain('window.matchMedia?.("(max-width: 800px)").matches');
+    expect(css).toMatch(/@media \(max-width: 800px\) \{[\s\S]*?\.evo-theme-rays,[\s\S]*?\.fx-evo-theme \{ display: none; \}/);
+    expect(css).toMatch(/@media \(max-width: 800px\) \{[\s\S]*?\.evo-tint \{ background: radial-gradient/);
   });
 
   it("PMFx.evolve walks the ladder so all ten stages can be demonstrated", () => {

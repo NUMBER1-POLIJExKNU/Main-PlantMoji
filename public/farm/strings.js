@@ -536,10 +536,8 @@
         noticing: (name) => `What? ${name} is changing…!`,
         evolved: (name, stage) => `Congratulations! ${name} grew into ${stage}!`,
         tapToContinue: "Tap to continue",
-        // Banner for the last stage of the whole growth arc. It used to read
-        // "GRAND JACKPOT" — hard-coded English, and casino wording for the one
-        // moment in the app that is purely earned: days of sensor care and
-        // finished quests, nothing won.
+        // Banner for the last stage of the whole growth arc: days of sensor
+        // care and completed quests, expressed as an earned final form.
         finalForm: "FINAL FORM",
       },
 

@@ -1084,7 +1084,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    overlay ladder) so the tint genuinely renders BEHIND the mascot/grass/NPC
    scene instead of covering it. */
 .evo-tint { position: fixed; inset: 0; pointer-events: none; z-index: 1300;
-  background: radial-gradient(circle at 50% 42%, color-mix(in srgb,var(--companion-accent,#FFDE6A) 70%,#fff) 0%,rgba(36,52,33,.86) 36%,rgba(8,18,30,.98) 76%);
+  background:
+    radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--evo-b,#FFDE6A) 72%,#fff) 0 7%,color-mix(in srgb,var(--evo-a,#FFDE6A) 55%,transparent) 20%,rgba(27,32,43,.9) 48%,rgba(6,12,24,.99) 78%),
+    linear-gradient(135deg,color-mix(in srgb,var(--evo-c,#243421) 42%,#07111f),#07111f);
   opacity:0; transition: opacity .4s ease; }
 .evo-tint.on { opacity: 1; }
 
@@ -1124,6 +1126,33 @@ body.evolution-active .fx-layer { z-index:1390; }
 .mascot-wrapper.evo-arena.evo-shake-lg > .mascot-svg { animation:evoShakeLg .32s steps(8,end) 1; }
 
 .evo-ceremony-hud { position:fixed; inset:0; z-index:1400; overflow:hidden; pointer-events:none; font-family:var(--font-heading); text-align:center; }
+.evo-ceremony-hud::after { content:""; position:absolute; inset:0; z-index:1; background:radial-gradient(circle at 50% 44%,transparent 0 24%,rgba(3,8,20,.18) 54%,rgba(3,8,20,.74) 100%); }
+.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge,.evo-ceremony-result,.evo-ceremony-status { z-index:5; }
+.evo-theme-rays { position:absolute; z-index:0; inset:50%; }
+.evo-theme-rays i { position:absolute; left:-3px; top:-62vmax; display:block; width:6px; height:124vmax; transform:rotate(calc(var(--i) * 30deg)); transform-origin:50% 50%; background:linear-gradient(transparent 5%,var(--evo-a) 27%,rgba(255,255,255,.82) 50%,var(--evo-c) 73%,transparent 95%); opacity:.2; }
+.evo-theme-orbit { position:absolute; z-index:2; left:50%; top:44%; width:min(68vmin,590px); aspect-ratio:1; border:2px solid color-mix(in srgb,var(--evo-a) 62%,transparent); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 30px color-mix(in srgb,var(--evo-a) 48%,transparent),inset 0 0 30px color-mix(in srgb,var(--evo-c) 35%,transparent); }
+.evo-theme-orbit i { position:absolute; left:50%; top:50%; width:12px; height:12px; border:2px solid #fff; background:var(--evo-b); box-shadow:0 0 15px var(--evo-a); transform:rotate(calc(var(--i) * 45deg)) translateY(calc(min(34vmin,295px) * -1)) rotate(calc(var(--i) * -45deg)); }
+.evo-theme-emblem { position:absolute; z-index:1; left:50%; top:44%; width:min(43vmin,370px); aspect-ratio:1; transform:translate(-50%,-50%) rotate(45deg); border:5px double color-mix(in srgb,var(--evo-b) 88%,#fff); background:radial-gradient(circle,color-mix(in srgb,var(--evo-a) 38%,transparent),transparent 68%); box-shadow:0 0 28px var(--evo-a),inset 0 0 28px color-mix(in srgb,var(--evo-c) 55%,transparent); opacity:.7; }
+
+/* Stage signatures: the composition changes as well as the palette. */
+.evo-theme-sprout .evo-theme-emblem { border-radius:100% 0 100% 0; transform:translate(-50%,-50%) rotate(-28deg) scale(.8); }
+.evo-theme-seedling .evo-theme-orbit { border-style:dotted; transform:translate(-50%,-50%) scaleX(.72); }
+.evo-theme-seedling .evo-theme-emblem { border-radius:55% 45% 62% 38%; transform:translate(-50%,-50%) rotate(45deg) scale(.78); }
+.evo-theme-bud .evo-theme-rays { transform:rotate(15deg) scale(.82); }
+.evo-theme-bud .evo-theme-emblem { clip-path:polygon(50% 0,70% 30%,100% 50%,70% 70%,50% 100%,30% 70%,0 50%,30% 30%); }
+.evo-theme-bloom .evo-theme-orbit { border-width:7px; border-style:double; }
+.evo-theme-bloom .evo-theme-emblem { border-radius:50%; clip-path:polygon(50% 0,63% 30%,93% 7%,70% 37%,100% 50%,70% 63%,93% 93%,63% 70%,50% 100%,37% 70%,7% 93%,30% 63%,0 50%,30% 37%,7% 7%,37% 30%); }
+.evo-theme-fruit .evo-theme-rays { transform:scaleX(1.35); }
+.evo-theme-fruit .evo-theme-emblem { border-radius:50%; transform:translate(-50%,-50%) scale(.76); border-width:10px; }
+.evo-theme-guardian .evo-theme-emblem { clip-path:polygon(50% 0,92% 15%,84% 72%,50% 100%,16% 72%,8% 15%); transform:translate(-50%,-50%); }
+.evo-theme-guardian .evo-theme-orbit { border-radius:18%; transform:translate(-50%,-50%) rotate(45deg); }
+.evo-theme-elder .evo-theme-rays { transform:rotate(-22.5deg); }
+.evo-theme-elder .evo-theme-emblem { clip-path:polygon(50% 0,61% 35%,100% 50%,61% 65%,50% 100%,39% 65%,0 50%,39% 35%); transform:translate(-50%,-50%) rotate(22.5deg); }
+.evo-theme-radiant .evo-theme-rays i { width:12px; opacity:.34; }
+.evo-theme-radiant .evo-theme-emblem { clip-path:polygon(50% 0,59% 35%,85% 15%,65% 41%,100% 50%,65% 59%,85% 85%,59% 65%,50% 100%,41% 65%,15% 85%,35% 59%,0 50%,35% 41%,15% 15%,41% 35%); border:0; }
+.evo-theme-legend .evo-theme-rays i:nth-child(3n+1) { background:linear-gradient(transparent,var(--evo-a),transparent); transform:rotate(calc(var(--i) * 30deg + 12deg)); }
+.evo-theme-legend .evo-theme-orbit { width:min(78vmin,680px); border-width:5px; border-style:double; }
+.evo-theme-legend .evo-theme-emblem { border-radius:50%; clip-path:polygon(50% 0,62% 28%,88% 12%,72% 38%,100% 50%,72% 62%,88% 88%,62% 72%,50% 100%,38% 72%,12% 88%,28% 62%,0 50%,28% 38%,12% 12%,38% 28%); }
 .evo-ceremony-kicker { position:absolute; top:8vh; left:50%; transform:translateX(-50%); color:#fff3a8; font-size:clamp(16px,2.6vw,30px); letter-spacing:.18em; text-shadow:0 4px 0 #0a3d62; }
 .evo-ceremony-reel { position:absolute; top:15vh; left:50%; display:flex; align-items:center; gap:clamp(10px,2vw,28px); transform:translateX(-50%); color:#dfffb1; font-size:clamp(11px,1.5vw,17px); opacity:.8; }
 .evo-ceremony-reel b { color:#ffde6a; }
@@ -1133,10 +1162,24 @@ body.evolution-active .fx-layer { z-index:1390; }
 .evo-ceremony-hud.is-revealed :is(.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge) { opacity:0; }
 .evo-ceremony-hud.is-revealed .evo-ceremony-result { opacity:1; transform:translate(-50%,0) scale(1); }
 .evo-ceremony-hud.is-grand .evo-ceremony-result { color:#fff29a; text-shadow:0 5px 0 #a15a16,0 0 22px #ffd62f,0 12px 30px #000; }
-.fx-evo-charge { position:fixed; width:10px; height:10px; background:#fff6a4; box-shadow:0 0 12px #ffde6a; image-rendering:pixelated; will-change:transform,opacity; }
-.evo-shockwave { position:fixed; left:50%; top:44%; z-index:1395; width:80px; height:80px; border:10px solid #fff4a2; border-radius:50%; transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; animation:evoShockwave .9s steps(12,end) forwards; }
+.fx-evo-charge { position:fixed; width:10px; height:10px; background:var(--evo-b,#fff6a4); box-shadow:0 0 12px var(--evo-a,#ffde6a); image-rendering:pixelated; will-change:transform,opacity; }
+.evo-shockwave { position:fixed; left:50%; top:44%; z-index:1395; width:80px; height:80px; border:10px solid var(--evo-b,#fff4a2); border-radius:50%; box-shadow:0 0 22px var(--evo-a,#ffde6a); transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; animation:evoShockwave .9s steps(12,end) forwards; }
+.fx-evo-theme { position:fixed; z-index:1396; width:13px; height:13px; background:var(--evo-a); box-shadow:0 0 9px var(--evo-b); image-rendering:pixelated; pointer-events:none; will-change:transform,opacity; }
+.fx-evo-sprout { width:10px; height:17px; border-radius:100% 0 100% 0; transform-origin:50% 100%; }
+.fx-evo-seedling { width:11px; height:16px; border-radius:55% 55% 65% 65%; clip-path:polygon(50% 0,100% 58%,70% 100%,30% 100%,0 58%); }
+.fx-evo-bud { transform:rotate(45deg); border:2px solid var(--evo-b); background:var(--evo-c); }
+.fx-evo-bloom { width:17px; height:11px; border-radius:100% 0 100% 0; }
+.fx-evo-fruit { width:15px; height:15px; border-radius:50%; border:2px solid var(--evo-b); background:var(--evo-c); }
+.fx-evo-guardian { width:15px; height:18px; clip-path:polygon(50% 0,100% 18%,88% 76%,50% 100%,12% 76%,0 18%); background:linear-gradient(135deg,var(--evo-b),var(--evo-c)); }
+.fx-evo-elder { border:3px double var(--evo-b); background:transparent; transform:rotate(45deg); }
+.fx-evo-radiant { width:18px; height:18px; clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%); background:var(--evo-b); }
+.fx-evo-legend { width:9px; height:24px; border-radius:50%; background:linear-gradient(var(--evo-a),var(--evo-b),var(--evo-c)); }
+.fx-star[class*="evo-star-"] { background:var(--evo-b,#FFDE6A); box-shadow:0 0 10px var(--evo-a,#FFDE6A); }
 @keyframes evoShockwave { 12%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(11);border-width:2px} }
 @media (prefers-reduced-motion:no-preference) {
+  .evo-theme-rays { animation:evoThemeRayTurn 8s linear infinite; }
+  .evo-theme-orbit { animation:evoThemeOrbit 3.2s linear infinite; }
+  .evo-theme-emblem { animation:evoThemeEmblem 1.15s steps(8,end) infinite alternate; }
   .evo-ceremony-hud.is-charging .evo-ceremony-kicker { animation:evoTitleThrob .55s steps(4,end) infinite; }
   .evo-ceremony-hud.is-charging .evo-ceremony-reel b { animation:evoReelSpin .36s steps(4,end) infinite; }
   .evo-ceremony-hud.is-revealed .evo-ceremony-result { animation:evoResultSlam .65s cubic-bezier(.2,1.6,.35,1) 1; }
@@ -1169,7 +1212,7 @@ body.evolution-active .fx-layer { z-index:1390; }
   .evo-flash, .evo-tint { display: none; }
   .evo-pulse, .evo-shake-sm, .evo-shake-lg { animation: none; }
   .mascot-svg.evo-xfade { transition: opacity .9s ease-in-out; opacity: .3; }
-  .evo-shockwave,.fx-evo-charge { display:none; }
+  .evo-shockwave,.fx-evo-charge,.fx-evo-theme,.evo-theme-rays,.evo-theme-orbit,.evo-theme-emblem { display:none; }
   .evo-ceremony-hud * { animation:none !important; transition:none !important; }
 }
 
@@ -1197,6 +1240,9 @@ body.evolution-active .fx-layer { z-index:1390; }
     color: #243421;
     overflow-wrap: anywhere;
 }
+@keyframes evoThemeRayTurn { to { transform:rotate(360deg); } }
+@keyframes evoThemeOrbit { to { rotate:360deg; } }
+@keyframes evoThemeEmblem { to { filter:brightness(1.65); opacity:1; } }
 .speech-bubble::after { content: none; }
 .animated-bounce { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
@@ -2046,6 +2092,25 @@ body.farmer-dragging {
     image-rendering: pixelated;
     pointer-events: none;
     -webkit-user-drag: none;
+}
+
+/* Desktop-only shoreline extension. Phone composition keeps the original
+   grass floor, decoration insets, and stacking behavior byte-for-byte. */
+@media (max-width: 800px) {
+    .grass-floor { overflow: visible; isolation: auto; }
+    .grass-floor::before,
+    .grass-floor::after { display: none; }
+    .grass-decor { inset: 0; z-index: auto; }
+    .shop-decor-layer { inset: 0; }
+    /* The new ceremony language is desktop-only; retain the existing phone
+       flash/tint silhouette and particle treatment exactly. */
+    .evo-ceremony-hud::after,
+    .evo-theme-rays,
+    .evo-theme-orbit,
+    .evo-theme-emblem,
+    .fx-evo-theme { display: none; }
+    .evo-tint { background: radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--companion-accent,#FFDE6A) 70%,#fff) 0%,rgba(36,52,33,.86) 36%,rgba(8,18,30,.98) 76%); }
+    .fx-evo-charge { background:#fff6a4; box-shadow:0 0 12px #ffde6a; }
 }
 
 /* Daytime tending loop. The tiny hoe and tilled-soil flecks are separate
