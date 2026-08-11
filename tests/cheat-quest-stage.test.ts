@@ -218,8 +218,10 @@ describe("collection reward preview", () => {
     // while the pop renders under the tab bar — it fired off-screen and read
     // as a dead button.
     expect(tabs).toContain("const previewRef = useRef<HTMLElement | null>(null);");
-    expect(tabs).toContain('node.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });');
     expect(tabs).toContain("ref={previewRef}");
-    expect(tabs).toMatch(/matchMedia\?\.\("\(prefers-reduced-motion: reduce\)"\)/);
+    // Instant, not smooth — a smooth scrollIntoView no-ops inside
+    // .reno-route-content, which left the pop exactly where it was.
+    expect(tabs).toContain('previewRef.current?.scrollIntoView({ block: "center" });');
+    expect(tabs).not.toContain('behavior: "smooth"');
   });
 });

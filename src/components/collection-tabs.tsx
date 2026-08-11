@@ -218,12 +218,13 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   // below the chapter map AND the chapter card). Landing off-screen above, the
   // click read as a dead button. Bring the pop to the reader rather than
   // moving it, so all three trigger sites keep sharing one slot.
+  // Instant, not smooth: a smooth scrollIntoView silently no-ops inside
+  // .reno-route-content. Measured on the deployed page — with "smooth" the pop
+  // stayed put at top -381, with the default it landed at +276. Arriving at
+  // once is also what a reduced-motion reader wants, so there is no branch.
   useEffect(() => {
     if (!preview || previewPulse === 0) return;
-    const node = previewRef.current;
-    if (!node) return;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    node.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    previewRef.current?.scrollIntoView({ block: "center" });
   }, [preview, previewPulse]);
 
   useEffect(() => {
