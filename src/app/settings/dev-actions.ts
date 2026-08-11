@@ -4,11 +4,12 @@
 // write arbitrary values into the REAL tables and stay there — that is the
 // point of the mode, and the reason it is gated harder.
 //
-// The presenter gate falls back to "admin" by explicit team decision, which is
-// fine for a rehearsal that only unlocks or resets. Handing the same default
-// to a tool that can zero a live account before a demo is not, so this one
-// needs DEV_MODE_CODE to be set: with no code configured the mode does not
-// exist at all.
+// The gate is a short shared password ("one" unless DEV_MODE_CODE overrides
+// it) — the team's explicit choice, same zero-friction stance as the presenter
+// tools. It is a speed bump, not a security boundary: it keeps a curious
+// student out of the panel, and nothing more. Real enforcement is that EVERY
+// action below re-checks the code server-side, so reaching the panel by typing
+// the URL still gets you nowhere without it.
 
 import { revalidatePath } from "next/cache";
 import { createHash, timingSafeEqual } from "node:crypto";
@@ -34,15 +35,9 @@ export interface DevActionState {
   message: string;
 }
 
-/** Null when unset — developer mode is hidden entirely rather than falling
- *  back to a guessable default the way the presenter gate does. */
-export async function devModeCode(): Promise<string | null> {
-  const code = process.env.DEV_MODE_CODE?.trim();
-  return code && code.length >= 8 ? code : null;
-}
-
-export async function isDevModeConfigured(): Promise<boolean> {
-  return (await devModeCode()) !== null;
+/** Shared developer password. DEV_MODE_CODE overrides it per deployment. */
+function configuredDevCode(): string {
+  return process.env.DEV_MODE_CODE?.trim() || "one";
 }
 
 function matches(submitted: string, configured: string): boolean {
@@ -51,19 +46,22 @@ function matches(submitted: string, configured: string): boolean {
   return timingSafeEqual(a, b);
 }
 
+/** Entry check for the door on the Settings page. The panel behind it is not
+ *  trusted because of this — every action re-validates the code itself. */
+export async function verifyDevCode(code: unknown): Promise<boolean> {
+  const submitted = typeof code === "string" ? code.trim() : "";
+  return submitted.length > 0 && matches(submitted, configuredDevCode());
+}
+
 function err(locale: AppLocale, en: string, id: string): DevActionState {
   return { status: "error", message: locale === "id" ? id : en };
 }
 
 async function authorise(formData: FormData): Promise<{ locale: AppLocale; error?: DevActionState }> {
   const locale = normalizeLocale(formData.get("locale"));
-  const configured = await devModeCode();
-  if (!configured) {
-    return { locale, error: err(locale, "Developer mode is not configured (set DEV_MODE_CODE).", "Mode pengembang belum dikonfigurasi (atur DEV_MODE_CODE).") };
-  }
   const raw = formData.get("devCode");
   const submitted = typeof raw === "string" ? raw.trim() : "";
-  if (!submitted || !matches(submitted, configured)) {
+  if (!submitted || !matches(submitted, configuredDevCode())) {
     return { locale, error: err(locale, "That developer code is not correct.", "Kode pengembang tidak cocok.") };
   }
   return { locale };

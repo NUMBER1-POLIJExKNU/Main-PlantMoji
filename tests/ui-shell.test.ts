@@ -161,12 +161,22 @@ describe("shared PlantMoji application shell", () => {
     // Team-internal project: the demo gate is deliberately zero-friction —
     // "admin" works everywhere unless DEMO_CHEAT_CODE overrides it.
     expect(actions).toContain('process.env.DEMO_CHEAT_CODE?.trim() || "admin"');
-    // Developer mode is the other door and is NOT zero-friction: it writes
-    // arbitrary real values, so with no DEV_MODE_CODE set it does not exist.
+    // Developer mode is the other door: same zero-friction stance, its own
+    // password. The password is a speed bump — what actually holds is that
+    // every action re-checks the code on the server, so reaching the panel by
+    // typing the URL gets you nothing.
     const devActions = source("src/app/settings/dev-actions.ts");
+    const devToggle = source("src/components/dev-mode-toggle.tsx");
     expect(settings).toContain('params.dev === "1"');
-    expect(devActions).toContain("process.env.DEV_MODE_CODE?.trim()");
-    expect(devActions).toContain("code && code.length >= 8 ? code : null");
+    expect(settings).toContain("<DevModeToggle locale={locale} />");
+    expect(devActions).toContain('process.env.DEV_MODE_CODE?.trim() || "one"');
+    expect(devActions).toContain("export async function verifyDevCode");
+    expect(devToggle).toContain("await verifyDevCode(code)");
+    // Every mutation goes through authorise(), never straight to the table.
+    for (const action of ["devSetProgress", "devSetQuest", "devSetMood", "devSetBadge", "devSetChapter", "devSetShopItem"]) {
+      expect(devActions).toContain(`export async function ${action}`);
+    }
+    expect(devActions).toContain("const { locale, error } = await authorise(formData);");
     expect(controls).toContain("prepareDemoLevelUp");
     expect(controls).toContain("grantDemoXp");
     expect(controls).toContain("evolveDemoCompanion");

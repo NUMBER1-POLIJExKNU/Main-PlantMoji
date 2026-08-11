@@ -7,7 +7,7 @@ import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
 import CheatModeToggle from "@/components/cheat-mode-toggle";
 import DevModePanel from "@/components/dev-mode-panel";
-import { isDevModeConfigured } from "@/app/settings/dev-actions";
+import DevModeToggle from "@/components/dev-mode-toggle";
 import { readDevSnapshot } from "@/game/dev/dev-mode";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { SHOP_CATALOG } from "@/game/economy/shop-catalog";
@@ -300,7 +300,6 @@ export default async function SettingsPage({
       {showDev && (
         <DevModePanel
           locale={locale}
-          configured={await isDevModeConfigured()}
           snapshot={await readDevSnapshot(supabase, PLANT_ID)}
           quests={(Object.keys(QUEST_DEFINITIONS) as QuestKey[]).map((key) => ({
             key,
@@ -316,6 +315,11 @@ export default async function SettingsPage({
         locale={locale}
         seed={{ level: demoProgress.level, totalXp: demoProgress.totalXp, days: demoProgress.streak }}
       />
+
+      {/* Developer mode's door, straight under the cheat sandbox's — the two
+          are opposites (that one discards, this one keeps) so they belong
+          side by side where the difference is easy to read. */}
+      <DevModeToggle locale={locale} />
       </div>
     </main>
   );

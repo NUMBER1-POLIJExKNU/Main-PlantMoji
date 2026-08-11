@@ -12,7 +12,7 @@
 // sandbox; a developer editing them here would be writing fake readings into
 // the real history.
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   devSetBadge,
   devSetChapter,
@@ -22,6 +22,7 @@ import {
   devSetShopItem,
   type DevActionState,
 } from "@/app/settings/dev-actions";
+import { DEV_CODE_STORAGE_KEY } from "@/components/dev-mode-toggle";
 import type { AppLocale } from "@/lib/i18n";
 
 const INITIAL: DevActionState = { status: "idle", message: "" };
@@ -100,34 +101,36 @@ export default function DevModePanel({
   snapshot,
   quests,
   shopItems,
-  configured,
 }: {
   locale: AppLocale;
   snapshot: DevSnapshot;
   quests: readonly { key: string; title: string }[];
   shopItems: readonly DevShopItem[];
-  /** False when DEV_MODE_CODE is unset — the mode simply does not exist. */
-  configured: boolean;
 }) {
   const [code, setCode] = useState("");
+  // Carried over from the door on the Settings page so it is not typed twice.
+  // Every action still sends it back for a server-side check — arriving here
+  // with an empty box (by typing the URL) buys nothing.
+  // Deferred out of the effect body rather than set synchronously, the same
+  // convention monitoring-live.tsx follows — and a lazy initializer is not an
+  // option here, since sessionStorage does not exist during the server render.
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      try {
+        const saved = sessionStorage.getItem(DEV_CODE_STORAGE_KEY);
+        if (saved) setCode(saved);
+      } catch {}
+    });
+    return () => { cancelled = true; };
+  }, []);
   const [progressState, progressAction] = useActionState(devSetProgress, INITIAL);
   const [questState, questAction] = useActionState(devSetQuest, INITIAL);
   const [moodState, moodAction] = useActionState(devSetMood, INITIAL);
   const [badgeState, badgeAction] = useActionState(devSetBadge, INITIAL);
   const [chapterState, chapterAction] = useActionState(devSetChapter, INITIAL);
   const [shopState, shopAction] = useActionState(devSetShopItem, INITIAL);
-
-  if (!configured) {
-    return (
-      <section className="mt-5 rounded-[16px] border-[3px] border-zinc-400 bg-zinc-50 p-5 dark:bg-zinc-900">
-        <h2 className="pm-heading text-xs">🛠️ DEVELOPER MODE</h2>
-        <p className="mt-2 text-xs leading-5 text-zinc-600 dark:text-zinc-400">
-          Set <code className="font-mono">DEV_MODE_CODE</code> (8+ characters) in the environment and redeploy. It is
-          kept separate from the presenter code because everything in here writes real data that stays.
-        </p>
-      </section>
-    );
-  }
 
   const shopByCategory = ["pot", "decor", "accessory"].map((category) => ({
     category,
