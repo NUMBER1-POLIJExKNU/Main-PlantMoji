@@ -55,6 +55,17 @@ describe("Farmer Tani living-world UI", () => {
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
   });
 
+  it("keeps the bed compact but still larger than Farmer Tani", () => {
+    const farmerRule = css.match(/\.npc-farmer \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const bedRule = css.match(/\.npc-farmer-bed \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const size = (rule: string, property: string) =>
+      Number(rule.match(new RegExp(`${property}:\\s*(\\d+)px`))?.[1]);
+    expect(size(bedRule, "width")).toBeGreaterThan(size(farmerRule, "width"));
+    expect(size(bedRule, "height")).toBeGreaterThan(size(farmerRule, "height"));
+    expect(size(bedRule, "width")).toBe(118);
+    expect(size(bedRule, "width")).toBeLessThan(142);
+  });
+
   it("measures the real grass boundary instead of wandering by viewport width", () => {
     expect(live).toContain('const grass = $(".grass-floor")');
     expect(live).toContain("grass.getBoundingClientRect()");
