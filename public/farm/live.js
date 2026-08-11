@@ -51,6 +51,11 @@ const COPY = {
     "weather.loading": "Memuat prakiraan...",
     "weather.unavailable": "Prakiraan belum tersedia",
     "clock.label": "WAKTU JEMBER · WIB", "hud.status": "STATUS JAMKACHU", "hud.mission": "MISI HARI INI", "hud.bonus": "BONUS", "hud.quiz": "QUIZ HARI INI",
+    "focus.now": "SEKARANG", "focus.step.sense": "LIHAT", "focus.step.senseHint": "Baca kondisinya", "focus.step.act": "LAKUKAN", "focus.step.actHint": "Ubah satu hal", "focus.step.verify": "CEK", "focus.step.verifyHint": "Sensor membuktikan", "focus.proof": "Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.",
+    "focus.waiting.title": "Hubungkan sensor", "focus.waiting.summary": "Nilai akan muncul otomatis saat perangkat tersambung.", "focus.waiting.action": "Periksa koneksi perangkat 🔌", "focus.waiting.why": "Pastikan perangkat menyala dan Arduino terhubung ke Node-RED. Nilai akan muncul sendiri—kamu tidak perlu menyegarkan halaman.",
+    "focus.healthy.title": "Jamkachu nyaman", "focus.healthy.summary": "Semua kondisi aman. Tidak ada tindakan yang perlu dilakukan sekarang.",
+    "focus.action.title": "Bantu Jamkachu sekarang", "focus.action.summary": "Lakukan satu tindakan di bawah, lalu biarkan sensor melihat perubahannya.",
+    "focus.verifying.title": "Pertahankan kondisinya", "focus.verifying.summary": "Perawatanmu terlihat. Jangan ubah apa pun dulu saat sensor memeriksa.",
     "guide.title": "CARA BERMAIN", "guide.sense": "1 · Lihat sensor", "guide.understand": "2 · Dengar Jamkachu", "guide.act": "3 · Ubah satu hal kecil", "guide.verify": "4 · Sensor cek, hadiah tumbuh", "guide.start": "AYO MULAI!",
     "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ok": "Aman", "env.check": "Perlu dicek", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Misi muncul saat sensorku merasakan perubahan",
@@ -94,6 +99,11 @@ const COPY = {
     "weather.loading": "Loading forecast...",
     "weather.unavailable": "Forecast unavailable",
     "clock.label": "JEMBER TIME · WIB", "hud.status": "JAMKACHU STATUS", "hud.mission": "TODAY'S MISSION", "hud.bonus": "BONUS", "hud.quiz": "TODAY'S QUIZ",
+    "focus.now": "RIGHT NOW", "focus.step.sense": "LOOK", "focus.step.senseHint": "Read the condition", "focus.step.act": "DO", "focus.step.actHint": "Change one thing", "focus.step.verify": "CHECK", "focus.step.verifyHint": "Sensors prove it", "focus.proof": "This button only gives guidance. Real sensors check your care.",
+    "focus.waiting.title": "Connect the sensors", "focus.waiting.summary": "Values will appear automatically when the device connects.", "focus.waiting.action": "Check the device connection 🔌", "focus.waiting.why": "Make sure the device is powered and Arduino is connected to Node-RED. Values will appear on their own—no refresh needed.",
+    "focus.healthy.title": "Jamkachu is comfortable", "focus.healthy.summary": "Every condition is safe. Nothing needs changing right now.",
+    "focus.action.title": "Help Jamkachu now", "focus.action.summary": "Do the one action below, then let the sensors see the change.",
+    "focus.verifying.title": "Keep it steady", "focus.verifying.summary": "Your care was noticed. Do not change anything while the sensors check.",
     "guide.title": "HOW TO PLAY", "guide.sense": "1 · Check the sensors", "guide.understand": "2 · Listen to Jamkachu", "guide.act": "3 · Change one small thing", "guide.verify": "4 · Sensors check, rewards grow", "guide.start": "LET'S GROW!",
     "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ok": "OK", "env.check": "Check", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "Missions appear when my sensors feel a change",
@@ -1829,6 +1839,7 @@ function isNightWIB() {
 // not evaluated yet — the first evaluation applies silently, no cue).
 let careMood = "Happy";
 let sleepShown = null;
+let careFocusState = "waiting";
 
 /** Sleep presentation is Happy-only: a problem mood at night keeps its own
  *  face and care button. */
@@ -1841,7 +1852,10 @@ function applyCareButton() {
   const btn = $("#care-action");
   if (!btn) return;
   const labelEl = btn.querySelector(".care-action-label") ?? btn;
-  if (sleepShown) {
+  if (careFocusState === "waiting") {
+    btn.classList.remove("care-night");
+    labelEl.textContent = t("focus.waiting.action");
+  } else if (sleepShown) {
     btn.classList.add("care-night");
     labelEl.textContent = PM().sleep?.button ?? SLEEP_FALLBACK.button;
   } else {
@@ -1895,7 +1909,12 @@ function maybeWhyCard(text, rect) {
  *  leaf/sparkle particles (never water droplets), the mood's why-card on
  *  the 30s cooldown, a mood-appropriate cue. Zero XP, zero writes. */
 function onCareAction() {
-  const rect = mascotRect();
+  const rect = careFocusState === "waiting" ? ($("#care-action")?.getBoundingClientRect() ?? mascotRect()) : mascotRect();
+  if (careFocusState === "waiting") {
+    window.PMSfx?.play("tick");
+    maybeWhyCard(t("focus.waiting.why"), rect);
+    return;
+  }
   if (sleepShown) {
     // Quiet good-night press: soft "shh" card only — no bounce, no confetti.
     window.PMSfx?.play("tick");
@@ -4449,6 +4468,35 @@ function renderHp(moodState) {
   el.classList.add(pct >= 80 ? "hp-good" : pct >= 60 ? "hp-warn" : "hp-low");
 }
 
+/** The dominant home decision surface. It explains the same real quest
+ *  state in four child-readable phases without creating a second source of
+ *  truth: sensor availability and renderQuestSlot choose the state; this
+ *  function only paints localized guidance. */
+function renderCareFocus(state) {
+  const focus = $("#care-focus");
+  if (!focus) return;
+  const next = ["waiting", "healthy", "action", "verifying"].includes(state) ? state : "waiting";
+  const presentation = {
+    waiting: { icon: "📡", steps: ["current", "todo", "todo"] },
+    healthy: { icon: "💚", steps: ["done", "not-needed", "done"] },
+    action: { icon: "👐", steps: ["done", "current", "todo"] },
+    verifying: { icon: "🔍", steps: ["done", "done", "current"] },
+  }[next];
+  careFocusState = next;
+  focus.dataset.careState = next;
+  setText("#care-focus-icon", presentation.icon);
+  setText("#care-focus-title", t(`focus.${next}.title`));
+  setText("#care-focus-summary", t(`focus.${next}.summary`));
+  ["sense", "act", "verify"].forEach((step, index) => {
+    const item = focus.querySelector(`[data-care-step="${step}"]`);
+    if (!item) return;
+    item.dataset.stepState = presentation.steps[index];
+    if (presentation.steps[index] === "current") item.setAttribute("aria-current", "step");
+    else item.removeAttribute("aria-current");
+  });
+  applyCareButton();
+}
+
 /** Home quest slot (#current-quest): first ACTIVE quest, else first
  *  VERIFYING. Maintain quests show live elapsed/target minutes; VERIFYING
  *  renders the amber shimmer state (Task 12): 🔍 + "Sensor is checking…" +
@@ -4464,6 +4512,11 @@ function renderQuestSlot(rows) {
   // shimmer (.verifying) + "Sensor is checking…" line below already tell
   // the whole story without engineering vocabulary.
   slotEl?.classList.toggle("verifying", quest?.status === "VERIFYING");
+  if (quest?.status === "VERIFYING") renderCareFocus("verifying");
+  else if (quest?.status === "ACTIVE") renderCareFocus("action");
+  else if (lastReading != null && careMood !== "Happy") renderCareFocus("action");
+  else if (lastReading != null) renderCareFocus("healthy");
+  else renderCareFocus("waiting");
   if (!quest) {
     nameEl.textContent = t("quest.none");
     progressEl.textContent = "";
@@ -5189,6 +5242,7 @@ function renderSensorsWaiting() {
     note.textContent = W.note ?? SENSOR_WAIT_FALLBACK.note;
     note.hidden = false;
   }
+  renderCareFocus("waiting");
 }
 
 /** Environment strip (#env-strip): 2×2 game-HUD stat tiles (4×1 on the
@@ -5277,6 +5331,10 @@ function renderSensors(reading) {
     humidity: reading?.humidity != null && Number.isFinite(humidity) ? humidity : null,
     light: reading?.light != null && Number.isFinite(light) && light >= 0 && light <= 100 ? light : null,
   });
+  // Sensor availability may arrive before or after the quest query. Repaint
+  // from the last quest snapshot so the focus card never stays on "connect"
+  // once real values are visible.
+  renderQuestSlot(lastQuestRows);
 }
 
 function weatherIcon(description) {

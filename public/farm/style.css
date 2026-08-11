@@ -391,7 +391,9 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .weather-text .indoor-reading { margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(43, 58, 39, 0.25); font-size: 13px; color: #555; }
 .weather-widget.weather-stale .forecast-time { color: #9a6515; }
 
-/* Home info stack: quest → bond → divider → env strip → actions */
+/* Home info stack: one decision → mission → sensor evidence → progression →
+   bonus. The care-focus card answers the three first-use questions before
+   asking a child to interpret numbers or rewards. */
 .home-stack {
     position: relative;
     z-index: 10;
@@ -403,6 +405,47 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     align-items: stretch;
     gap: 14px;
 }
+
+.care-focus {
+    --care-accent:#718076;
+    position:relative;
+    display:grid;
+    gap:14px;
+    overflow:hidden;
+    border-color:var(--care-accent);
+    padding:18px;
+    background:linear-gradient(145deg,color-mix(in srgb,var(--care-accent) 10%,var(--color-surface)),var(--color-surface) 62%);
+    box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent);
+}
+.care-focus::before { content:""; position:absolute; inset:0 auto 0 0; width:7px; background:var(--care-accent); }
+.care-focus[data-care-state="waiting"] { --care-accent:#6583a0; }
+.care-focus[data-care-state="healthy"] { --care-accent:var(--color-grass); }
+.care-focus[data-care-state="action"] { --care-accent:#d36c43; }
+.care-focus[data-care-state="verifying"] { --care-accent:#d4a52f; }
+.care-focus-heading { display:grid; grid-template-columns:46px minmax(0,1fr); align-items:center; gap:12px; padding-left:3px; }
+.care-focus-icon { display:grid; place-items:center; width:46px; height:46px; border:2px solid var(--color-outline); border-radius:12px; background:var(--color-surface); font:25px/1 sans-serif; }
+.care-focus-kicker { display:block; margin-bottom:4px; color:var(--care-accent); font:7px/1.3 var(--font-heading); letter-spacing:.08em; }
+.care-focus h2 { margin:0; color:var(--color-outline); font:13px/1.45 var(--font-heading); }
+.care-focus-heading p { margin:5px 0 0; color:var(--color-text); font:14px/1.4 var(--font-body); }
+.care-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:0; padding:0; list-style:none; }
+.care-steps li { min-width:0; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:6px; border:2px solid var(--color-border); border-radius:10px; padding:7px; color:var(--color-text-muted); background:color-mix(in srgb,var(--color-surface) 76%,#dce5da); }
+.care-steps li > b { display:grid; place-items:center; width:27px; height:27px; border:2px solid currentColor; border-radius:50%; font:9px/1 var(--font-heading); }
+.care-steps li span { min-width:0; display:grid; gap:2px; }
+.care-steps li strong { overflow:hidden; font:7px/1.25 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
+.care-steps li small { overflow:hidden; font:10px/1.25 var(--font-body); text-overflow:ellipsis; white-space:nowrap; }
+.care-steps li[data-step-state="done"] { color:#285a30; border-color:#76ab70; background:#e4f4dd; }
+.care-steps li[data-step-state="done"] > b::after { content:"✓"; }
+.care-steps li[data-step-state="done"] > b { font-size:0; }
+.care-steps li[data-step-state="current"] { color:var(--color-outline); border-color:var(--care-accent); background:color-mix(in srgb,var(--care-accent) 20%,white); box-shadow:0 3px 0 color-mix(in srgb,var(--care-accent) 38%,transparent); }
+.care-steps li[data-step-state="not-needed"] { opacity:.58; }
+.care-proof-note { margin:0; color:var(--color-text-muted); font:11px/1.4 var(--font-body); text-align:center; }
+.care-focus .actions-panel { margin:0; }
+.care-focus #care-action { max-width:none; }
+
+@media (prefers-reduced-motion:no-preference) {
+    .care-focus[data-care-state="verifying"] { animation:care-focus-check 1.8s ease-in-out infinite; }
+}
+@keyframes care-focus-check { 0%,100% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent); } 50% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 62%,transparent); } }
 
 /* Whole-card quest link (kid-guide Task 1): #current-quest is a real
    <a href="/quests"> now — link resets + a ≥44px tap target + the same
@@ -1999,6 +2042,19 @@ body.farmer-dragging {
         padding: 4px 4px 104px;
         overflow-y: visible;
     }
+    /* Promote the contents of the stack into the game-world flex flow so the
+       decision card can appear before the tall character stage on phones.
+       DOM order and every realtime anchor remain unchanged; this is purely
+       responsive information hierarchy. */
+    .home-stack { display:contents; }
+    .hud-top { order:0; }
+    .care-focus { order:1; align-self:center; flex:0 0 auto; width:calc(100vw - 28px); min-width:0; max-width:640px; margin-inline:0; }
+    .mascot-stage { order:2; }
+    #current-quest { order:3; width:100%; max-width:640px; margin-inline:auto; }
+    #quest-verify-console { order:4; width:100%; max-width:640px; margin-inline:auto; }
+    #env-strip { order:5; width:100%; max-width:640px; margin-inline:auto; }
+    .user-gamification { order:6; max-width:640px; margin-inline:auto; }
+    .quiz-chip { order:7; max-width:640px; margin-inline:auto; }
     .hud-top { width:calc(100% - 60px); min-width:0; justify-content:center; }
     .hud-top .jember-clock { flex:0 0 auto; }
     .hud-top .weather-widget { flex:1 1 0; min-width:0; max-width:260px; overflow:hidden; }
@@ -2045,6 +2101,30 @@ body.farmer-dragging {
     .xp-bar-wrap { width: 110px; }
     .username { max-width: 150px; }
     .badges { flex-basis: 100%; justify-content: center; }
+
+    /* Keep the character expressive but let the one care decision enter the
+       first phone viewport instead of sitting below a presentation-scale
+       mascot and several progression rows. */
+    .mascot-wrapper { width:min(210px,60vw); }
+    .speech-bubble { max-width:calc(100vw - 48px); margin-bottom:10px; padding:10px 14px; font-size:13px; }
+    .char-id h2 { font-size:18px; }
+    #char-mood { margin-top:4px; }
+    .companion-next { display:none; }
+    .wardrobe-open { margin-top:4px; }
+    .home-stack { gap:10px; }
+    .care-focus { gap:11px; padding:14px 12px 14px 16px; }
+    .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
+    .care-focus-icon { width:40px; height:40px; font-size:21px; }
+    .care-focus h2 { font-size:11px; }
+    .care-focus-heading p { font-size:12px; }
+    .care-steps { gap:4px; }
+    .care-steps,.care-steps li,.care-focus .actions-panel,#care-action,.care-action-label { min-width:0; }
+    .care-action-label { overflow-wrap:anywhere; }
+    .care-steps li { min-height:54px; grid-template-columns:22px minmax(0,1fr); gap:4px; padding:5px 4px; }
+    .care-steps li > b { width:22px; height:22px; font-size:7px; }
+    .care-steps li strong { font-size:6px; }
+    .care-steps li small { font-size:8px; white-space:normal; }
+    .care-proof-note { font-size:10px; }
 
     /* Weather widget had only ~10px of slack at exactly 360px wide
        (32px icon + 16px gap + 190px min-width text + 48px panel padding
@@ -2144,13 +2224,25 @@ body.farmer-dragging {
         scrollbar-color:var(--color-border) transparent;
     }
 
-    .home-stack .user-gamification { order:-4; }
-    #current-quest { order:-3; }
-    #quest-verify-console { order:-2; }
-    .actions-panel { order:-1; margin-top:-10px; }
-    #env-strip { order:0; }
-    .quiz-chip { order:1; }
+    .care-focus { order:-5; }
+    #current-quest { order:-4; }
+    #quest-verify-console { order:-3; }
+    #env-strip { order:-2; }
+    .home-stack .user-gamification { order:-1; }
+    .quiz-chip { order:0; }
     .home-divider { display: none; }
+
+    .care-focus { gap:10px; padding:13px 14px 14px 17px; }
+    .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
+    .care-focus-icon { width:40px; height:40px; font-size:21px; }
+    .care-focus h2 { font-size:11px; }
+    .care-focus-heading p { margin-top:3px; font-size:12px; }
+    .care-steps li { grid-template-columns:23px minmax(0,1fr); min-height:47px; padding:5px; }
+    .care-steps li > b { width:23px; height:23px; font-size:7px; }
+    .care-steps li strong { font-size:6px; }
+    .care-steps li small { font-size:8px; }
+    .care-proof-note { font-size:9px; }
+    .care-focus #care-action { min-height:58px; border-top-width:3px; border-radius:12px; font-size:10px; }
 
     .user-gamification {
         display:grid;
@@ -2185,15 +2277,6 @@ body.farmer-dragging {
         text-align:left;
     }
     #current-quest .current-quest-line { font:11px/1.65 var(--font-body); font-weight:800; }
-    #care-action {
-        max-width: none;
-        min-height:52px;
-        padding:10px 18px;
-        border-top-width:0;
-        border-top-left-radius:5px;
-        border-top-right-radius:5px;
-        font-size: 11px;
-    }
     #env-strip { padding:12px; font-size:14px; white-space:normal; border-color:var(--color-border); }
     .env-hud-title { margin-bottom:10px; }
     /* The rail is narrow: a 2×2 board gives values, state and ideal range room. */
