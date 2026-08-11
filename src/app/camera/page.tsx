@@ -13,7 +13,7 @@ import CameraGuardian, { type GuardianFeedItem } from "@/components/camera-guard
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import { getRequestLocale } from "@/lib/i18n-server";
-import { getPlant } from "@/lib/queries";
+import { getPlant, normalizeGrowthStage } from "@/lib/queries";
 import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { CAMERA_COPY } from "./copy";
@@ -101,11 +101,12 @@ export default async function CameraPage() {
 
   return (
     <main className="mx-auto w-full">
-      <PageHeader icon="📷" eyebrow={locale === "id" ? "AMATI DENGAN AMAN" : "OBSERVE SAFELY"} title={copy.title} description={copy.description} />
+      <PageHeader destination="camera" eyebrow={locale === "id" ? "AMATI DENGAN AMAN" : "OBSERVE SAFELY"} title={copy.title} description={copy.description} />
       <div className="mx-auto w-full max-w-[720px]">
         <CameraGuardian
           locale={locale}
           plantId={PLANT_ID}
+          growthStage={normalizeGrowthStage(result.plant.growth_stage) ?? "New Plant"}
           guardianReady={guardianReady}
           scanConfigured={Boolean(process.env.GEMINI_API_KEY)}
           initialEvents={initialEvents}

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("React Grandpa Tani chat", () => {
+describe("React Farmer Tani chat", () => {
   const npc = read("src/components/farmer-npc.tsx");
   const dialog = read("src/components/farmer-chat-dialog.tsx");
   const css = read("src/app/globals.css");
@@ -28,8 +28,7 @@ describe("React Grandpa Tani chat", () => {
     expect(dialog).toContain("document.body");
     expect(dialog).toContain('role="dialog"');
     expect(dialog).toContain('aria-modal="true"');
-    expect(dialog).toContain("Kakek Tani");
-    expect(dialog).toContain("Grandpa Tani");
+    expect(dialog.match(/Farmer Tani/g)?.length).toBeGreaterThanOrEqual(2);
     expect(css).toContain(".pm-farmer-chat-backdrop");
     expect(css).toContain("max-height:82dvh");
   });

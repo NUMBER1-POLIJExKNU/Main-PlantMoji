@@ -388,8 +388,8 @@ async function settleCompletions(supabase: SupabaseClient, plantId: string): Pro
     await evaluateChapters(supabase, plantId);
   }
 
-  // Level-only companion sync reads authoritative bond_state. It awards no XP
-  // and safely no-ops until milestone11 is installed.
+  // Virtual evolution only reads persisted, sensor-verified COMPLETED quests.
+  // It awards no XP and safely no-ops until milestone11 is installed.
   await evaluateCompanion(supabase, plantId);
 
   // Seed coin sweep (milestone18): mirrors the persisted-state XP bonus

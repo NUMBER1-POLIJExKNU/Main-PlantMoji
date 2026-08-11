@@ -34,21 +34,6 @@ export interface ShopPurchaseRow {
 const CATEGORY_ORDER: ShopCategory[] = ["pot", "decor", "accessory"];
 type OwnershipFilter = "all" | "affordable" | "owned";
 const FILTER_ORDER: OwnershipFilter[] = ["all", "affordable", "owned"];
-// Windows commonly renders the Indonesia flag emoji as the regional code
-// "ID". These catalog entries use a CSS-drawn Merah Putih instead so the
-// item icon is a flag on every desktop platform and emoji font.
-const CSS_INDONESIA_FLAG_KEYS = new Set(["decor_indonesia_flag", "acc_indonesia_sash"]);
-
-function ShopItemVisual({ item }: { item: ShopGridItem }) {
-  const art = shopItemArt(item.key);
-  const isIndonesiaFlag = CSS_INDONESIA_FLAG_KEYS.has(item.key) && !art;
-  return (
-    <span className={`pm-shop-visual${isIndonesiaFlag ? " is-indonesia-flag" : ""}`} aria-hidden="true">
-      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-      {art ? <img src={art} alt="" className="pm-shop-art" width={128} height={128} draggable={false} /> : isIndonesiaFlag ? null : item.emoji}
-    </span>
-  );
-}
 
 function popConfetti(anchor: HTMLElement) {
   const rect = anchor.getBoundingClientRect();
@@ -95,26 +80,18 @@ export default function ShopGrid({
   const [toast, setToast] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [category, setCategory] = useState<ShopCategory>("pot");
   const [filter, setFilter] = useState<OwnershipFilter>("all");
-  const [previewKey, setPreviewKey] = useState<string | null>(() => items.find((item) => item.category === "pot")?.key ?? null);
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
   // Cheat sandbox (feature 3): buy/equip stay client-only so a classroom demo
   // never writes purchases or equips to Supabase.
   const { active: cheatActive } = useCheat();
 
-  // Balance and ownership/equip state stay server-authoritative. Realtime
-  // purchase events are re-read instead of reconstructed from the payload so
-  // cross-tab equips and the category-exclusive unequip happen atomically in UI.
+  // Seeds balance stays live: bond_state is already realtime (milestone3),
+  // so earned Seeds appear here without a reload. Display only.
   useEffect(() => {
     const supabase = getBrowserSupabase();
     if (!supabase) return;
-    const refreshPurchases = async () => {
-      const { data, error } = await supabase
-        .from("shop_purchases")
-        .select("item_key, category, equipped")
-        .eq("plant_id", plantId);
-      if (!error && data) setPurchases(data as ShopPurchaseRow[]);
-    };
     const channel = supabase
-      .channel(`shop-live-${plantId}`)
+      .channel(`shop-seeds-${plantId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "bond_state", filter: `plant_id=eq.${plantId}` },
@@ -122,11 +99,6 @@ export default function ShopGrid({
           const next = (payload.new as { seeds?: number } | null)?.seeds;
           if (typeof next === "number") setSeeds(next);
         },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "shop_purchases", filter: `plant_id=eq.${plantId}` },
-        () => { void refreshPurchases(); },
       )
       .subscribe();
     return () => {
@@ -171,16 +143,30 @@ export default function ShopGrid({
     }
   };
 
+  // Pots and accessories are exclusive — wearing one takes the other off.
+  // Decorations are not: a garden may show every one it owns at once, which is
+  // why equipping one must not clear its siblings here either.
+  const EXCLUSIVE: ShopCategory[] = ["pot", "accessory"];
+  const applyEquip = (item: ShopGridItem, nextEquipped: boolean) =>
+    setPurchases((prev) =>
+      prev.map((p) => {
+        if (p.item_key === item.key) return { ...p, equipped: nextEquipped };
+        if (nextEquipped && p.category === item.category && EXCLUSIVE.includes(item.category)) {
+          return { ...p, equipped: false };
+        }
+        return p;
+      }),
+    );
+
+  // Taking something off used to change a button label and nothing else: the
+  // stage kept previewing whatever was selected, so the item stayed on the
+  // plant and equipping read as broken. Dropping the selection hands the stage
+  // back to the real worn loadout, which is the answer the tap asked for.
   const equip = async (item: ShopGridItem, nextEquipped: boolean) => {
     if (busyKey) return;
     if (cheatActive) {
-      setPurchases((prev) =>
-        prev.map((p) => {
-          if (p.item_key === item.key) return { ...p, equipped: nextEquipped };
-          if (nextEquipped && p.category === item.category) return { ...p, equipped: false };
-          return p;
-        }),
-      );
+      applyEquip(item, nextEquipped);
+      if (!nextEquipped) setPreviewKey(null);
       window.PMSfx?.play("coin");
       return;
     }
@@ -189,16 +175,8 @@ export default function ShopGrid({
       const result = await equipShopItem(item.key, nextEquipped, locale);
       applyResult(result);
       if (result.status === "success") {
-        const confirmedItemKey = result.itemKey ?? item.key;
-        const confirmedCategory = result.category ?? item.category;
-        const confirmedEquipped = result.equipped ?? nextEquipped;
-        setPurchases((prev) =>
-          prev.map((p) => {
-            if (p.item_key === confirmedItemKey) return { ...p, equipped: confirmedEquipped };
-            if (confirmedEquipped && p.category === confirmedCategory) return { ...p, equipped: false };
-            return p;
-          }),
-        );
+        applyEquip(item, nextEquipped);
+        if (!nextEquipped) setPreviewKey(null);
         window.PMSfx?.play("coin");
       } else {
         window.PMSfx?.play("tick");
@@ -220,14 +198,8 @@ export default function ShopGrid({
     return true;
   });
 
-  const selectCategory = (nextCategory: ShopCategory) => {
-    setCategory(nextCategory);
-    setPreviewKey(items.find((item) => item.category === nextCategory)?.key ?? null);
-    window.PMSfx?.play("tick");
-  };
-
   return (
-    <div className="pm-shop-browser">
+    <div>
       {toast && (
         <p className={`pm-shop-toast${toast.kind === "error" ? " is-error" : ""}`} role="status">
           {toast.text}
@@ -240,6 +212,8 @@ export default function ShopGrid({
         seeds={seeds}
         item={previewItem}
         owned={previewOwned}
+        wornPotKey={purchases.find((p) => p.category === "pot" && p.equipped)?.item_key ?? null}
+        wornAccessoryKey={purchases.find((p) => p.category === "accessory" && p.equipped)?.item_key ?? null}
         affordable={previewAffordable}
         busy={previewItem !== null && busyKey === previewItem.key}
         onClear={() => setPreviewKey(null)}
@@ -247,65 +221,67 @@ export default function ShopGrid({
         onEquip={equip}
       />
 
-      <div className="pm-shop-controls">
         <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>
           {CATEGORY_ORDER.map((entry) => (
-            <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => selectCategory(entry)}>
+            <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>
+              {/* The designer's tab art, so the three destinations look like
+                  what they sell instead of three unrelated emoji. */}
               {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
               <img src={shopCategoryArt(entry)} alt="" className="pm-shop-tab-art" width={96} height={96} draggable={false} />
-              <b>{copy.categories[entry]}</b>
+              <span>{copy.categories[entry]}</span>
             </button>
           ))}
         </nav>
-        <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>
-          {FILTER_ORDER.map((entry) => (
-            <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>
-              {copy.filters[entry]}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>{copy.filters[entry]}</button>)}</div>
 
       <div className="pm-shop-sections">
-        <section aria-label={copy.categories[category]}>
-          <div className="pm-shop-grid">
-            {shownItems.map((item) => {
-              const owned = ownedRow(item.key);
-              const affordable = seeds >= item.price;
-              const isPreviewed = previewKey === item.key;
-              return (
-                <button
-                  type="button"
-                  key={item.key}
-                  className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
-                  aria-busy={busyKey === item.key}
-                  aria-pressed={isPreviewed}
-                  onClick={() => setPreviewKey(item.key)}
-                >
-                  <ShopItemVisual item={item} />
-                  <span className="pm-shop-card-copy">
-                    <strong>{item.name}</strong>
-                    <small>{item.blurb}</small>
-                  </span>
-                  <span className="pm-shop-card-foot">
-                    <span className="pm-shop-price">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-                      <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
-                    </span>
-                    {owned ? (
-                      <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
-                    ) : affordable ? (
-                      <span className="pm-shop-state is-ready">{copy.preview} →</span>
-                    ) : (
-                      <span className="pm-shop-state is-short">+{item.price - seeds}</span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-            {shownItems.length === 0 && <p className="pm-shop-empty">{locale === "id" ? "Belum ada barang dalam filter ini." : "No items in this filter yet."}</p>}
-          </div>
-        </section>
+          <section aria-label={copy.categories[category]}>
+            <div className="pm-shop-grid">
+              {shownItems.map((item) => {
+                  const isPreviewed = previewKey === item.key;
+                  // A card used to show a picture, a name, a blurb and a
+                  // Preview button — no price, no idea whether you owned it,
+                  // no idea whether you could afford it. Buying rightly lives
+                  // on the stage above, but the browsing surface still has to
+                  // answer "what does this cost and do I have it".
+                  const owned = ownedRow(item.key);
+                  const affordable = seeds >= item.price;
+                  const art = shopItemArt(item.key);
+                  return (
+                    <article
+                      key={item.key}
+                      className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
+                      aria-busy={busyKey === item.key}
+                      // Tapping the card selects it into the try-on stage
+                      // above — buy/equip live exclusively on that stage now
+                      // (single coherent purchase surface). The eye button
+                      // below stays the keyboard-operable, independently
+                      // toggling control for the same selection.
+                      onClick={() => setPreviewKey(item.key)}
+                    >
+                      <span className="pm-shop-emoji" aria-hidden="true">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                        {art ? <img src={art} alt="" className="pm-shop-art" width={128} height={128} draggable={false} /> : item.emoji}
+                      </span>
+                      <h3>{item.name}</h3>
+                      <p>{item.blurb}</p>
+                      {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
+                      <div className="pm-shop-card-foot">
+                        <span className="pm-shop-price">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                          <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
+                        </span>
+                        {owned
+                          ? <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
+                          : !affordable && <span className="pm-shop-state is-short">{item.price - seeds} {copy.needMore}</span>}
+                      </div>
+                      <button type="button" className={`pm-shop-preview-btn${isPreviewed ? " is-active" : ""}`} onClick={(event) => { event.stopPropagation(); setPreviewKey(isPreviewed ? null : item.key); }}>{isPreviewed ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
+                    </article>
+                  );
+                })}
+              {shownItems.length === 0 && <p className="pm-shop-empty">{locale === "id" ? "Belum ada barang dalam filter ini." : "No items in this filter yet."}</p>}
+            </div>
+          </section>
       </div>
     </div>
   );

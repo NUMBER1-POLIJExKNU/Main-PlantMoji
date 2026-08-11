@@ -617,7 +617,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                   : { color: "var(--color-text)" }
               }
             >
-              <span className="pm-collection-tab-icon text-base leading-none" role="img" aria-hidden="true">
+              <span className="text-base leading-none" role="img" aria-hidden="true">
                 {entry.emoji}
               </span>
               {copy[entry.id]}
@@ -698,7 +698,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             // The real Jamkachu sprite (four moods share the "plain" body —
             // MOOD_STATUS_CHIP tells them apart, same contract as mascot.tsx).
             const chip = MOOD_STATUS_CHIP[selectedMood.mood as PlantMood];
-            const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? "happy");
+            const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? "plain");
             // Small reinforcement icon ties the hero back to the dex card's
             // art — this is also what fully disambiguates SoilAcidic from
             // SoilAlkaline here, since the big sprite + chip alone still
@@ -805,7 +805,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               return (
                 <button key={badge.key} type="button" className="pm-wheel-node pm-gem-button cursor-pointer border-0 bg-transparent p-0" style={{ left: `${meta.x}%`, top: `${meta.y}%`, ...cascadeStyle(index) }} aria-pressed={selected} aria-label={`${badge.name}: ${unlocked ? copy.unlocked : copy.locked}`} onClick={() => { setSelectedBadgeKey(badge.key); window.PMSfx?.play("tick"); }}>
                     <span className={`pm-gem-socket relative grid aspect-square place-items-center overflow-hidden rounded-full border-[5px] ${unlocked ? "pm-gem-unlocked" : "pm-gem-locked"} ${flipping.has(badge.key) ? "pm-badge-flip" : ""}`} style={unlocked ? { background: `radial-gradient(circle at 38% 30%, #fff 0 5%, ${meta.color} 18% 58%, #4D5135 100%)`, borderColor: selected ? "#243421" : "#FFF4BE" } : { background: "#D9E1D5", borderColor: selected ? "#243421" : "#AAB6A5" }}>
-                      <span className={`pm-badge-icon text-3xl leading-none sm:text-4xl ${unlocked ? "drop-shadow-[0_2px_0_rgba(255,255,255,.6)]" : "brightness-0 opacity-25"}`} aria-hidden="true">{badge.emoji}</span>
+                      <span className={`text-3xl leading-none sm:text-4xl ${unlocked ? "drop-shadow-[0_2px_0_rgba(255,255,255,.6)]" : "brightness-0 opacity-25"}`} aria-hidden="true">{badge.emoji}</span>
                       {!unlocked && <span className="absolute bottom-1 right-2 text-sm" aria-hidden="true">🔒</span>}
                     </span>
                 </button>
@@ -814,7 +814,6 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           </div>
           {selectedBadge && (
             <article className="pm-panel mt-4 text-center" style={{ borderColor: selectedBadgeUnlocked ? "var(--color-yellow)" : "var(--color-border)", ...(selectedBadgeUnlocked ? {} : LOCKED_PANEL) }} aria-live="polite">
-              <span className={`pm-selected-badge-icon${selectedBadgeUnlocked ? " is-unlocked" : ""}`} aria-hidden="true">{selectedBadgeUnlocked ? selectedBadge.emoji : "🔒"}</span>
               <p className="pm-heading text-[10px]" style={{ color: selectedBadgeUnlocked ? "#A97B12" : INK_FAINT }}>{selectedBadgeUnlocked ? `◆ ${copy.unlocked} ◆` : `🔒 ${copy.locked}`}</p>
               <h3 className="mt-2 text-base font-bold">{selectedBadge.name}</h3>
               <p className="mt-1 text-xs leading-5" style={{ color: INK_MUTED }}>{selectedBadge.description}</p>

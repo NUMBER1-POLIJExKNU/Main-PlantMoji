@@ -48,6 +48,19 @@
          no internet — same rationale as vendor/supabase.js. -->
     <link rel="stylesheet" href="/farm/vendor/fonts/fonts.css">
     <link rel="stylesheet" href="/farm/style.css">
+    <!-- Farm-wave inline layer (owned with this file; deliberately layered
+         AFTER style.css, which belongs to another stream):
+         STATUS JAMKACHU phone grid — the cat avatar was removed, so the
+         48px column the ≤800px grid reserved for it collapses.
+         (The old tap-face rules retired with the inline SVG faces: tap
+         reactions now flash an alternate designer-sprite mood via
+         jamkachu-sprite.js — see live.js showPetExpression.) -->
+    <style>
+        /* Avatar removed: collapse the 48px column style.css's >=801px grid
+           still reserves (body prefix outranks the 0,1,0 stylesheet rule). */
+        body .user-gamification { grid-template-columns: minmax(0, 1fr); }
+        body .user-gamification .user-details { grid-column: 1; }
+    </style>
 </head>
 <body>
     <!-- Background Environment (Decorations) -->
@@ -215,16 +228,17 @@
                     </div>
                 </div>
 
-                <!-- Farmer grandpa NPC (living world): the designer's Mbah
+                <!-- Farmer Tani NPC (living world): the same designer sprite
+                     used by Quests, returned to the main farm.
                      Tani sprite (npc pack, kiki design integration) replaces
-                     the old box-shadow walk frames. The transparent PNG
-                     exports replace the broken GIF's opaque later frames;
-                     the responsive srcset keeps them crisp. live.js moves this BUTTON
+                     the old box-shadow walk frames. The idle GIF is ambient-
+                     only — the <picture> source swaps in the static 2x PNG
+                     under prefers-reduced-motion. live.js moves this BUTTON
                      (WAAPI wander/drag/night bed); the walk direction is the
                      button's scaleX(-1), which the img simply inherits.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with farmer grandpa"><picture class="npc-farmer-art"><source media="(prefers-reduced-motion: reduce)" srcset="/farm/assets/npc/2x/npc-06-mbah-tani.png"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcset="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with Farmer Tani"><picture class="npc-farmer-art"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-01-pak-tani.png" srcset="/farm/assets/npc/1x/npc-01-pak-tani.png 32w, /farm/assets/npc/2x/npc-01-pak-tani.png 64w, /farm/assets/npc/4x/npc-01-pak-tani.png 128w, /farm/assets/npc/8x/npc-01-pak-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
                 <div class="npc-farmer-bed" aria-hidden="true">
                     <span class="npc-bed-pillow"></span>
                     <span class="npc-bed-blanket"></span>
@@ -234,8 +248,7 @@
 
                 <!-- Mascot -->
                 <div class="mascot-container">
-                    <!-- Compact game HUD: Bond Level, the single XP bar,
-                         comfort hearts, streak and Seeds. Lives ABOVE
+                    <!-- Bond / XP / HP / Streak. Lives in the headroom ABOVE
                          Jamkachu and above the speech bubble: on the right-hand
                          stack it was a whole screen away from the character it
                          describes. Identity diet: the old pixel CAT avatar and
@@ -243,32 +256,28 @@
                          mascot is the single name owner; the .username slot
                          carries only the bond-level label ("Ikatan Lv.3"). -->
                     <div class="user-gamification panel-glass">
-                        <span class="hud-section-label sr-only" data-i18n="hud.status">STATUS JAMKACHU</span>
-                        <button class="status-help username" type="button" data-status-help="level" aria-controls="hud-detail" aria-expanded="false"><span class="bond-word">Ikatan</span> Lv.1</button>
-                        <button class="status-help xp-bar-wrap" type="button" data-status-help="xp" aria-controls="hud-detail" aria-expanded="false">
-                            <span class="xp-bar" style="width: 0%;"></span>
-                            <span class="xp-bar-label"><span data-xp-num>0</span> XP</span>
-                        </button>
-                        <button id="hp-inline" class="status-help comfort-hearts" type="button" data-status-help="hp" aria-controls="hud-detail" aria-expanded="false"><span aria-hidden="true">♡♡♡♡♡</span><small>Nyaman</small></button>
-                        <button class="badge streak status-help" type="button" data-status-help="streak" aria-controls="hud-detail" aria-expanded="false"><i class="icon">🔥</i> -- Hari</button>
-                        <button class="badge seeds status-help" type="button" data-status-help="seeds" aria-controls="hud-detail" aria-expanded="false" hidden><img class="icon seed-icon" src="/icons/seed.png" alt="" width="14" height="14"> <span data-seed-num>0</span> <span data-seed-label>Benih</span></button>
-                    </div>
-                    <div class="speech-bubble-frame animated-bounce">
-                        <div class="speech-bubble">
-                            "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
+                        <span class="hud-section-label" data-i18n="hud.status">STATUS JAMKACHU</span>
+                        <div class="user-details">
+                            <span class="username">Ikatan Lv.1</span>
+                            <div class="xp-row">
+                                <div class="xp-bar-wrap"><div class="xp-bar" style="width: 0%;"></div></div>
+                                <span id="hp-inline">HP --</span>
+                            </div>
                         </div>
-                        <span class="speech-bubble-sparkles" aria-hidden="true"><i></i><i></i><i></i></span>
+                        <div class="badges">
+                            <div class="badge coin"><i class="icon">⭐</i> -- XP</div>
+                            <div class="badge streak"><i class="icon">🔥</i> -- Days</div>
+                            <!-- The designer's seed, the same picture the shop
+                                 prices everything in — an emoji chestnut here
+                                 and a drawn seed there read as two currencies. -->
+                            <div class="badge seeds" hidden><img class="icon seed-icon" src="/icons/seed.png" alt="" width="14" height="14"> <span data-seed-num>0</span> <span data-seed-label>Benih</span></div>
+                        </div>
+                    </div>
+                    <div class="speech-bubble animated-bounce">
+                        "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
                     </div>
                     <div class="mascot-wrapper animated-breath">
                         <span id="positive-expression" class="positive-expression" aria-hidden="true"></span>
-                        <!-- Stable homepage portrait: the generated hero art is
-                             the primary desktop character image. The live
-                             sprite below remains mounted as a compact status
-                             badge so mood, evolution and equipped cosmetics
-                             keep their existing DOM/data channel. -->
-                        <figure class="jamkachu-home-portrait" aria-hidden="true">
-                            <img src="/farm/assets/jamkachu/jamkachu-home-portrait.png" alt="" width="1122" height="1408" draggable="false">
-                        </figure>
                         <!-- Designer sprite mascot (kiki design integration, 2026-08-11):
                              the pixel packs in assets/jamkachu/ ARE Jamkachu now.
                              jamkachu-sprite.js (window.PMSprite) owns the img src
@@ -280,13 +289,13 @@
                              state channel even where no CSS reads them anymore.
                              Crop silhouettes retired from the mascot: crop identity
                              lives in the skins/pot palette + text now. -->
-                        <div class="mascot-svg" aria-label="Live Jamkachu status">
+                        <div class="mascot-svg">
                             <!-- Decorative: #char-name/#char-mood below carry the
                                  accessible identity, so the img stays alt="". -->
                             <img id="jamkachu-sprite" alt="" draggable="false">
-                            <!-- Status chip: 🥶/💦/🧪 floats near the head for
-                                 moods that share the safe calm face (aria-hidden;
-                                 the #char-mood text is
+                            <!-- Plain-mood status chip: 🥶/💦/🧪 float near the head
+                                 for the four moods that share the sprite's calm
+                                 "plain" body (aria-hidden; the #char-mood text is
                                  the accessible signal — all 8 moods stay
                                  distinguishable). PMSprite writes it. -->
                             <span id="mood-status-chip" aria-hidden="true"></span>
@@ -311,18 +320,20 @@
                                      phase via the .sprite-phase-N class the sprite
                                      driver stamps (seed y≈133, sprout y≈109). -->
                                 <g class="acc-anchor-crown" transform="translate(0 60)">
-                                     <g class="shop-item shop-g-acc_strawhat" aria-hidden="true">
-                                         <rect x="112" y="0" width="76" height="14" fill="#E8C56A" stroke="var(--color-outline)" stroke-width="5"/>
-                                         <rect x="86" y="12" width="128" height="12" fill="#D9B04E" stroke="var(--color-outline)" stroke-width="5"/>
-                                         <rect x="112" y="8" width="76" height="5" fill="#B8862F"/>
+                                    <g class="shop-item shop-g-acc_strawhat" aria-hidden="true">
+                                        <rect x="112" y="0" width="76" height="14" fill="#E8C56A" stroke="var(--color-outline)" stroke-width="5"/>
+                                        <rect x="86" y="12" width="128" height="12" fill="#D9B04E" stroke="var(--color-outline)" stroke-width="5"/>
+                                        <rect x="112" y="8" width="76" height="5" fill="#B8862F"/>
                                     </g>
                                     <g class="shop-item shop-g-acc_coffee_crown" aria-hidden="true"><circle cx="112" cy="17" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><circle cx="150" cy="10" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><circle cx="188" cy="17" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><path d="M105 25h90" stroke="#397A2B" stroke-width="7"/></g>
                                     <g class="shop-item shop-g-acc_bandana" aria-hidden="true"><rect x="91" y="22" width="118" height="14" fill="#E76252" stroke="var(--color-outline)" stroke-width="4"/><path d="M201 28l28 18-22 5z" fill="#E76252" stroke="var(--color-outline)" stroke-width="4"/></g>
-                                    <g class="shop-item shop-g-acc_jfc_headdress" aria-hidden="true">
-                                        <path d="M101 27h98" stroke="#E8C56A" stroke-width="9"/>
-                                        <path d="M112 24Q92 -8 111 -28Q130 -5 124 24M139 24Q129 -18 150 -38Q171 -18 161 24M176 24Q170 -5 189 -28Q208 -8 188 24" fill="#F06B5A" stroke="var(--color-outline)" stroke-width="4"/>
-                                        <path d="M120 16h60" stroke="#FFDE6A" stroke-width="6"/>
-                                    </g>
+                                    <!-- JFC feather headdress: a carnival fan of three
+                                         feathers on a band, colours read off the
+                                         designer's icons/shop/acc_jfc_headdress.png. -->
+                                    <g class="shop-item shop-g-acc_jfc_headdress" aria-hidden="true"><path d="M120 16L100 -20l26 24z" fill="#8A6B48" stroke="var(--color-outline)" stroke-width="4" stroke-linejoin="round"/><path d="M180 16l20-36-26 24z" fill="#5C4326" stroke="var(--color-outline)" stroke-width="4" stroke-linejoin="round"/><path d="M143 14l7-42 7 42z" fill="#EFE6D2" stroke="var(--color-outline)" stroke-width="4" stroke-linejoin="round"/><rect x="106" y="12" width="88" height="14" fill="#C8A05A" stroke="var(--color-outline)" stroke-width="4"/></g>
+                                    <!-- Taeguk ribbon: the flag's red-over-blue as a head
+                                         bow, so it reads at 52px instead of a swirl. -->
+                                    <g class="shop-item shop-g-acc_taeguk_ribbon" aria-hidden="true"><rect x="108" y="2" width="24" height="18" fill="#E5384F" stroke="var(--color-outline)" stroke-width="4"/><rect x="168" y="2" width="24" height="18" fill="#2E5FBF" stroke="var(--color-outline)" stroke-width="4"/><rect x="130" y="18" width="14" height="16" fill="#E5384F" stroke="var(--color-outline)" stroke-width="4"/><rect x="156" y="18" width="14" height="16" fill="#2E5FBF" stroke="var(--color-outline)" stroke-width="4"/><rect x="138" y="4" width="24" height="16" fill="#FFF" stroke="var(--color-outline)" stroke-width="4"/></g>
                                 </g>
 
                                 <!-- Eye-line accessories (glasses/goggles) ride their own
@@ -347,12 +358,14 @@
                                     <rect x="134" y="150" width="14" height="12" fill="var(--color-cheek)" stroke="var(--color-outline)" stroke-width="4"/>
                                     <rect x="126" y="153" width="8" height="8" fill="#E5697C" stroke="var(--color-outline)" stroke-width="3"/>
                                 </g>
-                                <!-- The Merah Putih sash sits over the pot, below the
-                                     face, so it remains readable at every growth phase. -->
+
+                                <!-- Merah Putih sash (milestone18): worn across the body,
+                                     not the head, so it takes a fixed seat over the stem
+                                     column like the stem ribbon above rather than one of
+                                     the two head anchors. -->
                                 <g class="shop-item shop-g-acc_indonesia_sash" aria-hidden="true">
-                                    <path d="M76 265L215 316" stroke="var(--color-outline)" stroke-width="22"/>
-                                    <path d="M76 260L215 311" stroke="#CE1126" stroke-width="9"/>
-                                    <path d="M72 269L211 320" stroke="#FFFFFF" stroke-width="9"/>
+                                    <path d="M106 188h20l48 48h-20z" fill="#E5384F" stroke="var(--color-outline)" stroke-width="4" stroke-linejoin="round"/>
+                                    <path d="M126 188h20l48 48h-20z" fill="#FFF" stroke="var(--color-outline)" stroke-width="4" stroke-linejoin="round"/>
                                 </g>
 
                                 <!-- Level decorations (spec §6.4): pot-anchored keepsakes,
@@ -402,13 +415,12 @@
                         <h2 id="char-name">JAMKACHU</h2>
                         <span id="bff-token" class="bff-token" hidden>Best Friend 💛</span>
                         <div id="char-mood">--</div>
-                        <!-- One clickable evolution card owns current stage,
-                             next-stage XP and the complete 10-stage map. -->
-                        <button id="evolution-guide-open" class="evolution-guide-open" type="button" aria-haspopup="dialog" aria-controls="evolution-guide" aria-expanded="false">
-                            <span id="companion-stage" class="companion-stage">COMPANION · SEED</span>
-                            <span id="companion-next" class="companion-next"></span>
-                            <span class="evolution-guide-link"><span aria-hidden="true">🌱</span> <span id="evolution-guide-open-label">VIEW 10 STAGES · 1/10</span></span>
-                        </button>
+                        <div id="companion-stage" class="companion-stage">COMPANION · SEED</div>
+                        <!-- Honest next-stage progress line (evolution-ladder
+                             plan, Task 5). live.js fills it from companion_state
+                             counters; stays empty (and :empty-hidden) when the
+                             milestone16 counters are missing. -->
+                        <div id="companion-next" class="companion-next"></div>
                         <!-- Wardrobe (milestone20): cosmetic Jember-crop skin
                              picker. live.js localizes the label (strings.js
                              "wardrobe" group) and fills the #wardrobe-panel
@@ -419,17 +431,53 @@
                 </div>
             </div>
 
-            <!-- Sensor evidence and today's bonus remain in one compact rail. -->
+            <!-- 3+) Decision-first stack below the character. The first card
+                 answers what is happening, what to do, and how the real
+                 sensors will prove it before progression or bonus content. -->
             <div class="home-stack">
-                <div class="home-stack-scroll">
-                <!-- Students can open any reading for its meaning and advice. -->
+
+                <section id="care-focus" class="care-focus panel-glass" data-care-state="waiting" aria-labelledby="care-focus-title">
+                    <div class="care-focus-heading">
+                        <span id="care-focus-icon" class="care-focus-icon" aria-hidden="true">📡</span>
+                        <div>
+                            <span class="care-focus-kicker" data-i18n="focus.now">SEKARANG</span>
+                            <h2 id="care-focus-title">Hubungkan sensor</h2>
+                            <p id="care-focus-summary" aria-live="polite">Nilai akan muncul otomatis saat perangkat tersambung.</p>
+                        </div>
+                    </div>
+                    <ol class="care-steps" aria-label="Alur perawatan">
+                        <li data-care-step="sense" data-step-state="current"><b>1</b><span><strong data-i18n="focus.step.sense">LIHAT</strong><small data-i18n="focus.step.senseHint">Baca kondisinya</small></span></li>
+                        <li data-care-step="act" data-step-state="todo"><b>2</b><span><strong data-i18n="focus.step.act">LAKUKAN</strong><small data-i18n="focus.step.actHint">Ubah satu hal</small></span></li>
+                        <li data-care-step="verify" data-step-state="todo"><b>3</b><span><strong data-i18n="focus.step.verify">CEK</strong><small data-i18n="focus.step.verifyHint">Sensor membuktikan</small></span></li>
+                    </ol>
+                    <!-- Contextual guidance only: the click grants nothing.
+                         Physical care must change a real reading before the
+                         quest engine can verify it and award a reward. -->
+                    <div class="actions-panel">
+                        <button id="care-action" class="pixel-btn" type="button">
+                            <span class="care-action-label">Elus aku — atau tulis buku harianku 📖</span>
+                        </button>
+                    </div>
+                    <p id="care-proof-note" class="care-proof-note" data-i18n="focus.proof">Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.</p>
+                </section>
+
+                <!-- Current Quest (fed by the existing quests query). The whole
+                     panel is a REAL link to /quests (kid-guide Task 1): one big
+                     honest tap target (≥44px, style.css) instead of a dead
+                     card. Inner ids/classes are unchanged so live.js's
+                     renderQuestSlot keeps writing into the same anchors. -->
+                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
+
+                <!-- Environment evidence follows the decision card: students
+                     can inspect the values without having to interpret them
+                     before they know the one safe next action. -->
                 <section id="env-strip" class="panel-glass" aria-label="Current environment">
                     <div class="env-hud-title"><span data-i18n="env.title">KONDISI KEBUN</span><a href="/monitoring" data-i18n="env.details">Lihat detail ›</a></div>
                     <div class="env-hud-grid">
-                        <button class="env-hud-card is-temp" type="button" data-vital="temp" aria-controls="hud-detail" aria-expanded="false"><i aria-hidden="true"><img src="/icons/temperature.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-hum" type="button" data-vital="hum" aria-controls="hud-detail" aria-expanded="false"><i aria-hidden="true"><img src="/icons/humidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-light" type="button" data-vital="light" aria-controls="hud-detail" aria-expanded="false"><i aria-hidden="true"><img src="/icons/brightness.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-ph" type="button" data-vital="ph" aria-controls="hud-detail" aria-expanded="false"><i aria-hidden="true"><img src="/icons/acidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true"><img src="/icons/temperature.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true"><img src="/icons/humidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true"><img src="/icons/brightness.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true"><img src="/icons/acidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em></span></button>
                     </div>
                     <p id="env-waiting-note" class="env-waiting-note" hidden></p>
                 </section>
@@ -442,7 +490,6 @@
                     <span class="quiz-chip-xp">+9 XP</span>
                 </button>
 
-                </div>
             </div>
 
         </main>
@@ -451,33 +498,19 @@
          the game world's pointer-events:none and stacking context. -->
     <dialog id="farmer-chat" class="farmer-chat" aria-labelledby="farmer-chat-title">
         <form method="dialog" class="farmer-chat-top">
-            <div class="farmer-chat-portrait" aria-hidden="true"><img src="/farm/assets/npc/2x/npc-06-mbah-tani.png" alt=""></div>
-            <div><span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span><h2 id="farmer-chat-title">Grandpa Tani</h2></div>
+            <div class="farmer-chat-portrait" aria-hidden="true"><img src="/farm/assets/npc/2x/npc-01-pak-tani.png" alt=""></div>
+            <div><span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span><h2 id="farmer-chat-title">Farmer Tani</h2></div>
             <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
         </form>
         <div id="farmer-chat-system" class="farmer-chat-system" aria-live="polite" hidden></div>
         <div id="farmer-chat-log" class="farmer-chat-log" role="log" aria-live="polite"></div>
         <div id="farmer-chat-prompts" class="farmer-chat-prompts"></div>
         <form id="farmer-chat-form" class="farmer-chat-form">
-            <label class="sr-only" for="farmer-chat-input">Ask Grandpa Tani</label>
+            <label class="sr-only" for="farmer-chat-input">Ask Farmer Tani</label>
             <input id="farmer-chat-input" maxlength="280" autocomplete="off" />
             <button id="farmer-chat-send" type="submit">ASK</button>
         </form>
         <p id="farmer-chat-note" class="farmer-chat-note"></p>
-    </dialog>
-
-    <!-- One shared details dialog for sensor cards and game-HUD help. Native
-         dialog supplies Escape closing; live.js restores focus to the trigger. -->
-    <dialog id="hud-detail" class="hud-detail" aria-labelledby="hud-detail-title" aria-describedby="hud-detail-summary">
-        <div class="hud-detail-card">
-            <span id="hud-detail-kicker" class="hud-detail-kicker">JAMKACHU</span>
-            <h2 id="hud-detail-title">Detail</h2>
-            <p id="hud-detail-summary"></p>
-            <div id="hud-detail-gauge" class="hud-detail-gauge" hidden aria-hidden="true"><i></i></div>
-            <dl id="hud-detail-facts" class="hud-detail-facts" hidden></dl>
-            <div id="hud-detail-action" class="hud-detail-action"></div>
-            <button id="hud-detail-close" class="pixel-btn" type="button">TUTUP</button>
-        </div>
     </dialog>
 
     <div id="daily-quiz-modal" class="quiz-modal" hidden>
@@ -535,15 +568,6 @@
             <p id="wardrobe-note" class="wardrobe-note" hidden></p>
             <div id="wardrobe-list" class="wardrobe-list"></div>
             <button id="wardrobe-close" class="pixel-btn" type="button">OK</button>
-        </div>
-    </dialog>
-    <dialog id="evolution-guide" class="farm-guide evolution-guide" aria-labelledby="evolution-guide-title">
-        <div class="farm-guide-card evolution-guide-card">
-            <span>🌱 JAMKACHU</span>
-            <div class="evolution-guide-heading"><h2 id="evolution-guide-title">EVOLUTION MAP</h2><b id="evolution-guide-count">1 / 10 unlocked</b></div>
-            <p id="evolution-guide-subtitle">Jamkachu evolves every time Bond Level rises through Lv.10.</p>
-            <div id="evolution-guide-list" class="evolution-guide-list"></div>
-            <button id="evolution-guide-close" class="pixel-btn" type="button">CLOSE</button>
         </div>
     </dialog>
     <!-- Classroom-demo sandbox (window.PMCheat). next.config.ts rewrites "/"

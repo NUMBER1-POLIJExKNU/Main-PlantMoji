@@ -7,7 +7,6 @@
 // replayed Node-RED deliveries can never double-grant (handoff §28).
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { syncCompanionForLevel } from "@/game/companion/companion-engine";
 import type { AwardXpResult, BondState } from "@/types/game";
 
 /** jsonb shape returned by public.award_xp (milestone3.sql). */
@@ -48,17 +47,10 @@ export async function awardXp(
   }
 
   const row = data as AwardXpRpcResult;
-  const bondLevel = Number(row.bond_level);
-  // milestone21 performs this inside Postgres. Keep an app-side fallback so
-  // every TypeScript XP path follows the same level-only evolution rule even
-  // before the migration is installed. XP itself must never fail on cosmetics.
-  await syncCompanionForLevel(supabase, plantId, bondLevel).catch((cause) => {
-    console.error(`award_xp companion sync failed for plant "${plantId}":`, cause);
-  });
   return {
     duplicate: Boolean(row.duplicate),
     totalXp: Number(row.total_xp),
-    bondLevel,
+    bondLevel: Number(row.bond_level),
     leveledUp: Boolean(row.leveled_up),
   };
 }

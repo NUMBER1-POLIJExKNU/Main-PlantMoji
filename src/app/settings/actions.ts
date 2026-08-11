@@ -151,9 +151,14 @@ export async function updatePlantSettings(formData: FormData): Promise<void> {
  * rejected without writing — the form's client-side constraints make that
  * path unreachable in normal use.
  */
-export async function addGrowthRecord(formData: FormData): Promise<void> {
+export interface GrowthRecordActionResult {
+  ok: boolean;
+  photoSaved: boolean;
+}
+
+export async function addGrowthRecord(formData: FormData): Promise<GrowthRecordActionResult> {
   const supabase = getServerSupabase();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, photoSaved: false };
 
   const parsed = parseGrowthInput({
     plantId: formData.get("plantId"),
@@ -164,7 +169,7 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   });
   if (!parsed.ok) {
     console.error(`addGrowthRecord rejected: ${parsed.error}`);
-    return;
+    return { ok: false, photoSaved: false };
   }
 
   const { plantId, stage, heightCm, leafCount, note } = parsed.input;
@@ -176,8 +181,10 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
     : null;
   if (photo instanceof File && photo.size > 0 && !acceptedPhoto) {
     console.error("addGrowthRecord rejected photo: use JPEG, PNG, or WebP up to 5 MB");
-    return;
+    return { ok: false, photoSaved: false };
   }
+  const photoRequired = formData.get("photoRequired") === "true";
+  if (photoRequired && !acceptedPhoto) return { ok: false, photoSaved: false };
   const recordId = randomUUID();
   let photoPath: string | null = null;
   // Photo bytes are read ONCE and reused for both the storage upload and the
@@ -191,6 +198,7 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
     const { error: uploadError } = await supabase.storage.from("growth-snapshots").upload(photoPath, bytes, { contentType: acceptedPhoto.type, upsert: false });
     if (uploadError) {
       console.error(`addGrowthRecord(${plantId}) snapshot upload failed:`, uploadError.message);
+      if (photoRequired) return { ok: false, photoSaved: false };
       photoPath = null; // the written growth fact must not depend on photo storage
     }
   }
@@ -208,7 +216,7 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   if (insertError) {
     if (photoPath) await supabase.storage.from("growth-snapshots").remove([photoPath]);
     console.error(`addGrowthRecord(${plantId}) insert failed:`, insertError.message);
-    return;
+    return { ok: false, photoSaved: false };
   }
 
   // Growth journaling bonus (handoff §28): the persisted record is the
@@ -304,6 +312,13 @@ export async function addGrowthRecord(formData: FormData): Promise<void> {
   // The add-record form now lives on /diary (Growth Records moved out of
   // Settings) — revalidate that route instead of /settings.
   revalidatePath("/diary");
+  return { ok: true, photoSaved: Boolean(photoPath) };
+}
+
+/** Form-compatible wrapper: React form actions must resolve to void, while
+ *  Camera AI calls addGrowthRecord directly to show an honest save result. */
+export async function addGrowthRecordFromForm(formData: FormData): Promise<void> {
+  await addGrowthRecord(formData);
 }
 
 /** milestone19 not applied: `growth_records.ai_comment` is missing — raw

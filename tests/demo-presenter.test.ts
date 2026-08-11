@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { DEMO_PRESENTATION_MAX_XP, nextCompanionStage, xpBeforeNextLevel } from "@/game/demo/presenter";
 import { getEnvironmentDemoPreset } from "@/lib/environment-demo";
 import { XP_PER_LEVEL } from "@/types/game";
@@ -21,14 +20,6 @@ describe("presenter demo scenarios", () => {
     expect(nextCompanionStage("Bloom")).toBe("Fruit");
     expect(nextCompanionStage("Guardian")).toBe("Elder");
     expect(nextCompanionStage("Legend")).toBeNull();
-  });
-
-  it("uses Bond XP rather than direct companion writes for demo evolution", () => {
-    const source = readFileSync("src/game/demo/presenter.ts", "utf8");
-    expect(source).toContain('"presenter-level-evolution"');
-    expect(source).toContain("await awardXp(");
-    expect(source).not.toContain('from("companion_evolutions").upsert');
-    expect(source).not.toContain('from("companion_state").upsert');
   });
 
   it("uses explicit virtual snapshots without persisting sensor truth", () => {

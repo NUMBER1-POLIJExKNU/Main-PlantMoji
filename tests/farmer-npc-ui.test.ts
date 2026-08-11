@@ -10,19 +10,16 @@ const strings = source("public/farm/strings.js");
 const assetExists = (publicPath: string) =>
   existsSync(resolve(process.cwd(), "public", publicPath.replace(/^\//, "")));
 
-describe("Grandpa Tani living-world UI", () => {
-  it("draws Grandpa with the designer Mbah Tani sprite, not box-shadow art", () => {
-    // The original GIF's later frames carried an opaque green rectangle.
-    // The farm therefore renders the designer's transparent responsive PNG.
+describe("Farmer Tani living-world UI", () => {
+  it("draws the same Farmer Tani sprite as Quests, not box-shadow art", () => {
+    // Transparent responsive PNG art avoids the GIF's opaque rectangle.
     expect(html).toContain('class="npc-farmer-img"');
-    expect(html).toContain('src="/farm/assets/npc/2x/npc-06-mbah-tani.png"');
-    expect(html).not.toContain('class="npc-farmer-img" src="/farm/assets/npc/gif/npc-06-mbah-tani.gif"');
-    expect(html).toMatch(
-      /<source media="\(prefers-reduced-motion: reduce\)" srcset="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png">/,
-    );
+    expect(html).not.toContain("/farm/assets/npc/gif/npc-01-pak-tani.gif");
+    expect(html).toContain('src="/farm/assets/npc/2x/npc-01-pak-tani.png"');
+    expect(html).toContain("/farm/assets/npc/8x/npc-01-pak-tani.png 256w");
     // The chat dialog portrait shows the same character's static art.
     expect(html).toMatch(
-      /class="farmer-chat-portrait"[^>]*><img src="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png" alt=""/,
+      /class="farmer-chat-portrait"[^>]*><img src="\/farm\/assets\/npc\/2x\/npc-01-pak-tani\.png" alt=""/,
     );
     // The retired ~90-layer box-shadow walk frames and their steps() cycle.
     expect(css).not.toContain(".npc-farmer::before");
@@ -38,55 +35,21 @@ describe("Grandpa Tani living-world UI", () => {
     // inherits the mirror — the img itself must never counter-flip (only
     // the AI-CHAT tag does, pinned in the walk-label test below).
     expect(css).not.toMatch(/\.npc-farmer-img[^{]*\{[^}]*scaleX/);
-    // The referenced transparent fallback ships with the page.
-    expect(assetExists("farm/assets/npc/2x/npc-06-mbah-tani.png")).toBe(true);
+    // Both referenced files ship with the page.
+    expect(assetExists("farm/assets/npc/2x/npc-01-pak-tani.png")).toBe(true);
   });
 
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
-    expect(css).toMatch(/body\.night:not\(\.farmer-night-awake\) \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
-    expect(css).toMatch(/\.npc-farmer-bed \{[\s\S]*?background:\s*transparent/);
-    expect(css).toContain(".npc-bed-blanket { display:none; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
     expect(live).toContain("function wakeFarmerAtNight()");
     expect(live).toContain("function scheduleFarmerNightSleep()");
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
-  });
-
-  it("parks the desktop night bed outside the right HUD rail", () => {
-    expect(css).toContain("--farmer-bed-left:clamp(304px,24vw,410px)");
-    expect(css).toMatch(/@media \(min-width:801px\)[\s\S]*?\.npc-farmer-bed \{ left:var\(--farmer-bed-left\); right:auto/);
-    expect(css).toContain("width: 90px");
-    expect(css).toContain("left:calc(var(--farmer-bed-left) + 18px) !important");
-  });
-
-  it("stands the farmer on the ground when a sleeping sprite is pressed", () => {
-    expect(live).toContain("function farmerNightWakePosition()");
-    expect(live).toContain("top: ground.top");
-    expect(live).toContain("const wakePosition = wasSleeping ? farmerNightWakePosition() : null");
-    expect(live).not.toContain("farmer.style.top = `${rect.top}px`;\n    farmer.style.transform = \"none\";\n    setFarmerFacing(1);");
-    expect(css).not.toContain("body.night.farmer-night-awake .npc-farmer.npc-ready { left:auto !important; }");
-  });
-
-  it("keeps AI chat available at night and returns Grandpa to bed after chat", () => {
-    const openStart = live.indexOf("function openFarmerChat()");
-    const openEnd = live.indexOf('$("#farmer-chat")?.addEventListener("close"', openStart);
-    expect(live.slice(openStart, openEnd)).toContain("wakeFarmerAtNight();");
-
-    const clickStart = live.indexOf('$("#npc-farmer")?.addEventListener("click"');
-    const clickEnd = live.indexOf('document.addEventListener("pointerdown"', clickStart);
-    const clickBody = live.slice(clickStart, clickEnd);
-    expect(clickBody).toContain("if (isNightWIB())");
-    expect(clickBody).toContain("openFarmerChat();");
-    expect(clickBody).not.toMatch(/if \(isNightWIB\(\)\)[\s\S]*?return;/);
-
-    const closeStart = live.indexOf('$("#farmer-chat")?.addEventListener("close"');
-    const closeEnd = live.indexOf('$("#farmer-chat")?.addEventListener("click"', closeStart);
-    expect(live.slice(closeStart, closeEnd)).toContain("if (isNightWIB()) scheduleFarmerNightSleep();");
   });
 
   it("measures the real grass boundary instead of wandering by viewport width", () => {
@@ -142,18 +105,6 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).toContain("fxQueue.length === 0");
     expect(live).toContain('classList.contains("npc-falling")');
     expect(live).toContain("farmerRecentLines.length > 3");
-  });
-
-  it("grounds automatic wisdom in fresh sensor values and crop-specific bands", () => {
-    expect(live).toContain("function farmerSensorLine(family)");
-    expect(live).toContain("staleLabel(lastReading.recorded_at)");
-    expect(live).toContain("gaugeDomainAndBand(kind, cropProfile).band");
-    expect(live).toContain("lastVitals.temperature.toFixed(1)");
-    expect(live).toContain("lastVitals.humidity");
-    expect(live).toContain("lastVitals.light");
-    expect(live).toContain("lastVitals.soilPh.toFixed(1)");
-    expect(live).toContain("This is air around the leaves, not soil wetness");
-    expect(live).toContain("function farmerMoodLines(family)");
   });
 
   it("keeps idle lines deterministic, bilingual, and opens chat from the bubble", () => {
@@ -271,20 +222,23 @@ describe("Farm-layer NPC gif placements (kiki design integration)", () => {
     expect(assetExists("farm/assets/jamkachu/4x/plant-p4-fruit-happy.png")).toBe(true);
   });
 
-  it("re-points the how-I-grow strip at the safe front-facing art + live tier on every guide open", () => {
+  it("re-points the how-I-grow strip at the live mood + tier on every guide open", () => {
     // The markup's growth-happy default is only a fallback: renderGuideGrowth
-    // re-targets the art at the CURRENT accessory tier. The designer plain
-    // frames face away, so a player-facing guide never selects that strip.
+    // re-targets the art at the CURRENT accessory tier and at the calm strip
+    // whenever Jamkachu is not happily awake, so every designer growth
+    // variant (plain + bow/ribbon) is reachable in play — none orphaned.
     expect(live).toContain("function renderGuideGrowth()");
     expect(live).toContain("/farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif");
     // The reduced-motion <picture> source follows the same mood + tier.
     expect(live).toContain("/farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png");
     // Re-rendered on every open, before the dialog shows.
     expect(live).toMatch(/renderGuideGrowth\(\);\s*\n\s*farmGuide\.showModal\(\)/);
-    expect(live).toContain('const strip = "happy"');
-    for (const suffix of ["", "-bow", "-ribbon"]) {
-      expect(assetExists(`farm/assets/jamkachu/gif/growth-happy${suffix}.gif`)).toBe(true);
-      expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-happy${suffix}.png`)).toBe(true);
+    // Every variant the renderer can point at ships on disk.
+    for (const strip of ["happy", "plain"]) {
+      for (const suffix of ["", "-bow", "-ribbon"]) {
+        expect(assetExists(`farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif`)).toBe(true);
+        expect(assetExists(`farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png`)).toBe(true);
+      }
     }
   });
 

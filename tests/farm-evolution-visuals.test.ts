@@ -159,7 +159,7 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(seq).toContain('wrap.classList.add("evo-arena")');
     expect(seq).toContain('wrap.classList.remove("evo-arena", "evo-pulse", "evo-shake-lg")');
     expect(css).toMatch(/\.mascot-wrapper\.evo-arena > \.mascot-svg \{[\s\S]*?width:min\(54vmin,460px\)/);
-    expect(css).toContain(".mascot-wrapper.evo-arena .jamkachu-home-portrait");
+    expect(css).toContain(".mascot-wrapper.evo-arena .positive-expression");
   });
 
   it("adds a pachinko-weight payoff without repeated full-screen flashes", () => {

@@ -10,6 +10,7 @@ import { getMoodMessage } from "@/game/personality/templates";
 import BondPanel from "@/components/bond-panel";
 import HomeQuestCard from "@/components/home-quest-card";
 import LevelUpOverlay from "@/components/level-up-overlay";
+import Mascot from "@/components/mascot";
 import HomeEnvironmentGlance from "@/components/home-environment-glance";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 import type { AppLocale } from "@/lib/i18n";
@@ -264,7 +265,7 @@ export default function PlantHome({
         show={levelUp.show}
         onDone={() => setLevelUp((prev) => ({ ...prev, show: false }))}
       />
-      {/* Sky stage: name, mood badge, speech bubble, homepage portrait */}
+      {/* Sky stage: name, mood badge, speech bubble, mascot */}
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-10">
         <div className="pm-home-clock" aria-label={`${locale === "id" ? "Waktu Jember" : "Jember time"} ${jemberTime}`}><span aria-hidden="true">{jemberHour >= 18 || jemberHour < 6 ? "🌙" : "☀️"}</span><div><small>{locale === "id" ? "WAKTU JEMBER · WIB" : "JEMBER TIME · WIB"}</small><strong>{jemberTime}</strong></div></div>
         <h1 className="pm-pixel-title font-pixel max-w-full break-words text-center text-xl leading-relaxed">
@@ -277,17 +278,9 @@ export default function PlantHome({
 
         <div className="mt-auto flex w-full flex-col items-center pt-8">
           <p className="pm-bubble pm-bounce">“<TypewriterText text={moodMessage} speed={22} />”</p>
-          <figure className="pm-home-portrait-frame -mb-7" aria-label={`${plant.name} · ${moodLabel}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- project-owned generated hero art; exact crop is controlled by this frame */}
-            <img
-              className="pm-home-portrait"
-              src="/farm/assets/jamkachu/jamkachu-home-portrait.png"
-              alt={plant.name}
-              width={1122}
-              height={1408}
-              draggable={false}
-            />
-          </figure>
+          <div className="-mb-7 w-60 max-w-[70vw]">
+            <Mascot mood={plant.current_state} />
+          </div>
         </div>
       </div>
 

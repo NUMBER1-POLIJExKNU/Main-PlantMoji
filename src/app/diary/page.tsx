@@ -20,7 +20,7 @@ import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
 import { toJamkachuMemory, type MemoryEventRow } from "@/lib/jamkachu-memory";
-import { addGrowthRecord } from "../settings/actions";
+import { addGrowthRecordFromForm } from "../settings/actions";
 import "./diary.css";
 
 // Always reflect the latest saved values.
@@ -138,7 +138,7 @@ export default async function DiaryPage() {
   return (
     <main className="mx-auto w-full">
       <PageHeader
-        icon="📖"
+        destination="diary"
         eyebrow={locale === "id" ? "KENANGAN TANAMAN" : "PLANT MEMORIES"}
         title={locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
         description={locale === "id" ? "Foto dan catat perubahan kecil agar perjalanan tumbuhnya mudah diingat." : "Photograph and note small changes so the growth journey is easy to remember."}
@@ -155,7 +155,7 @@ export default async function DiaryPage() {
             <p className={fieldHelpClass}>{locale === "id" ? "Foto, ukur, lalu tulis apa yang berubah." : "Photograph, measure, and note what changed."}</p>
           </div>
 
-          <form action={addGrowthRecord} className="pm-diary-paper-note flex flex-col gap-4">
+          <form action={addGrowthRecordFromForm} className="pm-diary-paper-note flex flex-col gap-4">
             <input type="hidden" name="plantId" value={plant.id} />
 
             <label className="flex flex-col gap-1.5">

@@ -29,7 +29,7 @@ describe("Jamkachu tap expression variety", () => {
     expect((happy.match(/emojiBurst:/g) ?? []).length).toBeGreaterThanOrEqual(12);
     expect(source).toContain("const POSITIVE_FACE_GLYPHS");
     expect(source).toContain('positive-expression');
-    expect(source).not.toMatch(/Happy: \[[\s\S]*spriteMood: "(?:plain|sleepy)"/);
+    expect(happy).not.toMatch(/spriteMood: "(?:plain|sleepy)"/);
   });
 
   it("keeps expressions presentation-only and respects sleep (plus hatch/tour)", () => {

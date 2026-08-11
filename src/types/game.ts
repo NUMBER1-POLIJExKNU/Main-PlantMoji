@@ -141,34 +141,23 @@ export const COMPANION_STAGES = [
 ] as const;
 export type CompanionStage = (typeof COMPANION_STAGES)[number];
 
-/** Level-only evolution ladder. Bond Level is the sole progression gate:
- *  Lv.1 is Seed, every level through Lv.10 unlocks the next stage, and
- *  Lv.10+ stays Legend. Mirrored in public/farm/companion-ladder.js. */
+/** Evolution requirements — care count / distinct affinities / distinct WIB days.
+ *  Mirrored (display-only) in public/farm/companion-ladder.js; a parity vitest
+ *  keeps the two identical. */
 export const COMPANION_LADDER: readonly {
-  stage: CompanionStage; level: number;
+  stage: CompanionStage; care: number; affinities: number; days: number;
 }[] = [
-  { stage: "Seed", level: 1 },
-  { stage: "Sprout", level: 2 },
-  { stage: "Seedling", level: 3 },
-  { stage: "Bud", level: 4 },
-  { stage: "Bloom", level: 5 },
-  { stage: "Fruit", level: 6 },
-  { stage: "Guardian", level: 7 },
-  { stage: "Elder", level: 8 },
-  { stage: "Radiant", level: 9 },
-  { stage: "Legend", level: 10 },
+  { stage: "Seed", care: 0, affinities: 0, days: 0 },
+  { stage: "Sprout", care: 1, affinities: 0, days: 0 },
+  { stage: "Seedling", care: 2, affinities: 0, days: 2 },
+  { stage: "Bud", care: 3, affinities: 2, days: 0 },
+  { stage: "Bloom", care: 7, affinities: 3, days: 2 },
+  { stage: "Fruit", care: 11, affinities: 3, days: 4 },
+  { stage: "Guardian", care: 15, affinities: 4, days: 5 },
+  { stage: "Elder", care: 25, affinities: 4, days: 8 },
+  { stage: "Radiant", care: 40, affinities: 4, days: 12 },
+  { stage: "Legend", care: 60, affinities: 4, days: 20 },
 ];
-
-export function companionStageForLevel(level: number): CompanionStage {
-  const safeLevel = Number.isFinite(level) ? Math.max(1, Math.floor(level)) : 1;
-  return COMPANION_STAGES[Math.min(safeLevel, COMPANION_STAGES.length) - 1];
-}
-
-export function levelForCompanionStage(stage: CompanionStage): number {
-  return Math.max(1, COMPANION_STAGES.indexOf(stage) + 1);
-}
-
-/** Care affinity remains a cosmetic form/tint only. It never gates evolution. */
 export const CARE_AFFINITIES = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
 export type CareAffinity = (typeof CARE_AFFINITIES)[number];
 

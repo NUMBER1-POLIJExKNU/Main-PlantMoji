@@ -6,8 +6,9 @@
 // PRIVACY CONTRACT: the video feed never leaves this component. Frames are
 // downscaled into an in-memory 64×48 canvas for the deterministic frame-diff
 // engine (src/lib/motion-detect — math, never AI), and at most ONE ≤200KB
-// JPEG snapshot per scan window is POSTed for advisory analysis — nothing
-// is kept anywhere, and this island talks ONLY to the two camera API routes.
+// JPEG snapshot per scan window is POSTed for advisory analysis and then
+// discarded. A separate, explicit "save to diary" button is the only path
+// that persists a frame; automatic guardian scans are never stored.
 //
 // REWARDS CONTRACT: nothing here grants anything, ever. Touch events drive
 // presentation (mini Jamkachu + the farm fan-out) and a camera_events log
@@ -16,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { addGrowthRecord } from "@/app/settings/actions";
 import CameraSparkles from "@/components/camera-sparkles";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import { CAMERA_COPY } from "@/app/camera/copy";
@@ -62,12 +64,14 @@ interface WakeLockSentinel {
 export default function CameraGuardian({
   locale,
   plantId,
+  growthStage,
   guardianReady,
   scanConfigured,
   initialEvents,
 }: {
   locale: AppLocale;
   plantId: string;
+  growthStage: string;
   guardianReady: boolean;
   scanConfigured: boolean;
   initialEvents: GuardianFeedItem[];
@@ -100,6 +104,7 @@ export default function CameraGuardian({
   const [localModelState, setLocalModelState] = useState<LocalModelState>("loading");
   const [localClassification, setLocalClassification] = useState<"Safe Environment" | "Foreign Environment" | null>(null);
   const [scanNote, setScanNote] = useState<string | null>(null); // transient non-pest line
+  const [diarySave, setDiarySave] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const pushFeed = useCallback((item: GuardianFeedItem) => {
     setFeed((prev) => [item, ...prev].slice(0, FEED_LIMIT));
@@ -197,6 +202,39 @@ export default function CameraGuardian({
       setStatus((prev) => (prev === "checking" ? "watching" : prev));
     }
   }, [locale, plantId, pushFeed, scanDisabled, showScanNote]);
+
+  /** User-authorized capture only: take the current live frame, attach it
+   *  to the existing Growth Diary action, and require Storage to succeed so
+   *  a failed upload cannot create another photo-less postcard. */
+  const saveCurrentFrameToDiary = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.readyState < 2 || diarySave === "saving") return;
+    setDiarySave("saving");
+    try {
+      const canvas = document.createElement("canvas");
+      const sourceWidth = video.videoWidth || 1280;
+      const scale = Math.min(1, 1280 / sourceWidth);
+      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      canvas.height = Math.max(1, Math.round((video.videoHeight || 720) * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("canvas unavailable");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+      if (!blob) throw new Error("snapshot unavailable");
+      const formData = new FormData();
+      formData.set("plantId", plantId);
+      formData.set("stage", growthStage);
+      formData.set("heightCm", "");
+      formData.set("leafCount", "");
+      formData.set("note", locale === "id" ? "Foto dari Kamera AI" : "Photo from Camera AI");
+      formData.set("photoRequired", "true");
+      formData.set("photo", new File([blob], `plant-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      const result = await addGrowthRecord(formData);
+      setDiarySave(result.ok && result.photoSaved ? "saved" : "error");
+    } catch {
+      setDiarySave("error");
+    }
+  }, [diarySave, growthStage, locale, plantId]);
 
   const handleMotionEvent = (event: MotionEvent) => {
     if (event.kind !== "MOTION_START") return;
@@ -438,6 +476,28 @@ export default function CameraGuardian({
             <span>{tickle > 0 ? "😆" : localClassification === "Foreign Environment" ? "😮" : "🌱"}</span>
           </div>
           <CameraSparkles locale={locale} />
+        </div>
+      )}
+
+      {status !== "denied" && status !== "nocamera" && (
+        <div className="pm-cam-diary-save">
+          <button
+            type="button"
+            className="pm-btn pm-btn-primary"
+            onClick={() => void saveCurrentFrameToDiary()}
+            disabled={status === "starting" || diarySave === "saving"}
+          >
+            {diarySave === "saving"
+              ? (locale === "id" ? "MENYIMPAN…" : "SAVING…")
+              : (locale === "id" ? "📸 SIMPAN KE DIARI" : "📸 SAVE TO DIARY")}
+          </button>
+          <p role="status" aria-live="polite">
+            {diarySave === "saved"
+              ? (locale === "id" ? "Foto sudah masuk ke Diari Tumbuh." : "The photo is now in Growth Diary.")
+              : diarySave === "error"
+                ? (locale === "id" ? "Foto belum tersimpan. Coba lagi." : "The photo was not saved. Try again.")
+                : (locale === "id" ? "Hanya foto yang kamu simpan yang masuk ke diari." : "Only photos you choose to save enter the diary.")}
+          </p>
         </div>
       )}
 

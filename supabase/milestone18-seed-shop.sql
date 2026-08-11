@@ -119,8 +119,11 @@ begin
     return jsonb_build_object('ok', false, 'error', 'insufficient_seeds', 'seeds', v_seeds);
   end if;
 
-  insert into public.shop_purchases (plant_id, item_key, category, price_paid)
-  values (p_plant_id, p_item_key, p_category, p_price)
+  -- A decoration goes out on the farm the moment it is bought — the shop card
+  -- promises exactly that ("appears automatically on My Garden") — so it is
+  -- purchased already equipped. Pots and accessories wait to be worn.
+  insert into public.shop_purchases (plant_id, item_key, category, price_paid, equipped)
+  values (p_plant_id, p_item_key, p_category, p_price, p_category = 'decor')
   on conflict (plant_id, item_key) do nothing;
 
   if not found then
@@ -138,7 +141,11 @@ end;
 $$;
 
 -- ── equip_item: at most one equipped pot and one accessory ──────────────
--- p_equipped=false unequips just that item; decor is never equippable.
+-- p_equipped=false unequips just that item. Decorations are equippable too:
+-- refusing the category outright made every bought decoration permanent — the
+-- farm showed decor from ownership alone and nothing could take it back off.
+-- They are NOT exclusive the way a pot or an accessory is: a garden may show
+-- every decoration at once, so only those two categories clear their siblings.
 create or replace function public.equip_item(
   p_plant_id text,
   p_item_key text,
@@ -159,11 +166,8 @@ begin
   if v_category is null then
     return jsonb_build_object('ok', false, 'error', 'not_owned');
   end if;
-  if v_category = 'decor' then
-    return jsonb_build_object('ok', false, 'error', 'not_equippable');
-  end if;
 
-  if coalesce(p_equipped, true) then
+  if coalesce(p_equipped, true) and v_category in ('pot', 'accessory') then
     update public.shop_purchases
     set equipped = false
     where plant_id = p_plant_id and category = v_category

@@ -55,25 +55,15 @@ const COPY = {
     "weather.loading": "Memuat prakiraan...",
     "weather.unavailable": "Prakiraan belum tersedia",
     "clock.label": "WAKTU JEMBER · WIB", "hud.status": "STATUS JAMKACHU", "hud.mission": "MISI HARI INI", "hud.bonus": "BONUS", "hud.quiz": "QUIZ HARI INI",
-    "status.help.open.level": "Jelaskan Bond Level", "status.help.open.xp": "Jelaskan XP", "status.help.open.hp": "Jelaskan hati kenyamanan", "status.help.open.streak": "Jelaskan streak", "status.help.open.seeds": "Jelaskan Benih",
-    "status.help.level": "Bond Level menunjukkan kedekatanmu dengan Jamkachu. Setiap 30 XP menaikkan level; hingga Lv.10, tiap level membuat Jamkachu berevolusi dan membuka kostum.",
-    "status.help.xp": "Dapatkan XP dari misi perawatan yang dikonfirmasi sensor dan Quiz Hari Ini. {remaining} XP lagi menuju level berikutnya; XP tidak dibelanjakan.",
-    "status.help.hp": "Hati kenyamanan adalah ringkasan game dari empat kondisi sensor: suhu, kelembapan udara, cahaya, dan pH. Ini bukan nilai kesehatan medis dan tidak dapat dibelanjakan.",
-    "status.help.streak": "{days} hari berturut-turut. Biarkan sensor mengonfirmasi perawatanmu setiap hari WIB untuk membuatnya {next}; streak juga memberi Benih.",
-    "status.help.seeds": "Dapatkan Benih dari misi, jawaban quiz, badge, chapter, dan hari streak. Belanjakan di Toko untuk pot, aksesori, dan dekorasi; membeli tidak mengurangi XP.",
-    "focus.now": "SEKARANG", "focus.step.sense": "LIHAT", "focus.step.senseHint": "Baca kondisinya", "focus.step.act": "LAKUKAN", "focus.step.actHint": "Ubah satu hal", "focus.step.verify": "CEK", "focus.step.verifyHint": "Sensor memeriksa", "focus.proof": "Tombol ini memberi panduan. Sensor akan melihat perubahan tanamanmu.",
-    "focus.waiting.title": "Hubungkan sensor", "focus.waiting.summary": "Nilai akan muncul otomatis saat perangkat tersambung.", "focus.waiting.action": "Periksa koneksi perangkat 🔌", "focus.waiting.why": "Pastikan perangkat sensor menyala dan terhubung. Nilai akan muncul sendiri—kamu tidak perlu menyegarkan halaman.",
+    "focus.now": "SEKARANG", "focus.step.sense": "LIHAT", "focus.step.senseHint": "Baca kondisinya", "focus.step.act": "LAKUKAN", "focus.step.actHint": "Ubah satu hal", "focus.step.verify": "CEK", "focus.step.verifyHint": "Sensor membuktikan", "focus.proof": "Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.",
+    "focus.waiting.title": "Hubungkan sensor", "focus.waiting.summary": "Nilai akan muncul otomatis saat perangkat tersambung.", "focus.waiting.action": "Periksa koneksi perangkat 🔌", "focus.waiting.why": "Pastikan perangkat menyala dan Arduino terhubung ke Node-RED. Nilai akan muncul sendiri—kamu tidak perlu menyegarkan halaman.",
     "focus.healthy.title": "Jamkachu nyaman", "focus.healthy.summary": "Semua kondisi aman. Tidak ada tindakan yang perlu dilakukan sekarang.",
     "focus.action.title": "Bantu Jamkachu sekarang", "focus.action.summary": "Lakukan satu tindakan di bawah, lalu biarkan sensor melihat perubahannya.",
     "focus.verifying.title": "Pertahankan kondisinya", "focus.verifying.summary": "Perawatanmu terlihat. Jangan ubah apa pun dulu saat sensor memeriksa.",
-    "focus.feedback.waiting": "Belum terhubung — periksa daya dan koneksi perangkat.", "focus.feedback.healthy": "Tidak perlu mengubah apa pun — kondisi Jamkachu baik.", "focus.feedback.action": "Petunjuk siap — rawat tanamanmu, lalu tunggu sensor.", "focus.feedback.verifying": "Sensor sedang melihat perubahanmu.",
     "guide.title": "CARA BERMAIN", "guide.sense": "1 · Lihat sensor", "guide.understand": "2 · Dengar Jamkachu", "guide.act": "3 · Ubah satu hal kecil", "guide.verify": "4 · Sensor cek, hadiah tumbuh", "guide.grow": "Rawat aku — aku tumbuh dari benih sampai berbuah!", "guide.start": "AYO MULAI!",
-    "evolution.next": "EVOLUSI BERIKUTNYA", "evolution.xpLeft": "XP lagi", "evolution.complete": "EVOLUSI MAKSIMAL · LEGEND", "evolution.open": "LIHAT 10 TAHAP", "evolution.title": "PETA EVOLUSI", "evolution.subtitle": "Jamkachu berevolusi setiap kali Bond Level naik hingga Lv.10.", "evolution.unlocked": "terbuka", "evolution.current": "SEKARANG", "evolution.close": "TUTUP",
-    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ok": "Bagus", "env.check": "Periksa", "env.last": "terakhir", "npc.ai": "CHAT AI",
-    "detail.status": "PANDUAN GAME", "detail.sensor": "SENSOR MENJELASKAN", "detail.close": "TUTUP", "detail.reading": "Nilai", "detail.range": "Rentang nyaman", "detail.updated": "Diperbarui", "detail.waiting": "Menunggu nilai sensor", "detail.now": "baru saja", "detail.action": "Tidak ada tindakan khusus sekarang. Terus amati tanamanmu.",
-    "detail.temp": "Suhu memengaruhi kenyamanan daun dan akar.", "detail.hum": "Kelembapan menunjukkan banyaknya uap air di udara, bukan air di tanah.", "detail.light": "Cahaya membantu tanaman membuat energi untuk tumbuh.", "detail.ph": "pH menunjukkan tingkat asam atau basa pada tanah.",
+    "env.title": "KONDISI KEBUN", "env.details": "Lihat detail ›", "env.temperature": "SUHU", "env.humidity": "UDARA", "env.light": "CAHAYA", "env.ph": "TANAH", "env.ok": "Aman", "env.check": "Perlu dicek", "env.last": "terakhir", "npc.ai": "CHAT AI",
     "quest.none": "Misi muncul saat sensorku merasakan perubahan",
-    "quest.verifying": "sedang mengecek…",
+    "quest.verifying": "memverifikasi…",
     "quest.min": "menit",
     "mood.Happy": "Senang",
     "mood.Overheating": "Kepanasan",
@@ -113,25 +103,15 @@ const COPY = {
     "weather.loading": "Loading forecast...",
     "weather.unavailable": "Forecast unavailable",
     "clock.label": "JEMBER TIME · WIB", "hud.status": "JAMKACHU STATUS", "hud.mission": "TODAY'S MISSION", "hud.bonus": "BONUS", "hud.quiz": "TODAY'S QUIZ",
-    "status.help.open.level": "Explain Bond Level", "status.help.open.xp": "Explain XP", "status.help.open.hp": "Explain comfort hearts", "status.help.open.streak": "Explain streak", "status.help.open.seeds": "Explain Seeds",
-    "status.help.level": "Bond Level shows how your friendship with Jamkachu is growing. Every 30 XP raises it; through Lv.10, each level evolves Jamkachu and unlocks outfits.",
-    "status.help.xp": "Earn XP from care missions the sensors confirm and Today's Quiz. {remaining} XP until the next level; XP is never spent.",
-    "status.help.hp": "Comfort hearts are a game summary of four sensor conditions: temperature, air humidity, light, and pH. They are not a medical health score and cannot be spent.",
-    "status.help.streak": "{days} days in a row. Let the sensors confirm your care each WIB day to make it {next}; streak days also award Seeds.",
-    "status.help.seeds": "Earn Seeds from missions, quiz answers, badges, chapters, and streak days. Spend them in the Shop on pots, accessories, and decorations; purchases never reduce XP.",
-    "focus.now": "RIGHT NOW", "focus.step.sense": "LOOK", "focus.step.senseHint": "Read the condition", "focus.step.act": "DO", "focus.step.actHint": "Change one thing", "focus.step.verify": "CHECK", "focus.step.verifyHint": "Sensors check", "focus.proof": "This button gives guidance. The sensors will watch for your plant's change.",
-    "focus.waiting.title": "Connect the sensors", "focus.waiting.summary": "Values will appear automatically when the device connects.", "focus.waiting.action": "Check the device connection 🔌", "focus.waiting.why": "Make sure the sensor device is powered and connected. Values will appear on their own—no refresh needed.",
+    "focus.now": "RIGHT NOW", "focus.step.sense": "LOOK", "focus.step.senseHint": "Read the condition", "focus.step.act": "DO", "focus.step.actHint": "Change one thing", "focus.step.verify": "CHECK", "focus.step.verifyHint": "Sensors prove it", "focus.proof": "This button only gives guidance. Real sensors check your care.",
+    "focus.waiting.title": "Connect the sensors", "focus.waiting.summary": "Values will appear automatically when the device connects.", "focus.waiting.action": "Check the device connection 🔌", "focus.waiting.why": "Make sure the device is powered and Arduino is connected to Node-RED. Values will appear on their own—no refresh needed.",
     "focus.healthy.title": "Jamkachu is comfortable", "focus.healthy.summary": "Every condition is safe. Nothing needs changing right now.",
     "focus.action.title": "Help Jamkachu now", "focus.action.summary": "Do the one action below, then let the sensors see the change.",
     "focus.verifying.title": "Keep it steady", "focus.verifying.summary": "Your care was noticed. Do not change anything while the sensors check.",
-    "focus.feedback.waiting": "Not connected yet — check the device power and connection.", "focus.feedback.healthy": "Nothing needs changing — Jamkachu is comfortable.", "focus.feedback.action": "Guidance ready — care for your plant, then wait for the sensors.", "focus.feedback.verifying": "The sensors are watching for your change.",
     "guide.title": "HOW TO PLAY", "guide.sense": "1 · Check the sensors", "guide.understand": "2 · Listen to Jamkachu", "guide.act": "3 · Change one small thing", "guide.verify": "4 · Sensors check, rewards grow", "guide.grow": "Care for me — I grow from a seed all the way to fruit!", "guide.start": "LET'S GROW!",
-    "evolution.next": "NEXT EVOLUTION", "evolution.xpLeft": "XP left", "evolution.complete": "MAX EVOLUTION · LEGEND", "evolution.open": "VIEW 10 STAGES", "evolution.title": "EVOLUTION MAP", "evolution.subtitle": "Jamkachu evolves every time Bond Level rises through Lv.10.", "evolution.unlocked": "unlocked", "evolution.current": "NOW", "evolution.close": "CLOSE",
-    "env.title": "GARDEN CONDITIONS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ok": "Good", "env.check": "Check", "env.last": "last", "npc.ai": "AI CHAT",
-    "detail.status": "GAME GUIDE", "detail.sensor": "SENSOR EXPLAINS", "detail.close": "CLOSE", "detail.reading": "Reading", "detail.range": "Comfort range", "detail.updated": "Updated", "detail.waiting": "Waiting for a sensor reading", "detail.now": "just now", "detail.action": "No special action is needed now. Keep watching your plant.",
-    "detail.temp": "Temperature affects the comfort of leaves and roots.", "detail.hum": "Humidity shows water vapor in the air, not water in the soil.", "detail.light": "Light helps the plant make energy for growth.", "detail.ph": "pH shows how acidic or alkaline the soil is.",
+    "env.title": "GARDEN VITALS", "env.details": "View details ›", "env.temperature": "TEMP", "env.humidity": "HUMIDITY", "env.light": "LIGHT", "env.ph": "SOIL", "env.ok": "OK", "env.check": "Check", "env.last": "last", "npc.ai": "AI CHAT",
     "quest.none": "Missions appear when my sensors feel a change",
-    "quest.verifying": "checking…",
+    "quest.verifying": "verifying…",
     "quest.min": "min",
     "mood.Happy": "Happy",
     "mood.Overheating": "Overheating",
@@ -566,7 +546,6 @@ let currentSkinKey = "jamkachu";
 // states read it. Starts at 1 (worst case a skin briefly shows locked
 // until the first bond render; the server re-checks every pick anyway).
 let lastBondLevel = 1;
-let lastBondXp = 0;
 
 /** Catalog-normalize a companion_state.skin_key: unknown keys, a missing
  *  milestone20 column (undefined), and a missing catalog script all resolve
@@ -621,26 +600,42 @@ function chooseFreshDialogue(candidates) {
  *  backend sweep + the display-only ladder mirror — when the ladder script
  *  or the milestone16 counter columns are missing, the line hides entirely
  *  rather than inventing numbers. Presentation only, zero writes. */
-function renderEvolutionProgress() {
+function renderCompanionNext(stage, state) {
   const next = $("#companion-next");
   if (!next) return;
-  const ladder = Array.isArray(window.PM_LADDER) ? window.PM_LADDER : [];
-  if (!ladder.length) {
-    next.textContent = "";
+  if (typeof window.PM_NEXT_STAGE !== "function") {
+    next.textContent = ""; // ladder mirror not loaded: hide, never guess
     return;
   }
-  const currentIndex = Math.min(Math.max(1, lastBondLevel), ladder.length) - 1;
-  const nextRow = ladder[currentIndex + 1];
-  if (!nextRow) next.textContent = t("evolution.complete");
-  else {
-    const targetXp = (Number(nextRow.level) - 1) * XP_PER_LEVEL;
-    const xpLeft = Math.max(0, targetXp - lastBondXp);
-    const stageName = PM().companionStage?.[nextRow.stage] ?? nextRow.stage;
-    next.textContent = `${t("evolution.next")}: ${stageName} · Lv.${nextRow.level} · ${xpLeft} ${t("evolution.xpLeft")}`;
+  const req = window.PM_NEXT_STAGE(stage);
+  if (!req) {
+    // Top of the ladder (Legend) — a quiet "fully grown" line instead.
+    next.textContent = PM().companionMax ?? "";
+    return;
   }
-  const buttonLabel = $("#evolution-guide-open-label");
-  if (buttonLabel) buttonLabel.textContent = `${t("evolution.open")} · ${currentIndex + 1}/${ladder.length}`;
-  if (evolutionPanel?.open) renderEvolutionGuide();
+  const haveCounts = Number.isFinite(state.care_count) && Number.isFinite(state.day_count);
+  if (!haveCounts) {
+    next.textContent = ""; // pre-milestone16 DB: counters absent — hide
+    return;
+  }
+  // Player-facing progress shows what remains, not raw backend counters.
+  // Completed requirements disappear; over-complete values never render 5/4.
+  // Text diet: only the NEAREST unmet requirement renders — one clear next
+  // step beats a three-part sentence nobody reads.
+  const segments = [];
+  const careLeft = Math.max(0, req.care - state.care_count);
+  const daysLeft = Math.max(0, req.days - state.day_count);
+  const affinityLeft = Number.isFinite(state.affinity_count) ? Math.max(0, req.affinities - state.affinity_count) : 0;
+  if (careLeft > 0) segments.push(appLocale === "id" ? `${careLeft} perawatan lagi` : (careLeft === 1 ? "1 more care action" : `${careLeft} more care actions`));
+  if (req.affinities > 0 && Number.isFinite(state.affinity_count)) {
+    if (affinityLeft > 0) segments.push(appLocale === "id" ? `coba ${affinityLeft} jenis perawatan lagi` : (affinityLeft === 1 ? "try 1 more care type" : `try ${affinityLeft} more care types`));
+  }
+  if (daysLeft > 0) segments.push(appLocale === "id" ? `${daysLeft} hari lagi` : (daysLeft === 1 ? "1 more day" : `${daysLeft} more days`));
+  const parts = segments.filter((part) => typeof part === "string" && part);
+  const stageName = PM().companionStage?.[req.stage] ?? req.stage;
+  next.textContent = parts.length
+    ? `${appLocale === "id" ? "BERIKUTNYA" : "NEXT"}: ${stageName} · ${parts[0]}`
+    : `${appLocale === "id" ? "SIAP BEREVOLUSI" : "READY TO EVOLVE"} → ${stageName}`;
 }
 
 function renderCompanion(state) {
@@ -668,7 +663,7 @@ function renderCompanion(state) {
   // companion_state.skin_key. An undefined skin_key (pre-milestone20 DB or
   // the legacy column fallback select) behaves exactly like "jamkachu".
   applySkinClass(state.skin_key);
-  renderEvolutionProgress();
+  renderCompanionNext(stage, state);
   evoDemoStage = null; // real data render: the E-hotkey preview cursor resets
   // Evolution ceremony trigger (evolution-ladder plan, Task 7): a real RANK
   // INCREASE past the first render fires the T5 ceremony once per
@@ -703,7 +698,6 @@ function applyLocale() {
   document.querySelectorAll("[data-i18n]").forEach((element) => {
     element.textContent = t(element.dataset.i18n);
   });
-  refreshStatusHelpLabels();
   document.querySelectorAll("[data-locale]").forEach((button) => {
     button.setAttribute("aria-pressed", String(button.dataset.locale === appLocale));
   });
@@ -775,60 +769,6 @@ if (!pmSeenFlag("tour")) {
   openFarmGuide();
 }
 
-// ── Level-only evolution roadmap ────────────────────────────────────────
-// Always reopenable from the identity block. It shows the complete rule,
-// current unlock count, and every Lv.1–10 stage without inventing progress.
-const evolutionPanel = $("#evolution-guide");
-
-function renderEvolutionGuide() {
-  const list = $("#evolution-guide-list");
-  const count = $("#evolution-guide-count");
-  const ladder = Array.isArray(window.PM_LADDER) ? window.PM_LADDER : [];
-  if (!list || !ladder.length) return;
-  const unlocked = Math.min(Math.max(1, lastBondLevel), ladder.length);
-  if (count) count.textContent = `${unlocked} / ${ladder.length} ${t("evolution.unlocked")}`;
-  list.textContent = "";
-  for (const row of ladder) {
-    const item = document.createElement("div");
-    const level = Number(row.level) || 1;
-    item.className = "evolution-guide-stage";
-    item.classList.toggle("is-unlocked", level <= unlocked);
-    item.classList.toggle("is-current", level === unlocked);
-    item.classList.toggle("is-next", level === unlocked + 1);
-    const badge = document.createElement("b");
-    badge.textContent = `Lv.${level}`;
-    const name = document.createElement("strong");
-    name.textContent = PM().companionStage?.[row.stage] ?? row.stage;
-    const state = document.createElement("span");
-    state.textContent = level === unlocked ? t("evolution.current") : level < unlocked ? "✓" : "🔒";
-    item.append(badge, name, state);
-    list.appendChild(item);
-  }
-}
-
-function openEvolutionGuide() {
-  if (typeof evolutionPanel?.showModal !== "function") return;
-  renderEvolutionGuide();
-  $("#evolution-guide-open")?.setAttribute("aria-expanded", "true");
-  evolutionPanel.showModal();
-}
-
-{
-  const title = $("#evolution-guide-title");
-  const subtitle = $("#evolution-guide-subtitle");
-  const close = $("#evolution-guide-close");
-  if (title) title.textContent = t("evolution.title");
-  if (subtitle) subtitle.textContent = t("evolution.subtitle");
-  if (close) close.textContent = t("evolution.close");
-  $("#evolution-guide-open")?.addEventListener("click", openEvolutionGuide);
-  close?.addEventListener("click", () => evolutionPanel?.close());
-  evolutionPanel?.addEventListener("close", () => {
-    const trigger = $("#evolution-guide-open");
-    trigger?.setAttribute("aria-expanded", "false");
-    trigger?.focus();
-  });
-}
-
 // ── Wardrobe picker (milestone20, display-only) ─────────────────────────
 // Small button under the companion stage label → the same imperative
 // <dialog> pattern as the farm guide above, listing every window.PM_SKINS
@@ -881,9 +821,10 @@ function renderWardrobeMascot() {
 }
 
 /** Guide "how I grow" art (kiki design integration): re-points the growth
- *  strip at the CURRENT accessory tier. The designer's plain strip is a
- *  turned-away pose, so this player-facing guide always uses the friendly
- *  front-facing growth strip. The <picture> source keeps
+ *  strip at the CURRENT accessory tier, and at the calm strip whenever
+ *  Jamkachu is not actually happy and awake — so every designer growth
+ *  variant (plain + bow/ribbon tiers) is reachable in play, not just the
+ *  bare happy strip the markup defaults to. The <picture> source keeps
  *  owning reduced motion; it is re-pointed at the static grown sprite of
  *  the same mood + tier. Purely decorative (aria-hidden picture); when the
  *  sprite driver is absent the markup default stands. */
@@ -893,7 +834,14 @@ function renderGuideGrowth() {
   if (!img || !window.PMSprite) return;
   const tier = currentSpriteTier();
   const suffix = tier ? `-${tier}` : "";
-  const strip = "happy";
+  let strip = "plain";
+  try {
+    const spriteState = window.PMSprite?.getState?.();
+    const drawnMood = window.PMSprite?.tables?.MOOD_SPRITE?.[spriteState?.mood];
+    if (spriteState && !spriteState.sleeping && drawnMood === "happy") strip = "happy";
+  } catch {
+    strip = "plain";
+  }
   img.src = `/farm/assets/jamkachu/gif/growth-${strip}${suffix}.gif`;
   if (staticSource) staticSource.srcset = `/farm/assets/jamkachu/4x/plant-p4-fruit-${strip}${suffix}.png`;
 }
@@ -2050,10 +1998,17 @@ function animateXpCount(el, from, to) {
   xpCountFrame = requestAnimationFrame(tick);
 }
 
-/** The XP bar owns the one visible XP number; keep its node stable while
- *  count-up animation runs so the bar and label can never disagree. */
+/** Keep the coin badge's structure stable so only the number re-renders
+ *  during count-up (same visual output as the old wholesale innerHTML). */
 function ensureCoinNumber() {
-  return $("[data-xp-num]");
+  const coin = $(".badge.coin");
+  if (!coin) return null;
+  let num = coin.querySelector("[data-xp-num]");
+  if (!num) {
+    coin.innerHTML = `<i class="icon">⭐</i> <span data-xp-num></span> XP`;
+    num = coin.querySelector("[data-xp-num]");
+  }
+  return num;
 }
 
 // XP bar: style.css already transitions width (1s ease-in-out). On level-up
@@ -2165,24 +2120,6 @@ function isNightWIB() {
 let careMood = "Happy";
 let sleepShown = null;
 let careFocusState = "waiting";
-let careFeedbackTimer = null;
-
-/** Persistent desktop acknowledgement for the dominant action. The floating
- *  why-card remains the detailed explanation; this short line answers the
- *  immediate UX question "did my click work?" even during its cooldown. */
-function showDesktopCareFeedback() {
-  if (!window.matchMedia?.("(min-width: 801px)").matches) return;
-  const note = $("#care-proof-note");
-  if (!note) return;
-  if (careFeedbackTimer !== null) clearTimeout(careFeedbackTimer);
-  note.textContent = t(`focus.feedback.${careFocusState}`);
-  note.classList.add("is-feedback");
-  careFeedbackTimer = setTimeout(() => {
-    careFeedbackTimer = null;
-    note.textContent = t("focus.proof");
-    note.classList.remove("is-feedback");
-  }, 5_500);
-}
 
 /** Sleep presentation is Happy-only: a problem mood at night keeps its own
  *  face and care button. */
@@ -2255,7 +2192,6 @@ function maybeWhyCard(text, rect) {
  *  the 30s cooldown, a mood-appropriate cue. Zero XP, zero writes. */
 function onCareAction() {
   const rect = careFocusState === "waiting" ? ($("#care-action")?.getBoundingClientRect() ?? mascotRect()) : mascotRect();
-  showDesktopCareFeedback();
   if (careFocusState === "waiting") {
     window.PMSfx?.play("tick");
     maybeWhyCard(t("focus.waiting.why"), rect);
@@ -2365,61 +2301,61 @@ const PET_EXPRESSION_POOLS = {
     { spriteMood: "happy", emojiBurst: "💖" },
     { spriteMood: "overheat", emojiBurst: "💦" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
     { spriteMood: "overheat", emojiBurst: "🥵" },
   ],
   TooCold: [
     { spriteMood: "happy", emojiBurst: "💖" },
-    { spriteMood: "happy", emojiBurst: "🥶" },
+    { spriteMood: "plain", emojiBurst: "🥶" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
-    { spriteMood: "happy", emojiBurst: "❄️" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "❄️" },
   ],
   DryAir: [
     { spriteMood: "happy", emojiBurst: "💖" },
     { spriteMood: "thirsty", emojiBurst: "💧" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
     { spriteMood: "thirsty", emojiBurst: "💦" },
   ],
   HumidAir: [
     { spriteMood: "happy", emojiBurst: "💖" },
-    { spriteMood: "happy", emojiBurst: "💦" },
+    { spriteMood: "plain", emojiBurst: "💦" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
-    { spriteMood: "happy", emojiBurst: "🌬️" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🌬️" },
   ],
   Sleepy: [
     { spriteMood: "happy", emojiBurst: "💖" },
-    { spriteMood: "happy", emojiBurst: "💤" },
+    { spriteMood: "sleepy", emojiBurst: "💤" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "🌙" },
-    { spriteMood: "happy", emojiBurst: "😌" },
+    { spriteMood: "sleepy", emojiBurst: "🌙" },
+    { spriteMood: "sleepy", emojiBurst: "😌" },
   ],
   SoilAcidic: [
     { spriteMood: "happy", emojiBurst: "💖" },
-    { spriteMood: "happy", emojiBurst: "🧪" },
+    { spriteMood: "plain", emojiBurst: "🧪" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
-    { spriteMood: "happy", emojiBurst: "🌱" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🌱" },
   ],
   SoilAlkaline: [
     { spriteMood: "happy", emojiBurst: "💖" },
-    { spriteMood: "happy", emojiBurst: "🧪" },
+    { spriteMood: "plain", emojiBurst: "🧪" },
     { spriteMood: "happy", emojiBurst: "⭐" },
-    { spriteMood: "happy", emojiBurst: "😊" },
-    { spriteMood: "happy", emojiBurst: "🪴" },
+    { spriteMood: "sleepy", emojiBurst: "😊" },
+    { spriteMood: "plain", emojiBurst: "🪴" },
   ],
 };
 // Named reactions for the explicit callers (drowsy blink, surprise-hop
 // giggle) — sprite-mood flavors of the retired face keys, same call sites.
 const PET_NAMED_REACTIONS = {
-  blink: { spriteMood: "happy", emojiBurst: "😌" },
+  blink: { spriteMood: "sleepy", emojiBurst: "😌" },
   giggle: { spriteMood: "happy", emojiBurst: "😄" },
 };
-// The portrait stays on the safe, friendly happy sprite. These separate
-// face glyphs give every positive reaction a visibly different expression
-// without reviving the unsafe `plain`/`sleepy` designer frames.
+// The designer sprite remains the source of truth for Jamkachu's body and
+// sensor mood. This small badge gives positive taps twelve visibly distinct
+// friendly expressions without replacing the teammate-authored face art.
 const POSITIVE_FACE_GLYPHS = {
   "💖": "😍",
   "⭐": "😎",
@@ -3323,89 +3259,10 @@ function retireTileInvite() {
   for (const el of document.querySelectorAll(".env-hud-card.env-invite")) el.classList.remove("env-invite");
 }
 
-const HUD_VITALS = {
-  temp: { title: "env.temperature", summary: "detail.temp", range: "18–28 °C", max: 50, field: "temperature" },
-  hum: { title: "env.humidity", summary: "detail.hum", range: "45–60%", max: 100, field: "humidity" },
-  light: { title: "env.light", summary: "detail.light", range: "≥ 30%", max: 100, field: "light" },
-  ph: { title: "env.ph", summary: "detail.ph", range: "pH 6–7", max: 14, field: "soilPh" },
-};
-
-let hudDetailTrigger = null;
-
-function openHudDetail({ trigger, kicker, title, summary, facts = [], action, progress = null }) {
-  const dialog = $("#hud-detail");
-  if (!dialog || typeof dialog.showModal !== "function") return false;
-  if (dialog.open) dialog.close();
-  hudDetailTrigger = trigger ?? null;
-  hudDetailTrigger?.setAttribute("aria-expanded", "true");
-  setText("#hud-detail-kicker", kicker);
-  setText("#hud-detail-title", title);
-  setText("#hud-detail-summary", summary);
-  setText("#hud-detail-action", action);
-  setText("#hud-detail-close", t("detail.close"));
-  const gauge = $("#hud-detail-gauge");
-  if (gauge) {
-    gauge.hidden = progress == null;
-    gauge.style.setProperty("--detail-progress", `${Math.max(0, Math.min(100, Number(progress) || 0))}%`);
-  }
-  const factsEl = $("#hud-detail-facts");
-  if (factsEl) {
-    factsEl.textContent = "";
-    factsEl.hidden = facts.length === 0;
-    for (const [label, value] of facts) {
-      const term = document.createElement("dt");
-      const detail = document.createElement("dd");
-      term.textContent = label;
-      detail.textContent = value;
-      factsEl.append(term, detail);
-    }
-  }
-  dialog.showModal();
-  return true;
-}
-
-function closeHudDetail() {
-  const dialog = $("#hud-detail");
-  if (dialog?.open) dialog.close();
-}
-
-function sensorUpdatedLabel() {
-  const timestamp = lastReading?.recorded_at;
-  if (!timestamp) return t("detail.now");
-  const parsed = new Date(timestamp);
-  if (Number.isNaN(parsed.getTime())) return t("detail.now");
-  return parsed.toLocaleTimeString(appLocale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit" });
-}
-
-function showVitalDetail(kind, trigger) {
-  const meta = HUD_VITALS[kind];
-  if (!meta) return false;
-  const value = lastVitals[meta.field];
-  const displayed = trigger?.querySelector("strong")?.textContent?.trim() || t("detail.waiting");
-  const progress = Number.isFinite(value) ? Number(value) / meta.max * 100 : 0;
-  return openHudDetail({
-    trigger,
-    kicker: t("detail.sensor"),
-    title: t(meta.title),
-    summary: t(meta.summary),
-    facts: [
-      [t("detail.reading"), displayed],
-      [t("detail.range"), meta.range],
-      [t("detail.updated"), sensorUpdatedLabel()],
-    ],
-    action: vitalComment(kind) || t("detail.action"),
-    progress,
-  });
-}
-
-function onVitalTap(kind, trigger) {
+function onVitalTap(kind) {
   // Retire the invite wiggle on ANY tile tap — even one that lands inside
   // the comment cooldown or has nothing true to say.
   retireTileInvite();
-  if (window.matchMedia?.("(min-width: 801px)").matches && showVitalDetail(kind, trigger)) {
-    window.PMSfx?.play("blip");
-    return;
-  }
   const now = Date.now();
   if (now < vitalTapCooldownUntil) return;
   const line = vitalComment(kind);
@@ -3415,66 +3272,8 @@ function onVitalTap(kind, trigger) {
   showTransientBubble(line, PET_BUBBLE_RESTORE_MS);
 }
 
-function refreshStatusHelpLabels() {
-  document.querySelectorAll("[data-status-help]").forEach((element) => {
-    const kind = element.dataset.statusHelp;
-    element.setAttribute("aria-label", t(`status.help.open.${kind}`));
-    element.setAttribute("title", t(`status.help.open.${kind}`));
-  });
-}
-
-function statusHelpText(kind) {
-  if (kind === "xp") {
-    const progress = Math.max(0, lastBondXp) % XP_PER_LEVEL;
-    const remaining = progress === 0 ? XP_PER_LEVEL : XP_PER_LEVEL - progress;
-    return t("status.help.xp").replace("{remaining}", String(remaining));
-  }
-  if (kind === "streak") {
-    const days = Math.max(0, Number(prevStreak) || 0);
-    return t("status.help.streak")
-      .replace("{days}", String(days))
-      .replace("{next}", String(days + 1));
-  }
-  return t(`status.help.${kind}`);
-}
-
-let statusHelpCooldownUntil = 0;
-function showStatusHelp(element) {
-  const now = Date.now();
-  if (now < statusHelpCooldownUntil) return;
-  statusHelpCooldownUntil = now + 450;
-  const kind = element?.dataset?.statusHelp;
-  if (!kind) return;
-  window.PMSfx?.play("blip");
-  if (window.matchMedia?.("(min-width: 801px)").matches) {
-    openHudDetail({
-      trigger: element,
-      kicker: t("detail.status"),
-      title: t(`status.help.open.${kind}`),
-      summary: statusHelpText(kind),
-      action: kind === "seeds" ? t("status.help.seeds") : t("focus.proof"),
-    });
-  } else {
-    floatWhyCard(statusHelpText(kind), element.getBoundingClientRect());
-  }
-  if (kind === "streak" && !prefersReducedMotion()) {
-    animateSafe(
-      element,
-      [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
-      { duration: 300, easing: "steps(4, end)" },
-    );
-  }
-}
-
 /** One-time listener wiring; safe on the static demo (no data needed). */
 function setupCareInteractions() {
-  $("#hud-detail-close")?.addEventListener("click", closeHudDetail);
-  $("#hud-detail")?.addEventListener("close", () => {
-    const trigger = hudDetailTrigger;
-    trigger?.setAttribute("aria-expanded", "false");
-    hudDetailTrigger = null;
-    trigger?.focus();
-  });
   // Universal button micro-juice: sub-100ms press feedback + blip on every
   // pixel button and nav link (one delegated capture listener, no awaits).
   document.addEventListener(
@@ -3492,19 +3291,11 @@ function setupCareInteractions() {
     { passive: true },
   );
 
-  const careAction = $("#care-action");
-  if (window.matchMedia?.("(min-width: 801px)").matches) {
-    careAction?.setAttribute("aria-describedby", "care-proof-note");
-    const careNote = $("#care-proof-note");
-    careNote?.setAttribute("role", "status");
-    careNote?.setAttribute("aria-live", "polite");
-    careNote?.setAttribute("aria-atomic", "true");
-  }
-  careAction?.addEventListener("pointerdown", onCareAction);
+  $("#care-action")?.addEventListener("pointerdown", onCareAction);
   // Keyboard activation (it's a real <button>): click with detail 0 means
   // Enter/Space — pointer taps already went through pointerdown above.
   // Same pattern as #npc-farmer.
-  careAction?.addEventListener("click", (event) => {
+  $("#care-action")?.addEventListener("click", (event) => {
     if (event.detail === 0) onCareAction();
   });
 
@@ -3527,12 +3318,18 @@ function setupCareInteractions() {
     stageEl.addEventListener("pointerleave", gazeReset);
   }
 
-  // Native buttons provide pointer + Enter/Space activation exactly once.
+  // Pressable vitals (plan T19): pointer + keyboard (role=button spans).
   const vitalCards = { temp: "temp", hum: "hum", light: "light", ph: "ph" };
   for (const [key, kind] of Object.entries(vitalCards)) {
     const el = $(`[data-vital="${key}"]`);
     if (!el) continue;
-    el.addEventListener("click", () => onVitalTap(kind, el));
+    el.addEventListener("pointerdown", () => onVitalTap(kind));
+    el.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onVitalTap(kind);
+      }
+    });
   }
   // Tile invite wiggle (kid-guide Task 1): only while "tiles.tried" is
   // unseen — the first onVitalTap above retires it forever.
@@ -3540,12 +3337,27 @@ function setupCareInteractions() {
     for (const el of document.querySelectorAll(".env-hud-card")) el.classList.add("env-invite");
   }
 
-  // Every status value is self-explaining: one shared why-card tells the
-  // player what the value means, how it changes, and whether it is spent.
-  // Real buttons give pointer + Enter/Space behavior without duplicate code.
-  for (const element of document.querySelectorAll("[data-status-help]")) {
-    element.addEventListener("click", () => showStatusHelp(element));
-  }
+  // Streak flame press (Task 15): tap → "N days in a row! Care today makes
+  // N+1." + blip + a little flame pulse. Celebrates only what is already
+  // real (prevStreak stays null until real data renders); grants nothing.
+  $(".badge.streak")?.addEventListener("pointerdown", () => {
+    const days = prevStreak;
+    if (typeof days !== "number" || days <= 0) return;
+    const nowTs = Date.now();
+    if (nowTs < flamePressCooldownUntil) return;
+    flamePressCooldownUntil = nowTs + FLAME_PRESS_COOLDOWN_MS;
+    window.PMSfx?.play("blip");
+    const text = PM().streakKeeper?.flame?.(days) ?? STREAK_KEEPER_FALLBACK.flame(days);
+    floatWhyCard(text, streakAnchorRect());
+    const el = $(".badge.streak");
+    if (el && !prefersReducedMotion()) {
+      animateSafe(
+        el,
+        [{ transform: "scale(1)" }, { transform: "scale(1.15)" }, { transform: "scale(1)" }],
+        { duration: 300, easing: "steps(4, end)" },
+      );
+    }
+  });
 }
 
 // ── Living world (dusk sky · fireflies · idle life · wind · grandpa NPC) ──
@@ -3910,7 +3722,7 @@ let farmerDragPleaTimer = null;
 
 const FARMER_CHAT_COPY = {
   id: {
-    kicker: "TEMAN KEBUNMU", title: "Kakek Tani", close: "Tutup percakapan",
+    kicker: "TEMAN KEBUNMU", title: "Farmer Tani", close: "Tutup percakapan",
     hello: "Hoho… datanglah, Nak. Apa yang ingin kamu ketahui tentang tanaman kecil kita?",
     placeholder: "Tanya tentang tanaman atau sensor…", send: "TANYA",
     note: "Kakek menjelaskan data sensor. Untuk perubahan tanah, tanyakan juga kepada guru atau petani setempat.",
@@ -3919,7 +3731,7 @@ const FARMER_CHAT_COPY = {
     prompts: ["Bagaimana keadaan tanaman sekarang?", "Apakah cahayanya cukup?", "Apa arti pH tanah?"],
   },
   en: {
-    kicker: "YOUR GARDEN FRIEND", title: "Grandpa Tani", close: "Close chat",
+    kicker: "YOUR GARDEN FRIEND", title: "Farmer Tani", close: "Close chat",
     hello: "Hoho… come sit with me, my young friend. What would you like to know about our little plant?",
     placeholder: "Ask about the plant or sensors…", send: "ASK",
     note: "Grandpa explains sensor data. Ask a teacher or local farmer before changing the soil.",
@@ -4112,21 +3924,6 @@ function scheduleFarmerNightSleep() {
   }, 3000);
 }
 
-function farmerNightWakePosition() {
-  const farmer = $("#npc-farmer");
-  const ground = farmerGround();
-  if (!farmer || !ground) return null;
-
-  const bed = $(".npc-farmer-bed")?.getBoundingClientRect();
-  const farmerWidth = farmer.offsetWidth || 48;
-  const desiredLeft = bed ? bed.right + 8 : ground.left;
-  return {
-    left: Math.round(Math.max(ground.left, Math.min(ground.right, desiredLeft))),
-    top: ground.top,
-    width: farmerWidth,
-  };
-}
-
 function wakeFarmerAtNight() {
   if (!isNightWIB()) return false;
   const farmer = $("#npc-farmer");
@@ -4134,15 +3931,12 @@ function wakeFarmerAtNight() {
   if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
   farmerNightSleepTimer = null;
   const wasSleeping = !farmer.classList.contains("npc-night-awake");
-  // The sleeping sprite is rotated 90 degrees, so its visual bounding box is
-  // not a valid standing position. Resolve a real ground point before hiding
-  // the bed, then stand Grandpa beside it instead of copying the rotated top.
-  const wakePosition = wasSleeping ? farmerNightWakePosition() : null;
+  const rect = farmer.getBoundingClientRect();
   document.body?.classList.add("farmer-night-awake");
   farmer.classList.add("npc-night-awake");
-  if (wasSleeping && wakePosition) {
-    farmer.style.left = `${wakePosition.left}px`;
-    farmer.style.top = `${wakePosition.top}px`;
+  if (wasSleeping) {
+    farmer.style.left = `${rect.left}px`;
+    farmer.style.top = `${rect.top}px`;
     farmer.style.transform = "none";
     setFarmerFacing(1);
   }
@@ -4264,78 +4058,12 @@ function scheduleFarmerMotionRestart() {
   }, 180);
 }
 
-function farmerSensorLine(family) {
-  if (!lastReading) {
-    return appLocale === "id"
-      ? "Sensor belum mengirim kabar baru, Nak. Kakek tidak akan menebak—kita tunggu angka yang nyata dulu."
-      : "The sensors have not sent fresh news yet, my young friend. Grandpa will not guess—we will wait for real numbers.";
-  }
-  if (staleLabel(lastReading.recorded_at)) {
-    return appLocale === "id"
-      ? "Angka sensor ini sudah lama, Nak. Jangan ubah apa pun berdasarkan kabar lama; periksa koneksi dan tunggu bacaan baru."
-      : "These sensor numbers are old, my young friend. Do not act on old news—check the connection and wait for a fresh reading.";
-  }
-
-  const localized = appLocale === "id";
-  const bandFor = (kind) => gaugeDomainAndBand(kind, cropProfile).band;
-  const range = (kind, unit = "") => {
-    const band = bandFor(kind);
-    return band ? `${band.min}–${band.max}${unit}` : null;
-  };
-  const temp = Number.isFinite(lastVitals.temperature) ? lastVitals.temperature.toFixed(1) : null;
-  const humidity = Number.isFinite(lastVitals.humidity) ? Math.round(lastVitals.humidity) : null;
-  const light = Number.isFinite(lastVitals.light) ? Math.round(lastVitals.light) : null;
-  const ph = Number.isFinite(lastVitals.soilPh) ? lastVitals.soilPh.toFixed(1) : null;
-
-  if ((family === "Overheating" || family === "TooCold") && temp) {
-    const ideal = range("temp", "°C");
-    const direction = family === "Overheating"
-      ? (localized ? "lebih panas dari yang nyaman" : "warmer than comfortable")
-      : (localized ? "lebih dingin dari yang nyaman" : "colder than comfortable");
-    return localized
-      ? `Sensor suhu membaca ${temp}°C${ideal ? `; rentang nyamannya ${ideal}` : ""}. Itu ${direction}, jadi pindahkan ke tempat yang aman dan lebih ${family === "Overheating" ? "teduh" : "hangat"}, lalu cek lagi.`
-      : `The temperature sensor reads ${temp}°C${ideal ? `; the comfort range is ${ideal}` : ""}. That is ${direction}, so try a safe ${family === "Overheating" ? "shadier" : "warmer"} spot and check again.`;
-  }
-  if ((family === "DryAir" || family === "HumidAir") && humidity != null) {
-    const ideal = range("hum", "%");
-    const action = family === "DryAir"
-      ? (localized ? "jauhkan dari kipas atau AC" : "move it away from fans or AC")
-      : (localized ? "beri aliran udara segar" : "give it gentle fresh airflow");
-    return localized
-      ? `Kelembapan udara terbaca ${humidity}%${ideal ? `; rentang nyamannya ${ideal}` : ""}. Ini udara di sekitar daun, bukan basahnya tanah—${action}, lalu ukur lagi.`
-      : `Air humidity reads ${humidity}%${ideal ? `; the comfort range is ${ideal}` : ""}. This is air around the leaves, not soil wetness—${action}, then measure again.`;
-  }
-  if (family === "Sleepy" && light != null) {
-    const ideal = range("light", "%");
-    return localized
-      ? `Sensor cahaya membaca ${light}%${ideal ? `; target siangnya mulai ${ideal.split("–")[0]}` : ""}. Kalau masih siang, buka tirai atau cari tempat terang yang aman, lalu lihat perubahan sensornya.`
-      : `The light sensor reads ${light}%${ideal ? `; the daytime target starts at ${ideal.split("–")[0]}` : ""}. If it is daytime, open a curtain or find a safe brighter spot, then watch the sensor.`;
-  }
-  if (family === "Soil" && ph) {
-    const ideal = range("ph");
-    return localized
-      ? `Sensor pH membaca ${ph}${ideal ? `; rentang referensinya ${ideal}` : ""}. Catat angkanya dan tunjukkan kepada guru atau petani setempat—jangan menambahkan bahan sendiri.`
-      : `The pH sensor reads ${ph}${ideal ? `; the reference range is ${ideal}` : ""}. Record it and show a teacher or local farmer—never add a treatment by yourself.`;
-  }
-  if (family === "Happy" && temp && humidity != null) {
-    return localized
-      ? `Suhu ${temp}°C dan kelembapan udara ${humidity}% sedang tenang, Nak. Saat sensor bilang nyaman, kebijaksanaan terbaik adalah mempertahankan keadaan dan mengamati lagi nanti.`
-      : `Temperature ${temp}°C and air humidity ${humidity}% are sitting calmly, my young friend. When the sensors say comfortable, the wisest care is to keep things steady and observe later.`;
-  }
-  return null;
-}
-
-function farmerMoodLines(family) {
-  const table = PM().farmer?.[family];
-  const base = Array.isArray(table) && table.length > 0 ? table : FARMER_FALLBACK[family];
-  const sensorLine = farmerSensorLine(family);
-  return sensorLine ? [sensorLine, ...base] : base;
-}
-
-/** Next grandpa line for the CURRENT sensor-derived mood. */
+/** Next grandpa line for the CURRENT mood (Sleepy is inherently daytime-only
+ *  here: at night farmerSpeak bails before ever picking a line). */
 function farmerLine() {
   const family = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
-  const set = farmerMoodLines(family);
+  const table = PM().farmer?.[family];
+  const set = Array.isArray(table) && table.length > 0 ? table : FARMER_FALLBACK[family];
   const index = farmerLineIndex[family] ?? 0;
   farmerLineIndex[family] = index + 1;
   return set[index % set.length];
@@ -4350,7 +4078,9 @@ function randomFarmerLine(lines) {
 function autonomousFarmerLine() {
   const family = CARE_KEY_BY_MOOD[careMood] ?? "Happy";
   const localizedFarmer = PM().farmer;
-  const moodLines = farmerMoodLines(family);
+  const moodLines = Array.isArray(localizedFarmer?.[family]) && localizedFarmer[family].length > 0
+    ? localizedFarmer[family]
+    : FARMER_FALLBACK[family];
   const idle = localizedFarmer?.idle ?? FARMER_IDLE_FALLBACK[appLocale] ?? FARMER_IDLE_FALLBACK.id;
   let categories = family === "Happy"
     ? [{ key: "mood", weight: .35, lines: moodLines }, { key: "companion", weight: .4, lines: idle.companion }, { key: "wisdom", weight: .25, lines: idle.wisdom }]
@@ -4404,7 +4134,7 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
   bubble.type = "button";
   bubble.className = "npc-bubble";
   bubble.setAttribute("aria-live", "polite");
-  bubble.setAttribute("aria-label", `${text} ${appLocale === "id" ? "Ketuk untuk berbicara dengan Kakek Tani." : "Tap to talk with Grandpa Tani."}`);
+  bubble.setAttribute("aria-label", `${text} ${appLocale === "id" ? "Ketuk untuk berbicara dengan Farmer Tani." : "Tap to talk with Farmer Tani."}`);
   const line = document.createElement("span");
   line.textContent = text;
   const cta = document.createElement("small");
@@ -4414,34 +4144,6 @@ function showFarmerBubble(text, duration = FARMER_BUBBLE_MS, pauseMotion = true)
   bubble.style.left = `${Math.round(Math.max(120, Math.min(rect.left + rect.width / 2, window.innerWidth - 120)))}px`;
   bubble.style.top = `${Math.round(rect.top - 8)}px`;
   document.body.appendChild(bubble);
-
-  /* Desktop collision guard: Grandpa can wander behind the central hero.
-   * If his ambient bubble would cover Jamkachu's identity or wardrobe
-   * control, park it in the larger side gutter while keeping the same
-   * vertical anchor. Mobile positioning remains owned by the mobile UI. */
-  if (window.matchMedia?.("(min-width: 801px)").matches) {
-    const mascotRect = $(".mascot-container")?.getBoundingClientRect();
-    const stageRect = $(".mascot-stage")?.getBoundingClientRect();
-    const bubbleRect = bubble.getBoundingClientRect();
-    const overlapsMascot = mascotRect
-      && bubbleRect.left < mascotRect.right
-      && bubbleRect.right > mascotRect.left
-      && bubbleRect.top < mascotRect.bottom
-      && bubbleRect.bottom > mascotRect.top;
-    if (overlapsMascot && stageRect) {
-      const gutter = 16;
-      const leftRoom = mascotRect.left - stageRect.left;
-      const rightRoom = stageRect.right - mascotRect.right;
-      const preferredCenter = leftRoom >= rightRoom
-        ? mascotRect.left - bubbleRect.width / 2 - gutter
-        : mascotRect.right + bubbleRect.width / 2 + gutter;
-      const safeCenter = Math.max(
-        stageRect.left + bubbleRect.width / 2 + gutter,
-        Math.min(preferredCenter, stageRect.right - bubbleRect.width / 2 - gutter),
-      );
-      bubble.style.left = `${Math.round(safeCenter)}px`;
-    }
-  }
   farmerBubbleEl = bubble;
   farmerBubbleTimer = setTimeout(clearFarmerBubble, duration);
   return true;
@@ -4520,10 +4222,6 @@ function prepareFarmerChat() {
 function openFarmerChat() {
   const dialog = $("#farmer-chat");
   if (!dialog || dialog.hasAttribute("open") || $("#npc-farmer")?.classList.contains("npc-falling")) return;
-  // Night changes Grandpa's animation, not his availability. A press wakes
-  // him onto the real ground and cancels the return-to-bed timer while the
-  // player is talking to him.
-  wakeFarmerAtNight();
   clearFarmerBubble();
   prepareFarmerChat();
   showFarmerIntelligence(false);
@@ -4538,7 +4236,6 @@ $("#farmer-chat")?.addEventListener("close", () => {
   farmerChatController?.abort();
   farmerChatController = null;
   setFarmerMotionPaused(false);
-  if (isNightWIB()) scheduleFarmerNightSleep();
 });
 $("#farmer-chat")?.addEventListener("click", (event) => {
   if (event.target === event.currentTarget) event.currentTarget.close();
@@ -4601,6 +4298,9 @@ $("#npc-farmer")?.addEventListener("click", (event) => {
   }
   if (isNightWIB()) {
     wakeFarmerAtNight();
+    scheduleFarmerNightSleep();
+    event.preventDefault();
+    return;
   }
   openFarmerChat();
 });
@@ -4627,6 +4327,12 @@ if (typeof ResizeObserver === "function") {
   }
 }
 void runFarmerMotion();
+window.setInterval(() => {
+  if (!isNightWIB()) return;
+  const dialog = $("#farmer-chat");
+  if (dialog?.open) dialog.close();
+  clearFarmerBubble();
+}, 60_000);
 
 // ── End living world ────────────────────────────────────────────────────
 
@@ -5252,7 +4958,10 @@ function fxDecorReveal(level) {
 // Applied idempotently on every render, exactly like applyDecorations.
 
 const SHOP_POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"];
-const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles", "acc_jfc_headdress", "acc_indonesia_sash"];
+// Same drift the decor list below suffered: the catalog sold the last three
+// and the farm had never heard of them, so wearing one cost Seeds and changed
+// nothing. tests/shop-farm-wearables.test.ts pins this list against the catalog.
+const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles", "acc_jfc_headdress", "acc_taeguk_ribbon", "acc_indonesia_sash"];
 // Every decor key in SHOP_CATALOG, in catalog order. The last three were
 // missing, so buying the JFC banner, the flag or the Mugunghwa patch put a row
 // in the table and changed nothing on the farm — the item simply never existed
@@ -5265,7 +4974,11 @@ function renderShopPurchases(rows) {
   const list = Array.isArray(rows) ? rows : [];
   const equippedPot = list.find((r) => r.category === "pot" && r.equipped)?.item_key ?? null;
   const equippedAcc = list.find((r) => r.category === "accessory" && r.equipped)?.item_key ?? null;
-  const ownedDecor = new Set(list.filter((r) => r.category === "decor").map((r) => r.item_key));
+  // Decor hangs on the equipped flag, not on merely owning it. Keying it off
+  // ownership made every bought decoration permanent — there was no way to take
+  // one back off the farm. purchase_item equips decor on purchase, so buying
+  // still puts it out immediately; equip_item can now take it off again.
+  const ownedDecor = new Set(list.filter((r) => r.category === "decor" && r.equipped).map((r) => r.item_key));
   if (svg) {
     SHOP_POT_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedPot));
     SHOP_ACC_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedAcc));
@@ -5285,11 +4998,7 @@ function renderHp(moodState) {
   const el = $("#hp-inline");
   if (!el) return;
   const pct = HP_BY_MOOD[moodState] ?? 100;
-  const filled = Math.max(1, Math.min(5, Math.round(pct / 20)));
-  const label = appLocale === "id" ? "Nyaman" : "Comfort";
-  el.innerHTML = `<span aria-hidden="true">${"♥".repeat(filled)}${"♡".repeat(5 - filled)}</span><small>${label}</small>`;
-  el.setAttribute("aria-label", `${t("status.help.open.hp")}: ${filled}/5`);
-  el.dataset.comfort = String(filled);
+  el.textContent = `HP ${pct}%`;
   el.classList.remove("hp-good", "hp-warn", "hp-low");
   el.classList.add(pct >= 80 ? "hp-good" : pct >= 60 ? "hp-warn" : "hp-low");
 }
@@ -5310,10 +5019,6 @@ function renderCareFocus(state) {
   }[next];
   careFocusState = next;
   focus.dataset.careState = next;
-  const feedbackNote = $("#care-proof-note");
-  if (feedbackNote?.classList.contains("is-feedback")) {
-    feedbackNote.textContent = t(`focus.feedback.${next}`);
-  }
   setText("#care-focus-icon", presentation.icon);
   setText("#care-focus-title", t(`focus.${next}.title`));
   setText("#care-focus-summary", t(`focus.${next}.summary`));
@@ -5436,17 +5141,6 @@ function renderPlant(plant) {
   // its bond-level label fresh instead.)
 }
 
-function renderBondLevelLabel(level) {
-  const levelEl = $(".username");
-  if (!levelEl) return;
-  levelEl.textContent = "";
-  const word = document.createElement("span");
-  word.className = "bond-word";
-  word.textContent = t("bond");
-  const safeLevel = Math.min(MAX_BOND_LEVEL, Math.max(1, Number(level) || 1));
-  levelEl.append(word, document.createTextNode(` Lv.${safeLevel}${safeLevel >= MAX_BOND_LEVEL ? " · MAX" : ""}`));
-}
-
 function renderBond(bond, plantName) {
   if (!bond) return;
   if (plantName) lastPlantName = plantName; // evolution ceremony's dialog name (see currentPlantName())
@@ -5463,9 +5157,7 @@ function renderBond(bond, plantName) {
   // Wardrobe lock states (milestone20) read the latest REAL bond level —
   // display-only, the server re-checks every skin pick against bond_state.
   const bondLevelChanged = level !== lastBondLevel;
-  lastBondXp = totalXp;
   lastBondLevel = level;
-  renderEvolutionProgress();
   if (bondLevelChanged) refreshWardrobeIfOpen();
   // DEV ADDITION (reward FX): diff against the previous render. All prev*
   // start null, so the FIRST render only records state — no celebration for
@@ -5479,13 +5171,20 @@ function renderBond(bond, plantName) {
   // Bond-level label right above the XP bar ("Ikatan Lv.3"): the panel's
   // single remaining identity line — the plant NAME lives only in
   // #char-name under the mascot now (no more cat-vs-plant confusion).
+  const levelEl = $(".username");
   const atMax = Number(bond.bond_level) >= MAX_BOND_LEVEL;
-  renderBondLevelLabel(bond.bond_level);
+  if (levelEl) levelEl.textContent = atMax
+    ? `${t("bond")} Lv.${MAX_BOND_LEVEL} · MAX`
+    : `${t("bond")} Lv.${bond.bond_level}`;
   // At the cap the bar is full and stays full — a bar that kept sliding back
   // to 7% would promise a level that can no longer arrive.
   setXpBar(atMax ? 100 : (totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
   const xpWrap = $(".xp-bar-wrap");
   if (xpWrap) xpWrap.classList.toggle("is-max", atMax);
+  // renderOfflineHome may have hidden the badges before the backend came
+  // back — real data always un-hides (`.badge[hidden]` really hides now).
+  const coinBadge = $(".badge.coin");
+  if (coinBadge) coinBadge.hidden = false;
   const numEl = ensureCoinNumber();
   if (numEl) {
     if (xpDelta > 0 && !prefersReducedMotion()) {
@@ -5584,11 +5283,13 @@ function renderBond(bond, plantName) {
 const STREAK_NUDGE_KEY = "pm_streak_nudge";
 const STREAK_NUDGE_HOUR_START = 7; // 07:00 WIB inclusive
 const STREAK_NUDGE_HOUR_END = 20; // 20:00 WIB exclusive
+const FLAME_PRESS_COOLDOWN_MS = 2000;
 const STREAK_KEEPER_FALLBACK = {
   active: (d) => `🔥 ${d} days going — Jamkachu would love a visit today.`,
   broken: "Every streak starts at day one. Welcome back!",
   flame: (d) => `${d} days in a row! Care today makes ${d + 1}.`,
 };
+let flamePressCooldownUntil = 0;
 
 /** Current WIB (Asia/Jakarta) calendar date + hour — the same calendar the
  *  server's streak engine counts in. Null when Intl/timezone data is
@@ -6404,10 +6105,10 @@ function runHatchIntro(plantName) {
     // (3) Personality + "rename me in Settings" care hint card.
     () => setCard(null, [H.personality ?? F.personality, H.rename ?? F.rename]),
     () => {
-    // (4) Finale: highlight the live sensor board + quiz destination.
+      // (4) Finale: highlight the care button + pulse the quest slot.
       layer.classList.add("hatch-final");
-      $("#env-strip")?.classList.add("hatch-highlight");
-      $("#daily-quiz-open")?.classList.add("hatch-highlight");
+      $("#care-action")?.classList.add("hatch-highlight");
+      $("#current-quest")?.classList.add("hatch-highlight");
       window.PMSfx?.play("blip");
       setCard(null, [H.finale ?? F.finale]);
     },
@@ -6426,8 +6127,8 @@ function runHatchIntro(plantName) {
     svg?.classList.remove("hatch-pre");
     container?.classList.remove("hatch-hidden");
     wrapper?.classList.remove("hatch-shake");
-    $("#env-strip")?.classList.remove("hatch-highlight");
-    $("#daily-quiz-open")?.classList.remove("hatch-highlight");
+    $("#care-action")?.classList.remove("hatch-highlight");
+    $("#current-quest")?.classList.remove("hatch-highlight");
     // Brand-new players roll straight into the first-day tour: the hatch
     // seen-flag was written up front, so hatchPendingOrActive() no longer
     // blocks it.
@@ -6677,7 +6378,9 @@ function runFirstDayTour() {
   const grandpa = T.grandpa ?? {};
   pmCoach(TOUR_SEEN_ID, [
     { target: "#env-strip", emoji: "👀", text: sensesText },
+    { target: "#care-action", emoji: "💛", text: T.care?.line ?? F.care.line },
     { target: "#daily-quiz-open", emoji: "🧠", text: T.quiz?.line ?? F.quiz.line },
+    { target: "#current-quest", emoji: "🔥", text: T.quest?.line ?? F.quest.line },
     // Final card (kid-guide Task 5): Grandpa waves — the handoff to the
     // sticker book, the ONE replayable help home. The dare's event is
     // caught next to the farm-guide wiring above (pm-open-guide).
@@ -6748,7 +6451,8 @@ function renderOfflineHome() {
   // but-empty backend shows (renderSensorsWaiting), never raw "--".
   renderSensorsWaiting();
   // Bond-level label: the fresh-start default, never the "Lv.--" markup.
-  renderBondLevelLabel(1);
+  const levelEl = $(".username");
+  if (levelEl) levelEl.textContent = `${t("bond")} Lv.1`;
 }
 
 // ── Classroom cheat sandbox (public/farm/cheat.js) ──────────────────────
@@ -7285,22 +6989,36 @@ async function main() {
         .limit(6)
         .then((res) => res)
         .catch(() => ({ data: null })),
-      // Companion stage (+ cycle for the ceremony key) and milestone20 skin.
-      // Evolution progress comes from bond_state only; legacy care counters
-      // are deliberately not requested. Missing skin_key falls back once.
+      // Companion state incl. milestone16 progress counters (+ cycle for the
+      // ceremony's once-per-stage key) and the milestone20 cosmetic skin_key.
+      // Enumerated unknown columns reject via PostgREST, so the chain steps
+      // down one migration at a time: full (m20 skin) → counters-only (m16,
+      // skin_key absent → jamkachu) → the legacy three-column select — old
+      // databases keep rendering (the progress line just hides). skin_key is
+      // therefore only ever requested in the tolerant first step.
       supabase
         .from("companion_state")
-        .select("stage, form_key, cycle, updated_at, skin_key")
+        .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count, skin_key")
         .eq("plant_id", PLANT_ID)
         .maybeSingle()
         .then((res) =>
           res?.error
             ? supabase
                 .from("companion_state")
-                .select("stage, form_key, cycle, updated_at")
+                .select("stage, form_key, cycle, updated_at, care_count, affinity_count, day_count")
                 .eq("plant_id", PLANT_ID)
                 .maybeSingle()
-                .then((legacy) => (legacy?.error ? { data: null } : legacy))
+                .then((m16) =>
+                  m16?.error
+                    ? supabase
+                        .from("companion_state")
+                        .select("stage, form_key, updated_at")
+                        .eq("plant_id", PLANT_ID)
+                        .maybeSingle()
+                        .then((legacy) => (legacy?.error ? { data: null } : legacy))
+                        .catch(() => ({ data: null }))
+                    : m16,
+                )
                 .catch(() => ({ data: null }))
             : res,
         )
