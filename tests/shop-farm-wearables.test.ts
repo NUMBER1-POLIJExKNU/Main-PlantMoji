@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SHOP_CATALOG } from "@/game/economy/shop-catalog";
@@ -37,16 +37,17 @@ describe("farm wearables", () => {
   });
 
   it("lists every catalog pot in the farm shell's key list", () => {
-    // Pots recolor the sprite through jamkachu-sprite.js POT_ITEM_RAMPS rather
-    // than an overlay group, so the ramp table is the thing that has to know
-    // every pot — a pot missing there equips to no visible change.
+    // Pots use their complete catalog image on both surfaces. A key missing
+    // from POT_ITEM_ART would equip successfully but leave the default pot.
     const line = keyList("SHOP_POT_KEYS");
     const sprite = readFileSync(resolve(process.cwd(), "public/farm/jamkachu-sprite.js"), "utf8");
-    const palette = readFileSync(resolve(process.cwd(), "src/lib/sprite-palette.ts"), "utf8");
     for (const item of POTS) {
       expect(line, `SHOP_POT_KEYS is missing ${item.key}`).toContain(`"${item.key}"`);
-      expect(sprite, `POT_ITEM_RAMPS (farm) is missing ${item.key}`).toContain(`${item.key}:`);
-      expect(palette, `POT_ITEM_RAMPS (react) is missing ${item.key}`).toContain(`${item.key}:`);
+      expect(sprite, `POT_ITEM_ART (farm) is missing ${item.key}`).toContain(
+        `${item.key}: "/icons/shop/${item.key}.png"`,
+      );
+      expect(existsSync(resolve(process.cwd(), `public/icons/shop/${item.key}.png`))).toBe(true);
+      expect(stage, `shop preview must use catalog art for ${item.key}`).toContain("shopItemArt(shownPotKey)");
     }
     expect(line.match(/"pot_[a-z_]+"/g) ?? []).toHaveLength(POTS.length);
   });

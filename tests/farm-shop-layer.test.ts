@@ -1,14 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
 // Farm shop layer, re-seated on the kiki designer sprites (2026-08-11):
 // equipped ACCESSORIES stay overlay-SVG groups above the sprite img
 // (repositioned onto the sprite head/stem inside .mascot-overlay), while
-// equipped POTS became pot-pixel palette ramps in jamkachu-sprite.js
-// (POT_ITEM_RAMPS — the old shop-g-pot_* overlay groups retired). Decor
-// props on the grass are unchanged. Display-only, as ever.
+// equipped POTS replace the baked-in pot with the complete catalog art.
+// Decor props on the grass are unchanged. Display-only, as ever.
 
 const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
 const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
@@ -18,22 +16,8 @@ const spriteJs = readFileSync(resolve(process.cwd(), "public/farm/jamkachu-sprit
 const ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles"];
 const POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"];
 
-interface Ramp {
-  body: string;
-  rim: string;
-  dark?: string;
-}
-
-function loadPotItemRamps(): Record<string, Ramp> {
-  const stubWindow: { PMSprite?: { tables: { POT_ITEM_RAMPS: Record<string, Ramp> } } } = {};
-  const context = vm.createContext({ window: stubWindow });
-  vm.runInContext(spriteJs, context, { filename: "jamkachu-sprite.js" });
-  if (!stubWindow.PMSprite) throw new Error("jamkachu-sprite.js did not assign window.PMSprite");
-  return stubWindow.PMSprite.tables.POT_ITEM_RAMPS;
-}
-
 describe("farm shop layer (display-only)", () => {
-  it("index.html keeps the accessory groups in the thin overlay; pot groups retired", () => {
+  it("keeps accessory SVGs but gives shop pots a dedicated replacement image", () => {
     for (const key of ACC_KEYS) {
       expect(html).toContain(`shop-g-${key}`);
     }
@@ -46,10 +30,12 @@ describe("farm shop layer (display-only)", () => {
     for (const key of ACC_KEYS) {
       expect(html.indexOf(`shop-g-${key}`)).toBeGreaterThan(overlayIdx);
     }
-    // The old pot overlay groups are gone — pots are palette ramps now.
+    // The old blocky pot SVGs stay retired; catalog PNG art owns this layer.
     for (const key of POT_KEYS) {
       expect(html, `stale shop-g-${key} group`).not.toContain(`shop-g-${key}`);
     }
+    expect(html).toContain('id="shop-pot-sprite"');
+    expect(html.indexOf('id="jamkachu-sprite"')).toBeLessThan(html.indexOf('id="shop-pot-sprite"'));
     expect(html).toContain('class="shop-decor-layer"');
     for (const cls of ["shop-decor-scarecrow", "shop-decor-fence", "shop-decor-lantern", "shop-decor-pond", "shop-decor-coffee-sign", "shop-decor-greenhouse", "shop-decor-rain-barrel", "shop-decor-compost", "shop-decor-tobacco-barn", "shop-decor-puger-pinwheel"]) {
       expect(html).toContain(cls);
@@ -104,37 +90,32 @@ describe("farm shop layer (display-only)", () => {
     for (const key of ACC_KEYS) {
       expect(css).toContain(`.mascot-svg.shop-${key} .shop-g-${key} { display: block; }`);
     }
-    // No stale pot display rules survive.
+    // No stale pot-group display rules survive; each real catalog image has
+    // a calibrated seat instead.
     for (const key of POT_KEYS) {
       expect(css).not.toContain(`.shop-g-${key} { display: block; }`);
+      expect(css).toContain(`#shop-pot-sprite[data-pot-key="${key}"]`);
     }
     expect(css).toContain(".shop-decor-layer .shop-decor { display: none; }");
     expect(css).toContain(".shop-decor-layer.own-decor_pond .shop-decor-pond { display: block; }");
     expect(css).toContain(".shop-decor-layer.own-decor_greenhouse .shop-decor-greenhouse { display: block; }");
   });
 
-  it("every shop pot has a palette ramp derived from its old SVG hexes", () => {
-    const ramps = loadPotItemRamps();
-    expect(Object.keys(ramps).sort()).toEqual([...POT_KEYS].sort());
+  it("every shop pot maps to its complete catalog image", () => {
     for (const key of POT_KEYS) {
-      const ramp = ramps[key];
-      expect(ramp.body, `${key} body`).toMatch(/^#[0-9A-F]{6}$/i);
-      expect(ramp.rim, `${key} rim`).toMatch(/^#[0-9A-F]{6}$/i);
-      if (ramp.dark) expect(ramp.dark, `${key} dark`).toMatch(/^#[0-9A-F]{6}$/i);
+      expect(spriteJs).toContain(`${key}: "/icons/shop/${key}.png"`);
     }
-    // Spot-pin the recorded legacy fills so the derivation stays honest.
-    expect(ramps.pot_terracotta).toEqual({ body: "#C86B4A", rim: "#E08B5F", dark: "#9A4E33" });
-    expect(ramps.pot_jember_mosaic.body).toBe("#3C8C75");
+    expect(spriteJs).not.toContain("POT_ITEM_RAMPS");
+    expect(css).toContain(".mascot-svg.has-shop-pot #jamkachu-sprite { clip-path: inset(0 0 37.5% 0); }");
   });
 
-  it("an equipped shop pot outranks the cosmetic skin ramp", () => {
-    // Precedence: pot item ramp > skin ramp > designer pot (none).
+  it("an equipped shop pot bypasses palette recoloring", () => {
     const activeRamp = spriteJs.slice(spriteJs.indexOf("function activeRamp"), spriteJs.indexOf("// ── Preload"));
-    const potIdx = activeRamp.indexOf("POT_ITEM_RAMPS[state.potItemKey]");
+    const potIdx = activeRamp.indexOf("POT_ITEM_ART[state.potItemKey]");
     const skinIdx = activeRamp.indexOf("SKIN_RAMPS[state.skinKey]");
     expect(potIdx).toBeGreaterThan(-1);
     expect(skinIdx).toBeGreaterThan(potIdx);
-    expect(activeRamp).toContain("return null");
+    expect(activeRamp).toContain("if (state.potItemKey && POT_ITEM_ART[state.potItemKey]) return null;");
   });
 
   it("live.js renders purchases idempotently, feeds the sprite, and never computes a balance", () => {

@@ -148,7 +148,7 @@ export default async function ReportsPage() {
   return (
     <main className="w-full">
       <PageHeader
-        icon="📊"
+        destination="reports"
         eyebrow={locale === "id" ? "Ringkasan perawatan" : "Care recap"}
         title={locale === "id" ? "Laporan" : "Reports"}
         description={locale === "id"

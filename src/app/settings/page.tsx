@@ -166,7 +166,7 @@ export default async function SettingsPage({
   return (
     <main className="mx-auto w-full">
       <PageHeader
-        icon="⚙️"
+        destination="settings"
         eyebrow={locale === "id" ? "Profil teman tanaman" : "Plant companion profile"}
         title={locale === "id" ? "Pengaturan" : "Settings"}
         description={locale === "id"

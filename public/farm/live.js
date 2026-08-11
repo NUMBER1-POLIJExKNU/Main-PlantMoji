@@ -1776,7 +1776,7 @@ function enqueueVerifyHold() {
   }, VERIFY_HOLD_MS);
 }
 
-// ── Reason chips + lucky jackpot reveal (Task 14) ───────────────────────
+// ── Reason chips + bonus reveal (Task 14) ───────────────────────
 // bond_events INSERTs (after the milestone8 migration adds the table to the
 // realtime publication) tell us WHY XP arrived: data = {amount, reason}.
 // The reason maps by prefix to a friendly label appended to the XP chip
@@ -1837,16 +1837,19 @@ function takeReasonLabel(amount) {
   return entry.label;
 }
 
-/** T3 gold "LUCKY! ×2" stamp: scale-slam + gold confetti + jackpot arpeggio
+/** T3 gold "BONUS ×2" stamp: scale-slam + gold confetti + rising arpeggio
  *  + a firm buzz. Pure reveal of a server-granted bonus (spec D2) — the XP
- *  itself was already awarded and is presented by the gold orb cascade. */
+ *  itself was already awarded and is presented by the gold orb cascade.
+ *  Read "LUCKY! x2" on a cue named `jackpot` until now: the same slot-machine
+ *  framing the evolution banner carried. Only the words and the cue name
+ *  changed — the stamp, the confetti and the sound are untouched. */
 function fxLuckyStampNow(done) {
   const layer = ensureFxLayer();
   if (!layer) {
     done();
     return;
   }
-  window.PMSfx?.play("jackpot");
+  window.PMSfx?.play("bonus");
   window.PMSfx?.buzz(25);
   const overlay = document.createElement("div");
   overlay.className = "fx-overlay";
@@ -1854,7 +1857,7 @@ function fxLuckyStampNow(done) {
   overlay.setAttribute("aria-live", "polite");
   const stamp = document.createElement("div");
   stamp.className = "fx-lucky-stamp";
-  stamp.textContent = PM().fx?.luckyStamp ?? "LUCKY! ×2";
+  stamp.textContent = PM().fx?.luckyStamp ?? "BONUS ×2";
   overlay.appendChild(stamp);
   layer.appendChild(overlay);
   const reduce = prefersReducedMotion();
@@ -4486,6 +4489,7 @@ const EVO_SEQUENCE_QUEUE_MS = 11_500;
 const EVO_FALLBACK = {
   noticing: (name) => `What? ${name} is changing…!`,
   evolved: (name, stage) => `Congratulations! ${name} grew into ${stage}!`,
+  finalForm: "FINAL FORM",
 };
 
 /** Evolution-ceremony speech-bubble line — quoted like every other spoken
@@ -4769,7 +4773,7 @@ async function runEvolutionSequence(oldStage, newStage) {
       svg.classList.add("evo-reveal-bounce");
       window.PMSfx?.cry();
       window.PMSfx?.evoFanfare();
-      window.PMSfx?.evoImpact?.({ jackpot: grand });
+      window.PMSfx?.evoImpact?.({ grand });
       window.PMSfx?.buzz(grand ? [45, 30, 90] : [35, 25, 65]);
       spawnEvoShockwaves(grand);
       spawnEvoStars(grand ? 52 : 36);
@@ -4787,7 +4791,14 @@ async function runEvolutionSequence(oldStage, newStage) {
       const result = hud.querySelector(".evo-ceremony-result");
       const status = hud.querySelector(".evo-ceremony-status");
       const stageLabel = localizedStage(newStage);
-      if (result) result.textContent = grand ? `GRAND JACKPOT · ${stageLabel}` : stageLabel;
+      // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of a
+      // growth arc a student spent days on. It used to be announced as "GRAND
+      // JACKPOT": slot-machine wording for the one thing here that is entirely
+      // earned, and the only line in this localized ceremony hard-coded to
+      // English. The staging below it — flash, hitstop, shake, shockwaves — is
+      // what carries the weight, and none of it changed.
+      const finalFormLabel = PM().evo?.finalForm ?? EVO_FALLBACK.finalForm;
+      if (result) result.textContent = grand ? `${finalFormLabel} · ${stageLabel}` : stageLabel;
       if (status) status.textContent = evolvedLine;
       hud.classList.remove("is-charging", "is-hold");
       hud.classList.add("is-revealed");
@@ -4822,7 +4833,7 @@ function fxEvolve(oldStage, newStage) {
 // ── End evolution ceremony ───────────────────────────────────────────────
 
 window.PMFx = {
-  /** Gold "LUCKY! ×2" stamp + gold orb burst — mirrors the server-lucky
+  /** Gold "BONUS ×2" stamp + gold orb burst — mirrors the server-lucky
    *  reveal WITHOUT noteReason/notePresented (pure display). */
   lucky() {
     fxEnqueue(3, (done) => fxLuckyStampNow(done), LUCKY_STAMP_MS + 100);
@@ -4983,9 +4994,9 @@ function renderShopPurchases(rows) {
     SHOP_POT_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedPot));
     SHOP_ACC_KEYS.forEach((key) => svg.classList.toggle(`shop-${key}`, key === equippedAcc));
   }
-  // Designer sprite: the equipped pot recolors the sprite's pot pixels
-  // (jamkachu-sprite.js POT_ITEM_RAMPS; precedence pot item > skin > none).
-  // Accessories stay overlay-SVG groups driven by the classes above.
+  // Designer sprite: the equipped pot replaces the baked-in pot with the
+  // matching catalog artwork. Accessories stay overlay-SVG groups driven by
+  // the classes above.
   window.PMSprite?.set({ potItemKey: equippedPot });
   if (layer) {
     SHOP_DECOR_KEYS.forEach((key) => layer.classList.toggle(`own-${key}`, ownedDecor.has(key)));

@@ -117,16 +117,18 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
           {(!isNight || awake) && <small>{dragging ? (locale === "id" ? "LEPAS DI SINI" : "DROP ME HERE") : locale === "id" ? "KETUK CHAT · GESER" : "TAP CHAT · DRAG"}</small>}
         </span>
         <span className="pm-react-farmer-sprite" aria-hidden="true">
-          {/* Designer art (kiki design integration): the transparent Farmer
-              Tani PNG, for the same reason Mbah Tani below uses one — the
-              idle GIF opens on a frame with transparency off, so it paints
-              the designer's grass diorama opaque behind the sprite wherever
-              it stands on the app's own scenery. All four export scales are
+          {/* Designer art (kiki design integration): Mbah Tani, the grandpa
+              who has always kept this farm. A later pass swapped him for the
+              younger Pak Tani (npc-01), who belongs to the Quests header, not
+              here. The transparent PNG rather than the idle GIF: that loop
+              opens on a frame with transparency off, so it paints the
+              designer's grass diorama opaque behind the sprite wherever it
+              stands on the app's own scenery. All four export scales are
               offered so the browser picks the crispest for its density. The
               button's aria-label above stays the accessible name, so this
               art is purely decorative. */}
           {/* eslint-disable-next-line @next/next/no-img-element -- responsive pixel art must not be resampled */}
-          <img src="/farm/assets/npc/2x/npc-01-pak-tani.png" srcSet="/farm/assets/npc/1x/npc-01-pak-tani.png 32w, /farm/assets/npc/2x/npc-01-pak-tani.png 64w, /farm/assets/npc/4x/npc-01-pak-tani.png 128w, /farm/assets/npc/8x/npc-01-pak-tani.png 256w" sizes="64px" alt="" />
+          <img src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcSet="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" />
         </span>
       </button>
     </div>

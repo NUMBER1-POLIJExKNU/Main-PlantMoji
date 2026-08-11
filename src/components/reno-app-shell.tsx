@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { APP_LOCALE_COOKIE, type AppLocale } from "@/lib/i18n";
+import { NAV_DESTINATIONS, NAV_TOOLS } from "@/lib/nav-destinations";
 import type { AppTheme, FarmSkin } from "@/lib/appearance";
 import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
@@ -13,26 +14,13 @@ import LiveActivityBar from "@/components/live-activity-bar";
 import NetworkStatus from "@/components/network-status";
 
 // The static farm home and every React route share five game destinations,
-// with operational views tucked into a small tool pocket. Keep
-// public/farm/index.html in sync until the static home has been retired.
-// `art` is the designer's icon (public/icons, from images/icons); `icon` is the
-// emoji it replaced and stays as the fallback for the one destination with no
-// drawing yet — Collection. The static shell renders the same set from
-// public/farm/index.html, so a file added here belongs there too.
-const NAV_ITEMS = [
-  { key: "home", href: "/", icon: "🌱", art: "/icons/my-garden.png", id: "Kebun Saya", en: "My Garden" },
-  { key: "quests", href: "/quests", icon: "💚", art: "/icons/quests.png", id: "Misi", en: "Quests" },
-  { key: "plants", href: "/plants", icon: "🗺️", art: "/icons/crop-explorer.png", id: "Eksplor Tanaman", en: "Crop Explorer" },
-  { key: "camera", href: "/camera", icon: "📷", art: "/icons/camera-ai.png", id: "Kamera AI", en: "Camera AI" },
-  { key: "diary", href: "/diary", icon: "📖", art: "/icons/growth-diary.png", id: "Diari Tumbuh", en: "Growth Diary" },
-  { key: "collection", href: "/collection", icon: "💎", art: null, id: "Koleksi", en: "Collection" },
-  { key: "shop", href: "/shop", icon: "🛒", art: "/icons/shop.png", id: "Toko", en: "Shop" },
-] as const;
-const TOOL_ITEMS = [
-  { key: "status", href: "/monitoring", icon: "📡", art: "/icons/monitoring.png", id: "Pemantauan", en: "Monitoring" },
-  { key: "reports", href: "/reports", icon: "📜", art: "/icons/reports.png", id: "Laporan", en: "Reports" },
-  { key: "settings", href: "/settings", icon: "🧰", art: "/icons/settings.png", id: "Pengaturan", en: "Settings" },
-] as const;
+// with operational views tucked into a small tool pocket. The list itself
+// lives in lib/nav-destinations.ts, because the header of each board pictures
+// the same destination and the two lists had drifted into showing different
+// icons for the same place. Keep public/farm/index.html in sync until the
+// static home has been retired.
+const NAV_ITEMS = NAV_DESTINATIONS;
+const TOOL_ITEMS = NAV_TOOLS;
 
 // The label next to it already names the destination, so the drawing is
 // decorative — an alt here would make every nav item read its name twice.

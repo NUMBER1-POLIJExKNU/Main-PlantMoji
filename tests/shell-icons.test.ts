@@ -11,6 +11,11 @@ import { describe, expect, it } from "vitest";
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const html = source("public/farm/index.html");
 const shell = source("src/components/reno-app-shell.tsx");
+// The destination table moved to lib/nav-destinations.ts so the header of each
+// board draws the same icon the rail does — they had drifted into different
+// pictures for the same place.
+const destinations = source("src/lib/nav-destinations.ts");
+const pageHeader = source("src/components/page-header.tsx");
 const farmCss = source("public/farm/style.css");
 const reactCss = source("src/app/globals.css");
 
@@ -45,7 +50,7 @@ describe("designer icon set", () => {
 
   it("uses the same icons on the React shell, for the same destinations", () => {
     for (const [name, href] of Object.entries(NAV_ICONS)) {
-      const item = shell.match(new RegExp(`href: "${href.replace("/", "\\/")}",[^\\n]*`))?.[0];
+      const item = destinations.match(new RegExp(`href: "${href.replace("/", "\\/")}",[^\\n]*`))?.[0];
       expect(item, `${href} nav entry`).toBeTruthy();
       expect(item, `${href} should use ${name}.png`).toContain(`art: "/icons/${name}.png"`);
     }
@@ -56,7 +61,12 @@ describe("designer icon set", () => {
     expect(shell).not.toMatch(/<i[^>]*>\{item\.icon\}<\/i>/);
     // next/image, so the nav art is served in the optimised size.
     expect(shell).toContain('<Image src={item.art} alt="" className="reno-nav-art"');
-    expect(shell).toContain('{ key: "collection", href: "/collection", icon: "💎", art: null');
+    expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: null');
+    // And the board that destination opens onto draws that same entry, instead
+    // of an emoji of its own choosing.
+    expect(pageHeader).toContain('import { navDestination } from "@/lib/nav-destinations"');
+    expect(pageHeader).toContain('className="pm-page-header-art"');
+    expect(reactCss).toContain(".pm-page-header-art {");
   });
 
   it("uses the designer title art as the brand on both shells", () => {

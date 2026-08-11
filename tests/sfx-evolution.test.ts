@@ -10,20 +10,24 @@ describe("evolution reveal audio", () => {
     expect(sfx).toContain("function evoFanfare()");
     expect(sfx).toContain("function cry()");
     expect(sfx).toContain("function evoImpact(options)");
-    expect(sfx).toContain("function evoJackpot()");
+    expect(sfx).toContain("function evoFinalForm()");
     expect(sfx).toContain("evoImpact,");
-    expect(sfx).toContain("evoJackpot,");
+    expect(sfx).toContain("evoFinalForm,");
   });
 
-  it("registers impact cues for probing while keeping jackpot as its own recipe", () => {
+  it("registers impact cues for probing while keeping the grand hit its own recipe", () => {
+    // The recipe is byte-for-byte the sound it always was. Only the name moved
+    // off "jackpot", because this fires when a plant reaches its final stage —
+    // the end of days of care, not a payout.
     expect(sfx).toContain("evoImpact: (c) => impactRecipe(c, c.destination, false)");
-    expect(sfx).toContain("evoJackpot: (c) => impactRecipe(c, c.destination, true)");
-    expect(sfx).toContain("function impactRecipe(c, dest, jackpot)");
-    expect(sfx).toContain("const chord = jackpot");
-    expect(sfx).toContain("if (jackpot)");
+    expect(sfx).toContain("evoFinalForm: (c) => impactRecipe(c, c.destination, true)");
+    expect(sfx).toContain("function impactRecipe(c, dest, grand)");
+    expect(sfx).toContain("const chord = grand");
+    expect(sfx).toContain("if (grand)");
+    expect(sfx).not.toContain("pachinko");
   });
 
-  it("uses a low reveal hit, bright major chord, and rising jackpot sparkle", () => {
+  it("uses a low reveal hit, bright major chord, and rising sparkle", () => {
     const recipe = sfx.slice(sfx.indexOf("function impactRecipe"), sfx.indexOf("// ── Cue recipes"));
     expect(recipe).toContain('low.type = "sine"');
     expect(recipe).toContain("low.frequency.exponentialRampToValueAtTime");
@@ -39,7 +43,7 @@ describe("evolution reveal audio", () => {
     const methods = sfx.slice(sfx.indexOf("function evoRiser"), sfx.indexOf("function buzz"));
     expect(methods).toContain("const c = readyContext();");
     expect(methods).toContain("function evoImpact(options)");
-    expect(methods).toContain("return impactRecipe(c, c.destination, jackpot);");
+    expect(methods).toContain("return impactRecipe(c, c.destination, grand);");
     // Dedicated ceremony calls intentionally bypass play(), whose ordinary
     // cues remain rate-limited. The guard is shared in readyContext().
     expect(methods).not.toContain("lastPlayedAt");
