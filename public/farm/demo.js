@@ -213,6 +213,9 @@
     try {
       for (const entry of skins) mascot.classList.remove(`skin-${entry.key}`);
       mascot.classList.add(`skin-${skin.key}`);
+      // Skins recolor through the sprite palette swap now, not CSS classes —
+      // feed PMSprite too or the presenter hotkey changes nothing on screen.
+      window.PMSprite?.set({ skinKey: skin.key });
       toast(`Skin → ${skin.nameEn} (Lv.${skin.unlockLevel})`);
     } catch {
       toast(`Skin "${skin.key}" threw — check console`);
