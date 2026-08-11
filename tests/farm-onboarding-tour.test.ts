@@ -143,12 +143,14 @@ describe("first-day tour (pmCoach consumer, display-only, one-time)", () => {
     expect(coachEngine()).toMatch(/const completeDare = [\s\S]{0,400}?fxEnqueue\(\s*2,/);
   });
 
-  it("spotlights the five card targets with the shared .hatch-highlight class", () => {
+  it("spotlights the remaining sensor, quiz, and guide targets", () => {
     const engine = coachEngine();
-    for (const target of ["#env-strip", "#care-action", "#daily-quiz-open", "#current-quest", "#farm-guide-open"]) {
+    for (const target of ["#env-strip", "#daily-quiz-open", "#farm-guide-open"]) {
       expect(tourSection(), `tour lost its ${target} spotlight target`).toContain(`"${target}"`);
       expect(html).toContain(`id="${target.slice(1)}"`);
     }
+    expect(tourSection()).not.toContain('"#care-action"');
+    expect(tourSection()).not.toContain('"#current-quest"');
     expect(engine).toContain('classList.add("hatch-highlight")');
     // finish() sweeps every spotlight it may have left behind.
     expect(engine).toContain('classList.remove("hatch-highlight")');
@@ -284,6 +286,6 @@ describe("honest quest-empty copy", () => {
   });
 
   it("keeps the static index.html default in sync with the id table", () => {
-    expect(html).toContain('data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan<');
+    expect(html).not.toContain('data-i18n="quest.none"');
   });
 });

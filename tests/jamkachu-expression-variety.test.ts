@@ -24,6 +24,14 @@ describe("Jamkachu tap expression variety", () => {
     expect(source).toContain("petExpressionIndex % pool.length");
   });
 
+  it("offers twelve distinct positive Happy reactions with a visible face badge", () => {
+    const happy = source.slice(source.indexOf("Happy: ["), source.indexOf("  ],", source.indexOf("Happy: [")) + 4);
+    expect((happy.match(/emojiBurst:/g) ?? []).length).toBeGreaterThanOrEqual(12);
+    expect(source).toContain("const POSITIVE_FACE_GLYPHS");
+    expect(source).toContain('positive-expression');
+    expect(source).not.toMatch(/Happy: \[[\s\S]*spriteMood: "(?:plain|sleepy)"/);
+  });
+
   it("keeps expressions presentation-only and respects sleep (plus hatch/tour)", () => {
     const start = source.indexOf("function showPetExpression");
     const end = source.indexOf("// Idle expression variety", start);

@@ -472,7 +472,6 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .badge.streak { cursor: pointer; user-select: none; }
 .badge.streak:active { transform: translateY(1px); }
 .hud-section-label { color:var(--color-forest); font:10px/1.4 var(--font-heading); letter-spacing:.04em; }
-.current-quest-line { display:block; }
 .quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:10px/1 var(--font-heading); }
 
 .weather-widget {
@@ -493,9 +492,7 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .weather-text .indoor-reading { margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(43, 58, 39, 0.25); font-size: 13px; color: #555; }
 .weather-widget.weather-stale .forecast-time { color: #9a6515; }
 
-/* Home info stack: one decision → mission → sensor evidence → progression →
-   bonus. The care-focus card answers the three first-use questions before
-   asking a child to interpret numbers or rewards. */
+/* Home info stack: sensor evidence followed by today's quiz bonus. */
 .home-stack {
     position: relative;
     z-index: 10;
@@ -508,95 +505,6 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     gap: 14px;
 }
 .home-stack-scroll { display: contents; }
-
-.care-focus {
-    --care-accent:#718076;
-    position:relative;
-    display:grid;
-    gap:14px;
-    overflow:hidden;
-    border-color:var(--care-accent);
-    padding:18px;
-    background:linear-gradient(145deg,color-mix(in srgb,var(--care-accent) 10%,var(--color-surface)),var(--color-surface) 62%);
-    box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent);
-}
-.care-focus::before { content:""; position:absolute; inset:0 auto 0 0; width:7px; background:var(--care-accent); }
-.care-focus[data-care-state="waiting"] { --care-accent:#6583a0; }
-.care-focus[data-care-state="healthy"] { --care-accent:var(--color-grass); }
-.care-focus[data-care-state="action"] { --care-accent:#d36c43; }
-.care-focus[data-care-state="verifying"] { --care-accent:#d4a52f; }
-.care-focus-heading { display:grid; grid-template-columns:46px minmax(0,1fr); align-items:center; gap:12px; padding-left:3px; }
-.care-focus-icon { display:grid; place-items:center; width:46px; height:46px; border:2px solid var(--color-outline); border-radius:12px; background:var(--color-surface); font:25px/1 sans-serif; }
-.care-focus-kicker { display:block; margin-bottom:4px; color:var(--care-accent); font:7px/1.3 var(--font-heading); letter-spacing:.08em; }
-.care-focus h2 { margin:0; color:var(--color-outline); font:13px/1.45 var(--font-heading); }
-.care-focus-heading p { margin:5px 0 0; color:var(--color-text); font:14px/1.4 var(--font-body); }
-.care-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:0; padding:0; list-style:none; }
-.care-steps li { min-width:0; display:grid; grid-template-columns:28px minmax(0,1fr); align-items:center; gap:6px; border:2px solid var(--color-border); border-radius:10px; padding:7px; color:var(--color-text-muted); background:color-mix(in srgb,var(--color-surface) 76%,#dce5da); }
-.care-steps li > b { display:grid; place-items:center; width:27px; height:27px; border:2px solid currentColor; border-radius:50%; font:9px/1 var(--font-heading); }
-.care-steps li span { min-width:0; display:grid; gap:2px; }
-.care-steps li strong { overflow:hidden; font:7px/1.25 var(--font-heading); text-overflow:ellipsis; white-space:nowrap; }
-.care-steps li small { overflow:hidden; font:10px/1.25 var(--font-body); text-overflow:ellipsis; white-space:nowrap; }
-.care-steps li[data-step-state="done"] { color:#285a30; border-color:#76ab70; background:#e4f4dd; }
-.care-steps li[data-step-state="done"] > b::after { content:"✓"; }
-.care-steps li[data-step-state="done"] > b { font-size:0; }
-.care-steps li[data-step-state="current"] { color:var(--color-outline); border-color:var(--care-accent); background:color-mix(in srgb,var(--care-accent) 20%,white); box-shadow:0 3px 0 color-mix(in srgb,var(--care-accent) 38%,transparent); }
-.care-steps li[data-step-state="not-needed"] { opacity:.58; }
-.care-proof-note { margin:0; color:var(--color-text-muted); font:11px/1.4 var(--font-body); text-align:center; }
-.care-focus .actions-panel { margin:0; }
-.care-focus #care-action { max-width:none; }
-
-@media (prefers-reduced-motion:no-preference) {
-    .care-focus[data-care-state="verifying"] { animation:care-focus-check 1.8s ease-in-out infinite; }
-}
-@keyframes care-focus-check { 0%,100% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 32%,transparent); } 50% { box-shadow:0 6px 0 color-mix(in srgb,var(--care-accent) 62%,transparent); } }
-
-/* Whole-card quest link (kid-guide Task 1): #current-quest is a real
-   <a href="/quests"> now — link resets + a ≥44px tap target + the same
-   gentle press feel as the env tiles, so it reads as tappable. */
-#current-quest {
-    display: grid;
-    gap:4px;
-    min-height: 44px;
-    margin:4px -16px -16px;
-    border:0;
-    border-top:2px dashed color-mix(in srgb,var(--care-accent) 55%,var(--color-border));
-    border-radius:0 0 13px 13px;
-    font-family: var(--font-heading);
-    font-size: 11px;
-    line-height: 1.45;
-    text-align: left;
-    padding: 10px 16px 12px;
-    color: inherit;
-    background:color-mix(in srgb,var(--care-soft) 68%,var(--color-surface));
-    text-decoration: none;
-    cursor: pointer;
-}
-#current-quest:hover { transform: translateY(-1px); }
-#current-quest:active { transform: translateY(2px); }
-#current-quest:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
-#cq-progress { color: var(--color-primary); }
-
-/* Verifying shimmer (Task 12): while the sensor is confirming real care the
-   quest slot turns amber with a magnifier and three blinking dots — honest
-   anticipation, not celebration. Dots animate with hard steps() toggles
-   (pixel feel) and stay static under reduced motion. */
-#current-quest.verifying {
-    background: #FFF7DF;
-    border-color: #E8C46B;
-    color: #7A5B12;
-}
-#current-quest.verifying #cq-progress { color: #A97B12; }
-.quest-verify-console { display:grid; gap:3px; margin-top:-10px; border:2px solid #a97b12; border-top:0; border-radius:0 0 9px 9px; padding:9px 11px; color:#f7da86; background:#241e0f; font:8px/1.45 ui-monospace,Consolas,monospace; }.quest-verify-console[hidden] { display:none; }.quest-verify-console b { color:#ffe6a0; }.quest-verify-console span { display:flex; justify-content:space-between; gap:8px; }.quest-verify-console strong { color:#fff0bd; }
-.cq-dots span { opacity: 0.25; }
-@media (prefers-reduced-motion: no-preference) {
-    .cq-dots span { animation: pm-dot-blink 1.2s steps(1, end) infinite; }
-    .cq-dots span:nth-child(2) { animation-delay: 0.4s; }
-    .cq-dots span:nth-child(3) { animation-delay: 0.8s; }
-}
-@keyframes pm-dot-blink {
-    0%, 100% { opacity: 0.25; }
-    50% { opacity: 1; }
-}
 
 .home-divider {
     border: 0;
@@ -785,40 +693,9 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 }
 .pixel-btn .icon { font-style: normal; font-size: 18px; }
 
-/* Contextual care button (spec §6.1): ONE large mood-driven safe action —
-   live.js owns the label; ≥64px touch target, centered in the panel. */
-#care-action {
-    width: 100%;
-    max-width: 440px;
-    min-height: 64px;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.7;
-    background: var(--color-grass);
-    color: var(--color-white);
-    border-color: var(--color-forest);
-    box-shadow: 0 6px 0 var(--color-forest);
-}
-#care-action:hover { transform: translateY(-2px); box-shadow: 0 8px 0 var(--color-forest); filter: brightness(1.06); }
-#care-action:active { transform: translateY(6px); box-shadow: 0 0 0 var(--color-forest); }
-
-/* Night state (spec §6.2): quiet "Good night 🌙" disabled-style look —
-   still pressable (soft shh why-card), but calm colors and no eager
-   hover lift while Jamkachu sleeps. */
-#care-action.care-night {
-    background: #39456B;
-    border-color: #232B45;
-    box-shadow: 0 6px 0 #232B45;
-    color: #D9DFF2;
-}
-#care-action.care-night:hover { transform: none; box-shadow: 0 6px 0 #232B45; filter: none; }
-#care-action.care-night:active { transform: translateY(3px); box-shadow: 0 3px 0 #232B45; }
-
 /* Touch press feedback (micro-juice): .pressed mirrors :active for
    pointerdown-driven presses, chunky 3px push (spec Task 8). */
 .pixel-btn.pressed { transform: translateY(3px); filter: brightness(0.96); }
-#care-action.pressed { box-shadow: 0 3px 0 var(--color-forest); }
-#care-action.care-night.pressed { box-shadow: 0 3px 0 #232B45; filter: none; }
 .nav-item.pressed { transform: translateX(2px) scale(0.98); }
 
 /* Mascot Stage (Center Stage — top of the hierarchy, now in document flow) */
@@ -1105,22 +982,80 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    .evo-sil-alt and this stretch gives it a second distinct silhouette
    shape. Discrete toggle, transform-only, scoped under .evo-sil (the
    reduced-motion path never strobes; img transform-origin is the pot base). */
-.mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.14) scaleX(0.92); }
+.mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.28) scaleX(0.78) rotate(2deg); }
 
 /* Full-screen flash: opacity-only, fires ONCE per sequence (WCAG 2.3.1).
    Sits above .mascot-stage (z 5) and .evo-tint (z 4) below; doesn't need to
    out-rank the quiz modal (z 3000+, style.css's overlay ladder) since the
    two never fire together. */
-.evo-flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 1200; }
+.evo-flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 1410; }
 
 /* Radial stage-tint backdrop behind the mascot (GB whole-screen-palette
    trick). z-index kept below .mascot-stage's z:5 (this file's existing
    overlay ladder) so the tint genuinely renders BEHIND the mascot/grass/NPC
    scene instead of covering it. */
-.evo-tint { position: fixed; inset: 0; pointer-events: none; z-index: 4;
-  background: radial-gradient(circle at 50% 42%, var(--companion-accent, #FFDE6A) 0%, rgba(36,52,33,.92) 70%);
-  transition: opacity .4s ease; }
+.evo-tint { position: fixed; inset: 0; pointer-events: none; z-index: 1300;
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb,var(--companion-accent,#FFDE6A) 70%,#fff) 0%,rgba(36,52,33,.86) 36%,rgba(8,18,30,.98) 76%);
+  opacity:0; transition: opacity .4s ease; }
 .evo-tint.on { opacity: 1; }
+
+body.evolution-active { overflow:hidden; }
+body.evolution-active .mascot-stage { z-index:1301; }
+body.evolution-active .mascot-stage > :not(.mascot-container),
+body.evolution-active .mascot-container > :not(.mascot-wrapper) { opacity:0; pointer-events:none; }
+body.evolution-active .fx-layer { z-index:1390; }
+.mascot-wrapper.evo-arena {
+  position:fixed;
+  inset:0;
+  z-index:1302;
+  display:grid;
+  place-items:center;
+  width:100vw;
+  height:100dvh;
+  aspect-ratio:auto;
+  filter:none;
+  pointer-events:none;
+}
+.mascot-wrapper.evo-arena .jamkachu-home-portrait,
+.mascot-wrapper.evo-arena .positive-expression { opacity:0; }
+.mascot-wrapper.evo-arena > .mascot-svg {
+  position:relative;
+  inset:auto;
+  z-index:2;
+  width:min(54vmin,460px);
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.mascot-wrapper.evo-arena > .mascot-svg::before,
+.mascot-wrapper.evo-arena #mood-status-chip { display:none; }
+.mascot-wrapper.evo-arena.evo-pulse { animation:none; }
+.mascot-wrapper.evo-arena.evo-pulse > .mascot-svg { animation:evoPulse .55s ease-in-out infinite; }
+.mascot-wrapper.evo-arena.evo-shake-lg { animation:none; }
+.mascot-wrapper.evo-arena.evo-shake-lg > .mascot-svg { animation:evoShakeLg .32s steps(8,end) 1; }
+
+.evo-ceremony-hud { position:fixed; inset:0; z-index:1400; overflow:hidden; pointer-events:none; font-family:var(--font-heading); text-align:center; }
+.evo-ceremony-kicker { position:absolute; top:8vh; left:50%; transform:translateX(-50%); color:#fff3a8; font-size:clamp(16px,2.6vw,30px); letter-spacing:.18em; text-shadow:0 4px 0 #0a3d62; }
+.evo-ceremony-reel { position:absolute; top:15vh; left:50%; display:flex; align-items:center; gap:clamp(10px,2vw,28px); transform:translateX(-50%); color:#dfffb1; font-size:clamp(11px,1.5vw,17px); opacity:.8; }
+.evo-ceremony-reel b { color:#ffde6a; }
+.evo-ceremony-charge { position:absolute; bottom:10vh; left:50%; transform:translateX(-50%); color:#fff; font-size:clamp(13px,2vw,22px); letter-spacing:.12em; text-shadow:0 4px 0 #0a3d62; }
+.evo-ceremony-result { position:absolute; bottom:8vh; left:50%; width:min(900px,92vw); transform:translate(-50%,24px) scale(.6); color:#fff7c7; font-size:clamp(24px,5.6vw,72px); line-height:1.35; text-shadow:0 5px 0 #a15a16,0 10px 24px #000; opacity:0; }
+.evo-ceremony-hud.is-hold :is(.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge) { opacity:.12; }
+.evo-ceremony-hud.is-revealed :is(.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge) { opacity:0; }
+.evo-ceremony-hud.is-revealed .evo-ceremony-result { opacity:1; transform:translate(-50%,0) scale(1); }
+.evo-ceremony-hud.is-grand .evo-ceremony-result { color:#fff29a; text-shadow:0 5px 0 #a15a16,0 0 22px #ffd62f,0 12px 30px #000; }
+.fx-evo-charge { position:fixed; width:10px; height:10px; background:#fff6a4; box-shadow:0 0 12px #ffde6a; image-rendering:pixelated; will-change:transform,opacity; }
+.evo-shockwave { position:fixed; left:50%; top:44%; z-index:1395; width:80px; height:80px; border:10px solid #fff4a2; border-radius:50%; transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; animation:evoShockwave .9s steps(12,end) forwards; }
+@keyframes evoShockwave { 12%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(11);border-width:2px} }
+@media (prefers-reduced-motion:no-preference) {
+  .evo-ceremony-hud.is-charging .evo-ceremony-kicker { animation:evoTitleThrob .55s steps(4,end) infinite; }
+  .evo-ceremony-hud.is-charging .evo-ceremony-reel b { animation:evoReelSpin .36s steps(4,end) infinite; }
+  .evo-ceremony-hud.is-revealed .evo-ceremony-result { animation:evoResultSlam .65s cubic-bezier(.2,1.6,.35,1) 1; }
+}
+@keyframes evoTitleThrob { 50%{transform:translateX(-50%) scale(1.08);filter:brightness(1.35)} }
+@keyframes evoReelSpin { 50%{transform:rotate(90deg) scale(1.35)} }
+@keyframes evoResultSlam { 0%{opacity:0;transform:translate(-50%,40px) scale(2.4)} 45%{opacity:1;transform:translate(-50%,0) scale(.92)} 70%{transform:translate(-50%,0) scale(1.08)} 100%{transform:translate(-50%,0) scale(1)} }
 
 /* Anticipation pulse: scale oscillation on the wrapper (transform-only). */
 @keyframes evoPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
@@ -1146,28 +1081,64 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
   .evo-flash, .evo-tint { display: none; }
   .evo-pulse, .evo-shake-sm, .evo-shake-lg { animation: none; }
   .mascot-svg.evo-xfade { transition: opacity .9s ease-in-out; opacity: .3; }
+  .evo-shockwave,.fx-evo-charge { display:none; }
+  .evo-ceremony-hud * { animation:none !important; transition:none !important; }
 }
 
-.speech-bubble {
-    background: var(--color-surface);
-    border: 3px solid var(--color-border);
-    padding: 14px 22px;
-    font-size: 15px;
-    max-width: 400px;
-    text-align: center;
+.speech-bubble-frame {
     position: relative;
     margin-bottom: 24px;
-    border-radius: 24px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    width: fit-content;
+    max-width: min(470px, calc(100vw - 36px));
+    filter: drop-shadow(0 8px 0 rgba(8,45,72,.16));
+}
+.speech-bubble {
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    min-width: min(300px, calc(100vw - 40px));
+    max-width: 470px;
+    padding: 19px 34px 21px;
+    overflow-wrap: anywhere;
+    color: #33413D;
+    background: #0A3D62;
+    clip-path: polygon(16px 0,calc(100% - 16px) 0,calc(100% - 16px) 5px,calc(100% - 8px) 5px,calc(100% - 8px) 12px,100% 12px,100% calc(100% - 13px),calc(100% - 8px) calc(100% - 13px),calc(100% - 8px) calc(100% - 6px),calc(100% - 16px) calc(100% - 6px),calc(100% - 16px) 100%,16px 100%,16px calc(100% - 6px),8px calc(100% - 6px),8px calc(100% - 13px),0 calc(100% - 13px),0 13px,8px 13px,8px 6px,16px 6px);
+    font-size: 15px;
     line-height: 1.5;
-    color: #444;
+    text-align: center;
+}
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    z-index: -1;
+    background: #FFF;
+    box-shadow: inset 0 0 0 5px #C8EE98, inset 0 -7px 0 #E5ECEC;
+    clip-path: polygon(14px 0,calc(100% - 14px) 0,calc(100% - 14px) 5px,calc(100% - 6px) 5px,calc(100% - 6px) 12px,100% 12px,100% calc(100% - 12px),calc(100% - 6px) calc(100% - 12px),calc(100% - 6px) calc(100% - 5px),calc(100% - 14px) calc(100% - 5px),calc(100% - 14px) 100%,14px 100%,14px calc(100% - 5px),6px calc(100% - 5px),6px calc(100% - 12px),0 calc(100% - 12px),0 12px,6px 12px,6px 5px,14px 5px);
 }
 .speech-bubble::after {
-    content: ''; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
-    border-width: 12px 12px 0;
-    border-style: solid;
-    border-color: var(--color-white) transparent transparent transparent;
-    display: block; width: 0;
+    content: '';
+    position: absolute;
+    bottom: -17px;
+    left: clamp(62px,22%,104px);
+    z-index: -2;
+    width: 34px;
+    height: 28px;
+    background: linear-gradient(90deg,#0A3D62 0 7px,#C8EE98 7px 14px,#FFF 14px 23px,transparent 23px);
+    clip-path: polygon(0 0,100% 0,100% 8px,75% 8px,75% 17px,50% 17px,50% 100%,25% 100%,25% 9px,0 9px);
+}
+.speech-bubble-sparkles { position:absolute; z-index:4; pointer-events:none; }
+.speech-bubble-sparkles { top:-18px; right:-13px; width:78px; height:52px; }
+.speech-bubble-sparkles i { position:absolute; display:block; background:linear-gradient(135deg,#FFF17A 0 35%,#FFD62F 36% 70%,#F1AA16 71%); clip-path:polygon(38% 0,62% 0,62% 34%,100% 34%,100% 66%,62% 66%,62% 100%,38% 100%,38% 66%,0 66%,0 34%,38% 34%); filter:drop-shadow(3px 0 #0A3D62) drop-shadow(-3px 0 #0A3D62) drop-shadow(0 3px #0A3D62) drop-shadow(0 -3px #0A3D62); }
+.speech-bubble-sparkles i:nth-child(1) { left:5px; top:1px; width:24px; height:34px; transform:rotate(19deg); }
+.speech-bubble-sparkles i:nth-child(2) { left:38px; top:8px; width:21px; height:31px; transform:rotate(35deg); }
+.speech-bubble-sparkles i:nth-child(3) { right:0; bottom:0; width:26px; height:14px; transform:rotate(2deg); }
+.speech-bubble-frame:has(.speech-bubble:empty) { display:none; }
+.mascot-container.hatch-hidden .speech-bubble-frame { visibility:hidden; }
+@media (max-width: 520px) {
+    .speech-bubble-frame { max-width:calc(100vw - 28px); }
+    .speech-bubble { min-width:min(260px,calc(100vw - 32px)); padding:17px 25px 19px; font-size:14px; }
+    .speech-bubble-sparkles { right:-5px; transform:scale(.82); transform-origin:right bottom; }
 }
 .animated-bounce { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
@@ -1188,6 +1159,34 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     -webkit-user-select: none;
 }
 .mascot-wrapper:active { cursor: grabbing; }
+.positive-expression {
+    position:absolute;
+    top:18%;
+    right:4%;
+    z-index:8;
+    display:grid;
+    place-items:center;
+    min-width:52px;
+    min-height:52px;
+    border:4px solid #0A3D62;
+    border-radius:50%;
+    color:#0A3D62;
+    background:#FFFDF4;
+    box-shadow:0 5px 0 rgba(10,61,98,.25);
+    font:30px/1 sans-serif;
+    opacity:0;
+    transform:translateY(8px) scale(.65) rotate(-8deg);
+    pointer-events:none;
+}
+.positive-expression.is-visible { opacity:1; transform:translateY(0) scale(1) rotate(4deg); }
+@media (prefers-reduced-motion:no-preference) {
+    .positive-expression.is-visible { animation:positive-expression-pop 1.2s steps(6,end); }
+}
+@keyframes positive-expression-pop {
+    0% { opacity:0; transform:translateY(12px) scale(.4) rotate(-12deg); }
+    18%,78% { opacity:1; transform:translateY(0) scale(1.08) rotate(4deg); }
+    100% { opacity:0; transform:translateY(-14px) scale(.85) rotate(8deg); }
+}
 .jamkachu-home-portrait { display:none; }
 /* Designer sprite stage (kiki design integration): .mascot-svg is a DIV
    now — it keeps the old inline SVG's 300×350 footprint inside the
@@ -2167,13 +2166,9 @@ body.farmer-dragging {
        responsive information hierarchy. */
     .home-stack { display:contents; }
     .hud-top { order:0; }
-    .care-focus { order:1; align-self:center; flex:0 0 auto; width:calc(100vw - 28px); min-width:0; max-width:640px; margin-inline:0; }
     .mascot-stage { order:2; }
-    /* Vitals above the mission (see the ≥801px block for why). The verify
-       console stays welded to the mission it belongs to. */
+    /* Keep the four garden readings together in the mobile flow. */
     #env-strip { order:3; width:100%; max-width:640px; margin-inline:auto; }
-    #current-quest { order:4; width:100%; max-width:640px; margin-inline:auto; }
-    #quest-verify-console { order:5; width:100%; max-width:640px; margin-inline:auto; }
     .user-gamification { order:6; max-width:640px; margin-inline:auto; }
     .quiz-chip { order:7; max-width:640px; margin-inline:auto; }
     .hud-top { width:calc(100% - 60px); min-width:0; justify-content:center; }
@@ -2299,11 +2294,15 @@ body.farmer-dragging {
 
     .mascot-container { max-height: 100%; }
     .mascot-wrapper { width: min(300px, 34vh); }
-    .speech-bubble {
+    .speech-bubble-frame {
         width: min(400px, 38vw);
+        margin-bottom: clamp(8px, 1.5vh, 18px);
+    }
+    .speech-bubble {
+        width: 100%;
+        min-width: 0;
         min-height: 58px;
         max-height: 92px;
-        margin-bottom: clamp(8px, 1.5vh, 18px);
         padding: 12px 18px;
         overflow: hidden;
         display: grid;
@@ -2338,8 +2337,6 @@ body.farmer-dragging {
         gap:10px;
         overflow:hidden;
     }
-    /* RIGHT NOW is the primary decision and never enters the scrollport.
-       Secondary mission/sensor/reward cards get their own rail below it. */
     .home-stack-scroll {
         min-height:0;
         display:flex;
@@ -2350,36 +2347,11 @@ body.farmer-dragging {
         scrollbar-width:thin;
         scrollbar-color:var(--color-border) transparent;
     }
-    .care-focus { order:-5; }
-    /* Vitals sit directly under the care card: both are readings, and the
-       care card's advice is about the numbers this strip shows, so they read
-       as one block. The mission follows, with its verify console attached —
-       those two must never be separated. */
     #env-strip { order:-4; }
-    #current-quest { order:-3; }
-    #quest-verify-console { order:-2; }
     .home-stack .user-gamification { order:-1; }
     .quiz-chip { order:0; }
     .home-stack-scroll > * { flex:0 0 auto; }
     .home-divider { display: none; }
-
-    .care-focus { width:100%; min-width:0; max-width:100%; gap:9px; padding:12px 13px 13px 16px; }
-    .care-focus > * { min-width:0; }
-    .care-focus-heading { grid-template-columns:40px minmax(0,1fr); gap:9px; }
-    .care-focus-icon { width:40px; height:40px; font-size:21px; }
-    .care-focus-kicker { font-size:10px; }
-    .care-focus h2 { font-size:15px; }
-    .care-focus-heading p { display:-webkit-box; margin-top:3px; overflow:hidden; font-size:13px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-    .care-steps { gap:5px; }
-    .care-steps li { min-width:0; min-height:39px; display:flex; grid-template-columns:none; justify-content:center; gap:5px; padding:5px 4px; overflow:hidden; }
-    .care-steps li > b { width:23px; height:23px; font-size:10px; }
-    .care-steps li span { display:block; min-width:0; }
-    .care-steps li strong { display:block; overflow:hidden; font-size:10px; line-height:23px; text-overflow:ellipsis; white-space:nowrap; }
-    .care-steps li small { display:none; }
-    .care-proof-note { display:-webkit-box; overflow:hidden; font-size:13px; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-    .care-proof-note.is-feedback { color:var(--color-outline); font-weight:700; }
-    .care-focus #care-action { min-height:58px; border-top-width:3px; border-radius:12px; font-size:15px; }
-    .care-focus .care-action-label { display:-webkit-box; min-width:0; overflow:hidden; overflow-wrap:anywhere; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
 
     .mascot-container > .user-gamification {
         display:grid;
@@ -2402,16 +2374,6 @@ body.farmer-dragging {
     .quiz-chip-copy strong { font-size:10px; }.quiz-chip-copy small { font-size:13px; }
     .avatar-img { width: 48px; height: 48px; }
 
-    #current-quest {
-        min-height:52px;
-        margin:4px -13px -13px -16px;
-        gap:4px;
-        padding:9px 15px 11px;
-        border-top-color:color-mix(in srgb,var(--care-accent) 60%,var(--color-border));
-        background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 12%,var(--color-surface)),var(--color-surface));
-        text-align:left;
-    }
-    #current-quest .current-quest-line { font:13px/1.4 var(--font-body); font-weight:800; }
     #env-strip { padding:12px; font-size:14px; white-space:normal; border-color:var(--color-border); }
     .env-hud-title { margin-bottom:10px; font-size:10px; }
     /* The rail is narrow: a 2×2 board gives values, state and ideal range room. */
@@ -2477,25 +2439,11 @@ body.farmer-dragging {
     .farm-appearance-row { min-width:0; flex:1 1 0; flex-direction:column; align-items:stretch; gap:2px; }
     .farm-appearance select { width:100%; max-width:none; padding:4px; font-size:11px; }
     .mascot-wrapper { width: min(250px, 32vh); }
-    .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
+    .speech-bubble-frame { margin-bottom: 6px; }
+    .speech-bubble { min-height: 48px; max-height: 70px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
     .home-stack { align-self:stretch; padding-top:54px; padding-bottom:8px; gap:6px; }
 
-    .care-focus { gap:6px; padding:9px 11px 10px 14px; }
-    .care-focus-heading { grid-template-columns:34px minmax(0,1fr); gap:8px; }
-    .care-focus-icon { width:34px; height:34px; font-size:18px; }
-    .care-focus h2 { font-size:15px; }
-    .care-focus-heading p { margin-top:1px; font-size:13px; -webkit-line-clamp:1; }
-    .care-steps { gap:4px; }
-    .care-steps li { min-height:32px; gap:4px; padding:3px; }
-    .care-steps li > b { width:20px; height:20px; font-size:10px; }
-    .care-steps li strong { font-size:10px; line-height:20px; }
-    .care-proof-note { font-size:13px; -webkit-line-clamp:1; }
-    .care-proof-note.is-feedback { -webkit-line-clamp:2; }
-    .care-focus #care-action { min-height:52px; padding:7px 10px; font-size:15px; }
-
-    #current-quest { min-height:52px; gap:4px; padding:7px 11px 9px; }
-    #current-quest .current-quest-line { font-size:13px; line-height:1.35; }
     #env-strip { padding:7px 8px 8px; }
     .env-hud-title { margin-bottom:5px; }
     .env-hud-grid { gap:5px; }
@@ -2513,7 +2461,6 @@ body.farmer-dragging {
 
 /* Right-rail night contrast: retain hierarchy without white SaaS cards. */
 body.night .user-gamification .badge,body.night .user-gamification .xp-bar-wrap,body.night .quiz-chip { color:#eef5e9; background:#25322d; border-color:#627664; }
-body.night #current-quest { color:#eef5e9; border-color:#71916e; background:linear-gradient(135deg,#26382e,#202c28); }
 body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#ad8b39; }
 
 /* ── Seed Shop farm rendering (milestone18) ─────────────────────────────

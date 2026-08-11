@@ -2352,10 +2352,14 @@ const PET_EXPRESSION_POOLS = {
     { spriteMood: "happy", emojiBurst: "⭐" },
     { spriteMood: "happy", emojiBurst: "😊" },
     { spriteMood: "happy", emojiBurst: "🎵" },
-    { spriteMood: "happy", emojiBurst: "😮" },
+    { spriteMood: "happy", emojiBurst: "🤩" },
     { spriteMood: "happy", emojiBurst: "✨" },
     { spriteMood: "happy", emojiBurst: "💛" },
     { spriteMood: "happy", emojiBurst: "🌈" },
+    { spriteMood: "happy", emojiBurst: "😄" },
+    { spriteMood: "happy", emojiBurst: "🥰" },
+    { spriteMood: "happy", emojiBurst: "🎉" },
+    { spriteMood: "happy", emojiBurst: "🌸" },
   ],
   Overheating: [
     { spriteMood: "happy", emojiBurst: "💖" },
@@ -2413,6 +2417,35 @@ const PET_NAMED_REACTIONS = {
   blink: { spriteMood: "happy", emojiBurst: "😌" },
   giggle: { spriteMood: "happy", emojiBurst: "😄" },
 };
+// The portrait stays on the safe, friendly happy sprite. These separate
+// face glyphs give every positive reaction a visibly different expression
+// without reviving the unsafe `plain`/`sleepy` designer frames.
+const POSITIVE_FACE_GLYPHS = {
+  "💖": "😍",
+  "⭐": "😎",
+  "😊": "😊",
+  "🎵": "😋",
+  "🤩": "🤩",
+  "✨": "😁",
+  "💛": "🥰",
+  "🌈": "😄",
+  "😄": "😆",
+  "🥰": "🤗",
+  "🎉": "🥳",
+  "🌸": "😌",
+  "😌": "😉",
+  "💦": "😊",
+  "🥵": "😅",
+  "🥶": "🙂",
+  "❄️": "😊",
+  "💧": "😊",
+  "🌬️": "😌",
+  "💤": "😴",
+  "🌙": "☺️",
+  "🧪": "🤓",
+  "🌱": "🌱",
+  "🪴": "🪴",
+};
 const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood frame returns
 let petExpressionTimer = null;
 
@@ -2440,6 +2473,11 @@ function clearPetExpression() {
     petExpressionTimer = null;
   }
   window.PMSprite?.set({ flashMood: null });
+  const expression = document.getElementById("positive-expression");
+  if (expression) {
+    expression.classList.remove("is-visible");
+    expression.textContent = "";
+  }
 }
 
 /** Flash one tap-reaction pair (alternate sprite mood + emoji burst), then
@@ -2460,6 +2498,14 @@ function showPetExpression(face, ms = PET_EXPRESSION_MS) {
   }
   clearPetExpression(); // restart cleanly so back-to-back taps visibly swap
   window.PMSprite.set({ flashMood: reaction.spriteMood });
+  const expression = document.getElementById("positive-expression");
+  if (expression) {
+    expression.textContent = POSITIVE_FACE_GLYPHS[reaction.emojiBurst] ?? "😊";
+    expression.classList.remove("is-visible");
+    // Force a fresh animation when two taps happen back-to-back.
+    void expression.offsetWidth;
+    expression.classList.add("is-visible");
+  }
   spawnPetEmojiBurst(reaction.emojiBurst);
   petExpressionTimer = setTimeout(() => {
     petExpressionTimer = null;
@@ -4729,7 +4775,7 @@ const EVO_SWAP_MS = 50; // ~3 frames per alternation
 // tap usually ends it much sooner). A shorter cap would let the queue start
 // the NEXT celebration while this one is still legitimately on screen
 // (the same "duration ≥ item's own max time" rule podDrop's cap follows).
-const EVO_SEQUENCE_QUEUE_MS = 10_500;
+const EVO_SEQUENCE_QUEUE_MS = 11_500;
 
 const EVO_FALLBACK = {
   noticing: (name) => `What? ${name} is changing…!`,
@@ -4765,6 +4811,74 @@ function ensureEvoTint() {
   evoTintEl.setAttribute("aria-hidden", "true");
   document.body.appendChild(evoTintEl);
   return evoTintEl;
+}
+
+/** Full-screen ceremony HUD. Visual labels stay aria-hidden while a single
+ *  polite status node announces only the final result. */
+function createEvolutionHud(oldStage, newStage, grand) {
+  if (!document.body) return null;
+  const hud = document.createElement("div");
+  hud.className = `evo-ceremony-hud${grand ? " is-grand" : ""}`;
+  const kicker = appLocale === "id" ? "LEVEL NAIK" : "LEVEL UP";
+  const evolving = appLocale === "id" ? "EVOLUSI DIMULAI" : "EVOLUTION START";
+  hud.innerHTML =
+    `<div class="evo-ceremony-kicker" aria-hidden="true">${kicker}</div>` +
+    `<div class="evo-ceremony-reel" aria-hidden="true"><span>${localizedStage(oldStage)}</span><b>◆</b><span>${localizedStage(newStage)}</span></div>` +
+    `<div class="evo-ceremony-charge" aria-hidden="true">${evolving}</div>` +
+    `<div class="evo-ceremony-result" aria-hidden="true"></div>` +
+    `<div class="sr-only evo-ceremony-status" role="status" aria-live="polite"></div>`;
+  document.body.appendChild(hud);
+  return hud;
+}
+
+/** Energy pixels converge on Jamkachu during the riser. They share the
+ *  global particle budget and animate only transform/opacity. */
+function spawnEvoChargeOrbs(n) {
+  if (prefersReducedMotion()) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const rect = mascotRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * 0.42;
+  const total = Math.max(0, Math.min(n, MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < total; i++) {
+    const orb = document.createElement("i");
+    orb.className = "fx-evo-charge";
+    orb.setAttribute("aria-hidden", "true");
+    const angle = Math.PI * 2 * i / Math.max(1, total) + Math.random() * 0.35;
+    const distance = Math.max(window.innerWidth, window.innerHeight) * (0.42 + Math.random() * 0.18);
+    const sx = cx + Math.cos(angle) * distance;
+    const sy = cy + Math.sin(angle) * distance;
+    orb.style.left = `${sx}px`;
+    orb.style.top = `${sy}px`;
+    layer.appendChild(orb);
+    liveParticles++;
+    const delay = i * 38;
+    const duration = 720 + Math.random() * 420;
+    animateSafe(
+      orb,
+      [
+        { transform: "translate(0,0) scale(.45)", opacity: 0 },
+        { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0.2 },
+        { transform: `translate(${cx - sx}px,${cy - sy}px) scale(.2)`, opacity: 1 },
+      ],
+      { duration, delay, easing: "steps(12,end)", fill: "forwards" },
+    );
+    removeLater(orb, delay + duration + 80, true);
+  }
+}
+
+function spawnEvoShockwaves(grand) {
+  if (prefersReducedMotion() || !document.body) return;
+  const count = grand ? 3 : 2;
+  for (let i = 0; i < count; i++) {
+    const ring = document.createElement("div");
+    ring.className = "evo-shockwave";
+    ring.style.animationDelay = `${i * 110}ms`;
+    ring.setAttribute("aria-hidden", "true");
+    document.body.appendChild(ring);
+    removeLater(ring, 1050 + i * 110);
+  }
 }
 
 /** Single full-screen white pulse — fires at MOST once per ceremony
@@ -4871,6 +4985,7 @@ async function runEvolutionSequence(oldStage, newStage) {
   const wrap = $(".mascot-wrapper");
   if (!svg || !wrap) return;
   const reduce = prefersReducedMotion();
+  const grand = newStage === STAGE_ORDER.at(-1);
   let ff = false; // fast-forward flag: a tap jumps the remaining strobe steps
   const ffTap = () => { ff = true; };
   evoFastForward = ffTap;
@@ -4895,8 +5010,11 @@ async function runEvolutionSequence(oldStage, newStage) {
     window.PMSprite?.set({ stage });
   };
   const tint = ensureEvoTint();
+  const hud = createEvolutionHud(oldStage, newStage, grand);
   let riser = null;
   try {
+    document.body?.classList.add("evolution-active");
+    wrap.classList.add("evo-arena");
     svg.style.willChange = "filter, transform";
     // Anticipation must show the PRE-evolution form — renderCompanion already
     // applied the new stage class before enqueuing, which would spoil the
@@ -4905,6 +5023,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     // ── ACT 1: anticipate (~1.3-1.8s) — dialog + tint + pulse
     speechBubble(PM().evo?.noticing?.(currentPlantName()) ?? EVO_FALLBACK.noticing(currentPlantName()));
     tint?.classList.add("on");
+    hud?.classList.add("is-charging");
     if (reduce) {
       // Safe path: crossfade only — no strobe, no flash, no shake.
       await sleep(900);
@@ -4916,6 +5035,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     } else {
       wrap.classList.add("evo-pulse");
       riser = window.PMSfx?.evoRiser(6) ?? null;
+      spawnEvoChargeOrbs(grand ? 32 : 22);
       await sleep(1300);
       // ── ACT 2: suspense — accelerating silhouette strobe (mascot-local)
       svg.classList.add("evo-sil");
@@ -4931,18 +5051,22 @@ async function runEvolutionSequence(oldStage, newStage) {
       setStage(newStage);
       wrap.classList.remove("evo-pulse");
       // Silence beat: eye and ear stop together right before the sting.
-      await sleep(ff ? 0 : 220);
+      hud?.classList.add("is-hold");
+      await sleep(ff ? 0 : 250);
       // ── ACT 3: payoff — ONE flash + hitstop + shake + reveal
       flashOnce(80); // single 80ms full-screen pulse (WCAG 2.3.1)
       setBreathPaused(true); // hitstop: freeze idle breathing
-      await sleep(50);
+      await sleep(80);
       setBreathPaused(false);
       svg.classList.remove("evo-sil", "evo-sil-alt");
       wrap.classList.add("evo-shake-lg");
       svg.classList.add("evo-reveal-bounce");
       window.PMSfx?.cry();
       window.PMSfx?.evoFanfare();
-      spawnEvoStars(28);
+      window.PMSfx?.evoImpact?.({ jackpot: grand });
+      window.PMSfx?.buzz(grand ? [45, 30, 90] : [35, 25, 65]);
+      spawnEvoShockwaves(grand);
+      spawnEvoStars(grand ? 52 : 36);
     }
     // Announcement precedence: full evo line → strings.js companionEvolved
     // (still localized, stage-only) → hard-coded English EVO_FALLBACK.
@@ -4953,6 +5077,15 @@ async function runEvolutionSequence(oldStage, newStage) {
       EVO_FALLBACK.evolved(currentPlantName(), evoStageName);
     const tapHint = PM().evo?.tapToContinue;
     speechBubble(tapHint ? `${evolvedLine} · ${tapHint}` : evolvedLine);
+    if (hud) {
+      const result = hud.querySelector(".evo-ceremony-result");
+      const status = hud.querySelector(".evo-ceremony-status");
+      const stageLabel = localizedStage(newStage);
+      if (result) result.textContent = grand ? `GRAND JACKPOT · ${stageLabel}` : stageLabel;
+      if (status) status.textContent = evolvedLine;
+      hud.classList.remove("is-charging", "is-hold");
+      hud.classList.add("is-revealed");
+    }
     await dismissOrTimeout(6000); // tap-to-continue, kiosk-safe
   } finally {
     document.removeEventListener("pointerdown", ffTap, { capture: true });
@@ -4961,7 +5094,9 @@ async function runEvolutionSequence(oldStage, newStage) {
     setBreathPaused(false); // ceremony must never leave breathing frozen
     svg.style.willChange = "auto";
     tint?.classList.remove("on");
-    wrap.classList.remove("evo-pulse", "evo-shake-lg");
+    hud?.remove();
+    document.body?.classList.remove("evolution-active");
+    wrap.classList.remove("evo-arena", "evo-pulse", "evo-shake-lg");
     svg.classList.remove("evo-sil", "evo-sil-alt", "evo-reveal-bounce", "evo-xfade");
     // real companion_state re-asserts stage classes on the next data render
   }
@@ -6269,10 +6404,10 @@ function runHatchIntro(plantName) {
     // (3) Personality + "rename me in Settings" care hint card.
     () => setCard(null, [H.personality ?? F.personality, H.rename ?? F.rename]),
     () => {
-      // (4) Finale: highlight the care button + pulse the quest slot.
+    // (4) Finale: highlight the live sensor board + quiz destination.
       layer.classList.add("hatch-final");
-      $("#care-action")?.classList.add("hatch-highlight");
-      $("#current-quest")?.classList.add("hatch-highlight");
+      $("#env-strip")?.classList.add("hatch-highlight");
+      $("#daily-quiz-open")?.classList.add("hatch-highlight");
       window.PMSfx?.play("blip");
       setCard(null, [H.finale ?? F.finale]);
     },
@@ -6291,8 +6426,8 @@ function runHatchIntro(plantName) {
     svg?.classList.remove("hatch-pre");
     container?.classList.remove("hatch-hidden");
     wrapper?.classList.remove("hatch-shake");
-    $("#care-action")?.classList.remove("hatch-highlight");
-    $("#current-quest")?.classList.remove("hatch-highlight");
+    $("#env-strip")?.classList.remove("hatch-highlight");
+    $("#daily-quiz-open")?.classList.remove("hatch-highlight");
     // Brand-new players roll straight into the first-day tour: the hatch
     // seen-flag was written up front, so hatchPendingOrActive() no longer
     // blocks it.
@@ -6542,9 +6677,7 @@ function runFirstDayTour() {
   const grandpa = T.grandpa ?? {};
   pmCoach(TOUR_SEEN_ID, [
     { target: "#env-strip", emoji: "👀", text: sensesText },
-    { target: "#care-action", emoji: "💛", text: T.care?.line ?? F.care.line },
     { target: "#daily-quiz-open", emoji: "🧠", text: T.quiz?.line ?? F.quiz.line },
-    { target: "#current-quest", emoji: "🔥", text: T.quest?.line ?? F.quest.line },
     // Final card (kid-guide Task 5): Grandpa waves — the handoff to the
     // sticker book, the ONE replayable help home. The dare's event is
     // caught next to the farm-guide wiring above (pm-open-guide).

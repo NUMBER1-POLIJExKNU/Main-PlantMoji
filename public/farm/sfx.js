@@ -28,6 +28,10 @@
 //                   resolving to a sustained detuned triad (~2.0s incl.
 //                   tail). Dedicated method, not rate-limited — the
 //                   sequencer fires it once per ceremony.
+//     evoImpact(opts) — reveal hit: a low impact plus bright major chord.
+//                   `opts.jackpot` adds a longer, denser pachinko-style
+//                   jackpot cadence. Dedicated methods are not rate-limited.
+//     evoJackpot() — shorthand for evoImpact({ jackpot: true }).
 //     cry()       — the companion's own reveal voice (~0.4s noise chirp +
 //                   triangle glide). Dedicated method, not rate-limited.
 //   }
@@ -36,7 +40,7 @@
 // chapter, pet, splash, whoosh, boing, knock, purr, lullaby, hum, breeze,
 // emberCrackle, reliefCool, reliefMist, reliefLight, reliefSoil, stamp,
 // evoChirp, evoRiser,
-// evoFanfare, cry — all WebAudio-synthesized square/triangle oscillators (or
+// evoFanfare, evoImpact, evoJackpot, cry — all WebAudio-synthesized square/triangle oscillators (or
 // a white-noise buffer through a filter). Zero external assets, zero
 // network (spec D1). The last three evolution-ceremony cues are also
 // exposed as dedicated PMSfx methods above — see the object literal doc.
@@ -257,7 +261,7 @@
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     src.connect(filter);
     filter.connect(gain);
-    gain.connect(c.destination);
+    gain.connect(opts.dest || c.destination);
     src.start(t0);
     src.stop(t0 + dur + 0.03);
   }
@@ -413,6 +417,107 @@
     osc.stop(glideStart + glideDur + 0.03);
   }
 
+  // Reveal hit for the evolution ceremony. The low sine drop gives the
+  // reveal a physical "thunk", while the bright major chord makes the new
+  // stage read as a reward rather than an alarm. Jackpot mode layers a
+  // second chord and a short rising sparkle cadence — intentionally denser
+  // than the normal reveal, but still fully synthesized and asset-free.
+  // Returns a handle so an interrupted ceremony can stop its oscillators.
+  function impactRecipe(c, dest, jackpot) {
+    const t0 = c.currentTime;
+    const nodes = [];
+    const low = c.createOscillator();
+    const lowGain = c.createGain();
+    low.type = "sine";
+    low.frequency.setValueAtTime(jackpot ? 78 : 88, t0);
+    low.frequency.exponentialRampToValueAtTime(jackpot ? 34 : 40, t0 + 0.42);
+    lowGain.gain.setValueAtTime(0.0001, t0);
+    lowGain.gain.linearRampToValueAtTime(jackpot ? 0.3 : 0.24, t0 + 0.012);
+    lowGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.52);
+    low.connect(lowGain).connect(dest);
+    low.start(t0);
+    low.stop(t0 + 0.56);
+    nodes.push(low);
+
+    // The click is deliberately low-passed so the attack feels like a
+    // cabinet hit instead of a harsh digital pop.
+    noise(c, {
+      at: 0,
+      dur: jackpot ? 0.11 : 0.08,
+      filter: "lowpass",
+      freq: jackpot ? 1250 : 1000,
+      glideTo: 220,
+      vol: jackpot ? 0.2 : 0.16,
+      dest,
+    });
+
+    const chord = jackpot
+      ? [
+          { freq: N.C5, at: 0.07, dur: 0.72, vol: 0.13 },
+          { freq: N.E5, at: 0.07, dur: 0.72, vol: 0.12 },
+          { freq: N.G5, at: 0.07, dur: 0.72, vol: 0.12 },
+          { freq: N.C6, at: 0.07, dur: 0.82, vol: 0.14 },
+          { freq: N.E6, at: 0.36, dur: 0.62, vol: 0.1 },
+          { freq: N.G6, at: 0.36, dur: 0.62, vol: 0.1 },
+        ]
+      : [
+          { freq: N.C5, at: 0.08, dur: 0.62, vol: 0.11 },
+          { freq: N.E5, at: 0.08, dur: 0.62, vol: 0.1 },
+          { freq: N.G5, at: 0.08, dur: 0.62, vol: 0.1 },
+          { freq: N.C6, at: 0.08, dur: 0.74, vol: 0.12 },
+        ];
+    for (const voice of chord) {
+      const osc = c.createOscillator();
+      const gain = c.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(voice.freq, t0 + voice.at);
+      gain.gain.setValueAtTime(0.0001, t0 + voice.at);
+      gain.gain.linearRampToValueAtTime(voice.vol, t0 + voice.at + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + voice.at + voice.dur);
+      osc.connect(gain).connect(dest);
+      osc.start(t0 + voice.at);
+      osc.stop(t0 + voice.at + voice.dur + 0.04);
+      nodes.push(osc);
+    }
+
+    if (jackpot) {
+      // A rising 8-bit sparkle cadence sells the payout without borrowing
+      // any external game sound. It is intentionally short enough to leave
+      // room for evoFanfare's longer musical tail.
+      [N.C6, N.E6, N.G6, N.C6 * 2].forEach((freq, index) => {
+        const at = 0.58 + index * 0.075;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, t0 + at);
+        gain.gain.setValueAtTime(0.0001, t0 + at);
+        gain.gain.linearRampToValueAtTime(0.07, t0 + at + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.1);
+        osc.connect(gain).connect(dest);
+        osc.start(t0 + at);
+        osc.stop(t0 + at + 0.12);
+        nodes.push(osc);
+      });
+    }
+
+    const totalMs = (jackpot ? 0.95 : 0.86) * 1000;
+    let stopped = false;
+    return {
+      totalMs,
+      stop() {
+        if (stopped) return;
+        stopped = true;
+        for (const node of nodes) {
+          try {
+            node.stop();
+          } catch {
+            /* already stopped/ended — ignore */
+          }
+        }
+      },
+    };
+  }
+
   // ── Cue recipes (plan Task 5; durations in seconds) ────────────────────
 
   const CUES = {
@@ -547,6 +652,8 @@
     // console probing and the QA overlay, same as every other cue.
     evoRiser: (c) => riserRecipe(c, c.destination, 6),
     evoFanfare: (c) => fanfareRecipe(c, c.destination),
+    evoImpact: (c) => impactRecipe(c, c.destination, false),
+    evoJackpot: (c) => impactRecipe(c, c.destination, true),
     cry: (c) => cryRecipe(c, c.destination),
   };
 
@@ -634,6 +741,21 @@
     } catch {
       /* a synthesis failure must never break the page */
     }
+  }
+
+  function evoImpact(options) {
+    const jackpot = options === true || Boolean(options && options.jackpot === true);
+    const c = readyContext();
+    if (!c) return { totalMs: 0, stop() {} };
+    try {
+      return impactRecipe(c, c.destination, jackpot);
+    } catch {
+      return { totalMs: 0, stop() {} }; // a synthesis failure must never break the page
+    }
+  }
+
+  function evoJackpot() {
+    return evoImpact({ jackpot: true });
   }
 
   function cry() {
@@ -738,5 +860,15 @@
   if (document.body) injectButton();
   else document.addEventListener("DOMContentLoaded", injectButton, { once: true });
 
-  window.PMSfx = { play, muted: readMuted, toggle, buzz, evoRiser, evoFanfare, cry };
+  window.PMSfx = {
+    play,
+    muted: readMuted,
+    toggle,
+    buzz,
+    evoRiser,
+    evoFanfare,
+    evoImpact,
+    evoJackpot,
+    cry,
+  };
 })();

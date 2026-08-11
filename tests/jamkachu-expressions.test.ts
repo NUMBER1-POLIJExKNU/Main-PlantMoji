@@ -11,7 +11,8 @@ import { describe, expect, it } from "vitest";
 // emojiBurst} reaction pairs, taps CYCLE the pool (consecutive spam-taps
 // always visibly differ), a reaction flashes an ALTERNATE designer-sprite
 // mood via PMSprite for ~1.2s then reverts to the deterministic mood frame,
-// plus one emoji burst rides the existing particle styling. The idle
+// plus one emoji burst and a distinct positive face glyph ride the existing
+// particle styling. The idle
 // variety loop is a bob/tilt class flash + occasional sparkle (no more
 // pupil/blink DOM writes), skipped entirely under prefers-reduced-motion.
 // The quiet gates (night sleep / hatch intro / first-day tour / PMSprite
@@ -75,6 +76,15 @@ describe("per-mood tap-reaction pair pools", () => {
     expect(Object.keys(pools).sort()).toEqual([...MOOD_KEYS].sort());
   });
 
+  it("gives Happy taps a large, all-positive face variety", () => {
+    expect(pools.Happy.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(pools.Happy.map((pair) => pair.emojiBurst)).size).toBeGreaterThanOrEqual(12);
+    const section = expressionSection();
+    expect(section).toContain("const POSITIVE_FACE_GLYPHS");
+    expect(section).toContain('expression.textContent = POSITIVE_FACE_GLYPHS[reaction.emojiBurst] ?? "😊"');
+    expect(section).not.toMatch(/Happy:[\s\S]{0,1200}spriteMood: "(?:plain|sleepy)"/);
+  });
+
   it("only flashes sprite moods the designer actually drew, with a real emoji burst", () => {
     for (const mood of MOOD_KEYS) {
       for (const pair of pools[mood]) {
@@ -122,6 +132,8 @@ describe("tap handler behavior", () => {
     const section = expressionSection();
     expect(section).toContain("window.PMSprite.set({ flashMood: reaction.spriteMood })");
     expect(section).toContain("spawnPetEmojiBurst(reaction.emojiBurst)");
+    expect(section).toContain('document.getElementById("positive-expression")');
+    expect(section).toContain('expression.classList.add("is-visible")');
     // The burst rides the shipped badge-tap particle styling.
     expect(section).toContain('el.className = "badge-tap-particle"');
   });
@@ -131,6 +143,7 @@ describe("tap handler behavior", () => {
     expect(section).toContain("const PET_EXPRESSION_MS = 1200");
     expect(section).toMatch(/petExpressionTimer = setTimeout\([\s\S]{0,120}?clearPetExpression\(\);/);
     expect(section).toContain("window.PMSprite?.set({ flashMood: null })");
+    expect(section).toContain('expression.classList.remove("is-visible")');
   });
 
   it("respects the quiet gates: night sleep, hatch intro, tour, PMSprite absent", () => {

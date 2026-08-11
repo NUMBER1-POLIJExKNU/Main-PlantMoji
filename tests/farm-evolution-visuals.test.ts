@@ -134,7 +134,7 @@ describe("evolution ceremony trigger + sequencer", () => {
     const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
     expect(seq).toContain("window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage)");
     expect(seq).toContain('svg.classList.toggle("evo-sil-alt", strobeSamePhase && stage === newStage');
-    expect(css).toContain(".mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.14) scaleX(0.92); }");
+    expect(css).toContain(".mascot-svg.evo-sil.evo-sil-alt #jamkachu-sprite { transform: scaleY(1.28) scaleX(0.78) rotate(2deg); }");
     // Both the payoff reveal and the finally-cleanup clear the alt marker
     // together with the silhouette, so no stretch can leak past the show.
     expect(seq).toContain('svg.classList.remove("evo-sil", "evo-sil-alt")');
@@ -151,6 +151,32 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(css).toMatch(/\.mascot-svg\.evo-xfade \{ transition: opacity/);
     // The hitstop freeze targets the img's animation now.
     expect(live).toMatch(/function setBreathPaused[\s\S]{0,200}?#jamkachu-sprite/);
+  });
+
+  it("promotes the tiny desktop LIVE badge into a full-screen evolution arena", () => {
+    const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
+    expect(seq).toContain('document.body?.classList.add("evolution-active")');
+    expect(seq).toContain('wrap.classList.add("evo-arena")');
+    expect(seq).toContain('wrap.classList.remove("evo-arena", "evo-pulse", "evo-shake-lg")');
+    expect(css).toMatch(/\.mascot-wrapper\.evo-arena > \.mascot-svg \{[\s\S]*?width:min\(54vmin,460px\)/);
+    expect(css).toContain(".mascot-wrapper.evo-arena .jamkachu-home-portrait");
+  });
+
+  it("adds a pachinko-weight payoff without repeated full-screen flashes", () => {
+    const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
+    expect(seq.match(/flashOnce\(/g)).toHaveLength(1);
+    expect(seq).toContain("spawnEvoChargeOrbs(grand ? 32 : 22)");
+    expect(seq).toContain("spawnEvoShockwaves(grand)");
+    expect(seq).toContain("window.PMSfx?.evoImpact?.({ jackpot: grand })");
+    expect(seq).toContain("spawnEvoStars(grand ? 52 : 36)");
+    expect(live).toContain('grand ? `GRAND JACKPOT · ${stageLabel}` : stageLabel');
+    expect(css).toContain("@keyframes evoShockwave");
+    expect(css).toContain("@keyframes evoResultSlam");
+  });
+
+  it("keeps the stronger ceremony safe under reduced motion", () => {
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.evo-shockwave,\.fx-evo-charge \{ display:none; \}/);
+    expect(css).toContain(".evo-ceremony-hud * { animation:none !important; transition:none !important; }");
   });
 
   it("PMFx.evolve walks the ladder so all ten stages can be demonstrated", () => {

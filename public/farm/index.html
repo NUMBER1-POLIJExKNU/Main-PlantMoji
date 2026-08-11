@@ -253,10 +253,14 @@
                         <button class="badge streak status-help" type="button" data-status-help="streak" aria-controls="hud-detail" aria-expanded="false"><i class="icon">🔥</i> -- Hari</button>
                         <button class="badge seeds status-help" type="button" data-status-help="seeds" aria-controls="hud-detail" aria-expanded="false" hidden><img class="icon seed-icon" src="/icons/seed.png" alt="" width="14" height="14"> <span data-seed-num>0</span> <span data-seed-label>Benih</span></button>
                     </div>
-                    <div class="speech-bubble animated-bounce">
-                        "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
+                    <div class="speech-bubble-frame animated-bounce">
+                        <div class="speech-bubble">
+                            "Aku merasa sehat banget!<br>Terima kasih sudah merawatku."
+                        </div>
+                        <span class="speech-bubble-sparkles" aria-hidden="true"><i></i><i></i><i></i></span>
                     </div>
                     <div class="mascot-wrapper animated-breath">
+                        <span id="positive-expression" class="positive-expression" aria-hidden="true"></span>
                         <!-- Stable homepage portrait: the generated hero art is
                              the primary desktop character image. The live
                              sprite below remains mounted as a compact status
@@ -415,48 +419,10 @@
                 </div>
             </div>
 
-            <!-- 3+) Decision-first stack below the character. The first card
-                 answers what is happening, what to do, and how the real
-                 sensors will prove it before progression or bonus content. -->
+            <!-- Sensor evidence and today's bonus remain in one compact rail. -->
             <div class="home-stack">
-
-                <section id="care-focus" class="care-focus panel-glass" data-care-state="waiting" aria-labelledby="care-focus-title">
-                    <div class="care-focus-heading">
-                        <span id="care-focus-icon" class="care-focus-icon" aria-hidden="true">📡</span>
-                        <div>
-                            <span class="care-focus-kicker" data-i18n="focus.now">SEKARANG</span>
-                            <h2 id="care-focus-title">Hubungkan sensor</h2>
-                            <p id="care-focus-summary" aria-live="polite">Nilai akan muncul otomatis saat perangkat tersambung.</p>
-                        </div>
-                    </div>
-                    <ol class="care-steps" aria-label="Alur perawatan">
-                        <li data-care-step="sense" data-step-state="current"><b>1</b><span><strong data-i18n="focus.step.sense">LIHAT</strong><small data-i18n="focus.step.senseHint">Baca kondisinya</small></span></li>
-                        <li data-care-step="act" data-step-state="todo"><b>2</b><span><strong data-i18n="focus.step.act">LAKUKAN</strong><small data-i18n="focus.step.actHint">Ubah satu hal</small></span></li>
-                        <li data-care-step="verify" data-step-state="todo"><b>3</b><span><strong data-i18n="focus.step.verify">CEK</strong><small data-i18n="focus.step.verifyHint">Sensor membuktikan</small></span></li>
-                    </ol>
-                    <!-- Contextual guidance only: the click grants nothing.
-                         Physical care must change a real reading before the
-                         quest engine can verify it and award a reward. -->
-                    <div class="actions-panel">
-                        <button id="care-action" class="pixel-btn" type="button">
-                            <span class="care-action-label">Elus aku — atau tulis buku harianku 📖</span>
-                        </button>
-                    </div>
-                    <p id="care-proof-note" class="care-proof-note" data-i18n="focus.proof">Tombol ini memberi panduan. Sensor akan memeriksa perubahan tanamanmu.</p>
-                    <!-- Existing quest link/IDs stay intact, but the mission is
-                         now the connected footer of RIGHT NOW instead of a
-                         competing standalone card. -->
-                    <a id="current-quest" class="care-focus-quest" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
-                </section>
-
-                <!-- Desktop keeps the decision card fully visible. Only the
-                     secondary evidence/reward rail below it may scroll. On
-                     mobile this wrapper is display:contents, preserving the
-                     separate mobile team's existing flow. -->
                 <div class="home-stack-scroll">
-                <!-- Environment evidence follows the decision card: students
-                     can inspect the values without having to interpret them
-                     before they know the one safe next action. -->
+                <!-- Students can open any reading for its meaning and advice. -->
                 <section id="env-strip" class="panel-glass" aria-label="Current environment">
                     <div class="env-hud-title"><span data-i18n="env.title">KONDISI KEBUN</span><a href="/monitoring" data-i18n="env.details">Lihat detail ›</a></div>
                     <div class="env-hud-grid">

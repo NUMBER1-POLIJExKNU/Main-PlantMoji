@@ -23,6 +23,8 @@ import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { PlantMood } from "@/types/events";
 import type { CompanionStage } from "@/types/game";
 
+const CSS_INDONESIA_FLAG_KEYS = new Set(["decor_indonesia_flag", "acc_indonesia_sash"]);
+
 export interface ShopPreviewMascot {
   mood: PlantMood;
   stage?: CompanionStage;
@@ -81,6 +83,8 @@ export default function ShopPreviewStage({
 
   const spriteImgSrc = recolor && recolor.key === rampKey ? recolor.url : baseSrc;
   const equipped = Boolean(owned?.equipped);
+  const isIndonesiaFlag = item ? CSS_INDONESIA_FLAG_KEYS.has(item.key) : false;
+  const accessoryArt = item?.category === "accessory" ? shopItemArt(item.key) : null;
   const decorArt = item?.category === "decor" ? shopItemArt(item.key) : null;
 
   return (
@@ -97,12 +101,12 @@ export default function ShopPreviewStage({
             {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
             <img src={spriteImgSrc} alt="" aria-hidden="true" draggable={false} />
             {item && item.category === "accessory" && (
-              <span className="pm-shop-stage-acc-icon" aria-hidden="true">
+              <span className={`pm-shop-stage-acc-icon${isIndonesiaFlag ? " is-indonesia-flag" : ""}`} aria-hidden="true">
                 {/* The drawn accessory, floated by the plant's head. It is not
                     worn until you equip it — the note under the price says so
                     — but the emoji stand-in could not even show which one. */}
                 {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-                {shopItemArt(item.key) ? <img src={shopItemArt(item.key) as string} alt="" draggable={false} /> : item.emoji}
+                {accessoryArt ? <img src={accessoryArt} alt="" draggable={false} /> : isIndonesiaFlag ? null : item.emoji}
               </span>
             )}
           </div>

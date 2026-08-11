@@ -11,26 +11,12 @@ const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf
 const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
 
-describe("#current-quest is a real link to /quests", () => {
-  it("wraps the whole panel in <a href=\"/quests\"> with the same inner anchors", () => {
-    expect(html).toContain('<a id="current-quest" class="care-focus-quest" href="/quests">');
-    // renderQuestSlot's writers still find their ids INSIDE the link.
-    const start = html.indexOf('<a id="current-quest"');
-    const end = html.indexOf("</a>", start);
-    const panel = html.slice(start, end);
-    expect(panel).toContain('id="cq-name"');
-    expect(panel).toContain('id="cq-progress"');
-    expect(panel).toContain('data-i18n="hud.mission"');
-  });
-
-  it("keeps a ≥44px tap target and link resets so the panel look survives", () => {
-    const rule = css.slice(css.indexOf("#current-quest {"), css.indexOf("}", css.indexOf("#current-quest {")));
-    expect(rule).toContain("display: grid");
-    expect(rule).toContain("min-height: 44px");
-    expect(rule).toContain("text-decoration: none");
-    expect(rule).toContain("color: inherit");
-    // Pressed-button feel, like the env tiles.
-    expect(css).toMatch(/#current-quest:active \{[^}]*translateY/);
+describe("removed RIGHT NOW quest affordance", () => {
+  it("removes the obsolete mission card and its realtime DOM anchors", () => {
+    for (const id of ["care-focus", "care-action", "current-quest", "cq-name", "cq-progress", "quest-verify-console"]) {
+      expect(html).not.toContain(`id="${id}"`);
+    }
+    expect(css).not.toContain("#current-quest");
   });
 });
 
