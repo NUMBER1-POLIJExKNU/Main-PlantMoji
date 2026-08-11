@@ -5,6 +5,7 @@ import { evaluateBadges } from "@/game/badges/badge-engine";
 import { evaluateChapters } from "@/game/story/story-engine";
 import { awardSeeds } from "@/game/economy/seed-engine";
 import { SEED_GRANTS, seedQuizRewardKey } from "@/game/economy/seed-grants";
+import { syncCompanionForLevel } from "@/game/companion/companion-engine";
 
 export const dynamic = "force-dynamic";
 const validPlant = (value: string) => /^[A-Za-z0-9_-]{1,64}$/.test(value);
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
     // no-ops on a missing migration; .catch keeps any other seed failure
     // from ever failing the quiz response (XP has already landed).
     awardSeeds(supabase,plantId,seedQuizRewardKey(plantId, quizDate, round, questionKey),SEED_GRANTS.quizCorrect,"quiz-correct").catch((cause)=>{console.error("daily-quiz seed grant failed:",cause);return null;}),
+    // answer_daily_quiz grants XP inside SQL and bypasses awardXp's fallback.
+    syncCompanionForLevel(supabase,plantId,Number(data?.bond_level) || 1).catch((cause)=>{console.error("daily-quiz companion sync failed:",cause);return null;}),
   ]);
   const reveal = !data?.correct && Number(data?.attempts) >= 2;
   return Response.json({ok:true,...data,explanation:localized.explanation,hint:quizHint(localized.category,locale),...(reveal?{correctIndex:localized.correctIndex,correctAnswer:localized.choices[localized.correctIndex]}:{})});

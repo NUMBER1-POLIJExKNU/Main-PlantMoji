@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const page = readFileSync(resolve(process.cwd(), "src/app/shop/page.tsx"), "utf8");
 const actions = readFileSync(resolve(process.cwd(), "src/app/shop/actions.ts"), "utf8");
 const grid = readFileSync(resolve(process.cwd(), "src/components/shop-grid.tsx"), "utf8");
+const css = readFileSync(resolve(process.cwd(), "src/app/shop/shop.css"), "utf8");
 
 describe("/shop route", () => {
   it("uses the shared page header and farm panel language", () => {
@@ -33,10 +34,33 @@ describe("/shop route", () => {
     expect(grid).not.toContain("seeds - item.price");
   });
 
+  it("shows a direct equip action and reconciles the RPC-confirmed state", () => {
+    expect(grid).toContain('className="pm-btn pm-shop-equip-btn"');
+    expect(grid).toContain("result.equipped ?? nextEquipped");
+    expect(grid).toContain("result.category ?? item.category");
+    expect(css).toContain(".pm-shop-card > .pm-shop-equip-btn");
+    expect(css).toMatch(/\.pm-shop-card > \.pm-shop-equip-btn\s*\{[^}]*display:inline-flex/);
+  });
+
+  it("re-reads purchases after realtime shop changes", () => {
+    expect(grid).toContain('table: "shop_purchases"');
+    expect(grid).toContain('.select("item_key, category, equipped")');
+    expect(grid).toContain("refreshPurchases");
+  });
+
   it("supports category, ownership, and non-persistent previews", () => {
     expect(grid).toContain("pm-shop-category-tabs");
     expect(grid).toContain('type OwnershipFilter = "all" | "affordable" | "owned"');
     expect(grid).toContain("setPreviewKey");
     expect(grid).not.toMatch(/purchaseShopItem\([^)]*price/);
+  });
+
+  it("draws both Indonesia items as flags instead of the Windows ID glyph", () => {
+    expect(grid).toContain('new Set(["decor_indonesia_flag", "acc_indonesia_sash"])');
+    expect(grid).toContain("isIndonesiaFlag ? null : item.emoji");
+    expect(grid).toContain("<ShopItemIcon item={previewItem} preview />");
+    expect(grid).toContain("<ShopItemIcon item={item} />");
+    expect(css).toContain(".pm-shop-emoji.is-indonesia-flag");
+    expect(css).toContain("background:linear-gradient(to bottom,#ce1126 0 50%,#fff 50% 100%)");
   });
 });

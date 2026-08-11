@@ -36,13 +36,16 @@ function localAdvice(analysis: EnvironmentAnalysis, locale: AppLocale) {
   return locale === "id" ? `${label} adalah perbedaan utama. Coba ${move}, lalu ukur lagi.` : `${label} is the main difference. Try ${move}, then measure again.`;
 }
 
-/** Keep Gemini's grounded explanation readable in the compact result card.
- *  The model may return one long paragraph; sentence breaks become visual
- *  lines while existing intentional paragraphs remain untouched. */
-function formatExplanation(text: string) {
+/** Keep Gemini's grounded explanation readable in the result card. Every
+ *  sentence gets its own paragraph-sized beat (two line breaks), regardless
+ *  of whether the provider returned one long line or inconsistent wrapping. */
+export function formatExplanation(text: string) {
   const normalized = text.replace(/\r\n?/g, "\n").trim();
-  if (!normalized || normalized.includes("\n")) return normalized;
-  return normalized.replace(/([.!?。！？])\s+/g, "$1\n");
+  if (!normalized) return "";
+  return normalized
+    .replace(/\s+/g, " ")
+    .replace(/([.!?。！？])(?:\s+|$)/g, "$1\n\n")
+    .trim();
 }
 
 export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {

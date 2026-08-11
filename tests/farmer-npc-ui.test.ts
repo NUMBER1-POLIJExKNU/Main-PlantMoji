@@ -46,7 +46,7 @@ describe("Grandpa Tani living-world UI", () => {
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
-    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toMatch(/body\.night:not\(\.farmer-night-awake\) \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
@@ -54,6 +54,39 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).toContain("function scheduleFarmerNightSleep()");
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
+  });
+
+  it("parks the desktop night bed outside the right HUD rail", () => {
+    expect(css).toContain("--farmer-bed-left:clamp(304px,24vw,410px)");
+    expect(css).toMatch(/@media \(min-width:801px\)[\s\S]*?\.npc-farmer-bed \{ left:var\(--farmer-bed-left\); right:auto/);
+    expect(css).toContain("width: 90px");
+    expect(css).toContain("left:calc(var(--farmer-bed-left) + 18px) !important");
+  });
+
+  it("stands the farmer on the ground when a sleeping sprite is pressed", () => {
+    expect(live).toContain("function farmerNightWakePosition()");
+    expect(live).toContain("top: ground.top");
+    expect(live).toContain("const wakePosition = wasSleeping ? farmerNightWakePosition() : null");
+    expect(live).not.toContain("farmer.style.top = `${rect.top}px`;\n    farmer.style.transform = \"none\";\n    setFarmerFacing(1);");
+    expect(css).not.toContain("body.night.farmer-night-awake .npc-farmer.npc-ready { left:auto !important; }");
+  });
+
+  it("keeps AI chat available at night and returns Grandpa to bed after chat", () => {
+    const openStart = live.indexOf("function openFarmerChat()");
+    const openEnd = live.indexOf('$("#farmer-chat")?.addEventListener("close"', openStart);
+    expect(live.slice(openStart, openEnd)).toContain("wakeFarmerAtNight();");
+
+    const clickStart = live.indexOf('$("#npc-farmer")?.addEventListener("click"');
+    const clickEnd = live.indexOf('document.addEventListener("pointerdown"', clickStart);
+    const clickBody = live.slice(clickStart, clickEnd);
+    expect(clickBody).toContain("if (isNightWIB())");
+    expect(clickBody).toContain("openFarmerChat();");
+    expect(clickBody).not.toMatch(/if \(isNightWIB\(\)\)[\s\S]*?return;/);
+
+    const closeStart = live.indexOf('$("#farmer-chat")?.addEventListener("close"');
+    const closeEnd = live.indexOf('$("#farmer-chat")?.addEventListener("click"', closeStart);
+    expect(live.slice(closeStart, closeEnd)).toContain("if (isNightWIB()) scheduleFarmerNightSleep();");
+    expect(live).not.toContain("if (dialog?.open) dialog.close();");
   });
 
   it("measures the real grass boundary instead of wandering by viewport width", () => {
@@ -109,6 +142,18 @@ describe("Grandpa Tani living-world UI", () => {
     expect(live).toContain("fxQueue.length === 0");
     expect(live).toContain('classList.contains("npc-falling")');
     expect(live).toContain("farmerRecentLines.length > 3");
+  });
+
+  it("grounds automatic wisdom in fresh sensor values and crop-specific bands", () => {
+    expect(live).toContain("function farmerSensorLine(family)");
+    expect(live).toContain("staleLabel(lastReading.recorded_at)");
+    expect(live).toContain("gaugeDomainAndBand(kind, cropProfile).band");
+    expect(live).toContain("lastVitals.temperature.toFixed(1)");
+    expect(live).toContain("lastVitals.humidity");
+    expect(live).toContain("lastVitals.light");
+    expect(live).toContain("lastVitals.soilPh.toFixed(1)");
+    expect(live).toContain("This is air around the leaves, not soil wetness");
+    expect(live).toContain("function farmerMoodLines(family)");
   });
 
   it("keeps idle lines deterministic, bilingual, and opens chat from the bubble", () => {

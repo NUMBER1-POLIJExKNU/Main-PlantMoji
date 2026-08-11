@@ -318,10 +318,10 @@
                                      phase via the .sprite-phase-N class the sprite
                                      driver stamps (seed y≈133, sprout y≈109). -->
                                 <g class="acc-anchor-crown" transform="translate(0 60)">
-                                    <g class="shop-item shop-g-acc_strawhat" aria-hidden="true">
-                                        <rect x="112" y="0" width="76" height="14" fill="#E8C56A" stroke="var(--color-outline)" stroke-width="5"/>
-                                        <rect x="86" y="12" width="128" height="12" fill="#D9B04E" stroke="var(--color-outline)" stroke-width="5"/>
-                                        <rect x="112" y="8" width="76" height="5" fill="#B8862F"/>
+                                     <g class="shop-item shop-g-acc_strawhat" aria-hidden="true">
+                                         <rect x="112" y="0" width="76" height="14" fill="#E8C56A" stroke="var(--color-outline)" stroke-width="5"/>
+                                         <rect x="86" y="12" width="128" height="12" fill="#D9B04E" stroke="var(--color-outline)" stroke-width="5"/>
+                                         <rect x="112" y="8" width="76" height="5" fill="#B8862F"/>
                                     </g>
                                     <g class="shop-item shop-g-acc_coffee_crown" aria-hidden="true"><circle cx="112" cy="17" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><circle cx="150" cy="10" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><circle cx="188" cy="17" r="10" fill="#fff" stroke="var(--color-outline)" stroke-width="4"/><path d="M105 25h90" stroke="#397A2B" stroke-width="7"/></g>
                                     <g class="shop-item shop-g-acc_bandana" aria-hidden="true"><rect x="91" y="22" width="118" height="14" fill="#E76252" stroke="var(--color-outline)" stroke-width="4"/><path d="M201 28l28 18-22 5z" fill="#E76252" stroke="var(--color-outline)" stroke-width="4"/></g>
@@ -398,11 +398,10 @@
                         <span id="bff-token" class="bff-token" hidden>Best Friend 💛</span>
                         <div id="char-mood">--</div>
                         <div id="companion-stage" class="companion-stage">COMPANION · SEED</div>
-                        <!-- Honest next-stage progress line (evolution-ladder
-                             plan, Task 5). live.js fills it from companion_state
-                             counters; stays empty (and :empty-hidden) when the
-                             milestone16 counters are missing. -->
+                        <!-- Level-only evolution progress: live.js shows the
+                             next stage, its Bond Level and exact XP remaining. -->
                         <div id="companion-next" class="companion-next"></div>
+                        <button id="evolution-guide-open" class="evolution-guide-open" type="button" aria-haspopup="dialog"><span aria-hidden="true">🌱</span> <span id="evolution-guide-open-label">VIEW 10 STAGES · 1/10</span></button>
                         <!-- Wardrobe (milestone20): cosmetic Jember-crop skin
                              picker. live.js localizes the label (strings.js
                              "wardrobe" group) and fills the #wardrobe-panel
@@ -443,6 +442,11 @@
                     <p id="care-proof-note" class="care-proof-note" data-i18n="focus.proof">Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.</p>
                 </section>
 
+                <!-- Desktop keeps the decision card fully visible. Only the
+                     secondary evidence/reward rail below it may scroll. On
+                     mobile this wrapper is display:contents, preserving the
+                     separate mobile team's existing flow. -->
+                <div class="home-stack-scroll">
                 <!-- Current Quest (fed by the existing quests query). The whole
                      panel is a REAL link to /quests (kid-guide Task 1): one big
                      honest tap target (≥44px, style.css) instead of a dead
@@ -472,6 +476,7 @@
                     <span class="quiz-chip-xp">+9 XP</span>
                 </button>
 
+                </div>
             </div>
 
         </main>
@@ -550,6 +555,15 @@
             <p id="wardrobe-note" class="wardrobe-note" hidden></p>
             <div id="wardrobe-list" class="wardrobe-list"></div>
             <button id="wardrobe-close" class="pixel-btn" type="button">OK</button>
+        </div>
+    </dialog>
+    <dialog id="evolution-guide" class="farm-guide evolution-guide" aria-labelledby="evolution-guide-title">
+        <div class="farm-guide-card evolution-guide-card">
+            <span>🌱 JAMKACHU</span>
+            <div class="evolution-guide-heading"><h2 id="evolution-guide-title">EVOLUTION MAP</h2><b id="evolution-guide-count">1 / 10 unlocked</b></div>
+            <p id="evolution-guide-subtitle">Jamkachu evolves every time Bond Level rises through Lv.10.</p>
+            <div id="evolution-guide-list" class="evolution-guide-list"></div>
+            <button id="evolution-guide-close" class="pixel-btn" type="button">CLOSE</button>
         </div>
     </dialog>
     <!-- Classroom-demo sandbox (window.PMCheat). next.config.ts rewrites "/"

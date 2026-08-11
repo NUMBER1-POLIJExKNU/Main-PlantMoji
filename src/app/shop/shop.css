@@ -132,10 +132,27 @@ html[data-theme="night"] .pm-shop-stage-balance { border-color:var(--color-borde
 html[data-theme="night"] .pm-shop-toast { border-color:var(--color-border); color:var(--color-text); background:var(--color-surface); }html[data-theme="night"] .pm-shop-toast.is-error { background:#412827; }
 
 .pm-shop-card.is-busy { opacity:.72; }
-/* Cards select one item into the try-on stage above; the stage is the only
-   surface with buy/equip controls (single coherent purchase surface — see
-   pm-shop-stage-copy > .pm-btn below). Cards render no buy/equip/owned
-   markup of their own, so there's nothing here to hide. */
+/* Buying stays on the preview stage, but owned equippable items must expose
+   their primary action directly. Hiding this button made purchases look
+   impossible to equip unless the user rediscovered the preview interaction. */
+.pm-shop-card > .pm-shop-owned {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:28px;
+  margin-top:auto;
+  padding:6px 8px;
+  border:2px solid color-mix(in srgb,#397a2b 45%,transparent);
+  border-radius:8px;
+  background:color-mix(in srgb,#8fd36f 18%,var(--color-surface));
+}
+.pm-shop-card > .pm-shop-equip-btn {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-height:44px;
+}
 
 /* Small T2 celebration: a handful of seed emoji popping from the card —
    buying is frequent, keep it light (no full-screen ceremony). */

@@ -32,9 +32,9 @@ The authoritative loop remains `sensor -> mood -> quest -> physical care -> sens
 - Keep exact English parity.
 - Explain that tapping the guidance button does not complete a mission; real sensors verify physical care.
 
-### P1 · Mobile and accessibility
+### P1 · Desktop and accessibility
 
-- Keep the primary action at least 64px tall and visible in the first phone viewport; the full character stage follows it on mobile.
+- Keep the desktop right rail within one screen, with the primary action at least 52px tall.
 - Use text, icon, and shape together; color is never the only state signal.
 - Announce focus-state changes politely and honor reduced-motion preferences.
 
@@ -43,5 +43,5 @@ The authoritative loop remains `sensor -> mood -> quest -> physical care -> sens
 - No existing realtime ID or route changes.
 - Waiting, active-care, verifying, and healthy states render distinct localized guidance.
 - On desktop, progression and quiz appear after the care loop.
-- On 360–430px phones, the care card has no horizontal overflow and all controls remain at least 44px tall.
+- At desktop widths from 1024px upward, the right rail has no horizontal overflow and remains vertically scroll-safe on short classroom laptops.
 - Relevant Vitest suites, lint, and production build pass.

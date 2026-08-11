@@ -8,8 +8,8 @@ import { COMPANION_LADDER, COMPANION_STAGES } from "@/types/game";
 // Guards against drift between the engine's ladder (src/types/game.ts
 // COMPANION_LADDER — the single source of truth) and its display-only farm
 // mirror (public/farm/companion-ladder.js). The farm layer renders labels and
-// the next-stage progress line from the mirror; if the two tables disagree,
-// students would see progress numbers that the engine never honors. Same
+// the next-stage level guide from the mirror; if the two tables disagree,
+// students would see unlock levels that the engine never honors. Same
 // pattern as tests/strings-parity.test.ts: read the plain script, evaluate it
 // in a node:vm sandbox whose only global is a stub `window`, then compare.
 
@@ -19,9 +19,7 @@ const source = readFileSync(ladderPath, "utf8");
 
 interface LadderRow {
   stage: string;
-  care: number;
-  affinities: number;
-  days: number;
+  level: number;
 }
 
 type StubWindow = {
@@ -47,17 +45,16 @@ const { PM_LADDER, PM_NEXT_STAGE } = loadFarmLadder();
 describe("farm companion-ladder mirror parity", () => {
   it("farm ladder mirror matches the engine ladder exactly", () => {
     expect(PM_LADDER).toEqual(
-      COMPANION_LADDER.map(({ stage, care, affinities, days }) => ({
+      COMPANION_LADDER.map(({ stage, level }) => ({
         stage,
-        care,
-        affinities,
-        days,
+        level,
       })),
     );
   });
 
   it("covers every stage in COMPANION_STAGES order", () => {
     expect(PM_LADDER.map((row) => row.stage)).toEqual([...COMPANION_STAGES]);
+    expect(PM_LADDER.map((row) => row.level)).toEqual([1,2,3,4,5,6,7,8,9,10]);
   });
 
   it("PM_NEXT_STAGE walks the ladder one row at a time", () => {

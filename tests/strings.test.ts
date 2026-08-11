@@ -25,6 +25,9 @@ type StringTable = {
   care: Record<string, { label?: unknown; why?: unknown }>;
   sleep: { bubble?: unknown; why?: unknown; nightLabel?: unknown; button?: unknown };
   streakKeeper: { active?: unknown; broken?: unknown; flame?: unknown };
+  farmer: Record<string, unknown> & {
+    idle?: { companion?: unknown; wisdom?: unknown };
+  };
   luckyOdds: unknown;
   petting: unknown;
   pettingYawn: unknown;
@@ -242,6 +245,17 @@ for (const [locale, S] of [
         expectLatinCopy(flame, "streakKeeper.flame");
         expect(flame as string).toContain("{days}");
       }
+    });
+
+    it("provides a deep bilingual advice pool for every sensor condition", () => {
+      for (const family of ["Overheating", "TooCold", "DryAir", "HumidAir", "Sleepy", "Soil", "Happy"]) {
+        const lines = S.farmer[family];
+        expect(Array.isArray(lines), `farmer.${family} should be an array`).toBe(true);
+        expect((lines as unknown[]).length, `farmer.${family} should avoid repetition`).toBeGreaterThanOrEqual(6);
+        (lines as unknown[]).forEach((line, index) => expectLatinCopy(line, `farmer.${family}[${index}]`));
+      }
+      const allAdvice = Object.values(S.farmer).flatMap((entry) => Array.isArray(entry) ? entry : []).join(" ");
+      expect(allAdvice).not.toMatch(/water the soil|fertili[sz]e the soil|siram(?:lah)? tanah|pupuk(?:lah)? tanah/i);
     });
 
     it("covers all eight threshold-true vital comments", () => {

@@ -34,7 +34,9 @@ export interface ShopPurchaseRow {
 const CATEGORY_ORDER: ShopCategory[] = ["pot", "decor", "accessory"];
 type OwnershipFilter = "all" | "affordable" | "owned";
 const FILTER_ORDER: OwnershipFilter[] = ["all", "affordable", "owned"];
-
+// Windows commonly renders the Indonesia flag emoji as the regional code
+// "ID". These catalog entries use a CSS-drawn Merah Putih instead so the
+// item icon is a flag on every desktop platform and emoji font.
 function popConfetti(anchor: HTMLElement) {
   const rect = anchor.getBoundingClientRect();
   const pieces = ["🌰", "✨", "🌱", "✨", "🌰"];
@@ -85,13 +87,21 @@ export default function ShopGrid({
   // never writes purchases or equips to Supabase.
   const { active: cheatActive } = useCheat();
 
-  // Seeds balance stays live: bond_state is already realtime (milestone3),
-  // so earned Seeds appear here without a reload. Display only.
+  // Balance and ownership/equip state stay server-authoritative. Realtime
+  // purchase events are re-read instead of reconstructed from the payload so
+  // cross-tab equips and the category-exclusive unequip happen atomically in UI.
   useEffect(() => {
     const supabase = getBrowserSupabase();
     if (!supabase) return;
+    const refreshPurchases = async () => {
+      const { data, error } = await supabase
+        .from("shop_purchases")
+        .select("item_key, category, equipped")
+        .eq("plant_id", plantId);
+      if (!error && data) setPurchases(data as ShopPurchaseRow[]);
+    };
     const channel = supabase
-      .channel(`shop-seeds-${plantId}`)
+      .channel(`shop-live-${plantId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "bond_state", filter: `plant_id=eq.${plantId}` },
@@ -99,6 +109,11 @@ export default function ShopGrid({
           const next = (payload.new as { seeds?: number } | null)?.seeds;
           if (typeof next === "number") setSeeds(next);
         },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shop_purchases", filter: `plant_id=eq.${plantId}` },
+        () => { void refreshPurchases(); },
       )
       .subscribe();
     return () => {
@@ -161,10 +176,13 @@ export default function ShopGrid({
       const result = await equipShopItem(item.key, nextEquipped, locale);
       applyResult(result);
       if (result.status === "success") {
+        const confirmedItemKey = result.itemKey ?? item.key;
+        const confirmedCategory = result.category ?? item.category;
+        const confirmedEquipped = result.equipped ?? nextEquipped;
         setPurchases((prev) =>
           prev.map((p) => {
-            if (p.item_key === item.key) return { ...p, equipped: nextEquipped };
-            if (nextEquipped && p.category === item.category) return { ...p, equipped: false };
+            if (p.item_key === confirmedItemKey) return { ...p, equipped: confirmedEquipped };
+            if (confirmedEquipped && p.category === confirmedCategory) return { ...p, equipped: false };
             return p;
           }),
         );
@@ -242,10 +260,9 @@ export default function ShopGrid({
                       className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
                       aria-busy={busyKey === item.key}
                       // Tapping the card selects it into the try-on stage
-                      // above — buy/equip live exclusively on that stage now
-                      // (single coherent purchase surface). The eye button
-                      // below stays the keyboard-operable, independently
-                      // toggling control for the same selection.
+                      // above. Buying stays on that single purchase surface;
+                      // owned equippable items also keep a direct action so a
+                      // purchase never appears impossible to equip later.
                       onClick={() => setPreviewKey(item.key)}
                     >
                       <span className="pm-shop-emoji" aria-hidden="true">
@@ -265,6 +282,28 @@ export default function ShopGrid({
                           : !affordable && <span className="pm-shop-state is-short">{item.price - seeds} {copy.needMore}</span>}
                       </div>
                       <button type="button" className={`pm-shop-preview-btn${isPreviewed ? " is-active" : ""}`} onClick={(event) => { event.stopPropagation(); setPreviewKey(isPreviewed ? null : item.key); }}>{isPreviewed ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
+                      {owned ? (
+                        <>
+                          <span className="pm-shop-owned">
+                            {owned.equipped ? `✓ ${copy.equipped}` : `✓ ${copy.owned}`}
+                          </span>
+                          {item.category !== "decor" && (
+                            <button
+                              type="button"
+                              className="pm-btn pm-shop-equip-btn"
+                              disabled={busyKey !== null}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                equip(item, !owned.equipped);
+                              }}
+                            >
+                              {busyKey === item.key ? (locale === "id" ? "Memasang…" : "Equipping…") : owned.equipped ? copy.unequip : copy.equip}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        !affordable && <small className="pm-shop-short">{item.price - seeds} {copy.needMore}</small>
+                      )}
                     </article>
                   );
                 })}

@@ -151,7 +151,6 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
   { key: "acc_bandana", category: "accessory", price: 25, emoji: "🧣", name: { en: "Farmer Bandana", id: "Bandana Petani" }, blurb: { en: "A practical scarf for a cheerful farm day.", id: "Kain praktis untuk hari ceria di kebun." } },
   { key: "acc_goggles", category: "accessory", price: 40, emoji: "🥽", name: { en: "Explorer Goggles", id: "Kacamata Penjelajah" }, blurb: { en: "Ready to inspect every sensor clue.", id: "Siap memeriksa setiap petunjuk dari sensor." } },
   { key: "acc_jfc_headdress", category: "accessory", price: 65, emoji: "🪶", name: { en: "JFC Feather Headdress", id: "Hiasan Kepala Bulu JFC" }, blurb: { en: "A bright, lightweight carnival look for Jamkachu.", id: "Gaya karnaval ringan dan cerah untuk Jamkachu." } },
-  { key: "acc_taeguk_ribbon", category: "accessory", price: 35, emoji: "🎗️", name: { en: "Taeguk Ribbon", id: "Pita Taeguk" }, blurb: { en: "A red-and-blue ribbon inspired by Korea's taeguk symbol.", id: "Pita merah-biru terinspirasi simbol taeguk Korea." } },
   { key: "acc_indonesia_sash", category: "accessory", price: 25, emoji: "🇮🇩", name: { en: "Merah Putih Sash", id: "Selempang Merah Putih" }, blurb: { en: "A simple red-and-white sash for a proud garden visit.", id: "Selempang merah-putih sederhana untuk kunjungan kebun." } },
 ] as const;
 
