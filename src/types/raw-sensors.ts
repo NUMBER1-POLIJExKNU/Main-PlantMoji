@@ -16,6 +16,23 @@ export type ParsedRawSensorReading =
   | { ok: true; reading: RawSensorReading }
   | { ok: false; error: string };
 
+/**
+ * Physically possible range for each sensor — the values the ingest endpoint
+ * is willing to store. Humidity and light are percentages and pH is the 0–14
+ * scale, so anything outside these is not a reading, it's a bad payload.
+ *
+ * Exported because the classroom cheat sandbox edits the same four numbers by
+ * hand: a demo must not be able to put a value on screen that the real
+ * hardware path would have rejected (200% humidity, pH 20). One definition,
+ * so the validator and the demo editor can never drift apart.
+ */
+export const SENSOR_LIMITS = {
+  temperature: { min: -40, max: 100 },
+  humidity: { min: 0, max: 100 },
+  soilPH: { min: 0, max: 14 },
+  light: { min: LIGHT_PERCENT_MIN, max: LIGHT_PERCENT_MAX },
+} as const;
+
 function finiteNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
@@ -71,16 +88,16 @@ export function parseRawSensorReading(
       error: "temperature, humidity, soilPH, and light must all be finite numbers",
     };
   }
-  if (temperature < -40 || temperature > 100) {
+  if (temperature < SENSOR_LIMITS.temperature.min || temperature > SENSOR_LIMITS.temperature.max) {
     return { ok: false, error: "temperature must be between -40 and 100°C" };
   }
-  if (humidity < 0 || humidity > 100) {
+  if (humidity < SENSOR_LIMITS.humidity.min || humidity > SENSOR_LIMITS.humidity.max) {
     return { ok: false, error: "humidity must be between 0 and 100%" };
   }
-  if (soilPH < 0 || soilPH > 14) {
+  if (soilPH < SENSOR_LIMITS.soilPH.min || soilPH > SENSOR_LIMITS.soilPH.max) {
     return { ok: false, error: "soilPH must be between 0 and 14" };
   }
-  if (light < LIGHT_PERCENT_MIN || light > LIGHT_PERCENT_MAX) {
+  if (light < SENSOR_LIMITS.light.min || light > SENSOR_LIMITS.light.max) {
     return { ok: false, error: "light must be between 0 and 100%" };
   }
 

@@ -5665,6 +5665,19 @@ const CHEAT_LABELS = {
   en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
+/** Physically possible range per sensor — mirror of SENSOR_LIMITS in
+ *  src/types/raw-sensors.ts, which is what /api/sensor-readings accepts from
+ *  the real hardware. A farm-shell script cannot import it, so a test pins the
+ *  two together. The sandbox edits the same four numbers by hand, and a demo
+ *  must not put a reading on screen that the real path would have rejected:
+ *  humidity and light are percentages, pH is the 0–14 scale. */
+const CHEAT_VITAL_LIMITS = {
+  temperature: { min: -40, max: 100 },
+  humidity: { min: 0, max: 100 },
+  light: { min: 0, max: 100 },
+  soilPh: { min: 0, max: 14 },
+};
+
 /** The XP band a bond level owns. levelForXp is floor(xp / XP_PER_LEVEL) + 1
  *  (src/types/game.ts, mirrored by award_xp() in SQL), so Lv.L covers
  *  [(L-1)·30, L·30 − 1]. Level and XP are separate fields in the sandbox
@@ -5741,6 +5754,12 @@ function buildCheatPanel() {
   panel.setAttribute("aria-label", "Cheat controls");
   const field = (key, label, value, step, min, max) =>
     `<label class="pm-cheat-field"><span>${label}</span><input type="number" data-cheat="${key}" value="${value}" step="${step}"${min != null ? ` min="${min}"` : ""}${max != null ? ` max="${max}"` : ""}></label>`;
+  /** Same row, with the min/max and the hover hint taken from the sensor's
+   *  physical range instead of being repeated at the call site. */
+  const vitalField = (key, label, value, step) => {
+    const limit = CHEAT_VITAL_LIMITS[key];
+    return `<label class="pm-cheat-field"><span>${label}</span><input type="number" data-cheat="${key}" value="${value}" step="${step}" min="${limit.min}" max="${limit.max}" title="${limit.min} – ${limit.max}"></label>`;
+  };
   panel.innerHTML =
     // Collapse control: the panel is docked over the sky beside the mascot, but
     // a presenter on a short screen still needs a way to clear it off the
@@ -5761,10 +5780,12 @@ function buildCheatPanel() {
     field("seeds", L.seeds, s.status.seeds, 1, 0) +
     `</div>` +
     `<div class="pm-cheat-group"><h3>🌿 ${L.vitalsTitle}</h3>` +
-    field("temperature", L.temp, s.vitals.temperature, 0.1) +
-    field("humidity", L.hum, s.vitals.humidity, 1, 0, 100) +
-    field("light", L.light, s.vitals.light, 1, 0, 100) +
-    field("soilPh", L.ph, s.vitals.soilPh, 0.1, 0, 14) +
+    // Ranges come from CHEAT_VITAL_LIMITS, never hand-typed here, so the
+    // spinner, the tooltip and the clamp below can never disagree.
+    vitalField("temperature", L.temp, s.vitals.temperature, 0.1) +
+    vitalField("humidity", L.hum, s.vitals.humidity, 1) +
+    vitalField("light", L.light, s.vitals.light, 1) +
+    vitalField("soilPh", L.ph, s.vitals.soilPh, 0.1) +
     `</div>` +
     `<p class="pm-cheat-hint">${L.hint}</p>` +
     `</div>`;
@@ -5821,7 +5842,12 @@ function buildCheatPanel() {
       } else if (key in STATUS_KEYS) {
         window.PMCheat.set({ status: { [key]: num } });
       } else {
-        window.PMCheat.set({ vitals: { [key]: num } });
+        // Sensors are held to the range real hardware readings are validated
+        // against — 200% humidity or pH 20 is not a demo value, it's nonsense
+        // on screen. Same non-destructive clamp as the XP field above.
+        const limit = CHEAT_VITAL_LIMITS[key];
+        const value = limit ? Math.min(limit.max, Math.max(limit.min, num)) : num;
+        window.PMCheat.set({ vitals: { [key]: value } });
       }
       applyCheatFarm();
     });
@@ -5830,6 +5856,10 @@ function buildCheatPanel() {
       // the sandbox actually holds, so an out-of-band entry visibly corrects.
       input.addEventListener("change", () => {
         input.value = String(Number(window.PMCheat.get("status.totalXp", 0)) || 0);
+      });
+    } else if (CHEAT_VITAL_LIMITS[key]) {
+      input.addEventListener("change", () => {
+        input.value = String(window.PMCheat.get(`vitals.${key}`, 0));
       });
     }
   });

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { XP_PER_LEVEL, levelForXp } from "@/types/game";
+import { SENSOR_LIMITS, parseRawSensorReading } from "@/types/raw-sensors";
 
 // The classroom-demo sandbox is a plain browser script (window.PMCheat) plus a
 // branch inside public/farm/live.js, so it can't be imported and exercised in
@@ -172,6 +173,68 @@ describe("cheat panel XP is confined to its level's band", () => {
   it("carries XP with the level so stepping it keeps progress inside the bar", () => {
     expect(live).toContain('const within = (Number(window.PMCheat.get("status.totalXp", 0)) || 0) % XP_PER_LEVEL;');
     expect(live).toContain("window.PMCheat.set({ status: { level: next, totalXp: nextXp } })");
+  });
+});
+
+describe("cheat sensor edits stay physically possible", () => {
+  const sensorPanel = readFileSync("src/components/cheat-sensor-panel.tsx", "utf8");
+
+  it("holds the sandbox to the same range the ingest endpoint accepts", () => {
+    // The point of one shared constant: a value the demo lets you type must be
+    // a value the real hardware path would have stored.
+    const at = (temperature: number, humidity: number, soilPH: number, light: number) =>
+      parseRawSensorReading({ plantId: "plant-01", temperature, humidity, soilPH, light });
+    const L = SENSOR_LIMITS;
+    expect(at(L.temperature.min, L.humidity.min, L.soilPH.min, L.light.min).ok).toBe(true);
+    expect(at(L.temperature.max, L.humidity.max, L.soilPH.max, L.light.max).ok).toBe(true);
+    // One step outside any edge and ingest refuses it.
+    expect(at(L.temperature.max + 1, 50, 7, 50).ok).toBe(false);
+    expect(at(25, L.humidity.max + 1, 7, 50).ok).toBe(false);
+    expect(at(25, 50, L.soilPH.max + 1, 50).ok).toBe(false);
+    expect(at(25, 50, 7, L.light.max + 1).ok).toBe(false);
+    expect(at(25, -1, 7, 50).ok).toBe(false);
+  });
+
+  it("states the ranges the user called out", () => {
+    expect(SENSOR_LIMITS.humidity).toEqual({ min: 0, max: 100 });
+    expect(SENSOR_LIMITS.light).toEqual({ min: 0, max: 100 });
+    expect(SENSOR_LIMITS.soilPH).toEqual({ min: 0, max: 14 });
+  });
+
+  it("keeps the farm shell's mirrored limits in step with SENSOR_LIMITS", () => {
+    // public/farm/live.js is a plain script and cannot import the constant, so
+    // without this the two silently drift.
+    const start = live.indexOf("const CHEAT_VITAL_LIMITS = {");
+    expect(start).toBeGreaterThanOrEqual(0);
+    const block = live.slice(start, live.indexOf("};", start));
+    for (const [key, limit] of [
+      ["temperature", SENSOR_LIMITS.temperature],
+      ["humidity", SENSOR_LIMITS.humidity],
+      ["light", SENSOR_LIMITS.light],
+      ["soilPh", SENSOR_LIMITS.soilPH], // the store spells pH with a lowercase h
+    ] as const) {
+      expect(block).toContain(`${key}: { min: ${limit.min}, max: ${limit.max} }`);
+    }
+  });
+
+  it("clamps in both editors, not just the Monitoring one", () => {
+    // Both panels write the same store, so leaving either unclamped would put
+    // the impossible value on screen anyway.
+    expect(sensorPanel).toContain('import { SENSOR_LIMITS } from "@/types/raw-sensors"');
+    expect(sensorPanel).toContain("api.set({ vitals: { [key]: Math.min(max, Math.max(min, num)) } })");
+    expect(live).toContain("const value = limit ? Math.min(limit.max, Math.max(limit.min, num)) : num;");
+  });
+
+  it("takes each field's min/max from the limits rather than the call site", () => {
+    expect(sensorPanel).toContain("const { min, max } = LIMITS[key];");
+    expect(sensorPanel).toMatch(/\{field\("humidity", t\.hum, 1\)\}/);
+    expect(live).toContain("const limit = CHEAT_VITAL_LIMITS[key];");
+    expect(live).toContain('vitalField("soilPh", L.ph, s.vitals.soilPh, 0.1)');
+  });
+
+  it("settles the field onto the stored value once editing ends", () => {
+    expect(sensorPanel).toContain("onBlur={(e) => { e.target.value = String(v[key]); }}");
+    expect(live).toContain("input.value = String(window.PMCheat.get(`vitals.${key}`, 0));");
   });
 });
 

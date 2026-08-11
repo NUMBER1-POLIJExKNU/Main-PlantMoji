@@ -7,7 +7,19 @@
 // sandbox is active.
 
 import type { AppLocale } from "@/lib/i18n";
-import { useCheat } from "@/lib/pm-cheat";
+import { useCheat, type CheatVitals } from "@/lib/pm-cheat";
+import { SENSOR_LIMITS } from "@/types/raw-sensors";
+
+/** The sandbox edits the same four numbers the hardware reports, so it is held
+ *  to the same physical range the ingest endpoint enforces — a demo must never
+ *  show a reading the real path would have rejected (200% humidity, pH 20).
+ *  Keyed to the store's field names; SENSOR_LIMITS spells pH `soilPH`. */
+const LIMITS: Record<keyof CheatVitals, { min: number; max: number }> = {
+  temperature: SENSOR_LIMITS.temperature,
+  humidity: SENSOR_LIMITS.humidity,
+  light: SENSOR_LIMITS.light,
+  soilPh: SENSOR_LIMITS.soilPH,
+};
 
 const COPY = {
   id: {
@@ -34,27 +46,36 @@ export default function CheatSensorPanel({ locale }: { locale: AppLocale }) {
   const t = COPY[locale] ?? COPY.en;
   const v = state.vitals;
 
-  const setVital = (key: keyof typeof v, raw: string) => {
+  const setVital = (key: keyof CheatVitals, raw: string) => {
     const num = Number(raw);
     if (!Number.isFinite(num)) return;
-    api.set({ vitals: { [key]: num } });
+    const { min, max } = LIMITS[key];
+    // Clamp what the sandbox stores, but leave the half-typed text alone —
+    // rewriting the field on every keystroke would fight the presenter. The
+    // blur handler below settles it onto whatever actually landed.
+    api.set({ vitals: { [key]: Math.min(max, Math.max(min, num)) } });
   };
 
-  const field = (key: keyof typeof v, label: string, step: number, min?: number, max?: number) => (
-    <label className="flex items-center justify-between gap-3">
-      <span className="text-[12px] font-medium">{label}</span>
-      <input
-        type="number"
-        defaultValue={v[key]}
-        step={step}
-        min={min}
-        max={max}
-        onChange={(e) => setVital(key, e.target.value)}
-        className="w-24 rounded-lg border-2 px-2 py-1 text-right text-[13px] tabular-nums"
-        style={{ borderColor: "#C2618A", background: "#fff", color: "#3a2600" }}
-      />
-    </label>
-  );
+  const field = (key: keyof CheatVitals, label: string, step: number) => {
+    const { min, max } = LIMITS[key];
+    return (
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-[12px] font-medium">{label}</span>
+        <input
+          type="number"
+          defaultValue={v[key]}
+          step={step}
+          min={min}
+          max={max}
+          title={`${min} – ${max}`}
+          onChange={(e) => setVital(key, e.target.value)}
+          onBlur={(e) => { e.target.value = String(v[key]); }}
+          className="w-24 rounded-lg border-2 px-2 py-1 text-right text-[13px] tabular-nums"
+          style={{ borderColor: "#C2618A", background: "#fff", color: "#3a2600" }}
+        />
+      </label>
+    );
+  };
 
   return (
     <section
@@ -66,9 +87,9 @@ export default function CheatSensorPanel({ locale }: { locale: AppLocale }) {
       </h2>
       <div className="grid grid-cols-2 gap-x-5 gap-y-2">
         {field("temperature", t.temp, 0.1)}
-        {field("humidity", t.hum, 1, 0, 100)}
-        {field("light", t.light, 1, 0, 100)}
-        {field("soilPh", t.ph, 0.1, 0, 14)}
+        {field("humidity", t.hum, 1)}
+        {field("light", t.light, 1)}
+        {field("soilPh", t.ph, 0.1)}
       </div>
       <p className="text-[10px] leading-4" style={{ color: "#7A5B12" }}>
         {t.note}
