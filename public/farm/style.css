@@ -799,6 +799,32 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     border-radius: 30px 30px 0 0;
     z-index: 0;
     box-shadow: inset 0 10px 20px rgba(255,255,255,0.2);
+    isolation: isolate;
+    overflow: hidden;
+}
+/* The turf reaches beneath the navigation instead of ending at its edge,
+   then softens through a narrow shore into Jember-blue water. Both layers
+   are scenery only and can never intercept navigation or farm controls. */
+.grass-floor::before,
+.grass-floor::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.grass-floor::before {
+    height: 34px;
+    background: linear-gradient(180deg,#d8bd72 0 24%,#f0d58a 25% 52%,color-mix(in srgb,var(--color-water) 35%,#f0d58a) 53% 100%);
+}
+.grass-floor::after {
+    height: 25px;
+    background:
+        radial-gradient(18px 6px at 9px 0,rgba(255,255,255,.72) 0 3px,transparent 4px) 0 2px/36px 12px repeat-x,
+        linear-gradient(180deg,color-mix(in srgb,var(--color-water) 76%,#fff),var(--color-water));
+    box-shadow: inset 0 4px rgba(255,255,255,.2);
 }
 
 .mascot-container {
@@ -1646,7 +1672,8 @@ body.room-warm {
    (skewX ±3deg, staggered via negative delays so they never sync up). */
 .grass-decor {
     position: absolute;
-    inset: 0;
+    inset: 0 0 25px;
+    z-index: 1;
     pointer-events: none;
     transform-origin: 50% 100%;
 }
@@ -2597,7 +2624,7 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
     .weather-text .indoor-reading { display: none; }
 
     .panel-glass:hover { transform: none; }
-    .grass-floor { left: 272px; width: calc(100% - 272px); height: 105px; }
+    .grass-floor { left: 0; width: 100%; height: 105px; }
 }
 
 /* Short classroom laptops get the same information hierarchy with a smaller
@@ -2674,7 +2701,7 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 .mascot-svg.shop-acc_taeguk_ribbon .shop-g-acc_taeguk_ribbon { display: block; }
 .mascot-svg.shop-acc_indonesia_sash .shop-g-acc_indonesia_sash { display: block; }
 
-.shop-decor-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.shop-decor-layer { position: absolute; inset: 0 0 25px; pointer-events: none; z-index: 1; }
 .shop-decor-layer .shop-decor { display: none; }
 .shop-decor-layer.own-decor_scarecrow .shop-decor-scarecrow { display: block; }
 .shop-decor-layer.own-decor_fence .shop-decor-fence { display: block; }
