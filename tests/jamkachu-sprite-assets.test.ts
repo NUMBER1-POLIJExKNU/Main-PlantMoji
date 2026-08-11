@@ -140,30 +140,40 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     expect(sprite.stagePhase("NotAStage")).toBe(4);
   });
 
-  it("mood→sprite is total over all 8 PlantMoods; plain-mapped moods carry a chip", () => {
+  it("never shows the faceless body for a mood — every mood keeps a face", () => {
+    // "plain" is the designer's decorative body with leaf veins where the
+    // face goes (their sheet-plain.png), not a neutral expression. Mapping
+    // moods onto it once shipped a faceless plant whenever the soil went
+    // off-pH or the air turned cold. Only four sprites are drawn with a
+    // face, so those four carry all eight moods.
+    for (const mood of PLANT_MOODS) {
+      expect(tables.MOOD_SPRITE[mood], `${mood} renders the faceless body`).not.toBe("plain");
+      expect(tables.SPRITE_MOODS, `MOOD_SPRITE[${mood}] not a drawn mood`).toContain(tables.MOOD_SPRITE[mood]);
+    }
     expect(tables.MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "plain",
+      TooCold: "sleepy",
       DryAir: "thirsty",
-      HumidAir: "plain",
+      HumidAir: "thirsty",
       Sleepy: "sleepy",
-      SoilAcidic: "plain",
-      SoilAlkaline: "plain",
+      SoilAcidic: "thirsty",
+      SoilAlkaline: "thirsty",
     });
-    for (const mood of PLANT_MOODS) {
-      expect(tables.SPRITE_MOODS, `MOOD_SPRITE[${mood}] not a drawn mood`).toContain(tables.MOOD_SPRITE[mood]);
-    }
-    // The four plain-collapsed moods stay distinguishable via the chip
+    // Moods that share a drawn face stay distinguishable via the chip
     // (aria-hidden; #char-mood text remains the accessible signal).
     expect(tables.MOOD_STATUS_CHIP).toEqual({
       TooCold: "🥶",
+      Sleepy: "🌙",
+      DryAir: "🌬️",
       HumidAir: "💦",
       SoilAcidic: "🧪",
       SoilAlkaline: "🧪",
     });
+    const bodyCounts: Record<string, number> = {};
+    for (const mood of PLANT_MOODS) bodyCounts[tables.MOOD_SPRITE[mood]] = (bodyCounts[tables.MOOD_SPRITE[mood]] ?? 0) + 1;
     for (const mood of Object.keys(tables.MOOD_STATUS_CHIP)) {
-      expect(tables.MOOD_SPRITE[mood], `${mood} chips but is not plain-mapped`).toBe("plain");
+      expect(bodyCounts[tables.MOOD_SPRITE[mood]], `${mood} chips but has its own face`).toBeGreaterThan(1);
     }
     // Night sleep forces the sleepy body (sleepShown → sleeping: true).
     expect(spriteJs).toMatch(/if \(state\.sleeping\) return "sleepy";/);

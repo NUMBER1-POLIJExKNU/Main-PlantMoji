@@ -44,25 +44,30 @@ export const PHASE_SLUG: Record<SpritePhase, string> = {
   4: "fruit",
 };
 
-/** Mood→sprite. Four moods share the "plain" body and stay distinguishable
- * via a status emoji chip next to the sprite (MOOD_STATUS_CHIP) plus the
- * accessible mood text supplied by the caller. */
+/** Mood→sprite. The pack draws FOUR faces — happy, thirsty, sleepy,
+ * overheat. The fifth file, "plain", is the designer's faceless decorative
+ * body (their sheet-plain.png), NOT a neutral expression: leaf veins sit
+ * where the face goes. No mood may map to it — a cold or off-pH plant must
+ * still have a face. Moods sharing the frowning "thirsty" body are told
+ * apart by the status badge (MOOD_STATUS_CHIP) and the mood text. */
 export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
-  TooCold: "plain",
+  TooCold: "sleepy",
   DryAir: "thirsty",
-  HumidAir: "plain",
+  HumidAir: "thirsty",
   Sleepy: "sleepy",
-  SoilAcidic: "plain",
-  SoilAlkaline: "plain",
+  SoilAcidic: "thirsty",
+  SoilAlkaline: "thirsty",
 };
 
-/** Emoji chip floated near the sprite head for the moods that collapse to the
- * "plain" body (aria-hidden; the mood label text remains the accessible
+/** Chip floated near the sprite head for the moods that SHARE a drawn body
+ * with another mood (aria-hidden; the mood label text remains the accessible
  * signal — the 8 moods must stay distinguishable). */
 export const MOOD_STATUS_CHIP: Partial<Record<PlantMood, string>> = {
   TooCold: "🥶",
+  Sleepy: "🌙",
+  DryAir: "🌬️",
   HumidAir: "💦",
   SoilAcidic: "🧪",
   SoilAlkaline: "🧪",

@@ -44,15 +44,22 @@
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
    *  (the accessible signal — all 8 moods must stay distinguishable). */
+  // The pack draws FOUR faces — happy, thirsty, sleepy, overheat. The fifth
+  // file, "plain", is the designer's faceless decorative body (their
+  // sheet-plain.png), NOT a neutral expression: it has leaf veins where the
+  // face goes. Never map a mood onto it — a plant that is cold or off-pH
+  // must still have a face. The moods that share the frowning "thirsty"
+  // body are told apart by the status badge beside the head and by the
+  // mood text, never by the body alone.
   var MOOD_SPRITE = {
     Happy: "happy",
     Overheating: "overheat",
-    TooCold: "plain",
+    TooCold: "sleepy", // cold plants hunker down; the 🥶 badge names it
     DryAir: "thirsty",
-    HumidAir: "plain",
+    HumidAir: "thirsty",
     Sleepy: "sleepy",
-    SoilAcidic: "plain",
-    SoilAlkaline: "plain",
+    SoilAcidic: "thirsty",
+    SoilAlkaline: "thirsty",
   };
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods
@@ -60,6 +67,8 @@
   // Emoji fallback kept for hosts that cannot load the badge art.
   var MOOD_STATUS_CHIP = {
     TooCold: "🥶",
+    Sleepy: "🌙",
+    DryAir: "🌬️",
     HumidAir: "💦",
     SoilAcidic: "🧪",
     SoilAlkaline: "🧪",
@@ -69,6 +78,8 @@
   // purple-up tube) instead of sharing one test-tube emoji.
   var MOOD_CHIP_ART = {
     TooCold: "mood-11-too-cold",
+    Sleepy: "mood-04-sleepy",
+    DryAir: "mood-03-dry-air",
     HumidAir: "mood-09-too-wet",
     SoilAcidic: "mood-05-soil-acidic",
     SoilAlkaline: "mood-06-soil-alkaline",

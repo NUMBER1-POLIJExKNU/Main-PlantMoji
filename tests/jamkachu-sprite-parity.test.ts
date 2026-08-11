@@ -68,26 +68,41 @@ describe("React sprite mapping pins the decided design tables", () => {
     expect(MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "plain",
+      TooCold: "sleepy",
       DryAir: "thirsty",
-      HumidAir: "plain",
+      HumidAir: "thirsty",
       Sleepy: "sleepy",
-      SoilAcidic: "plain",
-      SoilAlkaline: "plain",
+      SoilAcidic: "thirsty",
+      SoilAlkaline: "thirsty",
     });
   });
 
-  it("keeps the plain-body moods distinguishable via status chips", () => {
+  it("never renders the faceless decorative body for a mood", () => {
+    // The pack's "plain" file draws leaf veins where the face goes — it is
+    // the designer's decorative body, not a neutral expression. Mapping a
+    // mood onto it once shipped a faceless plant on off-pH and cold days.
+    for (const mood of PLANT_MOODS) {
+      expect(spriteMood(mood), `${mood} renders the faceless body`).not.toBe("plain");
+      expect(spriteMood(mood, true)).not.toBe("plain");
+    }
+  });
+
+  it("keeps moods that share a drawn face distinguishable via status chips", () => {
     expect(MOOD_STATUS_CHIP).toEqual({
       TooCold: "🥶",
+      Sleepy: "🌙",
+      DryAir: "🌬️",
       HumidAir: "💦",
       SoilAcidic: "🧪",
       SoilAlkaline: "🧪",
     });
-    // Every mood that collapses onto the shared "plain" body needs a chip.
+    // Any mood sharing its body with another mood needs a chip to tell it
+    // apart; a mood with its own face does not.
+    const bodyCounts = new Map<string, number>();
+    for (const mood of PLANT_MOODS) bodyCounts.set(MOOD_SPRITE[mood], (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) + 1);
     for (const mood of PLANT_MOODS) {
-      if (MOOD_SPRITE[mood] === "plain") {
-        expect(MOOD_STATUS_CHIP[mood], `${mood} shares the plain body but has no chip`).toBeTruthy();
+      if ((bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
+        expect(MOOD_STATUS_CHIP[mood], `${mood} shares a face but has no chip`).toBeTruthy();
       }
     }
   });
@@ -130,7 +145,7 @@ describe("React sprite mapping pins the decided design tables", () => {
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
     );
     expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 12, scale: "2x" })).toBe(
-      "/farm/assets/jamkachu/2x/plant-p3-flower-plain-bow.png",
+      "/farm/assets/jamkachu/2x/plant-p3-flower-sleepy-bow.png",
     );
     expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 12 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p1-seed-overheat.png",
