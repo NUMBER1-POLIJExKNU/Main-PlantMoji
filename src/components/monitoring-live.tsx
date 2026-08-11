@@ -74,8 +74,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", idealRangesNote: "Ditampilkan sebagai pita hijau pada grafik di bawah." },
-  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", idealRangesNote: "Shown as the green band on the chart below." },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note, liveNote }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string }) {
@@ -146,14 +146,10 @@ function RangeLegend({
   displayName,
   ranges,
   c,
-  noteVisible,
 }: {
   displayName: string;
   ranges: ComfortRanges;
   c: (typeof COPY)[AppLocale];
-  /** The "green band on the chart" note only when the band actually renders
-   *  (percent mode) — a lux-mode reader must not be sent hunting for it. */
-  noteVisible: boolean;
 }) {
   const rows = [
     { icon: "🌡️", label: c.temperature, value: formatRange(ranges.temperature, "°C") },
@@ -167,7 +163,6 @@ function RangeLegend({
         <span className="text-xl" aria-hidden="true">🌱</span>
         <div>
           <h2 className="pm-heading text-xs">{displayName} · {c.idealRanges}</h2>
-          {noteVisible ? <p className="mt-0.5 text-xs opacity-70">{c.idealRangesNote}</p> : null}
         </div>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
@@ -309,19 +304,19 @@ export default function MonitoringLive({
         </p>
       )}
 
-      <div className="pm-monitor-intro"><div><span>📡</span><div><h2>{c.real}</h2><p>{c.intro}</p></div></div></div>
-
       <div className="pm-monitor-reading-grid">
-        {/* liveNote is the localized "live" footer (no hardcoded English);
+        {/* liveNote is the short dedicated "live" word (id "Langsung" / en
+            "Live") — the status bar above already says sensors are live, so
+            the cards no longer repeat the "Current environment" sentence.
             readingNote overrides it with the demo-data note in demo mode. */}
-        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" liveNote={c.real} note={temperature == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" liveNote={c.real} note={humidity == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" liveNote={c.real} note={soilPh == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" liveNote={c.real} note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
+        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" liveNote={c.liveWord} note={temperature == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" liveNote={c.liveWord} note={humidity == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" liveNote={c.liveWord} note={soilPh == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" liveNote={c.liveWord} note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
       </div>
 
       {ranges && cropProfile && (
-        <RangeLegend displayName={cropProfile.displayName} ranges={ranges} c={c} noteVisible={mode === "percent"} />
+        <RangeLegend displayName={cropProfile.displayName} ranges={ranges} c={c} />
       )}
 
       <section className="pm-panel pm-monitor-chart">

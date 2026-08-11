@@ -14,6 +14,7 @@ import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getPlant } from "@/lib/queries";
+import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { CAMERA_COPY } from "./copy";
 
@@ -73,6 +74,8 @@ export default async function CameraPage() {
     );
   }
 
+  const initialSnapshot = await getLatestSensorSnapshot(supabase, PLANT_ID);
+
   // milestone19 probe + recent-events seed: the SELECT errors while
   // camera_events is missing → guardianReady=false → local-only mode with
   // an honest operator note (never a crash).
@@ -106,6 +109,7 @@ export default async function CameraPage() {
           guardianReady={guardianReady}
           scanConfigured={Boolean(process.env.GEMINI_API_KEY)}
           initialEvents={initialEvents}
+          initialSnapshot={initialSnapshot}
         />
       </div>
     </main>

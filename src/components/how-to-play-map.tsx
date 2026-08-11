@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ReplayGuideButton from "@/components/replay-guide-button";
 import type { AppLocale } from "@/lib/i18n";
 
 const LOOP = {
@@ -41,6 +42,7 @@ export default function HowToPlayMap({ locale }: { locale: AppLocale }) {
           </li>
         ))}
       </ol>
+      <ReplayGuideButton locale={locale} />
     </section>
   );
 }

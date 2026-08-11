@@ -182,7 +182,6 @@ export default function ShopGrid({
         <span aria-hidden="true">🌰</span>
         <span>{seeds} {copy.balanceLabel}</span>
       </div>
-      <p className="mt-2 text-xs opacity-75">{copy.earnHint}</p>
       {toast && (
         <p className={`pm-shop-toast${toast.kind === "error" ? " is-error" : ""}`} role="status">
           {toast.text}
@@ -231,9 +230,6 @@ export default function ShopGrid({
                         </>
                       ) : (
                         <>
-                          <span className={`pm-shop-price${affordable ? "" : " is-short"}`}>
-                            🌰 {item.price}
-                          </span>
                           {!affordable && <small className="pm-shop-short">{item.price - seeds} {copy.needMore}</small>}
                           <button
                             type="button"

@@ -1961,14 +1961,16 @@ let petExpressionIndex = 0;
 // ("surprised" and "dizzy" were cut by user decision 2026-08-11 — the round-eye
 // gasp and X-eye KO faces read as scary, not cute. Don't re-add them.)
 const PET_EXPRESSION_POOLS = {
-  Happy: ["love", "star", "wink", "blep", "giggle", "proud", "heart", "shy"],
-  Overheating: ["teary", "grit", "wink", "sweat"],
-  TooCold: ["grit", "teary", "wink", "shy"],
-  DryAir: ["teary", "grit", "wink", "sweat", "shy"],
-  HumidAir: ["grit", "teary", "wink", "sweat"],
-  Sleepy: ["blink", "teary", "curious", "shy"],
-  SoilAcidic: ["teary", "grit", "curious", "angry"],
-  SoilAlkaline: ["grit", "teary", "curious", "sweat"],
+  // Positive reactions intentionally outnumber concern faces (about 3:1),
+  // so a tap feels encouraging even while the sensor mood remains honest.
+  Happy: ["love", "star", "wink", "blep", "giggle", "proud", "heart", "shy", "love", "star"],
+  Overheating: ["wink", "heart", "shy", "love", "star", "teary", "grit"],
+  TooCold: ["wink", "shy", "love", "heart", "star", "grit", "teary"],
+  DryAir: ["wink", "shy", "love", "heart", "star", "teary", "grit"],
+  HumidAir: ["wink", "heart", "love", "star", "shy", "grit", "teary"],
+  Sleepy: ["shy", "love", "heart", "star", "wink", "blink", "teary"],
+  SoilAcidic: ["wink", "heart", "love", "shy", "star", "teary", "grit"],
+  SoilAlkaline: ["wink", "heart", "love", "star", "shy", "grit", "teary"],
 };
 const PET_EXPRESSION_MS = 1200; // ~1.2s of reaction, then the mood face returns
 const PET_EXPRESSION_CLASSES = [...new Set(Object.values(PET_EXPRESSION_POOLS).flat())].map((face) => `tapface-${face}`);

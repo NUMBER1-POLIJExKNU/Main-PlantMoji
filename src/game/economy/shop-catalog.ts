@@ -110,6 +110,9 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
   { key: "decor_compost", category: "decor", price: 40, emoji: "♻️", name: { en: "Compost Corner", id: "Sudut Kompos" }, blurb: { en: "Garden leftovers return to the growing cycle.", id: "Sisa kebun kembali ke dalam siklus pertumbuhan." } },
   { key: "decor_tobacco_barn", category: "decor", price: 50, emoji: "🏚️", name: { en: "Jember Drying Barn", id: "Gudang Pengering Jember" }, blurb: { en: "A miniature landmark from Jember's farming landscape.", id: "Miniatur penanda dari lanskap pertanian Jember." } },
   { key: "decor_puger_pinwheel", category: "decor", price: 35, emoji: "🌬️", name: { en: "Puger Sea Pinwheel", id: "Kincir Angin Puger" }, blurb: { en: "A bright spinner inspired by the Puger coast.", id: "Kincir cerah yang terinspirasi pesisir Puger." } },
+  { key: "decor_jfc_banner", category: "decor", price: 55, emoji: "🎭", name: { en: "JFC Parade Banner", id: "Bendera Parade JFC" }, blurb: { en: "A playful carnival banner inspired by Jember Fashion Carnaval.", id: "Bendera ceria terinspirasi Jember Fashion Carnaval." } },
+  { key: "decor_indonesia_flag", category: "decor", price: 20, emoji: "🇮🇩", name: { en: "Red-and-White Flag", id: "Bendera Merah Putih" }, blurb: { en: "A little red-and-white welcome for the garden.", id: "Sambutan merah-putih kecil untuk kebun." } },
+  { key: "decor_mugunghwa", category: "decor", price: 30, emoji: "🌺", name: { en: "Mugunghwa Patch", id: "Lencana Mugunghwa" }, blurb: { en: "A Korean national-flower patch for the farm fence.", id: "Lencana bunga nasional Korea untuk pagar kebun." } },
   // ── Jamkachu accessories (equippable, at most one) ────────────────────
   {
     key: "acc_strawhat",
@@ -147,6 +150,9 @@ export const SHOP_CATALOG: readonly ShopItem[] = [
   { key: "acc_coffee_crown", category: "accessory", price: 35, emoji: "🌼", name: { en: "Coffee Flower Crown", id: "Mahkota Bunga Kopi" }, blurb: { en: "Little white blossoms for a Jember look.", id: "Bunga putih kecil untuk gaya khas Jember." } },
   { key: "acc_bandana", category: "accessory", price: 25, emoji: "🧣", name: { en: "Farmer Bandana", id: "Bandana Petani" }, blurb: { en: "A practical scarf for a cheerful farm day.", id: "Kain praktis untuk hari ceria di kebun." } },
   { key: "acc_goggles", category: "accessory", price: 40, emoji: "🥽", name: { en: "Explorer Goggles", id: "Kacamata Penjelajah" }, blurb: { en: "Ready to inspect every sensor clue.", id: "Siap memeriksa setiap petunjuk dari sensor." } },
+  { key: "acc_jfc_headdress", category: "accessory", price: 65, emoji: "🪶", name: { en: "JFC Feather Headdress", id: "Hiasan Kepala Bulu JFC" }, blurb: { en: "A bright, lightweight carnival look for Jamkachu.", id: "Gaya karnaval ringan dan cerah untuk Jamkachu." } },
+  { key: "acc_taeguk_ribbon", category: "accessory", price: 35, emoji: "🎗️", name: { en: "Taeguk Ribbon", id: "Pita Taeguk" }, blurb: { en: "A red-and-blue ribbon inspired by Korea's taeguk symbol.", id: "Pita merah-biru terinspirasi simbol taeguk Korea." } },
+  { key: "acc_indonesia_sash", category: "accessory", price: 25, emoji: "🇮🇩", name: { en: "Merah Putih Sash", id: "Selempang Merah Putih" }, blurb: { en: "A simple red-and-white sash for a proud garden visit.", id: "Selempang merah-putih sederhana untuk kunjungan kebun." } },
 ] as const;
 
 export function shopItemByKey(key: string): ShopItem | null {
@@ -208,7 +214,7 @@ export const SHOP_UI_COPY = {
   en: {
     eyebrow: "Spend your Seeds",
     title: "Seed Shop",
-    subtitle: "Cosmetics only — Jamkachu grows from real care, never from shopping.",
+    subtitle: "Jamkachu's cosmetic shop",
     balanceLabel: "Seeds",
     owned: "Owned",
     equipped: "Equipped",
@@ -217,7 +223,6 @@ export const SHOP_UI_COPY = {
     buy: "Buy",
     purchased: "Yay! It's yours!",
     equippedToast: "Looking good!",
-    earnHint: "Earn Seeds: quest +3 · badge +5 · story +10 · quiz +1 · streak day +1",
     filters: { all: "All", affordable: "Can buy", owned: "Owned" },
     preview: "Preview",
     previewing: "Previewing",
@@ -240,7 +245,7 @@ export const SHOP_UI_COPY = {
   id: {
     eyebrow: "Belanjakan Benihmu",
     title: "Toko Benih",
-    subtitle: "Hanya kosmetik — Jamkachu tumbuh dari perawatan nyata, bukan dari belanja.",
+    subtitle: "Toko kosmetik Jamkachu",
     balanceLabel: "Benih",
     owned: "Dimiliki",
     equipped: "Dipakai",
@@ -249,7 +254,6 @@ export const SHOP_UI_COPY = {
     buy: "Beli",
     purchased: "Hore! Jadi milikmu!",
     equippedToast: "Keren!",
-    earnHint: "Dapatkan Benih: misi +3 · lencana +5 · cerita +10 · quiz +1 · hari rawatan +1",
     filters: { all: "Semua", affordable: "Bisa dibeli", owned: "Dimiliki" },
     preview: "Pratinjau",
     previewing: "Sedang dicoba",

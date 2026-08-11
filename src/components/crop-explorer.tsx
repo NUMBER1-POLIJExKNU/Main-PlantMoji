@@ -35,6 +35,15 @@ function localAdvice(analysis: EnvironmentAnalysis, locale: AppLocale) {
   return locale === "id" ? `${label} adalah perbedaan utama. Coba ${move}, lalu ukur lagi.` : `${label} is the main difference. Try ${move}, then measure again.`;
 }
 
+/** Keep Gemini's grounded explanation readable in the compact result card.
+ *  The model may return one long paragraph; sentence breaks become visual
+ *  lines while existing intentional paragraphs remain untouched. */
+function formatExplanation(text: string) {
+  const normalized = text.replace(/\r\n?/g, "\n").trim();
+  if (!normalized || normalized.includes("\n")) return normalized;
+  return normalized.replace(/([.!?。！？])\s+/g, "$1\n");
+}
+
 export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {
   const c = COPY[locale];
   const searchParams = useSearchParams();
@@ -66,8 +75,8 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
     try {
       const response = await fetch("/api/environment-explanation", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ cropKey: selected.cropKey, locale, demo: data?.source === "demo", demoPreset: initialDemoPreset }) });
       const result = await response.json() as { explanation?: string };
-      setExplanation(result.explanation ?? c.noData);
-    } catch { setExplanation(localAdvice(selected, locale)); }
+      setExplanation(formatExplanation(result.explanation ?? c.noData));
+    } catch { setExplanation(formatExplanation(localAdvice(selected, locale))); }
     finally { setExplaining(false); }
   };
 

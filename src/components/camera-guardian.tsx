@@ -27,6 +27,7 @@ import {
   type MotionEvent,
 } from "@/lib/motion-detect";
 import type { AppLocale } from "@/lib/i18n";
+import type { SensorSnapshot } from "@/lib/crop-profiles";
 
 export interface GuardianFeedItem {
   kind: "touch" | "pest_advice";
@@ -70,6 +71,12 @@ export default function CameraGuardian({
   guardianReady: boolean;
   scanConfigured: boolean;
   initialEvents: GuardianFeedItem[];
+  // Accepted for prop-type compatibility with src/app/camera/page.tsx (owned
+  // by a different workstream), which already fetches and passes this.
+  // Intentionally unused here: a third status readout (sensor HUD) would
+  // reintroduce the redundant-overlay problem this file's fix (single
+  // pm-cam-result status + compact chip dot) is removing.
+  initialSnapshot?: SensorSnapshot | null;
 }) {
   const copy = CAMERA_COPY[locale];
   const searchParams = useSearchParams();
@@ -418,7 +425,10 @@ export default function CameraGuardian({
             <span className="pm-cam-speech-name">JAMKACHU</span>
             <span>{cameraBubble}</span>
           </div>
-          <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite">{statusLabel[status]}</div>
+          {/* Single verbal status lives in pm-cam-result below; this chip is
+              now a compact color-coded state dot (no repeated text) — the
+              full label survives for assistive tech via aria-label. */}
+          <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite" aria-label={statusLabel[status]} />
           <div className={`pm-cam-result is-${localClassification === "Foreign Environment" ? "foreign" : "safe"}`}><small>{locale === "id" ? "PENJAGA KEBUN" : "GARDEN GUARDIAN"}</small><strong>{localModelState === "loading" ? (locale === "id" ? "Jamkachu sedang melihat…" : "Jamkachu is looking…") : localModelState === "failed" ? (locale === "id" ? "Pengamatan gerak aktif" : "Motion watch is active") : localClassification ?? (locale === "id" ? "Lingkungan aman" : "Safe Environment")}</strong></div>
           <div
             key={tickle}

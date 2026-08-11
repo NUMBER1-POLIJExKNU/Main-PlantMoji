@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import type { AppLocale } from "@/lib/i18n";
 import FarmerChatDialog from "@/components/farmer-chat-dialog";
 
@@ -37,13 +37,19 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
     drag.current = { id: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top, startX: event.clientX, startY: event.clientY, moved: false };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
-  const pointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+  const updateDragPosition = useCallback((clientX: number, clientY: number, pointerId: number) => {
     const current = drag.current;
-    if (!current || current.id !== event.pointerId) return;
-    if (!current.moved && Math.hypot(event.clientX - current.startX, event.clientY - current.startY) < 6) return;
+    if (!current || current.id !== pointerId) return;
+    // The pointer handler's original threshold was
+    // Math.hypot(event.clientX - current.startX, event.clientY - current.startY);
+    // keep the same 6px slop while sharing it with the window fallback.
+    if (!current.moved && Math.hypot(clientX - current.startX, clientY - current.startY) < 6) return;
     if (!current.moved) { setAwake(true); setDragging(true); }
     current.moved = true;
-    setPosition({ x: Math.max(6, Math.min(window.innerWidth - 58, event.clientX - current.dx)), y: Math.max(70, Math.min(window.innerHeight - 70, event.clientY - current.dy)) });
+    setPosition({ x: Math.max(6, Math.min(window.innerWidth - 58, clientX - current.dx)), y: Math.max(70, Math.min(window.innerHeight - 70, clientY - current.dy)) });
+  }, []);
+  const pointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    updateDragPosition(event.clientX, event.clientY, event.pointerId);
   };
   const pointerUp = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (drag.current?.id !== event.pointerId) return;
@@ -88,6 +94,19 @@ export default function FarmerNpc({ isNight, locale }: { isNight: boolean; local
     scheduleSleep();
     window.setTimeout(() => buttonRef.current?.focus(), 0);
   };
+
+  // Pointer capture normally keeps move events on the button, but a few
+  // mobile WebViews drop capture when the dragged element changes position.
+  // A window listener is a defensive fallback so the NPC follows the finger
+  // even after it leaves the original button bounds.
+  useEffect(() => {
+    const onWindowMove = (event: PointerEvent) => {
+      if (!drag.current || drag.current.id !== event.pointerId) return;
+      updateDragPosition(event.clientX, event.clientY, event.pointerId);
+    };
+    window.addEventListener("pointermove", onWindowMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onWindowMove);
+  }, [updateDragPosition]);
 
   return <>
     <div className={`pm-react-farmer${isNight ? " is-night" : ""}${awake ? " is-awake" : " is-sleeping"}${chatOpen ? " is-chatting" : ""}${dragging ? " is-dragging" : ""}`}>

@@ -39,6 +39,12 @@ function changeAppLocale(nextLocale: AppLocale) {
 export default function RenoAppShell({ children, locale, initialTheme, initialSkin }: { children: React.ReactNode; locale: AppLocale; initialTheme: AppTheme; initialSkin: FarmSkin }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  // LiveActivityBar polls /api/sensor-history every 5s. That ops-telemetry
+  // strip belongs on the home dashboard and the Monitoring tool, not on
+  // every route (quests, camera, diary, etc.) — restricting where it
+  // mounts also stops the 5s interval entirely on the other routes, since
+  // its effect cleanup runs on unmount.
+  const showLiveActivityBar = isHome || pathname.startsWith("/monitoring");
   const [moreOpen, setMoreOpen] = useState(false);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreSheetRef = useRef<HTMLElement>(null);
@@ -148,7 +154,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
         </aside>
 
         <div className={`reno-route-content ${isHome ? "reno-route-home" : "reno-route-page"}`}>
-          <LiveActivityBar locale={locale} />
+          {showLiveActivityBar && <LiveActivityBar locale={locale} />}
           {children}
         </div>
       </div>

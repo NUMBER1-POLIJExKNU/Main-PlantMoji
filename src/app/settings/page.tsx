@@ -6,7 +6,6 @@ import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
 import CheatModeToggle from "@/components/cheat-mode-toggle";
-import ReplayGuideButton from "@/components/replay-guide-button";
 import HowToPlayMap from "@/components/how-to-play-map";
 import { BADGE_KEYS } from "@/types/game";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
@@ -221,9 +220,7 @@ export default async function SettingsPage({
             ))}
           </select>
           <span className={fieldHelpClass}>
-            {locale === "id"
-              ? "Dicatat manual di versi MVP ini — sensor belum bisa mengukur pertumbuhan asli. Terpisah dari Bond Level, yang tidak pernah turun."
-              : "Tracked manually in the MVP — sensors can't measure real growth. Separate from Bond Level, which never decreases."}
+            {locale === "id" ? "Kamu yang mencatat tahap ini." : "You record this stage yourself."}
           </span>
         </label>
 
@@ -234,21 +231,18 @@ export default async function SettingsPage({
 
       <Link href="/diary" className="pm-panel mt-5 flex items-center gap-3">
         <span className="text-3xl leading-none" role="img" aria-hidden="true">
-          🌱
+          📖
         </span>
         <div>
           <p className="text-sm font-bold text-[#243421]">
             {locale === "id" ? "Diari Tumbuh" : "Growth Diary"}
           </p>
           <p className="text-xs text-[#57684F]">
-            {locale === "id"
-              ? "Catatan pertumbuhan pindah ke halaman sendiri"
-              : "Growth records now live on their own page"}
+            {locale === "id" ? "Tulis apa yang berubah hari ini" : "Write down what changed today"}
           </p>
         </div>
       </Link>
       <HowToPlayMap locale={locale} />
-      <ReplayGuideButton locale={locale} />
 
       {!showDemo && (
         <Link

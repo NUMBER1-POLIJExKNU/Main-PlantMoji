@@ -193,21 +193,18 @@ export default async function ReportsPage() {
           emoji="🔥"
           label={locale === "id" ? "Kejadian kepanasan" : "Overheating events"}
           value={String(report.overheatingEvents)}
-          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
           accent="#F08A6B"
         />
         <StatTile
           emoji="🥶"
           label={locale === "id" ? "Kejadian kedinginan" : "Too-cold events"}
           value={String(report.tooColdEvents)}
-          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
           accent="#7FB8D6"
         />
         <StatTile
           emoji="🌫️"
           label={locale === "id" ? "Kejadian udara lembap" : "Humid-air events"}
           value={String(report.humidAirEvents)}
-          sub={locale === "id" ? "entri kondisi, bukan sampel data" : "state entries, not samples"}
           accent="#6FA89C"
         />
         <StatTile
@@ -233,12 +230,6 @@ export default async function ReportsPage() {
         <span>{locale === "id" ? "Pemantauan langsung" : "Live monitoring"}</span>
         <span aria-hidden="true">→</span>
       </Link>
-
-      <p className="mt-6 text-center text-xs leading-5" style={{ color: INK_MUTED }}>
-        {locale === "id"
-          ? "Dihitung langsung dari riwayat minggu ini — waktu sehat tidak menghitung saat sensor offline."
-          : "Computed live from this week's history — healthy time excludes sensor-offline periods."}
-      </p>
     </main>
   );
 }

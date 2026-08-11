@@ -68,12 +68,19 @@ describe("per-mood tap-reaction face pools", () => {
     expect(html).toContain(".mascot-svg.is-tapface .mascot-face { display: none; }");
   });
 
-  it("keeps problem-mood pools honest — no celebration faces over a struggling plant", () => {
+  it("problem-mood taps stay encouraging but never pure-party, and keep concern faces", () => {
+    // Redesigned contract (2026-08-11): the MOOD face carries the honest
+    // status; tap reactions answer the affection, so warm faces are welcome
+    // on problem moods too (~3:1 positive). Two lines still hold: the
+    // giddiest party faces stay Happy-only, and every problem pool keeps
+    // at least two concern faces so struggle never fully disappears.
     for (const mood of MOOD_KEYS) {
       if (mood === "Happy") continue;
       for (const face of pools[mood]) {
-        expect(["love", "star", "blep", "giggle", "proud"], `${mood} shows party face '${face}'`).not.toContain(face);
+        expect(["blep", "giggle", "proud"], `${mood} shows pure-party face '${face}'`).not.toContain(face);
       }
+      const concern = pools[mood].filter((face: string) => ["teary", "grit", "sweat", "blink"].includes(face));
+      expect(concern.length, `${mood} lost its concern faces`).toBeGreaterThanOrEqual(2);
     }
   });
 });

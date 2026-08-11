@@ -21,7 +21,15 @@ describe("Quest game UI", () => {
     expect(page).toContain("history.slice(0, 3)");
     expect(css).toContain(".pm-quest-hero");
     expect(page).toContain("featured={index === 0}");
+<<<<<<< HEAD
     expect(heroStages).toContain("I'm watching the sensors");
+=======
+    // Verifying state keeps its rail/well/bar signals but the companion
+    // bubble no longer duplicates them with its own verifying line — the
+    // is-watching class is the sole verifying cue left on the bubble.
+    expect(page).toContain('pm-quest-jam${verifying ? " is-watching" : ""}');
+    expect(page).not.toContain("I'm watching the sensors");
+>>>>>>> 0e170c2 (polish(ux): close the audit remainder — instant /plants, single-voice status, one-screen badges)
     expect(css).toContain(".pm-quest-jam");
   });
 });

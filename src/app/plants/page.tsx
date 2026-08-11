@@ -12,7 +12,7 @@ import type { AppLocale } from "@/lib/i18n";
 import { getPlant } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { updateCropProfile } from "./actions";
-import { explainEnvironment } from "@/lib/environment-explanation";
+import EnvironmentExplanationLive from "@/components/environment-explanation-live";
 import CropExplorer from "@/components/crop-explorer";
 import { getJemberCropCatalog } from "@/lib/jember-crop-catalog";
 import { compareEnvironmentToCrops } from "@/lib/environment-analyzer";
@@ -119,7 +119,13 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: profile.timezone }).format(new Date()));
   const isLightingHours = hour >= profile.light.lightingHours.start && hour < profile.light.lightingHours.end;
   const states = evaluateCropEnvironment(snapshot, profile, isLightingHours);
-  const explanation = await explainEnvironment(profile, snapshot, states, locale);
+  // Instant, meaningful first paint (no live-Gemini wait during server
+  // render): the deterministic template mirrors explainEnvironment()'s own
+  // no-AI fallback (src/lib/environment-explanation.ts). The AI-flavored
+  // version streams in client-side after mount via EnvironmentExplanationLive.
+  const deterministicExplanation = locale === "id"
+    ? `Penganalisis aturan menemukan: suhu ${states.temperature.toLowerCase()}, kelembapan udara ${states.airHumidity.toLowerCase()}, pH tanah ${states.soilPh.toLowerCase()}, dan cahaya ${states.light.toLowerCase()}. Ikuti panduan sensor yang ditandai dan minta bantuan orang dewasa untuk perubahan pH.`
+    : `The deterministic analyzer found: temperature ${states.temperature.toLowerCase()}, air humidity ${states.airHumidity.toLowerCase()}, soil pH ${states.soilPh.toLowerCase()}, and light ${states.light.toLowerCase()}. Follow the highlighted sensor guidance and ask an adult for any pH adjustment.`;
   const shown = (value: number | null | undefined, suffix: string) => value == null ? copy.waiting : `${value}${suffix}`;
 
   return (
@@ -154,7 +160,7 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
       </section>
       <section className="pm-panel mt-5" aria-labelledby="environment-explanation-title">
         <h2 id="environment-explanation-title" className="pm-heading text-xs">✨ {locale === "id" ? "Penjelasan lingkungan" : "Environment explanation"}</h2>
-        <p className="mt-3 text-sm leading-6">{explanation}</p>
+        <EnvironmentExplanationLive cropKey={profile.key} locale={locale} demo={demoPreset !== null} demoPreset={demoPreset} fallback={deterministicExplanation} />
         <p className="mt-2 text-[11px] opacity-65">{locale === "id" ? "Status ditentukan oleh penganalisis aturan; AI hanya menjelaskan hasilnya." : "Statuses are decided by the deterministic analyzer; AI only explains its results."}</p>
       </section>
       <p className="mt-5 text-sm opacity-70">{copy.ldrNote}{snapshot?.recordedAt ? ` ${copy.latest}: ${snapshot.recordedAt}` : ""}</p>

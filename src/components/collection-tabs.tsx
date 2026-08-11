@@ -276,11 +276,9 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   }, []);
 
   // Copy lives inline per locale (same mechanism as the rest of this file).
-  // luckyOdds duplicates public/farm/strings.js → PM_STRINGS.luckyOdds
-  // knowingly: React can't read the farm string table at build time.
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", luckyOdds: "1 dari 8 misi menumbuhkan bonus keberuntungan!", gemIntro: "Pilih satu lencana untuk mengaktifkan efek ketuk Jamkachu.", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi." }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", luckyOdds: "1 in 8 quests sprouts a lucky bonus!", gemIntro: "Choose one badge to activate its effect when tapping Jamkachu.", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again." };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi." }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again." };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered).length;
   const unlockedBadges = badges.filter(
@@ -349,7 +347,17 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
            plain :active transform, so it stays on for everyone. */
         .pm-tab-btn { transition: transform 0.08s ease-out; }
         .pm-tab-btn:active { transform: translateY(2px); }
-        .pm-badge-wheel { background: radial-gradient(circle at center, #FFFDF2 0 13%, #F4FAF1 35%, #E7F2E2 72%, #D6E8D0 100%); }
+        /* One-screen badges tab: wheel + detail side by side on wide
+           viewports, wheel diameter clamped to viewport height. Nodes and
+           the hub size in cqw (container width), so the whole radial design
+           scales as one piece instead of crowding when the circle shrinks. */
+        .pm-badge-layout { display: grid; gap: 14px; align-items: center; }
+        .pm-badge-layout > .pm-panel { margin-top: 0; }
+        @media (min-width: 800px) {
+          .pm-badge-layout { grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); }
+          .pm-badge-layout .pm-badge-wheel { max-width: min(30rem, 62vh); }
+        }
+        .pm-badge-wheel { container-type: inline-size; background: radial-gradient(circle at center, #FFFDF2 0 13%, #F4FAF1 35%, #E7F2E2 72%, #D6E8D0 100%); }
         .pm-gem-button { -webkit-tap-highlight-color: transparent; }
         .pm-gem-button:active .pm-gem-socket { transform: translateY(2px) scale(.96); }
         .pm-gem-button:focus-visible { outline: 3px solid #4DA1ED; outline-offset: 4px; border-radius: 18px; }
@@ -357,9 +365,9 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         .pm-gem-unlocked { box-shadow: inset 0 0 0 5px rgba(255,255,255,.38), 0 5px 0 #8C6A21, 0 9px 16px rgba(93,72,24,.18); }
         .pm-gem-unlocked::after { content: ""; position: absolute; width: 24%; height: 13%; top: 18%; left: 23%; background: rgba(255,255,255,.82); transform: rotate(-28deg); }
         .pm-gem-locked { box-shadow: inset 0 0 0 6px rgba(36,52,33,.08), 0 4px 0 #879481; }
-        .pm-wheel-node { position: absolute; width: clamp(48px, 14.5vw, 66px); transform: translate(-50%, -50%); z-index: 3; }
+        .pm-wheel-node { position: absolute; width: clamp(44px, 13.75cqw, 66px); transform: translate(-50%, -50%); z-index: 3; }
         .pm-wheel-node .pm-gem-socket { width: 100%; }
-        .pm-wheel-center { position: absolute; left: 50%; top: 50%; z-index: 4; width: clamp(76px, 21vw, 98px); aspect-ratio: 1; transform: translate(-50%, -50%); }
+        .pm-wheel-center { position: absolute; left: 50%; top: 50%; z-index: 4; width: clamp(64px, 20.4cqw, 98px); aspect-ratio: 1; transform: translate(-50%, -50%); }
         .pm-wheel-label { position: absolute; z-index: 2; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .05em; color: #57684F; }
         .pm-badge-effect-icon { display: flex; align-items: center; justify-content: center; gap: 1px; }
         .pm-badge-effect-icon i { display: block; max-width: 21px; font-style: normal; font-size: 18px; line-height: 1; }
@@ -419,12 +427,16 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
           </div>
           <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
           <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
+          <div className="mx-auto mt-3 max-w-[260px] rounded-xl border-2 border-dashed border-[#9bb88c] bg-[#f7fbe9] px-3 py-2 text-left text-[11px] font-bold text-[#397a2b]">
+            <div className="flex items-center justify-between"><span>✨ {locale === "id" ? "KOMBO SEMANGAT" : "CARE COMBO"}</span><b>{Math.min(3, previewPulse)} / 3</b></div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#dce8d3]"><span className="block h-full rounded-full bg-[#f4c95d] transition-all" style={{ width: `${Math.min(100, previewPulse * 33.333)}%` }} /></div>
+          </div>
+          <button type="button" className="pm-btn pm-btn-secondary mt-3" onClick={() => setPreview(null)}>{locale === "id" ? "KEMBALI KE KOLEKSI" : "BACK TO COLLECTION"}</button>
         </section>
       )}
 
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
-          <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
           <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div><b>{discoveredMoods}/{moods.length}</b></div>
           <ul className="pm-mood-dex-grid" aria-label={locale === "id" ? "Daftar suasana Jamkachu" : "Jamkachu mood list"}>
@@ -448,9 +460,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "badges" && (
         <section id="collection-panel-badges" role="tabpanel" className="mt-5">
-          <ProgressCounter value={unlockedBadges} total={badges.length} label={copy.unlockedBadges} />
           {unlockedBadges === badges.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <p className="mb-4 text-center text-xs leading-5" style={{ color: INK_MUTED }}>{copy.gemIntro}</p>
+          {/* One-screen layout: wheel + detail side by side on desktop, and the
+              wheel diameter is clamped to viewport height so the badges tab
+              never needs a scroll to see both (nodes/labels are %-positioned,
+              so the circle scales without breaking). */}
+          <div className="pm-badge-layout">
           <div className="pm-badge-wheel relative mx-auto aspect-square w-full max-w-[480px] overflow-hidden rounded-full border-[3px]" style={{ borderColor: "var(--color-border)", boxShadow: "inset 0 0 0 7px rgba(255,255,255,.38), 0 6px 0 rgba(36,52,33,.14)" }}>
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" aria-hidden="true">
               {BADGE_RING_RADII.map((radius) => <circle key={radius} cx="50" cy="50" r={radius} fill="none" stroke="rgba(87,104,79,.19)" strokeWidth=".65" strokeDasharray="1.5 1.5" />)}
@@ -504,12 +519,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               )}
             </article>
           )}
-          {/* Honest lucky-odds disclosure (spec D2 / §4.2). English copy is
-              the same text as PM_STRINGS.luckyOdds in public/farm/strings.js —
-              duplicated knowingly, React can't read that file at build time. */}
-          <p className="mt-4 text-center text-[11px] font-medium" style={{ color: INK_MUTED }}>
-            🍀 {copy.luckyOdds}
-          </p>
+          </div>
         </section>
       )}
 
