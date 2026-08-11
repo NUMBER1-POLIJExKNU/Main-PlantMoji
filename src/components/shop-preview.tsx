@@ -95,7 +95,11 @@ export default function ShopPreviewStage({
             <img src={spriteImgSrc} alt="" aria-hidden="true" draggable={false} />
             {item && item.category === "accessory" && (
               <span className="pm-shop-stage-acc-icon" aria-hidden="true">
-                {item.emoji}
+                {/* The drawn accessory, floated by the plant's head. It is not
+                    worn until you equip it — the note under the price says so
+                    — but the emoji stand-in could not even show which one. */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                {shopItemArt(item.key) ? <img src={shopItemArt(item.key) as string} alt="" draggable={false} /> : item.emoji}
               </span>
             )}
           </div>
@@ -123,7 +127,8 @@ export default function ShopPreviewStage({
 
       <div className="pm-shop-stage-copy">
         <div className="pm-shop-stage-balance" aria-live="polite">
-          <span aria-hidden="true">🌰</span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+          <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} />
           <span>
             {seeds} {copy.balanceLabel}
           </span>
@@ -141,7 +146,10 @@ export default function ShopPreviewStage({
               ×
             </button>
             <h2>{item.name}</h2>
-            <strong>🌰 {item.price}</strong>
+            <strong>
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+              <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
+            </strong>
             {item.category === "accessory" && (
               <p className="pm-shop-stage-acc-note">{copy.accessoryPreviewNote}</p>
             )}

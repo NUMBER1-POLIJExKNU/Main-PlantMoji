@@ -160,17 +160,27 @@ export function shopItemByKey(key: string): ShopItem | null {
 }
 
 /**
- * The designer's sprite for an item, or null where the catalog is still on
- * emoji. Decorations have real art (images/icons/shop → public/icons/shop);
- * pots recolor the plant sprite and accessories overlay it, so neither has a
- * standalone drawing to show.
+ * The designer's sprite for an item (images/icons/shop → public/icons/shop),
+ * or null for a key the catalog does not sell.
+ *
+ * Every item has one now. A pot still recolors the plant sprite and an
+ * accessory still overlays it on the farm — those remain the honest preview of
+ * what you get — but the shop card has to show the object itself, because the
+ * card is where you choose and a recolored pot cannot be shown in a 52px box
+ * next to twelve others.
  *
  * The farm shell needs the same pictures and cannot import this module, so
- * public/farm/index.html hard-codes the paths — tests/shop-farm-decor.test.ts
- * keeps the two in step.
+ * public/farm/index.html hard-codes the decor paths —
+ * tests/shop-farm-decor.test.ts keeps the two in step.
  */
 export function shopItemArt(key: string): string | null {
-  return key.startsWith("decor_") ? `/icons/shop/${key}.png` : null;
+  return shopItemByKey(key) ? `/icons/shop/${key}.png` : null;
+}
+
+/** Tab icon for a category, drawn by the designer (a potted plant, a
+ *  scarecrow, a ribbon) instead of the emoji the tabs used to carry. */
+export function shopCategoryArt(category: ShopCategory): string {
+  return `/icons/shop/category-${category}.png`;
 }
 
 // ── Error copy (honest, never optimistic — spec "Error handling") ───────

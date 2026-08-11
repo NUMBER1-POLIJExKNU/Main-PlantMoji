@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SHOP_CATALOG, shopItemArt } from "@/game/economy/shop-catalog";
+import { SHOP_CATALOG, shopCategoryArt, shopItemArt } from "@/game/economy/shop-catalog";
 
 // A decoration has to exist in four places at once: the catalog sells it,
 // live.js turns ownership into a class, index.html has a picture for that
@@ -29,12 +29,37 @@ describe("farm decorations", () => {
     }
   });
 
-  it("gives pots and accessories no standalone art", () => {
-    // They recolor or overlay the plant sprite, so a lone drawing would be a
-    // second source of truth for what the player is wearing.
-    for (const item of SHOP_CATALOG.filter((entry) => entry.category !== "decor")) {
-      expect(shopItemArt(item.key), item.key).toBeNull();
+  it("gives every catalog item art, and nothing else", () => {
+    // Pots and accessories have drawings now too. On the farm a pot still
+    // recolors the plant sprite and an accessory still overlays it — that is
+    // the honest preview of what you get — but the shop card has to show the
+    // object, because a recolored pot cannot be read in a 52px box.
+    for (const item of SHOP_CATALOG) {
+      const art = shopItemArt(item.key);
+      expect(art, item.key).toBe(`/icons/shop/${item.key}.png`);
+      expect(existsSync(resolve(process.cwd(), `public${art}`)), `public${art}`).toBe(true);
     }
+    expect(shopItemArt("pot_does_not_exist")).toBeNull();
+  });
+
+  it("draws every category tab with the designer's icon", () => {
+    for (const category of ["pot", "decor", "accessory"] as const) {
+      const art = shopCategoryArt(category);
+      expect(art).toBe(`/icons/shop/category-${category}.png`);
+      expect(existsSync(resolve(process.cwd(), `public${art}`)), `public${art}`).toBe(true);
+    }
+  });
+
+  it("prices everything in the same drawn seed, on both shells", () => {
+    // An emoji chestnut in one place and a drawn seed in another read as two
+    // different currencies.
+    expect(existsSync(resolve(process.cwd(), "public/icons/seed.png"))).toBe(true);
+    const grid = readFileSync(resolve(process.cwd(), "src/components/shop-grid.tsx"), "utf8");
+    const stage = readFileSync(resolve(process.cwd(), "src/components/shop-preview.tsx"), "utf8");
+    for (const [name, source] of [["shop grid", grid], ["try-on stage", stage]] as const) {
+      expect(source, `${name} should price in the drawn seed`).toContain('src="/icons/seed.png"');
+    }
+    expect(html).toContain('class="icon seed-icon" src="/icons/seed.png"');
   });
 
   it("lists every catalog decoration in the farm shell's key list", () => {

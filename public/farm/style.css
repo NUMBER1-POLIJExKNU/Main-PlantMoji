@@ -426,6 +426,12 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
+/* The drawn seed, sized to sit on the badge's type line rather than tower
+   over it — the sibling badges carry emoji at the same optical size. */
+.badge .seed-icon { width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; }
+/* Same picture, same currency, in the cheat panel's care heading. */
+.pm-cheat-heading-icon { width: 14px; height: 14px; object-fit: contain; image-rendering: pixelated; vertical-align: -2px; }
+
 /* Streak flame is pressable (Task 15): tap → honest "N days in a row"
    line + blip. Pure celebration of real history — grants nothing. */
 .badge.streak { cursor: pointer; user-select: none; }

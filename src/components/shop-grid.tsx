@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { equipShopItem, purchaseShopItem, type ShopActionResult } from "@/app/shop/actions";
 import { useCheat } from "@/lib/pm-cheat";
-import { SHOP_UI_COPY, shopItemArt, type ShopCategory } from "@/game/economy/shop-catalog";
+import { SHOP_UI_COPY, shopCategoryArt, shopItemArt, type ShopCategory } from "@/game/economy/shop-catalog";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import ShopPreviewStage from "@/components/shop-preview";
 import type { AppLocale } from "@/lib/i18n";
@@ -210,7 +210,17 @@ export default function ShopGrid({
         onEquip={equip}
       />
 
-        <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>{CATEGORY_ORDER.map((entry) => <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>{entry === "pot" ? "🪴" : entry === "decor" ? "🏡" : "🎀"}<span>{copy.categories[entry]}</span></button>)}</nav>
+        <nav className="pm-shop-category-tabs" aria-label={locale === "id" ? "Kategori toko" : "Shop categories"}>
+          {CATEGORY_ORDER.map((entry) => (
+            <button key={entry} type="button" className={category === entry ? "is-active" : ""} aria-pressed={category === entry} onClick={() => { setCategory(entry); setPreviewKey(null); window.PMSfx?.play("tick"); }}>
+              {/* The designer's tab art, so the three destinations look like
+                  what they sell instead of three unrelated emoji. */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+              <img src={shopCategoryArt(entry)} alt="" className="pm-shop-tab-art" width={96} height={96} draggable={false} />
+              <span>{copy.categories[entry]}</span>
+            </button>
+          ))}
+        </nav>
       <div className="pm-shop-filter" role="group" aria-label={locale === "id" ? "Saring barang" : "Filter items"}>{FILTER_ORDER.map((entry) => <button key={entry} type="button" className={filter === entry ? "is-active" : ""} aria-pressed={filter === entry} onClick={() => { setFilter(entry); window.PMSfx?.play("tick"); }}>{copy.filters[entry]}</button>)}</div>
 
       <div className="pm-shop-sections">
@@ -246,7 +256,10 @@ export default function ShopGrid({
                       <p>{item.blurb}</p>
                       {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
                       <div className="pm-shop-card-foot">
-                        <span className="pm-shop-price"><span aria-hidden="true">🌰</span> {item.price}</span>
+                        <span className="pm-shop-price">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                          <img src="/icons/seed.png" alt="" className="pm-seed-icon" width={64} height={64} draggable={false} /> {item.price}
+                        </span>
                         {owned
                           ? <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
                           : !affordable && <span className="pm-shop-state is-short">{item.price - seeds} {copy.needMore}</span>}

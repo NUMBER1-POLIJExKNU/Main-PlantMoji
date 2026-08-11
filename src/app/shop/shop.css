@@ -6,6 +6,12 @@
 
 .pm-shop-category-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:18px; }
 .pm-shop-category-tabs button { display:flex; align-items:center; justify-content:center; gap:8px; min-height:48px; border:3px solid var(--color-border); border-radius:12px; color:var(--color-text); background:var(--color-surface); cursor:pointer; font-weight:800; }
+/* Designer tab art (a potted plant, a scarecrow, a ribbon) replaced the emoji
+   the tabs carried, so the three destinations look like the things they sell. */
+.pm-shop-tab-art { width:26px; height:26px; object-fit:contain; image-rendering:pixelated; }
+/* The seed currency, wherever a price or a balance is shown. Sized in em so it
+   tracks the type it sits beside instead of needing its own breakpoints. */
+.pm-seed-icon { width:1.25em; height:1.25em; object-fit:contain; image-rendering:pixelated; vertical-align:-0.25em; }
 .pm-shop-category-tabs button:active,.pm-shop-filter button:active,.pm-shop-preview-btn:active { transform:translateY(2px); box-shadow:none; }
 .pm-shop-category-tabs button.is-active { border-color:var(--color-forest); background:color-mix(in srgb,var(--color-grass-light) 18%,var(--color-surface)); box-shadow:0 4px 0 var(--color-forest); transform:translateY(-2px); }
 .pm-shop-filter { display:flex; gap:7px; margin-top:14px; overflow-x:auto; padding-bottom:3px; }
@@ -51,6 +57,7 @@
 .pm-shop-stage-jamkachu { position:relative; flex:none; width:72px; height:72px; }
 .pm-shop-stage-jamkachu img { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.22)); }
 .pm-shop-stage-acc-icon { position:absolute; top:-4px; right:-8px; font-size:24px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.3)); }
+.pm-shop-stage-acc-icon img { display:block; width:30px; height:30px; object-fit:contain; image-rendering:pixelated; }
 .pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:6px; font-size:28px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }
 /* The real sprite, at the size it will stand on the farm grass. */
 .pm-shop-stage-decor-prop img { display:block; width:54px; height:54px; object-fit:contain; image-rendering:pixelated; }

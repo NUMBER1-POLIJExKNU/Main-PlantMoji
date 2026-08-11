@@ -6517,7 +6517,11 @@ function buildCheatPanel() {
     // Care actions come before the raw numbers, because "put it in the sun" is
     // the lesson and 34 is just a number. cheat.js owns the list so this panel
     // and the Monitoring one can never drift apart.
-    `<div class="pm-cheat-group"><h3>🌿 ${L.actionsTitle}</h3>` +
+    // The designer's watering can heads the physical-care list — misting,
+    // rinsing, shading, venting. Deliberately NOT used anywhere that means
+    // "the plant is thirsty": this game's whole point is that dry AIR is not
+    // dry soil, and a watering can next to that lesson would undo it.
+    `<div class="pm-cheat-group"><h3><img class="pm-cheat-heading-icon" src="/icons/watering-can.png" alt="" width="14" height="14"> ${L.actionsTitle}</h3>` +
     `<div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div>` +
     `<div class="pm-cheat-actions">${cheatActionButtons("delta")}</div>` +
     `<p class="pm-cheat-hint">${L.slowNote}</p>` +
