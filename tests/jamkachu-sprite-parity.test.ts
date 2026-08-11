@@ -370,14 +370,28 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     expect(GOLDPOT_RAMP.rim).toBe("#F2D268");
   });
 
-  it("activeRamp() checks bondLevel >= 10 before the equipped pot/skin, and the shop preview mirrors that priority", () => {
+  it("lets the equipped pot beat the Lv.10 keepsake, on the farm and on the shop stage", () => {
+    // The keepsake used to win outright, which killed the whole Pots category
+    // past Lv.10: you spent seeds, equipped a pot, and nothing changed. It is
+    // now what you wear when you have chosen nothing — take the pot off and
+    // the gold comes back.
     const source = readFileSync(farmSpritePath, "utf8");
     expect(source).toMatch(
-      /function activeRamp\(\) \{\s*if \(Number\(state\.bondLevel\) >= 10\) return \{ key: "decor:goldpot", ramp: GOLDPOT_RAMP \};/,
+      /function activeRamp\(\) \{\s*if \(state\.potItemKey && POT_ITEM_RAMPS\[state\.potItemKey\]\)/,
     );
+    // …and the keepsake still applies, just later, and still ahead of a skin.
+    const body = source.slice(source.indexOf("function activeRamp()"));
+    const potAt = body.indexOf("state.potItemKey");
+    const goldAt = body.indexOf("GOLD_POT_LEVEL");
+    const skinAt = body.indexOf("SKIN_RAMPS");
+    expect(potAt).toBeGreaterThanOrEqual(0);
+    expect(goldAt).toBeGreaterThan(potAt);
+    expect(skinAt).toBeGreaterThan(goldAt);
+
+    // The stage mirrors it, or a Lv.10+ player previewing a pot sees gold.
     const preview = readFileSync(path.resolve(repoRoot, "src/components/shop-preview.tsx"), "utf8");
-    expect(preview).toContain("const goldPot = mascot.bondLevel >= 10;");
-    expect(preview).toContain("GOLDPOT_RAMP");
+    expect(preview).toContain("const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;");
+    expect(preview).toContain("const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);");
   });
 
   it("behaves identically wherever the farm exposes the mapping functions", () => {

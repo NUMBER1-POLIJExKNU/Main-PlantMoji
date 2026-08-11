@@ -61,9 +61,12 @@ export const POT_ITEM_RAMPS: Record<string, PotRamp> = {
 
 /** Bond Lv.10 keepsake: the pot itself turns permanently gold on the farm
  *  (docs/superpowers/specs/2026-08-07-dopamine-ux-reframe-design.md: "Lv.10
- *  special pot"), and public/farm/jamkachu-sprite.js's activeRamp() checks
- *  this BEFORE the equipped shop pot or skin — Lv.10 always wins. Mirrors
- *  the farm's GOLDPOT_RAMP literal value-for-value (pinned in
+ *  special pot"). public/farm/jamkachu-sprite.js's activeRamp() checks it
+ *  AFTER the equipped shop pot and before the skin: the keepsake is what you
+ *  wear when you have chosen nothing. It used to win outright, which meant
+ *  the entire Pots category stopped doing anything past Lv.10.
+ *
+ *  Mirrors the farm's GOLDPOT_RAMP literal value-for-value (pinned in
  *  tests/jamkachu-sprite-parity.test.ts). The farm literal also carries
  *  shade/rimLight/rimHighlight/glint fields its own buildSwapMap never
  *  reads (only body/rim/dark are consumed there) — we omit `dark` here too
@@ -72,6 +75,10 @@ export const GOLDPOT_RAMP: PotRamp = {
   body: "#D9A63C",
   rim: "#F2D268",
 };
+
+/** Bond level at which the pot turns gold on its own. Mirrors the farm's
+ *  GOLD_POT_LEVEL. */
+export const GOLD_POT_LEVEL = 10;
 
 type Rgb = [number, number, number];
 

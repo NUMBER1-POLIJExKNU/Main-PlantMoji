@@ -309,13 +309,24 @@
    *  band laid over the pot — the reward is now the real drawn pot. */
   var GOLDPOT_RAMP = { body: "#D9A63C", shade: "#B0801F", rim: "#F2D268", rimLight: "#FBEBB4", rimHighlight: "#FFF6D8", glint: "#FFE79A" };
 
-  /** Active pot recolor: Lv.10 gold wins, then the equipped shop pot, then
-   *  the cosmetic skin; the designer's own pot shows when none applies. */
+  /** Bond level at which the pot turns gold on its own. Mirrored in
+   *  src/lib/sprite-palette.ts. */
+  var GOLD_POT_LEVEL = 10;
+
+  /** Active pot recolor, most deliberate choice first: the equipped shop pot,
+   *  then the Lv.10 gold keepsake, then the cosmetic skin; the designer's own
+   *  pot shows when none applies.
+   *
+   *  The equipped pot used to LOSE to the keepsake, which quietly killed the
+   *  whole Pots category the moment a player passed Lv.10 — you spent seeds,
+   *  equipped a pot, and nothing changed. The keepsake is now what you wear
+   *  when you have chosen nothing: still earned, still automatic, but it no
+   *  longer overrides a purchase. Take the pot off and the gold comes back. */
   function activeRamp() {
-    if (Number(state.bondLevel) >= 10) return { key: "decor:goldpot", ramp: GOLDPOT_RAMP };
     if (state.potItemKey && POT_ITEM_RAMPS[state.potItemKey]) {
       return { key: "pot:" + state.potItemKey, ramp: POT_ITEM_RAMPS[state.potItemKey] };
     }
+    if (Number(state.bondLevel) >= GOLD_POT_LEVEL) return { key: "decor:goldpot", ramp: GOLDPOT_RAMP };
     if (state.skinKey && SKIN_RAMPS[state.skinKey]) {
       return { key: "skin:" + state.skinKey, ramp: SKIN_RAMPS[state.skinKey] };
     }

@@ -18,7 +18,7 @@ import type { ShopGridItem, ShopPurchaseRow } from "@/components/shop-grid";
 import { npcIdleGifSrc, npcSpriteSrcSet } from "@/components/npc-badge";
 import { SHOP_UI_COPY, shopItemArt } from "@/game/economy/shop-catalog";
 import { spriteSrc } from "@/lib/jamkachu-sprite";
-import { GOLDPOT_RAMP, potRampFor, swapPotPalette } from "@/lib/sprite-palette";
+import { GOLDPOT_RAMP, GOLD_POT_LEVEL, potRampFor, swapPotPalette } from "@/lib/sprite-palette";
 import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { PlantMood } from "@/types/events";
 import type { CompanionStage } from "@/types/game";
@@ -56,12 +56,14 @@ export default function ShopPreviewStage({
 }) {
   const copy = SHOP_UI_COPY[locale];
   const baseSrc = spriteSrc({ stage: mascot.stage, mood: mascot.mood, bondLevel: mascot.bondLevel });
-  // Bond Lv.10 keepsake: the real farm's activeRamp() shows the gold pot
-  // unconditionally once bondLevel >= 10 — it wins over the equipped pot
-  // AND over whatever's being previewed here, so the try-on stage stays
-  // honest (never implies a previewed pot color would show when it can't).
-  const goldPot = mascot.bondLevel >= 10;
-  const potRamp = goldPot ? GOLDPOT_RAMP : item && item.category === "pot" ? potRampFor(item.key) : null;
+  // Same priority the real farm's activeRamp() uses, so the try-on stays
+  // honest: the pot you picked wins, and the Lv.10 gold keepsake is what
+  // shows when you have picked nothing. It used to be the other way round,
+  // which meant a Lv.10+ player previewing a pot saw gold — the stage was
+  // truthfully reporting that the purchase would do nothing.
+  const previewPotRamp = item && item.category === "pot" ? potRampFor(item.key) : null;
+  const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;
+  const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);
   // Keyed by (baseSrc, ramp) so a stale in-flight swap from a previous
   // selection can never paint over a newer one, and — without ever calling
   // setState synchronously inside the effect — a key mismatch alone makes

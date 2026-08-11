@@ -122,13 +122,15 @@ describe("pot items recolor the preview sprite; canvas failure never blanks it",
   });
 });
 
-describe("bond Lv.10 keepsake: the preview always shows the gold pot, matching the real farm", () => {
-  it("computes the gold ramp whenever bondLevel >= 10, ahead of whatever pot is being previewed", () => {
-    expect(preview).toContain("const goldPot = mascot.bondLevel >= 10;");
-    expect(preview).toContain(
-      'const potRamp = goldPot ? GOLDPOT_RAMP : item && item.category === "pot" ? potRampFor(item.key) : null;',
-    );
-    expect(preview).toContain('import { GOLDPOT_RAMP, potRampFor, swapPotPalette } from "@/lib/sprite-palette"');
+describe("bond Lv.10 keepsake: the baseline look, not an override", () => {
+  it("previews the pot you picked, and falls back to gold only when nothing is picked", () => {
+    // The keepsake used to win outright, so a Lv.10+ player tapping any pot
+    // saw gold — the stage was honestly reporting that buying it would change
+    // nothing, because on the farm it changed nothing.
+    expect(preview).toContain('const previewPotRamp = item && item.category === "pot" ? potRampFor(item.key) : null;');
+    expect(preview).toContain("const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;");
+    expect(preview).toContain("const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);");
+    expect(preview).toContain('import { GOLDPOT_RAMP, GOLD_POT_LEVEL, potRampFor, swapPotPalette } from "@/lib/sprite-palette"');
   });
 
   it("applies even with nothing selected, so a Lv.10 player's baseline preview isn't misleadingly plain", () => {
