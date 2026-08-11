@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_PRESENTATION_MAX_XP, nextCompanionStage, xpBeforeNextLevel } from "@/game/demo/presenter";
 import { getEnvironmentDemoPreset } from "@/lib/environment-demo";
+import { XP_PER_LEVEL } from "@/types/game";
 
 describe("presenter demo scenarios", () => {
   it("prepares the final XP before the next level without decreasing progress", () => {
-    expect(xpBeforeNextLevel(0)).toBe(29);
-    expect(xpBeforeNextLevel(29)).toBe(29);
-    expect(xpBeforeNextLevel(30)).toBe(59);
+    // "One short of the next level" is the top of the current band, whatever
+    // a level currently costs.
+    expect(xpBeforeNextLevel(0)).toBe(XP_PER_LEVEL - 1);
+    expect(xpBeforeNextLevel(XP_PER_LEVEL - 1)).toBe(XP_PER_LEVEL - 1);
+    expect(xpBeforeNextLevel(XP_PER_LEVEL)).toBe(XP_PER_LEVEL * 2 - 1);
     expect(xpBeforeNextLevel(DEMO_PRESENTATION_MAX_XP)).toBe(DEMO_PRESENTATION_MAX_XP);
   });
 

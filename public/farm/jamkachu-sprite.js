@@ -85,13 +85,42 @@
     SoilAlkaline: "mood-06-soil-alkaline",
   };
 
-  /** Bond→tier thresholds (automatic bond rewards, riding the skins pacing
-   *  1/2/4/6/8/10/12): bond_level ≥8 → prize ribbon · ≥4 → head bow. */
-  var TIER_THRESHOLDS = { bow: 4, ribbon: 8 };
+  /** Bond→tier thresholds — the `from` levels of the two bands that add an
+   *  ornament (bands 4 and 6). LEVEL_BANDS below is the real table. */
+  var TIER_THRESHOLDS = { bow: 9, ribbon: 24 };
 
   /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
   var PHASE_TIER_CAP = { 1: "", 2: "", 3: "bow", 4: "ribbon" };
   var TIER_RANK = { "": 0, bow: 1, ribbon: 2 };
+
+  // Level bands — mirror of src/game/progression/level-bands.ts. My Garden is
+  // a static page that never runs React, so it cannot import that module and
+  // carries its own copy; tests/level-bands.test.ts pins the two together.
+  //
+  // Bond level alone decides how grown Jamkachu looks. The companion ladder
+  // still runs and still shows its own STAGE n/10 line — it just no longer
+  // drives the body, so there is one visible ladder instead of two that can
+  // disagree in front of a class.
+  var MAX_BOND_LEVEL = 30;
+  var LEVEL_BANDS = [
+    { band: 1, from: 1, phase: 1, tier: "" },
+    { band: 2, from: 3, phase: 2, tier: "" },
+    { band: 3, from: 6, phase: 3, tier: "" },
+    { band: 4, from: 9, phase: 3, tier: "bow" },
+    { band: 5, from: 13, phase: 4, tier: "" },
+    { band: 6, from: 18, phase: 4, tier: "bow" },
+    { band: 7, from: 24, phase: 4, tier: "ribbon" },
+  ];
+
+  function bandForLevel(level) {
+    var safe = typeof level === "number" && isFinite(level) ? Math.floor(level) : 1;
+    var clamped = Math.min(MAX_BOND_LEVEL, Math.max(1, safe));
+    var found = LEVEL_BANDS[0];
+    for (var i = 0; i < LEVEL_BANDS.length; i++) {
+      if (clamped >= LEVEL_BANDS[i].from) found = LEVEL_BANDS[i];
+    }
+    return found;
+  }
 
   // ── Designer pot ramp ───────────────────────────────────────────────────
   // Sampled from the committed PNGs (2026-08-11): the pot art is IDENTICAL
@@ -296,12 +325,16 @@
   function preload(phase, bondLevel) {
     try {
       var wanted = [];
-      var tier = accessoryTier(bondLevel, phase);
-      for (var i = 0; i < SPRITE_MOODS.length; i++) wanted.push(spriteFile(phase, SPRITE_MOODS[i], tier));
-      if (phase < 4) {
-        var nextPhase = phase + 1;
-        wanted.push(spriteFile(nextPhase, "happy", accessoryTier(bondLevel, nextPhase)));
+      // Every mood of the look being worn now, plus the first frame of the
+      // NEXT band — a level-up must not flash a missing image, and with 15 XP
+      // a level the next band can be one quest away.
+      var band = bandForLevel(bondLevel);
+      for (var i = 0; i < SPRITE_MOODS.length; i++) wanted.push(spriteFile(band.phase, SPRITE_MOODS[i], band.tier));
+      var ahead = null;
+      for (var b = 0; b < LEVEL_BANDS.length; b++) {
+        if (LEVEL_BANDS[b].band === band.band + 1) ahead = LEVEL_BANDS[b];
       }
+      if (ahead) wanted.push(spriteFile(ahead.phase, "happy", ahead.tier));
       for (var k = 0; k < wanted.length; k++) {
         var file = wanted[k];
         if (preloadedKeys[file]) continue;
@@ -320,10 +353,11 @@
   function repaint() {
     if (typeof document === "undefined") return;
     var img = document.getElementById("jamkachu-sprite");
-    var phase = stagePhase(state.stage);
+    var band = bandForLevel(state.bondLevel);
+    var phase = band.phase;
     var mood =
       state.flashMood && SPRITE_MOODS.indexOf(state.flashMood) >= 0 ? state.flashMood : spriteMoodFor();
-    var tier = accessoryTier(state.bondLevel, phase);
+    var tier = band.tier;
     var src = ASSET_BASE + spriteFile(phase, mood, tier);
     if (img) {
       // Stamp the drawn phase on the stage div so head-anchored overlay art

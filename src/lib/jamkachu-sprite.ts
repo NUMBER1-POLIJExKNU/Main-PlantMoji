@@ -10,6 +10,8 @@
 import type { PlantMood } from "@/types/events";
 import type { CompanionStage } from "@/types/game";
 import type { GrowthStage } from "@/lib/queries";
+// The band table imports only TYPES from here, so there is no runtime cycle.
+import { bandForLevel } from "@/game/progression/level-bands";
 
 /** The pack draws 4 growth phases; the 10 companion stages bucket into them. */
 export type SpritePhase = 1 | 2 | 3 | 4;
@@ -73,8 +75,13 @@ export const MOOD_STATUS_CHIP: Partial<Record<PlantMood, string>> = {
   SoilAlkaline: "🧪",
 };
 
-/** Bond→tier thresholds (ride the skins pacing 1/2/4/6/8/10/12). */
-export const TIER_THRESHOLDS = { bow: 4, ribbon: 8 } as const;
+/**
+ * Bond→tier thresholds. These are the `from` levels of the two bands that
+ * introduce an ornament (LEVEL_BANDS 4 and 6) — kept as named constants because
+ * the farm shell mirrors them and several tests read them, but the band table
+ * in @/game/progression/level-bands is the source of truth.
+ */
+export const TIER_THRESHOLDS = { bow: 9, ribbon: 24 } as const;
 
 /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
 export const PHASE_TIER_CAP: Record<SpritePhase, SpriteTier> = {
@@ -151,6 +158,12 @@ export function spriteSrc({
   sleeping?: boolean;
   scale?: SpriteScale;
 }): string {
-  const phase = stagePhase(stage);
-  return spriteAssetPath(phase, spriteMood(mood, sleeping), accessoryTier(bondLevel, phase), scale);
+  // Bond level alone decides how grown Jamkachu looks. The companion ladder
+  // (care count / affinities / days) still runs and still shows its own
+  // "STAGE 7/10" line, but it no longer drives the body: one visible ladder is
+  // easier to read in a 20-minute lesson than two that can disagree.
+  // `stage` stays in the signature for the callers that pass it; it is ignored.
+  void stage;
+  const band = bandForLevel(bondLevel);
+  return spriteAssetPath(band.phase, spriteMood(mood, sleeping), band.tier, scale);
 }

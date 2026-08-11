@@ -179,21 +179,23 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     expect(spriteJs).toMatch(/if \(state\.sleeping\) return "sleepy";/);
   });
 
-  it("bond→tier thresholds ride the skins pacing and clamp by phase", () => {
-    expect(tables.TIER_THRESHOLDS).toEqual({ bow: 4, ribbon: 8 });
+  it("bond→tier thresholds sit at the band starts and clamp by phase", () => {
+    // The two thresholds ARE the `from` levels of the bands that introduce an
+    // ornament (LEVEL_BANDS 4 and 6); tests/level-bands.test.ts owns the table.
+    expect(tables.TIER_THRESHOLDS).toEqual({ bow: 9, ribbon: 24 });
     expect(tables.PHASE_TIER_CAP).toEqual({ 1: "", 2: "", 3: "bow", 4: "ribbon" });
     // p1/p2 always bare, whatever the bond.
-    expect(sprite.accessoryTier(12, 1)).toBe("");
-    expect(sprite.accessoryTier(12, 2)).toBe("");
+    expect(sprite.accessoryTier(30, 1)).toBe("");
+    expect(sprite.accessoryTier(30, 2)).toBe("");
     // p3 caps at bow even past the ribbon threshold.
-    expect(sprite.accessoryTier(8, 3)).toBe("bow");
-    expect(sprite.accessoryTier(4, 3)).toBe("bow");
-    expect(sprite.accessoryTier(3, 3)).toBe("");
+    expect(sprite.accessoryTier(24, 3)).toBe("bow");
+    expect(sprite.accessoryTier(9, 3)).toBe("bow");
+    expect(sprite.accessoryTier(8, 3)).toBe("");
     // p4 walks the full ladder.
-    expect(sprite.accessoryTier(3, 4)).toBe("");
-    expect(sprite.accessoryTier(4, 4)).toBe("bow");
-    expect(sprite.accessoryTier(7, 4)).toBe("bow");
-    expect(sprite.accessoryTier(8, 4)).toBe("ribbon");
+    expect(sprite.accessoryTier(8, 4)).toBe("");
+    expect(sprite.accessoryTier(9, 4)).toBe("bow");
+    expect(sprite.accessoryTier(23, 4)).toBe("bow");
+    expect(sprite.accessoryTier(24, 4)).toBe("ribbon");
     // Garbage input degrades to bare, never a broken src.
     expect(sprite.accessoryTier(Number.NaN, 4)).toBe("");
   });
@@ -240,8 +242,12 @@ describe("driver wiring (index.html + live.js hooks)", () => {
     expect(unguarded.length).toBe(0);
   });
 
-  it("preloads the current phase's five moods plus the next phase's happy frame", () => {
+  it("preloads the current band's five moods plus the next band's happy frame", () => {
+    // A level-up must never flash a missing image, and at 15 XP a level the
+    // next band can be one quest away.
     expect(spriteJs).toMatch(/function preload\(phase, bondLevel\)/);
-    expect(spriteJs).toContain('wanted.push(spriteFile(nextPhase, "happy", accessoryTier(bondLevel, nextPhase)))');
+    expect(spriteJs).toContain("var band = bandForLevel(bondLevel);");
+    expect(spriteJs).toContain('wanted.push(spriteFile(band.phase, SPRITE_MOODS[i], band.tier))');
+    expect(spriteJs).toContain('if (ahead) wanted.push(spriteFile(ahead.phase, "happy", ahead.tier));');
   });
 });

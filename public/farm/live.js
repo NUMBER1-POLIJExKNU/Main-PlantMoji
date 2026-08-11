@@ -7,7 +7,11 @@
 // never decides XP or truth (handoff rules) — it only displays.
 
 const PLANT_ID = "plant-01";
-const XP_PER_LEVEL = 30;
+// Mirrors src/types/game.ts. One class period is 20–30 minutes and buys about
+// 150–200 XP, so 15 XP a level is what makes the plant visibly change during
+// the lesson; the level stops at 30 and total_xp keeps climbing past it.
+const XP_PER_LEVEL = 15;
+const MAX_BOND_LEVEL = 30;
 const LOCALE_KEY = "plantmoji_locale";
 const BADGE_EFFECT_STORAGE_KEY = "plantmoji_badge_effect_v1";
 const BADGE_TAP_EFFECTS = {
@@ -5026,8 +5030,15 @@ function renderBond(bond, plantName) {
   // single remaining identity line — the plant NAME lives only in
   // #char-name under the mascot now (no more cat-vs-plant confusion).
   const levelEl = $(".username");
-  if (levelEl) levelEl.textContent = `${t("bond")} Lv.${bond.bond_level}`;
-  setXpBar((totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
+  const atMax = Number(bond.bond_level) >= MAX_BOND_LEVEL;
+  if (levelEl) levelEl.textContent = atMax
+    ? `${t("bond")} Lv.${MAX_BOND_LEVEL} · MAX`
+    : `${t("bond")} Lv.${bond.bond_level}`;
+  // At the cap the bar is full and stays full — a bar that kept sliding back
+  // to 7% would promise a level that can no longer arrive.
+  setXpBar(atMax ? 100 : (totalXp % XP_PER_LEVEL) / XP_PER_LEVEL * 100, leveledUp);
+  const xpWrap = $(".xp-bar-wrap");
+  if (xpWrap) xpWrap.classList.toggle("is-max", atMax);
   // renderOfflineHome may have hidden the badges before the backend came
   // back — real data always un-hides (`.badge[hidden]` really hides now).
   const coinBadge = $(".badge.coin");
@@ -6335,8 +6346,11 @@ const CHEAT_VITAL_LIMITS = {
  *  producing a state the real game could never reach — Lv.4 with 0 XP, where
  *  the header says Lv.4 but the XP bar (totalXp % 30) disagrees. */
 function cheatXpBounds(level) {
-  const safe = Math.max(1, Math.floor(Number(level)) || 1);
+  const safe = Math.min(MAX_BOND_LEVEL, Math.max(1, Math.floor(Number(level)) || 1));
   const min = (safe - 1) * XP_PER_LEVEL;
+  // The top level is the exception: it owns everything from its floor upward,
+  // because past the cap XP keeps banking while the level holds.
+  if (safe >= MAX_BOND_LEVEL) return { min, max: min + XP_PER_LEVEL * 20 };
   return { min, max: min + XP_PER_LEVEL - 1 };
 }
 
@@ -6620,7 +6634,10 @@ function buildCheatPanel() {
     btn.addEventListener("click", () => {
       const delta = Number(btn.getAttribute("data-cheat-level")) || 0;
       const cur = Number(window.PMCheat.get("status.level", 1)) || 1;
-      const next = Math.max(1, cur + delta);
+      // Clamped at both ends: the sandbox must not show a level the real game
+      // cannot reach, or a presenter steps past the cap on stage and the
+      // sprite runs out of bands.
+      const next = Math.min(MAX_BOND_LEVEL, Math.max(1, cur + delta));
       // The level owns the band, so stepping it carries XP along at the SAME
       // progress within the level — Lv.2 at 12/30 becomes Lv.3 at 12/30, not a
       // snap back to the floor that would undo the bar mid-demo.

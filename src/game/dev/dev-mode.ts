@@ -23,7 +23,7 @@ import {
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { PLANT_MOODS, type PlantMood } from "@/types/events";
-import { BADGE_KEYS, levelForXp, type BadgeKey, type QuestKey } from "@/types/game";
+import { BADGE_KEYS, MAX_BOND_LEVEL, levelForXp, type BadgeKey, type QuestKey } from "@/types/game";
 
 function fail(operation: string, error: { message: string } | null): void {
   if (error) throw new Error(`dev-mode ${operation} failed: ${error.message}`);
@@ -77,7 +77,10 @@ export async function setDevProgress(
       {
         plant_id: plantId,
         total_xp: Math.max(0, Math.round(totalXp)),
-        bond_level: Math.max(1, Math.round(level)),
+        // XP is uncapped (it banks past the top level), the LEVEL is not —
+        // a row above MAX_BOND_LEVEL would ask the sprite table for a band
+        // that does not exist.
+        bond_level: Math.min(MAX_BOND_LEVEL, Math.max(1, Math.round(level))),
         current_streak: Math.max(0, Math.round(streak)),
         longest_streak: Math.max(Math.max(0, Math.round(streak)), Number(row.longest_streak ?? 0)),
         seeds: Math.max(0, Math.round(seeds)),

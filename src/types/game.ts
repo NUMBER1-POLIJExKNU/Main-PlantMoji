@@ -68,11 +68,47 @@ export interface QuestEngineResult {
 
 // ── Bond progression (handoff §14–§15, §37) ─────────────────────────────
 
-export const XP_PER_LEVEL = 30;
+/**
+ * Bond levels stop here. Above the cap `total_xp` keeps climbing — the ledger,
+ * the weekly report and the badge rules all read it — but the level, and with
+ * it Jamkachu's appearance, holds at MAX.
+ */
+export const MAX_BOND_LEVEL = 30;
 
-/** 0–29 → Lv.1, 30–59 → Lv.2, ... Must match award_xp() in SQL. */
+/**
+ * 15, not 30. Two numbers pin this from opposite sides.
+ *
+ * From below: the session this game is built for is ONE class period, 20–30
+ * minutes of hands-on time, worth roughly 150–200 XP — a few recovery quests
+ * at 20–30 each, the mood discoveries a student trips while trying the care
+ * actions, maybe a badge. At 30 XP a level that is Lv.6 and Jamkachu never
+ * leaves its first drawn look; at 15 it is Lv.11–14, which is three or four
+ * visible changes.
+ *
+ * From above: the one-time XP pool is 410 (badges 12×15, chapters 6×25, mood
+ * discoveries 8×5, streak milestones 4×10). Reaching MAX_BOND_LEVEL costs
+ * 29×15 = 435, so that pool alone cannot max the plant and quests still matter
+ * after the one-time content runs out. Anything below 15 breaks that.
+ *
+ * The cap and this number are separate knobs: for a longer programme raise
+ * this one rather than moving MAX_BOND_LEVEL.
+ */
+export const XP_PER_LEVEL = 15;
+
+/** Total XP that reaches the cap. Everything past it still banks in total_xp. */
+export const MAX_BOND_XP = (MAX_BOND_LEVEL - 1) * XP_PER_LEVEL;
+
+/** 0–9 → Lv.1, 10–19 → Lv.2, … clamped at MAX_BOND_LEVEL.
+ *  Must match award_xp() in SQL — that function is the real gate, this is the
+ *  display side of the same rule. */
 export function levelForXp(totalXp: number): number {
-  return Math.floor(totalXp / XP_PER_LEVEL) + 1;
+  const level = Math.floor(Math.max(0, totalXp) / XP_PER_LEVEL) + 1;
+  return Math.min(MAX_BOND_LEVEL, level);
+}
+
+/** True once the level can no longer rise, however much XP arrives. */
+export function isMaxBondLevel(level: number): boolean {
+  return level >= MAX_BOND_LEVEL;
 }
 
 /** Row shape of the backend-owned `bond_state` table. */

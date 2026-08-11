@@ -113,24 +113,26 @@ describe("React sprite mapping pins the decided design tables", () => {
     }
   });
 
-  it("awards accessory tiers at the planned bond thresholds with phase clamps", () => {
-    expect(TIER_THRESHOLDS).toEqual({ bow: 4, ribbon: 8 });
+  it("awards accessory tiers at the band thresholds with phase clamps", () => {
+    // The two thresholds ARE the `from` levels of the bands that introduce an
+    // ornament (LEVEL_BANDS 4 and 6); tests/level-bands.test.ts owns the table.
+    expect(TIER_THRESHOLDS).toEqual({ bow: 9, ribbon: 24 });
     expect(PHASE_TIER_CAP).toEqual({ 1: "", 2: "", 3: "bow", 4: "ribbon" });
 
     // Thresholds on the uncapped phase.
     expect(accessoryTier(0, 4)).toBe("");
-    expect(accessoryTier(3, 4)).toBe("");
-    expect(accessoryTier(4, 4)).toBe("bow");
-    expect(accessoryTier(7, 4)).toBe("bow");
-    expect(accessoryTier(8, 4)).toBe("ribbon");
-    expect(accessoryTier(12, 4)).toBe("ribbon");
+    expect(accessoryTier(8, 4)).toBe("");
+    expect(accessoryTier(9, 4)).toBe("bow");
+    expect(accessoryTier(23, 4)).toBe("bow");
+    expect(accessoryTier(24, 4)).toBe("ribbon");
+    expect(accessoryTier(30, 4)).toBe("ribbon");
 
     // Phase clamps: p1/p2 always bare, p3 caps at bow.
-    expect(accessoryTier(12, 1)).toBe("");
-    expect(accessoryTier(12, 2)).toBe("");
-    expect(accessoryTier(12, 3)).toBe("bow");
-    expect(accessoryTier(5, 3)).toBe("bow");
-    expect(accessoryTier(3, 3)).toBe("");
+    expect(accessoryTier(30, 1)).toBe("");
+    expect(accessoryTier(30, 2)).toBe("");
+    expect(accessoryTier(30, 3)).toBe("bow");
+    expect(accessoryTier(9, 3)).toBe("bow");
+    expect(accessoryTier(8, 3)).toBe("");
 
     // Garbage bond levels degrade to bare, never throw.
     expect(accessoryTier(Number.NaN, 4)).toBe("");
@@ -138,20 +140,25 @@ describe("React sprite mapping pins the decided design tables", () => {
   });
 
   it("builds sprite paths matching the committed asset naming", () => {
-    expect(spriteSrc({ stage: "Seedling", mood: "DryAir" })).toBe(
+    // Bond level picks the look now — `stage` is passed by some callers and
+    // deliberately ignored, so these cases vary the level, not the stage.
+    expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 3 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p2-sprout-thirsty.png",
     );
-    expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 9 })).toBe(
+    expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 24 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
     );
-    expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 12, scale: "2x" })).toBe(
+    // Lv.9 is band 4 (p3 + bow); TooCold draws the sleepy body — the pack's
+    // "plain" file is the faceless decorative body and never renders a mood.
+    expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 9, scale: "2x" })).toBe(
       "/farm/assets/jamkachu/2x/plant-p3-flower-sleepy-bow.png",
     );
-    expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 12 })).toBe(
+    expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 1 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p1-seed-overheat.png",
     );
+    // No bondLevel at all reads as Lv.0 → clamped to the first band.
     expect(spriteSrc({ mood: "Happy", sleeping: true })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p4-fruit-sleepy.png",
+      "/farm/assets/jamkachu/4x/plant-p1-seed-sleepy.png",
     );
   });
 
