@@ -74,6 +74,48 @@ describe("designer icon set", () => {
     expect(shell).not.toContain('src="/farm/assets/logo.png"');
   });
 
+  it("lifts the Quests icon so it reads on the active green pill", () => {
+    // The heart and the active pill are both mid-green; on that one row the
+    // icon all but vanishes. Keyed off href, not the file name, because
+    // next/image rewrites the React side's src into an /_next/image URL.
+    for (const [css, selector] of [
+      [farmCss, '.nav-item.active[href="/quests"] .icon img'],
+      [reactCss, '.reno-nav-item.active[href="/quests"] .reno-nav-art'],
+    ] as const) {
+      const rule = css.match(new RegExp(`${selector.replace(/[.[\]"/]/g, (c) => `\\${c}`)} \\{[^}]*\\}`))?.[0];
+      expect(rule, `${selector} needs a contrast filter`).toBeTruthy();
+      expect(rule).toContain("brightness(");
+    }
+  });
+
+  it("stacks the tool links like the rows above, on both shells", () => {
+    // TOOLS was a three-across grid of 6px captions while MY WORLD was a
+    // stack — two rhythms in one 240px column. Both shells now use one.
+    expect(farmCss).toMatch(/\.nav-tool-grid \{[^}]*flex-direction: column/);
+    expect(reactCss).toMatch(/\.reno-nav-tool-grid \{[^}]*flex-direction: column/);
+    // Nothing may re-add the tiny centred-caption treatment outside the phone
+    // dock, where the whole nav legitimately becomes icon-over-caption.
+    const farmBase = farmCss.slice(0, farmCss.indexOf("@media (max-width: 800px)"));
+    expect(farmBase).not.toMatch(/\.nav-item\.nav-tool \{[^}]*font-size/);
+    expect(reactCss.slice(0, reactCss.indexOf("@media (max-width: 800px)"))).not.toMatch(/\.reno-nav-item\.reno-nav-tool \{[^}]*font-size/);
+  });
+
+  it("keeps one sidebar rhythm across both shells", () => {
+    // Title-to-first-row and row-to-row spacing are two rules each, and they
+    // have to agree between the shells or My Garden looks airier than every
+    // other route the demo clicks through.
+    for (const [css, sidebar, brand, links, item] of [
+      [farmCss, ".sidebar", ".brand", ".nav-links", ".nav-item"],
+      [reactCss, ".reno-sidebar", ".reno-brand", ".reno-nav-links", ".reno-nav-item"],
+    ] as const) {
+      const block = (selector: string) => css.match(new RegExp(`\\${selector} \\{[^}]*\\}`))?.[0] ?? "";
+      expect(block(sidebar), `${sidebar} gap`).toMatch(/gap: 18px/);
+      expect(block(brand), `${brand} padding-bottom`).toMatch(/padding-bottom: 14px/);
+      expect(block(links), `${links} gap`).toMatch(/gap: 4px/);
+      expect(block(item), `${item} padding`).toMatch(/padding: 9px 12px/);
+    }
+  });
+
   it("never forces the title art square", () => {
     // The pot is 434x564. The rules it inherited were the old 1:1 logo's, and
     // a fixed 44x44 squashes it.

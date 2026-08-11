@@ -77,11 +77,17 @@ describe("farm mobile dock (≤800px) reaches all ten destinations", () => {
     expect(block).toMatch(/\.farm-guide-open\s*\{[^}]*bottom:\s*calc\([^)]*env\(safe-area-inset-bottom\)[^)]*\)/);
   });
 
-  it("keeps the >800px sidebar tool pocket untouched", () => {
-    // The base (non-media) rules still lay the pocket out as its own
-    // bordered section with a 3-column tool grid.
+  it("keeps the >800px tool pocket its own section, stacked like the rows above", () => {
+    // The base (non-media) rules still lay the pocket out as its own bordered
+    // section. Its links are now stacked and sized exactly like the MY WORLD
+    // rows — one vertical rhythm down the whole sidebar — instead of being
+    // squeezed three-across with 6px centred captions.
     const base = css.slice(0, css.indexOf("@media (max-width: 800px)"));
     expect(base).toMatch(/\.nav-tool-pocket\s*\{[^}]*margin-top/);
-    expect(base).toMatch(/\.nav-tool-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3/);
+    expect(base).toMatch(/\.nav-tool-grid\s*\{[^}]*flex-direction:\s*column/);
+    expect(base).not.toMatch(/\.nav-tool-grid\s*\{[^}]*grid-template-columns/);
+    expect(base).not.toMatch(/\.nav-item\.nav-tool\s*\{[^}]*flex-direction:\s*column/);
+    // The phone dock still dissolves the pocket so all ten stay reachable.
+    expect(mobileBlock()).toMatch(/\.nav-tool-pocket\s*\{\s*display:\s*contents/);
   });
 });

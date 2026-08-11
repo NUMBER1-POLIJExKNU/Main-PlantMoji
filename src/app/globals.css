@@ -895,7 +895,10 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   display: flex;
   flex: 0 0 240px;
   flex-direction: column;
-  gap: 32px;
+  /* Sidebar gap + the brand's own padding-bottom both sit between the title
+     and the first nav item, so they are tuned together. Mirrors .sidebar in
+     public/farm/style.css. */
+  gap: 18px;
   height: 100%;
   padding: 20px;
   border: 3px solid var(--color-border);
@@ -908,7 +911,7 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   display: flex;
   align-items: center;
   gap: 16px;
-  padding-bottom: 24px;
+  padding-bottom: 14px;
   border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
   color: var(--color-forest);
   font-family: var(--pm-font-pixel);
@@ -945,24 +948,27 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
 .reno-nav-links {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   overflow-y: auto;
   scrollbar-width: none;
 }
 
 .reno-nav-links::-webkit-scrollbar { display: none; }
 .reno-nav-section-title { padding: 2px 12px 1px; color: #7B8876; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .12em; }
-.reno-nav-tool-pocket { margin-top: 10px; border-top: 2px dashed rgba(43,58,39,.16); padding-top: 10px; }
-.reno-nav-tool-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin-top: 6px; }
-.reno-nav-item.reno-nav-tool { min-width: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 3px; font-size: 6px; text-align: center; }
-.reno-nav-item.reno-nav-tool i { font-size: 16px; }
-.reno-nav-item.reno-nav-tool:hover { transform: translateY(-2px); }
+.reno-nav-tool-pocket { margin-top: 6px; border-top: 2px dashed rgba(43,58,39,.16); padding-top: 6px; }
+/* Tools are ordinary destinations, so they are stacked and sized exactly like
+   the MY WORLD rows above them. They used to be a squeezed three-across grid
+   of 6px captions, which read as a different kind of thing and broke the
+   sidebar's single vertical rhythm. Mirrors public/farm/style.css. */
+.reno-nav-tool-grid { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.reno-nav-item.reno-nav-tool { min-width: 0; }
+.reno-nav-item.reno-nav-tool:hover { transform: translateX(6px); }
 
 .reno-nav-item {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 13px 12px;
+  padding: 9px 12px;
   border-radius: 12px;
   color: var(--color-text);
   font-family: var(--pm-font-pixel);
@@ -1005,6 +1011,12 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   background: var(--color-grass);
   box-shadow: 0 8px 16px rgba(105, 196, 85, 0.4);
 }
+
+/* Quests is a mid-green heart and the active pill is mid-green, so on the one
+   row where it matters the icon nearly disappears. Lifting brightness and
+   dropping saturation pushes it towards the pill's white text instead. Only
+   this destination: every other icon already reads on green. */
+.reno-nav-item.active[href="/quests"] .reno-nav-art { filter: brightness(1.75) saturate(0.55); }
 .reno-more-button,.reno-more-backdrop { display:none; }
 
 /* Nav sprout hop: a one-shot 2-frame pixel hop on hover/focus, and a slow
