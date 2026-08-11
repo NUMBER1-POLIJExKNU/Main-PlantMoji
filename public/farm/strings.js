@@ -157,7 +157,7 @@
       // Reason-chip labels (Task 14): bond_events reason prefix → friendly label.
       reasons: {
         quest: "Quest complete",
-        lucky: "Lucky ×2!",
+        lucky: "Bonus ×2",
         badge: "New badge",
         chapter: "Story unlocked",
         streak: "Streak bonus",
@@ -524,7 +524,7 @@
         questComplete: "🏆 Quest complete!",
         xpGain: (delta) => `+${delta} XP`,
         streakUp: (days) => (days === 1 ? "+1 day" : `+${days} days`),
-        luckyStamp: "LUCKY! ×2",
+        luckyStamp: "BONUS ×2",
       },
 
       // Evolution ceremony dialog (Pokémon-Style Transformation FX plan,
@@ -536,6 +536,11 @@
         noticing: (name) => `What? ${name} is changing…!`,
         evolved: (name, stage) => `Congratulations! ${name} grew into ${stage}!`,
         tapToContinue: "Tap to continue",
+        // Banner for the last stage of the whole growth arc. It used to read
+        // "GRAND JACKPOT" — hard-coded English, and casino wording for the one
+        // moment in the app that is purely earned: days of sensor care and
+        // finished quests, nothing won.
+        finalForm: "FINAL FORM",
       },
 
       // Banner tag shown while presenter/demo mode is active (Task 21) and on
@@ -672,7 +677,7 @@
 
       reasons: {
         quest: "Misi selesai",
-        lucky: "Hoki ×2!",
+        lucky: "Bonus ×2",
         badge: "Lencana baru",
         chapter: "Cerita terbuka",
         streak: "Bonus hari beruntun",
@@ -999,7 +1004,7 @@
         questComplete: "🏆 Misi selesai!",
         xpGain: (delta) => `+${delta} XP`,
         streakUp: (days) => (days === 1 ? "+1 hari" : `+${days} hari`),
-        luckyStamp: "BERUNTUNG! ×2",
+        luckyStamp: "BONUS ×2",
       },
 
       // Dialog upacara evolusi (rencana Pokémon-Style Transformation FX,
@@ -1008,6 +1013,7 @@
         noticing: (name) => `Lho? ${name} mulai berubah…!`,
         evolved: (name, stage) => `Selamat! ${name} tumbuh menjadi ${stage}!`,
         tapToContinue: "Ketuk untuk lanjut",
+        finalForm: "WUJUD AKHIR",
       },
 
       // Presenter/demo tag is a product mark, not copy — stays "DEMO".

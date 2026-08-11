@@ -7,6 +7,11 @@ function source(path: string) {
 }
 
 const reactShell = source("src/components/reno-app-shell.tsx");
+// The destination table moved out of the shell so the board headers could read
+// the same one (lib/nav-destinations.ts). Both files together are still "what
+// the React side declares", which is what these assertions are about.
+const reactNav = `${reactShell}
+${source("src/lib/nav-destinations.ts")}`;
 const reactCss = source("src/app/globals.css");
 
 const TAB_HREFS = [
@@ -25,24 +30,24 @@ const TAB_HREFS = [
 describe("shared PlantMoji application shell", () => {
   it("exposes the game destinations and three utility destinations", () => {
     for (const href of TAB_HREFS) {
-      expect(reactShell).toContain(`href: "${href}"`);
+      expect(reactNav).toContain(`href: "${href}"`);
     }
 
-    expect(reactShell.match(/href: "\/settings"/g)).toHaveLength(1);
-    expect(reactShell).toContain('key: "camera", href: "/camera"');
-    expect(reactShell).toContain('key: "shop", href: "/shop"');
+    expect(reactNav.match(/href: "\/settings"/g)).toHaveLength(1);
+    expect(reactNav).toContain('key: "camera", href: "/camera"');
+    expect(reactNav).toContain('key: "shop", href: "/shop"');
     expect(reactShell).not.toContain('className="reno-nav-item reno-nav-disabled"');
   });
 
   it("keeps crop exploration and care memories as distinct game destinations", () => {
-    expect(reactShell).toContain('key: "plants", href: "/plants"');
-    expect(reactShell).toContain('key: "diary", href: "/diary"');
+    expect(reactNav).toContain('key: "plants", href: "/plants"');
+    expect(reactNav).toContain('key: "diary", href: "/diary"');
     expect(reactShell).toContain("const TOOL_ITEMS");
   });
 
   it("uses task-oriented navigation labels in both languages", () => {
     for (const label of ["Kebun Saya", "Misi", "Eksplor Tanaman", "Diari Tumbuh", "Koleksi", "Quests", "Crop Explorer", "Growth Diary", "Collection"]) {
-      expect(reactShell).toContain(label);
+      expect(reactNav).toContain(label);
     }
   });
 

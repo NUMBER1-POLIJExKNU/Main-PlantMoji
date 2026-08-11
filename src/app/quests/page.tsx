@@ -383,7 +383,7 @@ export default async function QuestsPage() {
         }))}
       />
       <PageHeader
-        icon="🎯"
+        destination="quests"
         eyebrow={locale === "id" ? "Perawatan hari ini" : "Today's care"}
         title={locale === "id" ? "Misi" : "Quests"}
         description={locale === "id"

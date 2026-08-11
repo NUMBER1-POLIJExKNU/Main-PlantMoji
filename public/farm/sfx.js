@@ -29,18 +29,18 @@
 //                   tail). Dedicated method, not rate-limited — the
 //                   sequencer fires it once per ceremony.
 //     evoImpact(opts) — reveal hit: a low impact plus bright major chord.
-//                   `opts.jackpot` adds a longer, denser pachinko-style
-//                   jackpot cadence. Dedicated methods are not rate-limited.
-//     evoJackpot() — shorthand for evoImpact({ jackpot: true }).
+//                   `opts.grand` adds a longer, denser cadence for reaching
+//                   the final stage. Dedicated methods are not rate-limited.
+//     evoFinalForm() — shorthand for evoImpact({ grand: true }).
 //     cry()       — the companion's own reveal voice (~0.4s noise chirp +
 //                   triangle glide). Dedicated method, not rate-limited.
 //   }
 //
-// Cues: blip, tick, error, coin, cascade, pod, jackpot, fanfare, levelup,
+// Cues: blip, tick, error, coin, cascade, pod, bonus, fanfare, levelup,
 // chapter, pet, splash, whoosh, boing, knock, purr, lullaby, hum, breeze,
 // emberCrackle, reliefCool, reliefMist, reliefLight, reliefSoil, stamp,
 // evoChirp, evoRiser,
-// evoFanfare, evoImpact, evoJackpot, cry — all WebAudio-synthesized square/triangle oscillators (or
+// evoFanfare, evoImpact, evoFinalForm, cry — all WebAudio-synthesized square/triangle oscillators (or
 // a white-noise buffer through a filter). Zero external assets, zero
 // network (spec D1). The last three evolution-ceremony cues are also
 // exposed as dedicated PMSfx methods above — see the object literal doc.
@@ -419,20 +419,22 @@
 
   // Reveal hit for the evolution ceremony. The low sine drop gives the
   // reveal a physical "thunk", while the bright major chord makes the new
-  // stage read as a reward rather than an alarm. Jackpot mode layers a
-  // second chord and a short rising sparkle cadence — intentionally denser
-  // than the normal reveal, but still fully synthesized and asset-free.
+  // stage read as a reward rather than an alarm. Grand mode — reaching the
+  // final stage — layers a second chord and a short rising sparkle cadence,
+  // intentionally denser than the normal reveal but still fully synthesized
+  // and asset-free. The recipe is unchanged from when it was called
+  // "jackpot"; only the name is, because a payout is not what this is.
   // Returns a handle so an interrupted ceremony can stop its oscillators.
-  function impactRecipe(c, dest, jackpot) {
+  function impactRecipe(c, dest, grand) {
     const t0 = c.currentTime;
     const nodes = [];
     const low = c.createOscillator();
     const lowGain = c.createGain();
     low.type = "sine";
-    low.frequency.setValueAtTime(jackpot ? 78 : 88, t0);
-    low.frequency.exponentialRampToValueAtTime(jackpot ? 34 : 40, t0 + 0.42);
+    low.frequency.setValueAtTime(grand ? 78 : 88, t0);
+    low.frequency.exponentialRampToValueAtTime(grand ? 34 : 40, t0 + 0.42);
     lowGain.gain.setValueAtTime(0.0001, t0);
-    lowGain.gain.linearRampToValueAtTime(jackpot ? 0.3 : 0.24, t0 + 0.012);
+    lowGain.gain.linearRampToValueAtTime(grand ? 0.3 : 0.24, t0 + 0.012);
     lowGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.52);
     low.connect(lowGain).connect(dest);
     low.start(t0);
@@ -443,15 +445,15 @@
     // cabinet hit instead of a harsh digital pop.
     noise(c, {
       at: 0,
-      dur: jackpot ? 0.11 : 0.08,
+      dur: grand ? 0.11 : 0.08,
       filter: "lowpass",
-      freq: jackpot ? 1250 : 1000,
+      freq: grand ? 1250 : 1000,
       glideTo: 220,
-      vol: jackpot ? 0.2 : 0.16,
+      vol: grand ? 0.2 : 0.16,
       dest,
     });
 
-    const chord = jackpot
+    const chord = grand
       ? [
           { freq: N.C5, at: 0.07, dur: 0.72, vol: 0.13 },
           { freq: N.E5, at: 0.07, dur: 0.72, vol: 0.12 },
@@ -480,7 +482,7 @@
       nodes.push(osc);
     }
 
-    if (jackpot) {
+    if (grand) {
       // A rising 8-bit sparkle cadence sells the payout without borrowing
       // any external game sound. It is intentionally short enough to leave
       // room for evoFanfare's longer musical tail.
@@ -500,7 +502,7 @@
       });
     }
 
-    const totalMs = (jackpot ? 0.95 : 0.86) * 1000;
+    const totalMs = (grand ? 0.95 : 0.86) * 1000;
     let stopped = false;
     return {
       totalMs,
@@ -537,8 +539,8 @@
       tone(c, { freq: N.G4, stepTo: N.G5, dur: 0.09, vol: 0.06 });
       noise(c, { dur: 0.05, freq: 900, vol: 0.07 });
     },
-    // Lucky jackpot: 4-note rising arpeggio C5 E5 G5 C6, 60ms each.
-    jackpot: (c) => arpeggio(c, [N.C5, N.E5, N.G5, N.C6], 0.06),
+    // Bonus reveal: 4-note rising arpeggio C5 E5 G5 C6, 60ms each.
+    bonus: (c) => arpeggio(c, [N.C5, N.E5, N.G5, N.C6], 0.06),
     // Level-up fanfare: 6 notes across ~500ms, final note held.
     fanfare: (c) =>
       arpeggio(c, [N.C5, N.C5, N.C5, N.E5, N.G5, N.C6], 0.085, {
@@ -653,7 +655,7 @@
     evoRiser: (c) => riserRecipe(c, c.destination, 6),
     evoFanfare: (c) => fanfareRecipe(c, c.destination),
     evoImpact: (c) => impactRecipe(c, c.destination, false),
-    evoJackpot: (c) => impactRecipe(c, c.destination, true),
+    evoFinalForm: (c) => impactRecipe(c, c.destination, true),
     cry: (c) => cryRecipe(c, c.destination),
   };
 
@@ -744,18 +746,18 @@
   }
 
   function evoImpact(options) {
-    const jackpot = options === true || Boolean(options && options.jackpot === true);
+    const grand = options === true || Boolean(options && options.grand === true);
     const c = readyContext();
     if (!c) return { totalMs: 0, stop() {} };
     try {
-      return impactRecipe(c, c.destination, jackpot);
+      return impactRecipe(c, c.destination, grand);
     } catch {
       return { totalMs: 0, stop() {} }; // a synthesis failure must never break the page
     }
   }
 
-  function evoJackpot() {
-    return evoImpact({ jackpot: true });
+  function evoFinalForm() {
+    return evoImpact({ grand: true });
   }
 
   function cry() {
@@ -868,7 +870,7 @@
     evoRiser,
     evoFanfare,
     evoImpact,
-    evoJackpot,
+    evoFinalForm,
     cry,
   };
 })();

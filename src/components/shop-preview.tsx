@@ -18,7 +18,7 @@ import type { ShopGridItem, ShopPurchaseRow } from "@/components/shop-grid";
 import { npcStillImgProps } from "@/components/npc-badge";
 import { SHOP_UI_COPY, shopItemArt } from "@/game/economy/shop-catalog";
 import { spriteSrc } from "@/lib/jamkachu-sprite";
-import { GOLDPOT_RAMP, GOLD_POT_LEVEL, potRampFor, swapPotPalette } from "@/lib/sprite-palette";
+import { GOLDPOT_RAMP, GOLD_POT_LEVEL, swapPotPalette } from "@/lib/sprite-palette";
 import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { PlantMood } from "@/types/events";
 import type { CompanionStage } from "@/types/game";
@@ -67,11 +67,12 @@ export default function ShopPreviewStage({
   // and taking that pot off left the picture untouched.
   const shownPotKey = item?.category === "pot" ? item.key : wornPotKey ?? null;
   const shownAccessoryKey = item?.category === "accessory" ? item.key : wornAccessoryKey ?? null;
-  // Preserve the latest team rule: a selected/equipped pot beats the Lv.10
-  // keepsake; gold is only the fallback when no other pot is being shown.
-  const previewPotRamp = shownPotKey ? potRampFor(shownPotKey) : null;
-  const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;
-  const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);
+  const shownPotArt = shownPotKey ? shopItemArt(shownPotKey) : null;
+  const hasShopPot = Boolean(shownPotKey && shownPotArt);
+  // Gold remains the no-purchase Lv.10 fallback. A shop pot is rendered as
+  // its full design below, never flattened into this palette-swap path.
+  const goldPot = !hasShopPot && mascot.bondLevel >= GOLD_POT_LEVEL;
+  const potRamp = goldPot ? GOLDPOT_RAMP : null;
   // Keyed by (baseSrc, ramp) so a stale in-flight swap from a previous
   // selection can never paint over a newer one, and — without ever calling
   // setState synchronously inside the effect — a key mismatch alone makes
@@ -102,9 +103,27 @@ export default function ShopPreviewStage({
       <div className="pm-shop-stage-scene">
         <span className="pm-shop-stage-floor" aria-hidden="true" />
         <div className="pm-shop-stage-cast">
-          <div className="pm-shop-stage-jamkachu" role="img" aria-label="Jamkachu">
+          <div
+            className={`pm-shop-stage-jamkachu${hasShopPot ? " has-shop-pot" : ""}`}
+            role="img"
+            aria-label="Jamkachu"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
-            <img src={spriteImgSrc} alt="" aria-hidden="true" draggable={false} />
+            <img className="pm-shop-stage-sprite" src={spriteImgSrc} alt="" aria-hidden="true" draggable={false} />
+            {hasShopPot && (
+              /* The farm uses this exact catalog image too. The base sprite's
+                 baked-in pot is clipped away by .has-shop-pot, so this is a
+                 real replacement rather than a second pot laid on top. */
+              // eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels
+              <img
+                className="pm-shop-stage-pot"
+                src={shownPotArt as string}
+                data-pot-key={shownPotKey}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+              />
+            )}
             {shownAccessoryKey && shopItemArt(shownAccessoryKey) && (
               <span className="pm-shop-stage-acc-icon" aria-hidden="true">
                 {/* The drawn accessory, floated by the plant's head: the one

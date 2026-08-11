@@ -162,14 +162,19 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(css).toContain(".mascot-wrapper.evo-arena .positive-expression");
   });
 
-  it("adds a pachinko-weight payoff without repeated full-screen flashes", () => {
+  it("keeps the full-weight payoff without repeated full-screen flashes", () => {
     const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
     expect(seq.match(/flashOnce\(/g)).toHaveLength(1);
     expect(seq).toContain("spawnEvoChargeOrbs(grand ? 32 : 22)");
     expect(seq).toContain("spawnEvoShockwaves(grand)");
-    expect(seq).toContain("window.PMSfx?.evoImpact?.({ jackpot: grand })");
+    expect(seq).toContain("window.PMSfx?.evoImpact?.({ grand })");
     expect(seq).toContain("spawnEvoStars(grand ? 52 : 36)");
-    expect(live).toContain('grand ? `GRAND JACKPOT · ${stageLabel}` : stageLabel');
+    // The banner is localized now and says what actually happened. "GRAND
+    // JACKPOT" was hard-coded English AND casino wording for the one moment in
+    // this app that is entirely earned. The staging above is untouched.
+    expect(live).toContain('grand ? `${finalFormLabel} · ${stageLabel}` : stageLabel');
+    expect(live).toContain("const finalFormLabel = PM().evo?.finalForm ?? EVO_FALLBACK.finalForm;");
+    expect(live).not.toContain("GRAND JACKPOT ·");
     expect(css).toContain("@keyframes evoShockwave");
     expect(css).toContain("@keyframes evoResultSlam");
   });

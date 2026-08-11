@@ -90,7 +90,7 @@ export default async function ShopPage() {
   return (
     <main className="pm-shop w-full">
       <PageHeader
-        icon="🛒"
+        destination="shop"
         eyebrow={copy.eyebrow}
         title={copy.title}
         description={copy.subtitle}

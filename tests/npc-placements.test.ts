@@ -41,7 +41,7 @@ describe("NPC cast placements", () => {
     expect(badge).toContain('npcStillImgProps(npc, "64px")');
     // The farm-layer farmer and the camera avatar carry literal multi-scale
     // srcsets of their own (they render outside the badge helper).
-    expect(read("src/components/farmer-npc.tsx")).toContain("/farm/assets/npc/8x/npc-01-pak-tani.png 256w");
+    expect(read("src/components/farmer-npc.tsx")).toContain("/farm/assets/npc/8x/npc-06-mbah-tani.png 256w");
     expect(read("src/components/camera-guardian.tsx")).toContain("/farm/assets/npc/1x/npc-05-moji-bot.png 32w");
   });
 
@@ -86,8 +86,11 @@ describe("NPC cast placements", () => {
     expect(read("src/components/npc-badge.tsx")).toContain("npcStillImgProps");
     expect(read("src/components/npc-badge.tsx")).not.toMatch(/\n\s*<picture>/);
     const farmer = read("src/components/farmer-npc.tsx");
-    expect(farmer).not.toContain("/farm/assets/npc/gif/npc-01-pak-tani.gif");
-    expect(farmer).toContain("/farm/assets/npc/2x/npc-01-pak-tani.png");
+    // Mbah Tani, the grandpa who keeps this farm. A later pass swapped him
+    // for the younger Pak Tani (npc-01), who belongs to the Quests header.
+    expect(farmer).not.toContain("/farm/assets/npc/gif/npc-06-mbah-tani.gif");
+    expect(farmer).toContain("/farm/assets/npc/2x/npc-06-mbah-tani.png");
+    expect(farmer, "the farm farmer is the grandpa").not.toContain("npc-01-pak-tani.png");
     // Every idle loop the badge helper can point at ships on disk, so all
     // six cast GIFs are reachable through their assigned placements
     // (pak-tani/quests, botanis/monitoring, pedagang/shop, moji-bot/demo

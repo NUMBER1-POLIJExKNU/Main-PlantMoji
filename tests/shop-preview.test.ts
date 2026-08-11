@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SHOP_UI_COPY } from "@/game/economy/shop-catalog";
-import { GOLDPOT_RAMP, POT_ITEM_RAMPS, POT_RAMP, POT_TOP_FRACTION, SKIN_RAMPS } from "@/lib/sprite-palette";
+import { GOLDPOT_RAMP, POT_RAMP, POT_TOP_FRACTION, SKIN_RAMPS } from "@/lib/sprite-palette";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const assetExists = (publicPath: string) =>
@@ -96,13 +96,20 @@ describe("current Jamkachu is fetched server-side, same pattern as other pages",
   });
 });
 
-describe("pot items recolor the preview sprite; canvas failure never blanks it", () => {
-  it("only pot-category items compute a palette ramp", () => {
+describe("pot items replace the preview pot with their complete design", () => {
+  it("uses the catalog art for the selected or equipped pot", () => {
     expect(preview).toContain('const shownPotKey = item?.category === "pot" ? item.key : wornPotKey ?? null;');
-    expect(preview).toContain("shownPotKey ? potRampFor(shownPotKey) : null");
+    expect(preview).toContain("const shownPotArt = shownPotKey ? shopItemArt(shownPotKey) : null;");
+    expect(preview).toContain('className="pm-shop-stage-pot"');
+    expect(preview).toContain("data-pot-key={shownPotKey}");
+    expect(preview).not.toContain("potRampFor");
   });
 
-  it("paints the plain sprite immediately and swaps in the recolor only once it resolves", () => {
+  it("clips the baked-in pot so the design is a replacement, not an overlay", () => {
+    expect(css).toContain(".pm-shop-stage-jamkachu.has-shop-pot .pm-shop-stage-sprite { clip-path:inset(0 0 37.5% 0); }");
+  });
+
+  it("keeps the canvas fallback only for the automatic gold default pot", () => {
     // Keyed by (baseSrc, ramp): a selection change alone falls back to the
     // plain sprite (no synchronous setState-to-null needed in the effect —
     // react-hooks/set-state-in-effect stays clean) until the new swap
@@ -125,10 +132,9 @@ describe("bond Lv.10 keepsake: the baseline look, not an override", () => {
     // The keepsake used to win outright, so a Lv.10+ player tapping any pot
     // saw gold — the stage was honestly reporting that buying it would change
     // nothing, because on the farm it changed nothing.
-    expect(preview).toContain("const previewPotRamp = shownPotKey ? potRampFor(shownPotKey) : null;");
-    expect(preview).toContain("const goldPot = !previewPotRamp && mascot.bondLevel >= GOLD_POT_LEVEL;");
-    expect(preview).toContain("const potRamp = previewPotRamp ?? (goldPot ? GOLDPOT_RAMP : null);");
-    expect(preview).toContain('import { GOLDPOT_RAMP, GOLD_POT_LEVEL, potRampFor, swapPotPalette } from "@/lib/sprite-palette"');
+    expect(preview).toContain("const goldPot = !hasShopPot && mascot.bondLevel >= GOLD_POT_LEVEL;");
+    expect(preview).toContain("const potRamp = goldPot ? GOLDPOT_RAMP : null;");
+    expect(preview).toContain('import { GOLDPOT_RAMP, GOLD_POT_LEVEL, swapPotPalette } from "@/lib/sprite-palette"');
   });
 
   it("applies even with nothing selected, so a Lv.10 player's baseline preview isn't misleadingly plain", () => {
@@ -198,7 +204,7 @@ describe("every rendered image is pixelated; decorative art is aria-hidden with 
 
   it("the Jamkachu sprite is aria-hidden with the wrapper carrying the accessible name", () => {
     expect(preview).toContain('role="img" aria-label="Jamkachu"');
-    expect(preview).toMatch(/<img src=\{spriteImgSrc\} alt="" aria-hidden="true"/);
+    expect(preview).toMatch(/<img className="pm-shop-stage-sprite" src=\{spriteImgSrc\} alt="" aria-hidden="true"/);
   });
 
   it("the decor prop and accessory icon are decorative (aria-hidden) — the item name text is the signal", () => {
@@ -224,12 +230,9 @@ describe("sprite-palette.ts mirrors the farm layer's pot algorithm constants", (
     });
   });
 
-  it("SKIN_RAMPS and POT_ITEM_RAMPS cover the same keys as the shop catalog / companion skins", () => {
+  it("SKIN_RAMPS covers every companion skin", () => {
     expect(Object.keys(SKIN_RAMPS).sort()).toEqual(
       ["jamkachu", "edamame", "padi", "jagung", "kopi", "kakao", "buah_naga"].sort(),
-    );
-    expect(Object.keys(POT_ITEM_RAMPS).sort()).toEqual(
-      ["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"].sort(),
     );
   });
 

@@ -55,7 +55,31 @@
 }
 .pm-shop-stage-cast { position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; gap:4px; padding:10px 6px 8px; }
 .pm-shop-stage-jamkachu { position:relative; flex:none; width:72px; height:72px; }
-.pm-shop-stage-jamkachu img { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.22)); }
+.pm-shop-stage-jamkachu img { image-rendering:pixelated; }
+.pm-shop-stage-sprite { display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.22)); }
+.pm-shop-stage-jamkachu.has-shop-pot .pm-shop-stage-sprite { clip-path:inset(0 0 37.5% 0); }
+.pm-shop-stage-pot {
+  --preview-pot-width:48px;
+  --preview-pot-height:32px;
+  --preview-pot-crop-top:0%;
+  position:absolute;
+  z-index:1;
+  left:50%;
+  bottom:0;
+  width:var(--preview-pot-width);
+  height:var(--preview-pot-height);
+  object-fit:fill;
+  clip-path:inset(var(--preview-pot-crop-top) 0 0 0);
+  transform:translateX(-50%);
+  filter:drop-shadow(1px 2px 0 rgba(36,52,33,.2));
+  pointer-events:none;
+}
+.pm-shop-stage-pot[data-pot-key="pot_terracotta"] { --preview-pot-width:50px; --preview-pot-height:32px; }
+.pm-shop-stage-pot[data-pot-key="pot_batik"] { --preview-pot-width:48px; --preview-pot-height:29px; bottom:2px; }
+.pm-shop-stage-pot[data-pot-key="pot_tincan"] { --preview-pot-width:55px; --preview-pot-height:43px; --preview-pot-crop-top:38%; }
+.pm-shop-stage-pot[data-pot-key="pot_coffee_sack"] { --preview-pot-width:52px; --preview-pot-height:42px; --preview-pot-crop-top:34%; }
+.pm-shop-stage-pot[data-pot-key="pot_bamboo"] { --preview-pot-width:53px; --preview-pot-height:46px; --preview-pot-crop-top:40%; }
+.pm-shop-stage-pot[data-pot-key="pot_jember_mosaic"] { --preview-pot-width:43px; --preview-pot-height:32px; }
 .pm-shop-stage-acc-icon { position:absolute; top:-4px; right:-8px; font-size:24px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.3)); }
 .pm-shop-stage-acc-icon img { display:block; width:30px; height:30px; object-fit:contain; image-rendering:pixelated; }
 .pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:6px; font-size:28px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }

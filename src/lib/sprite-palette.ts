@@ -1,11 +1,11 @@
-// Client-side pot palette swap for the seed-shop try-on preview (Phase 1,
+// Client-side default-pot palette swap for the seed-shop preview,
 // docs/superpowers/plans/2026-08-11-kiki-design-integration.md).
 //
 // Ports public/farm/jamkachu-sprite.js's canvas palette-swap algorithm to a
 // small React-side module: an exact-hex swap constrained to the pot rows
 // (rows ≥ 40/64 of the 64px grid) so leaves/face/outlines can never be
-// touched. POT_RAMP / SKIN_RAMPS / POT_ITEM_RAMPS mirror the farm layer's
-// tables VALUE-FOR-VALUE — pinned identical in
+// touched. POT_RAMP / SKIN_RAMPS mirror the farm layer's tables
+// VALUE-FOR-VALUE — pinned identical in
 // tests/jamkachu-sprite-parity.test.ts, same guard as the stage/mood tables
 // in src/lib/jamkachu-sprite.ts. Presentation only: this module never writes
 // game state, and ANY failure (SSR call, tainted canvas, missing 2d context,
@@ -47,24 +47,10 @@ export const SKIN_RAMPS: Record<string, PotRamp | null> = {
   buah_naga: { body: "#E85FA2", rim: "#EF8FBE", dark: "#A24371" },
 };
 
-/** Shop pot-item ramps (milestone18 — equipped pot wins over skin), keyed by
- *  the SHOP_CATALOG pot item keys. Mirrors the farm layer's POT_ITEM_RAMPS
- *  exactly. */
-export const POT_ITEM_RAMPS: Record<string, PotRamp> = {
-  pot_terracotta: { body: "#C86B4A", rim: "#E08B5F", dark: "#9A4E33" },
-  pot_batik: { body: "#5B4632", rim: "#8A6B48" }, // squares #E8D5A9/#B8862F retired
-  pot_tincan: { body: "#B9C2C9", rim: "#D7DDE2", dark: "#8E979E" }, // highlight #F2F6F8 retired
-  pot_coffee_sack: { body: "#A98055", rim: "#C59B68" },
-  pot_bamboo: { body: "#C9A84E", rim: "#E1C56A", dark: "#7E8637" },
-  pot_jember_mosaic: { body: "#3C8C75", rim: "#56A9B8" }, // zigzag #F1D36B retired
-};
-
 /** Bond Lv.10 keepsake: the pot itself turns permanently gold on the farm
  *  (docs/superpowers/specs/2026-08-07-dopamine-ux-reframe-design.md: "Lv.10
- *  special pot"). public/farm/jamkachu-sprite.js's activeRamp() checks it
- *  AFTER the equipped shop pot and before the skin: the keepsake is what you
- *  wear when you have chosen nothing. It used to win outright, which meant
- *  the entire Pots category stopped doing anything past Lv.10.
+ *  special pot"). It is only used while no complete shop-pot design is
+ *  replacing the default pot.
  *
  *  Mirrors the farm's GOLDPOT_RAMP literal value-for-value (pinned in
  *  tests/jamkachu-sprite-parity.test.ts). The farm literal also carries
@@ -119,7 +105,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /** `${src}|${body}|${rim}|${dark}` → resolved blob URL. Small in-memory
- *  cache so re-selecting the same pot on the same base sprite doesn't
+ *  cache so revisiting the same default-pot colorway doesn't
  *  re-decode/re-paint the canvas. */
 const swapCache = new Map<string, string>();
 
@@ -172,9 +158,3 @@ export async function swapPotPalette(src: string, ramp: PotRamp): Promise<string
   }
 }
 
-/** Ramp for a shop pot item key, or null when the key isn't a recolorable
- *  pot. Callers pass the result straight to swapPotPalette. */
-export function potRampFor(itemKey: string | null | undefined): PotRamp | null {
-  if (!itemKey) return null;
-  return POT_ITEM_RAMPS[itemKey] ?? null;
-}

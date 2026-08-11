@@ -3,8 +3,8 @@
 // The team designer's pixel packs in public/farm/assets/jamkachu/ ARE the
 // one true Jamkachu: this module maps live game state (companion stage,
 // plant mood, bond level, cosmetic skin, equipped shop pot, night sleep)
-// onto the drawn sprite frames and writes #jamkachu-sprite / the
-// #mood-status-chip. Pure presentation — zero network truth, zero writes,
+// onto the drawn sprite frames and writes #jamkachu-sprite,
+// #shop-pot-sprite and #mood-status-chip. Pure presentation — zero network truth, zero writes,
 // no gameplay logic. live.js feeds state in via window.PMSprite.set({...});
 // every hook there no-ops safely when this script is absent.
 //
@@ -157,18 +157,17 @@
     buah_naga: { body: "#E85FA2", rim: "#EF8FBE", dark: "#A24371" },
   };
 
-  // ── Shop pot-item ramps (milestone18 — equipped pot wins over skin) ─────
-  // Derived from each retired shop-g-pot_* SVG group's literal hex fills
-  // (recorded from index.html before deletion): body/rim verbatim; dark from
-  // the group's shade hex where it had one, else a 30% black shade of body.
-  // Pattern accents that can't survive a flat recolor are noted per item.
-  var POT_ITEM_RAMPS = {
-    pot_terracotta: { body: "#C86B4A", rim: "#E08B5F", dark: "#9A4E33" },
-    pot_batik: { body: "#5B4632", rim: "#8A6B48" }, // squares #E8D5A9/#B8862F retired
-    pot_tincan: { body: "#B9C2C9", rim: "#D7DDE2", dark: "#8E979E" }, // highlight #F2F6F8 retired
-    pot_coffee_sack: { body: "#A98055", rim: "#C59B68" },
-    pot_bamboo: { body: "#C9A84E", rim: "#E1C56A", dark: "#7E8637" },
-    pot_jember_mosaic: { body: "#3C8C75", rim: "#56A9B8" }, // zigzag #F1D36B retired
+  // ── Shop pot artwork (milestone18) ─────────────────────────────────────
+  // A shop pot is a different object/design, not a colorway of the default
+  // pot. These are the same complete catalog assets shown in the Shop. CSS
+  // clips the baked-in pot off Jamkachu and seats this art in its place.
+  var POT_ITEM_ART = {
+    pot_terracotta: "/icons/shop/pot_terracotta.png",
+    pot_batik: "/icons/shop/pot_batik.png",
+    pot_tincan: "/icons/shop/pot_tincan.png",
+    pot_coffee_sack: "/icons/shop/pot_coffee_sack.png",
+    pot_bamboo: "/icons/shop/pot_bamboo.png",
+    pot_jember_mosaic: "/icons/shop/pot_jember_mosaic.png",
   };
 
   // ── Color helpers ───────────────────────────────────────────────────────
@@ -313,19 +312,11 @@
    *  src/lib/sprite-palette.ts. */
   var GOLD_POT_LEVEL = 10;
 
-  /** Active pot recolor, most deliberate choice first: the equipped shop pot,
-   *  then the Lv.10 gold keepsake, then the cosmetic skin; the designer's own
-   *  pot shows when none applies.
-   *
-   *  The equipped pot used to LOSE to the keepsake, which quietly killed the
-   *  whole Pots category the moment a player passed Lv.10 — you spent seeds,
-   *  equipped a pot, and nothing changed. The keepsake is now what you wear
-   *  when you have chosen nothing: still earned, still automatic, but it no
-   *  longer overrides a purchase. Take the pot off and the gold comes back. */
+  /** Active palette recolor for the DEFAULT pot only. A valid shop pot is a
+   *  replacement layer, so the hidden default pot must not spend time going
+   *  through canvas or accidentally flash gold beneath it. */
   function activeRamp() {
-    if (state.potItemKey && POT_ITEM_RAMPS[state.potItemKey]) {
-      return { key: "pot:" + state.potItemKey, ramp: POT_ITEM_RAMPS[state.potItemKey] };
-    }
+    if (state.potItemKey && POT_ITEM_ART[state.potItemKey]) return null;
     if (Number(state.bondLevel) >= GOLD_POT_LEVEL) return { key: "decor:goldpot", ramp: GOLDPOT_RAMP };
     if (state.skinKey && SKIN_RAMPS[state.skinKey]) {
       return { key: "skin:" + state.skinKey, ramp: SKIN_RAMPS[state.skinKey] };
@@ -381,6 +372,19 @@
       var stageBox = img.parentElement;
       if (stageBox && stageBox.classList) {
         for (var p = 1; p <= 4; p++) stageBox.classList.toggle("sprite-phase-" + p, p === phase);
+      }
+      var potImg = document.getElementById("shop-pot-sprite");
+      var potSrc = state.potItemKey ? POT_ITEM_ART[state.potItemKey] || "" : "";
+      if (stageBox && stageBox.classList) stageBox.classList.toggle("has-shop-pot", Boolean(potSrc));
+      if (potImg) {
+        potImg.hidden = !potSrc;
+        if (potSrc) {
+          potImg.dataset.potKey = state.potItemKey;
+          if (potImg.getAttribute("src") !== potSrc) potImg.src = potSrc;
+        } else {
+          potImg.removeAttribute("data-pot-key");
+          potImg.removeAttribute("src");
+        }
       }
       var rampSpec = activeRamp();
       var want = rampSpec ? src + "|" + rampSpec.key : src;
@@ -457,7 +461,7 @@
       PHASE_TIER_CAP: PHASE_TIER_CAP,
       POT_RAMP: POT_RAMP,
       SKIN_RAMPS: SKIN_RAMPS,
-      POT_ITEM_RAMPS: POT_ITEM_RAMPS,
+      POT_ITEM_ART: POT_ITEM_ART,
     },
     stagePhase: stagePhase,
     accessoryTier: accessoryTier,

@@ -238,7 +238,7 @@
                      button's scaleX(-1), which the img simply inherits.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with Farmer Tani"><picture class="npc-farmer-art"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-01-pak-tani.png" srcset="/farm/assets/npc/1x/npc-01-pak-tani.png 32w, /farm/assets/npc/2x/npc-01-pak-tani.png 64w, /farm/assets/npc/4x/npc-01-pak-tani.png 128w, /farm/assets/npc/8x/npc-01-pak-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with Farmer Tani"><picture class="npc-farmer-art"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcset="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
                 <div class="npc-farmer-bed" aria-hidden="true">
                     <span class="npc-bed-pillow"></span>
                     <span class="npc-bed-blanket"></span>
@@ -281,8 +281,9 @@
                         <!-- Designer sprite mascot (kiki design integration, 2026-08-11):
                              the pixel packs in assets/jamkachu/ ARE Jamkachu now.
                              jamkachu-sprite.js (window.PMSprite) owns the img src
-                             (stage phase × mood × bond tier) and recolors the pot
-                             pixels for skins/shop pots via canvas palette swap.
+                             (stage phase × mood × bond tier). Cosmetic skins still
+                             recolor the default pot; shop pots replace that pot with
+                             their complete catalog artwork in #shop-pot-sprite.
                              This div KEEPS receiving every existing state class
                              (face-*, companion-*, skin-*, shop-*, decor-lv*,
                              crop-*, is-tapface, breath classes) — classes stay the
@@ -293,6 +294,10 @@
                             <!-- Decorative: #char-name/#char-mood below carry the
                                  accessible identity, so the img stays alt="". -->
                             <img id="jamkachu-sprite" alt="" draggable="false">
+                            <!-- Equipped shop pots are real designs, not palette
+                                 swaps. CSS clips the baked-in pot off the mascot
+                                 sprite and seats this catalog art in its place. -->
+                            <img id="shop-pot-sprite" alt="" aria-hidden="true" draggable="false" hidden>
                             <!-- Plain-mood status chip: 🥶/💦/🧪 float near the head
                                  for the four moods that share the sprite's calm
                                  "plain" body (aria-hidden; the #char-mood text is
@@ -498,7 +503,7 @@
          the game world's pointer-events:none and stacking context. -->
     <dialog id="farmer-chat" class="farmer-chat" aria-labelledby="farmer-chat-title">
         <form method="dialog" class="farmer-chat-top">
-            <div class="farmer-chat-portrait" aria-hidden="true"><img src="/farm/assets/npc/2x/npc-01-pak-tani.png" alt=""></div>
+            <div class="farmer-chat-portrait" aria-hidden="true"><img src="/farm/assets/npc/2x/npc-06-mbah-tani.png" alt=""></div>
             <div><span id="farmer-chat-kicker">YOUR GARDEN FRIEND</span><h2 id="farmer-chat-title">Farmer Tani</h2></div>
             <button class="farmer-chat-close" value="close" aria-label="Close chat">×</button>
         </form>

@@ -334,7 +334,9 @@ describe("English tree exact copy", () => {
   });
 
   it("fx.luckyStamp matches the live.js English fallback", () => {
-    expect(EN.fx.luckyStamp).toBe("LUCKY! ×2");
+    // "LUCKY! ×2" until now. The XP was granted by the server for work already
+    // done, so slot-machine wording named it wrong as well as reading wrong.
+    expect(EN.fx.luckyStamp).toBe("BONUS ×2");
   });
 
   it("chapterTitles match story-definitions.ts EXACTLY (all six)", () => {
@@ -387,7 +389,9 @@ describe("Bahasa Indonesia tree is a real translation", () => {
   });
 
   it("id fx.luckyStamp is the approved Bahasa stamp", () => {
-    expect(ID.fx.luckyStamp).toBe("BERUNTUNG! ×2");
+    // "BERUNTUNG!" (lucky) retired with the English "LUCKY!"; "BONUS" reads the
+    // same in both languages, so the stamp needs no translation at all.
+    expect(ID.fx.luckyStamp).toBe("BONUS ×2");
   });
 
   it("hatch copy is a real translation (structure identical, key lines differ)", () => {

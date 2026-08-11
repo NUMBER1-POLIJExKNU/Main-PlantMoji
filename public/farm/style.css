@@ -1235,6 +1235,36 @@ body.evolution-active .fx-layer { z-index:1390; }
     -webkit-user-drag: none;
     user-select: none;
 }
+/* A catalog pot replaces the baked-in pot rather than tinting it. The plant
+   occupies rows 0–39 of the 64px source and stays intact; rows 40–63 contain
+   the default pot and are clipped away only while a valid shop pot is worn. */
+.mascot-svg.has-shop-pot #jamkachu-sprite { clip-path: inset(0 0 37.5% 0); }
+#shop-pot-sprite {
+    --shop-pot-width: 200px;
+    --shop-pot-height: 135px;
+    --shop-pot-crop-top: 0%;
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    bottom: 6px;
+    width: var(--shop-pot-width);
+    height: var(--shop-pot-height);
+    object-fit: fill;
+    clip-path: inset(var(--shop-pot-crop-top) 0 0 0);
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+    image-rendering: pixelated;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+#shop-pot-sprite[hidden] { display: none; }
+#shop-pot-sprite[data-pot-key="pot_terracotta"] { --shop-pot-width: 210px; --shop-pot-height: 135px; }
+#shop-pot-sprite[data-pot-key="pot_batik"] { --shop-pot-width: 200px; --shop-pot-height: 120px; bottom: 10px; }
+#shop-pot-sprite[data-pot-key="pot_tincan"] { --shop-pot-width: 230px; --shop-pot-height: 180px; --shop-pot-crop-top: 38%; }
+#shop-pot-sprite[data-pot-key="pot_coffee_sack"] { --shop-pot-width: 215px; --shop-pot-height: 175px; --shop-pot-crop-top: 34%; }
+#shop-pot-sprite[data-pot-key="pot_bamboo"] { --shop-pot-width: 220px; --shop-pot-height: 190px; --shop-pot-crop-top: 40%; bottom: 4px; }
+#shop-pot-sprite[data-pot-key="pot_jember_mosaic"] { --shop-pot-width: 180px; --shop-pot-height: 135px; }
 .mascot-overlay {
     position: absolute;
     inset: 0;
@@ -1513,6 +1543,7 @@ body.room-warm {
    rows (bottom 24/64 of the square grid → top inset 62.5%) and hides the
    accessory overlay + status chip. Static clip — reduced-motion safe. */
 .mascot-svg.hatch-pre #jamkachu-sprite { clip-path: inset(62.5% 0 0 0); animation: none; }
+.mascot-svg.has-shop-pot.hatch-pre #jamkachu-sprite { visibility: hidden; }
 .mascot-svg.hatch-pre .mascot-overlay,
 .mascot-svg.hatch-pre #mood-status-chip { visibility: hidden; }
 .mascot-container.hatch-hidden .speech-bubble,
@@ -2362,6 +2393,7 @@ body.farmer-dragging {
            rail the last card ran straight into the grass floor — which is
            position:fixed and therefore invisible to this grid. */
         align-self: stretch;
+        min-height: 0;
         width: 100%;
         max-width: 560px;
         /* Clearance over the floor. It is 140px tall here (105px on short
@@ -2373,6 +2405,13 @@ body.farmer-dragging {
         scrollbar-width:thin;
         scrollbar-color:var(--color-border) transparent;
     }
+
+    /* This rail is height-constrained and scrollable. Flex items shrink by
+       default, which used to collapse the cards below their own contents on
+       768px-tall laptops: the care button then painted over the sensor card
+       and the quiz painted into the grass. Keep every card at its honest
+       content height and let the rail itself do the scrolling. */
+    .home-stack > * { flex: 0 0 auto; }
 
     .care-focus { order:-5; }
     /* Vitals sit directly under the care card: both are readings, and the
@@ -2470,8 +2509,10 @@ body.farmer-dragging {
 }
 
 /* Short classroom laptops get the same information hierarchy with a smaller
-   character and tighter cards; the page itself still never scrolls. */
-@media (min-width: 801px) and (max-height: 720px) {
+   character and tighter cards; the page itself still never scrolls. The app
+   shell removes 48px for its outer padding, so a 768px viewport only leaves a
+   720px board. Apply the compact treatment to that common laptop size too. */
+@media (min-width: 801px) and (max-height: 820px) {
     .app-layout { padding-top: 14px; padding-bottom: 14px; }
     /* The sidebar gap, brand padding and nav-item padding this breakpoint used
        to tighten are now the defaults — the same numbers, applied everywhere. */
@@ -2479,11 +2520,42 @@ body.farmer-dragging {
     .mascot-wrapper { width: min(250px, 32vh); }
     .speech-bubble { min-height: 48px; max-height: 70px; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
-    .home-stack { padding-top:54px; gap:7px; }
+    .home-stack { margin-bottom:70px; padding-top:48px; gap:8px; }
     .user-gamification { padding: 8px 11px; }
-    #current-quest { min-height: 54px; padding: 8px 12px; }
-    #care-action { min-height: 50px; padding: 9px 14px; }
-    #env-strip { padding-top: 5px; padding-bottom: 5px; }
+    .care-focus { gap:8px; padding:10px 12px 12px 15px; }
+    .care-focus-heading { grid-template-columns:36px minmax(0,1fr); gap:8px; }
+    .care-focus-icon { width:36px; height:36px; font-size:19px; }
+    .care-focus h2 { font-size:10px; }
+    .care-focus-heading p { margin-top:2px; font-size:11px; }
+    .care-steps { gap:5px; }
+    .care-steps li { grid-template-columns:21px minmax(0,1fr); min-height:40px; gap:5px; padding:4px 5px; }
+    .care-steps li > b { width:21px; height:21px; font-size:7px; }
+    .care-steps li strong { font-size:6px; }
+    .care-steps li small { font-size:8px; }
+    .care-proof-note { font-size:9px; }
+    #care-action,.care-focus #care-action { min-height: 46px; padding: 8px 12px; font-size:9px; }
+    #env-strip { padding:9px; }
+    .env-hud-title { margin-bottom:7px; }
+    .env-hud-grid { gap:6px; }
+    .env-hud-card { min-height:76px; grid-template-columns:27px minmax(0,1fr); gap:5px; padding:6px; box-shadow:0 3px 0 var(--color-outline); }
+    .env-hud-card > i { width:26px; height:26px; font-size:15px; }
+    .env-hud-copy strong { margin-top:1px; font-size:18px; }
+    .env-gauge { height:6px; margin:3px 0; }
+    .env-gauge-marker { height:11px; }
+    .env-range { font-size:7px; }
+    .env-hud-copy em { font-size:8px; }
+    #current-quest { min-height: 52px; padding: 8px 12px; }
+    .quiz-chip { min-height:44px; padding:6px 10px; }
+    .quiz-chip > span:first-child { font-size:20px; }
+    .grass-floor { height:92px; }
+}
+
+/* At the narrow end of desktop the three instructional hints have only a few
+   characters of room and look broken rather than helpful. The numbered step
+   and its verb remain; the full explanation is still present in the focus
+   heading and proof note. Phone rules below retain their own copy treatment. */
+@media (min-width: 801px) and (max-width: 1150px) {
+    .care-steps li small { display:none; }
 }
 .user-gamification > .hud-section-label { flex:0 0 100%; }
 
@@ -2496,10 +2568,9 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
    Display-only: live.js renderShopPurchases toggles .shop-<item_key> on
    .mascot-svg (equipped pot/accessory) and .own-<item_key> on
    .shop-decor-layer (owned decor). Same idempotent mechanism as the level
-   decorations (.decor-lv*) above. Equipped POTS recolor the sprite's pot
-   pixels now (jamkachu-sprite.js POT_ITEM_RAMPS — the shop-g-pot_* overlay
-   groups retired with the inline SVG); ACCESSORIES stay overlay-SVG groups
-   above the img, shown by the class rules below. */
+   decorations (.decor-lv*) above. Equipped POTS replace the baked-in pot
+   through #shop-pot-sprite; ACCESSORIES stay overlay-SVG groups above the
+   mascot and pot layers, shown by the class rules below. */
 .mascot-svg .shop-item { display: none; }
 .mascot-svg.shop-acc_strawhat .shop-g-acc_strawhat { display: block; }
 .mascot-svg.shop-acc_ribbon .shop-g-acc_ribbon { display: block; }

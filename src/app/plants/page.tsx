@@ -133,7 +133,7 @@ export default async function PlantsPage({ searchParams }: { searchParams: Promi
 
   return (
     <main>
-      <PageHeader icon="🌱" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
+      <PageHeader destination="plants" eyebrow={copy.eyebrow} title={copy.title} description={copy.intro} />
       <CropExplorer locale={locale} initialSnapshot={snapshot} initialCrops={explorerCrops} initialResults={compareEnvironmentToCrops(snapshot, explorerCrops)} initialDemoPreset={demoPreset} />
 
       <details className="pm-crop-reference-tools">

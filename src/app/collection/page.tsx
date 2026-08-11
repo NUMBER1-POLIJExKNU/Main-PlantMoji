@@ -196,7 +196,7 @@ export default async function CollectionPage() {
   return (
     <main className="pm-collection w-full">
       <PageHeader
-        icon="🏆"
+        destination="collection"
         eyebrow={locale === "id" ? "Buku penemuan" : "Discovery book"}
         title={locale === "id" ? "Koleksi" : "Collection"}
         description={locale === "id"

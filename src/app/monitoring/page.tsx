@@ -57,7 +57,7 @@ export default async function MonitoringPage() {
   return (
     <main className="mx-auto w-full">
       <PageHeader
-        icon="📈"
+        destination="status"
         eyebrow={locale === "id" ? "Sensor langsung" : "Live sensors"}
         title={locale === "id" ? "Pemantauan" : "Monitoring"}
         description={locale === "id"

@@ -14,12 +14,15 @@ describe("Farmer Tani living-world UI", () => {
   it("draws the same Farmer Tani sprite as Quests, not box-shadow art", () => {
     // Transparent responsive PNG art avoids the GIF's opaque rectangle.
     expect(html).toContain('class="npc-farmer-img"');
-    expect(html).not.toContain("/farm/assets/npc/gif/npc-01-pak-tani.gif");
-    expect(html).toContain('src="/farm/assets/npc/2x/npc-01-pak-tani.png"');
-    expect(html).toContain("/farm/assets/npc/8x/npc-01-pak-tani.png 256w");
+    // Mbah Tani, the grandpa who keeps this farm. A later pass swapped him
+    // for the younger Pak Tani (npc-01), who belongs to the Quests header.
+    expect(html).not.toContain("/farm/assets/npc/gif/npc-06-mbah-tani.gif");
+    expect(html).toContain('src="/farm/assets/npc/2x/npc-06-mbah-tani.png"');
+    expect(html).toContain("/farm/assets/npc/8x/npc-06-mbah-tani.png 256w");
+    expect(html, "the farm farmer is the grandpa, not Quests' Pak Tani").not.toContain("npc-01-pak-tani");
     // The chat dialog portrait shows the same character's static art.
     expect(html).toMatch(
-      /class="farmer-chat-portrait"[^>]*><img src="\/farm\/assets\/npc\/2x\/npc-01-pak-tani\.png" alt=""/,
+      /class="farmer-chat-portrait"[^>]*><img src="\/farm\/assets\/npc\/2x\/npc-06-mbah-tani\.png" alt=""/,
     );
     // The retired ~90-layer box-shadow walk frames and their steps() cycle.
     expect(css).not.toContain(".npc-farmer::before");
@@ -36,7 +39,7 @@ describe("Farmer Tani living-world UI", () => {
     // the AI-CHAT tag does, pinned in the walk-label test below).
     expect(css).not.toMatch(/\.npc-farmer-img[^{]*\{[^}]*scaleX/);
     // Both referenced files ship with the page.
-    expect(assetExists("farm/assets/npc/2x/npc-01-pak-tani.png")).toBe(true);
+    expect(assetExists("farm/assets/npc/2x/npc-06-mbah-tani.png")).toBe(true);
   });
 
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {

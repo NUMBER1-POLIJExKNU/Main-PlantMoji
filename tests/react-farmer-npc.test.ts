@@ -20,14 +20,17 @@ describe("React My Garden farmer NPC", () => {
     expect(css).toMatch(/\.pm-grass \.pm-react-farmer>button\{[^}]*z-index:3[^}]*pointer-events:auto/);
     expect(css).toMatch(/\.pm-grass \.pm-react-farmer-bed\{[^}]*width:104px[^}]*pointer-events:none/);
   });
-  it("draws Quests' Farmer Tani with the transparent responsive PNG", () => {
+  it("draws Mbah Tani with the transparent responsive PNG", () => {
     // The GIF opens opaque, so the home uses transparent PNG art at all four
     // scales and never draws a rectangle around Farmer Tani.
     expect(component).not.toContain("/farm/assets/npc/gif/");
     expect(component).not.toContain("<picture>");
-    expect(component).toContain('src="/farm/assets/npc/2x/npc-01-pak-tani.png"');
-    expect(component).toContain("/farm/assets/npc/2x/npc-01-pak-tani.png 64w");
-    expect(component).toContain("/farm/assets/npc/8x/npc-01-pak-tani.png 256w");
+    // Mbah Tani, the grandpa who keeps this farm. A later pass swapped him
+    // for the younger Pak Tani (npc-01), who belongs to the Quests header.
+    expect(component).toContain('src="/farm/assets/npc/2x/npc-06-mbah-tani.png"');
+    expect(component).toContain("/farm/assets/npc/2x/npc-06-mbah-tani.png 64w");
+    expect(component).toContain("/farm/assets/npc/8x/npc-06-mbah-tani.png 256w");
+    expect(component).not.toContain("npc-01-pak-tani");
     // Old hand-drawn frame markup is gone; the sprite span stays decorative.
     expect(component).not.toContain("<i /><b /><em />");
     const css = read("src/app/globals.css");
