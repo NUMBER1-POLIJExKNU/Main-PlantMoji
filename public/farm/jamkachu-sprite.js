@@ -19,6 +19,7 @@
   "use strict";
 
   var ASSET_BASE = "/farm/assets/jamkachu/4x/"; // 4x source everywhere; CSS pixelates
+  var MOOD_BADGE_BASE = "/farm/assets/moods/4x/"; // designer mood badge icons
 
   /** Stage→phase: the pack draws 4 growth phases; 10 stages bucket into them. */
   var STAGE_PHASE = {
@@ -56,11 +57,21 @@
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods
    *  (aria-hidden in the markup; presentation only). */
+  // Emoji fallback kept for hosts that cannot load the badge art.
   var MOOD_STATUS_CHIP = {
     TooCold: "🥶",
     HumidAir: "💦",
     SoilAcidic: "🧪",
     SoilAlkaline: "🧪",
+  };
+  // The designer's mood badges (assets/moods) draw these four conditions
+  // apart properly — the two soil moods finally differ (red-down tube vs
+  // purple-up tube) instead of sharing one test-tube emoji.
+  var MOOD_CHIP_ART = {
+    TooCold: "mood-11-too-cold",
+    HumidAir: "mood-09-too-wet",
+    SoilAcidic: "mood-05-soil-acidic",
+    SoilAlkaline: "mood-06-soil-alkaline",
   };
 
   /** Bond→tier thresholds (automatic bond rewards, riding the skins pacing
@@ -250,9 +261,14 @@
     return promise;
   }
 
-  /** Active pot recolor: equipped shop pot wins over the cosmetic skin;
-   *  the designer's own pot shows when neither applies. */
+  /** Bond Lv.10 keepsake: the pot itself turns gold. Replaces the old SVG
+   *  band laid over the pot — the reward is now the real drawn pot. */
+  var GOLDPOT_RAMP = { body: "#D9A63C", shade: "#B0801F", rim: "#F2D268", rimLight: "#FBEBB4", rimHighlight: "#FFF6D8", glint: "#FFE79A" };
+
+  /** Active pot recolor: Lv.10 gold wins, then the equipped shop pot, then
+   *  the cosmetic skin; the designer's own pot shows when none applies. */
   function activeRamp() {
+    if (Number(state.bondLevel) >= 10) return { key: "decor:goldpot", ramp: GOLDPOT_RAMP };
     if (state.potItemKey && POT_ITEM_RAMPS[state.potItemKey]) {
       return { key: "pot:" + state.potItemKey, ramp: POT_ITEM_RAMPS[state.potItemKey] };
     }
@@ -328,8 +344,22 @@
     }
     var chipEl = document.getElementById("mood-status-chip");
     if (chipEl) {
-      var chip = state.sleeping ? "" : MOOD_STATUS_CHIP[state.mood] || "";
-      if (chipEl.textContent !== chip) chipEl.textContent = chip;
+      var chipArt = state.sleeping ? "" : MOOD_CHIP_ART[state.mood] || "";
+      if (chipEl.dataset.pmChip !== chipArt) {
+        chipEl.dataset.pmChip = chipArt;
+        chipEl.textContent = "";
+        if (chipArt) {
+          var chipImg = document.createElement("img");
+          chipImg.src = MOOD_BADGE_BASE + chipArt + ".png";
+          chipImg.alt = "";
+          // Badge art missing (offline mirror, partial deploy) falls back to
+          // the emoji so the mood never loses its second signal.
+          chipImg.onerror = function () {
+            chipEl.textContent = MOOD_STATUS_CHIP[state.mood] || "";
+          };
+          chipEl.appendChild(chipImg);
+        }
+      }
     }
     preload(phase, state.bondLevel);
   }

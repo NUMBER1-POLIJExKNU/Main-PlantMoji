@@ -57,26 +57,46 @@ describe("farm shop layer (display-only)", () => {
     expect(html).toContain('class="badge seeds"');
   });
 
-  it("head-anchored overlay art tracks the drawn phase down to the small sprites", () => {
-    // The shared crown anchor (shop hats/glasses/crown/bandana/goggles PLUS
-    // the Lv.7 ribbon keepsake) is calibrated to the p3/p4 head in the
-    // markup; the p1/p2 sprites start ~60-85px lower in the 300×350 box, so
-    // the sprite driver stamps .sprite-phase-N on every repaint and
-    // style.css pulls the anchor down to the measured head tops — a hat
-    // bought at Seed/Sprout sits ON the head, never floating in the air.
-    expect(html).toContain('<g class="acc-anchor" transform="translate(0 72)">');
+  it("overlay art lands on the drawn head and eyes at every growth phase", () => {
+    // Hats and lenses hang off two SEPARATE anchors, because the drawn head
+    // top and the drawn eye line are far apart (measured from the committed
+    // 4x PNGs: head top y78/97/134/158, eye centre y118/132/162/190 for
+    // p4/p3/p2/p1). One shared anchor put lenses on the forehead and hats
+    // through the face. Each smaller phase also SCALES the art about the
+    // head centre — the p1 head is 60px wide against the p4 head's 149px,
+    // so an unscaled hat would be twice the seed's width.
+    expect(html).toContain('<g class="acc-anchor-crown" transform="translate(0 60)">');
+    expect(html).toContain('<g class="acc-anchor-eyes" transform="translate(0 113)">');
     expect(spriteJs).toContain('stageBox.classList.toggle("sprite-phase-" + p, p === phase)');
-    expect(css).toContain(".mascot-svg.sprite-phase-1 .acc-anchor { transform: translate(0px, 133px); }");
-    expect(css).toContain(".mascot-svg.sprite-phase-2 .acc-anchor { transform: translate(0px, 109px); }");
-    // The Lv.7 head-ribbon decoration survived the overlay trim and shares
-    // the anchor: element present inside the anchor group, CSS reveal rule
-    // alive, and live.js still targeting it — the bond reward stays visible.
-    const anchorIdx = html.indexOf('class="acc-anchor"');
-    const ribbonIdx = html.indexOf('class="decor decor-ribbon"');
-    expect(anchorIdx).toBeGreaterThan(-1);
-    expect(ribbonIdx).toBeGreaterThan(anchorIdx);
-    expect(css).toContain(".mascot-svg.decor-lv7 .decor-ribbon { display: block; }");
-    expect(live).toContain('ribbon: ".decor-ribbon"');
+    for (const [phase, crown, eyes, scale] of [[3, 84, 128, "0.81"], [2, 125, 159, "0.62"], [1, 154, 188, "0.4"]] as const) {
+      expect(css).toContain(`.mascot-svg.sprite-phase-${phase} .acc-anchor-crown { transform: translate(150px, ${crown}px) scale(${scale}) translate(-150px, 0px); }`);
+      expect(css).toContain(`.mascot-svg.sprite-phase-${phase} .acc-anchor-eyes { transform: translate(150px, ${eyes}px) scale(${scale}) translate(-150px, 0px); }`);
+    }
+    // Lenses ride the eye anchor, hats the crown anchor.
+    const eyesIdx = html.indexOf('class="acc-anchor-eyes"');
+    expect(html.indexOf("shop-g-acc_glasses")).toBeGreaterThan(eyesIdx);
+    expect(html.indexOf("shop-g-acc_goggles")).toBeGreaterThan(eyesIdx);
+    expect(html.indexOf("shop-g-acc_strawhat")).toBeLessThan(eyesIdx);
+  });
+
+  it("retires the Lv.7 ribbon the designer art already awards", () => {
+    // Bond 4 draws a head bow and bond 8 a prize ribbon INTO the sprite
+    // (jamkachu-sprite.js tiers), so the old SVG bow was a second ribbon
+    // fighting the drawn one. The whole promise chain goes with it — no
+    // level announces a decoration the character cannot show.
+    expect(html).not.toContain("decor-ribbon");
+    expect(css).not.toContain("decor-lv7");
+    expect(live).not.toContain('ribbon: ".decor-ribbon"');
+    expect(live).toContain("const DECOR_LEVELS = [2, 3, 5, 10];");
+    for (const strings of [live, readFileSync(resolve(process.cwd(), "public/farm/strings.js"), "utf8")]) {
+      expect(strings).not.toContain("Head ribbon");
+      expect(strings).not.toContain("Pita di kepala");
+    }
+    // Lv.10 recolors the sprite's own pot instead of laying a band over it.
+    expect(html).not.toContain("decor-goldpot");
+    expect(spriteJs).toContain("GOLDPOT_RAMP");
+    expect(css).toContain(".mascot-svg.decor-lv10 .decor-token { display: block; }");
+    expect(live).toContain('goldpot: ".decor-token"');
   });
 
   it("style.css hides accessory art until live.js applies ownership classes", () => {

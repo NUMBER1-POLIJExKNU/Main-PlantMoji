@@ -568,6 +568,11 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    since the rail is a separate narrow column, not this same grid width. */
 .env-hud-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .env-hud-card { --hud-accent:var(--color-grass); --pulse-color:transparent; position:relative; min-width:0; min-height:132px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 10px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; transition:opacity .3s ease, filter .3s ease; }
+/* Designer condition badge (assets/moods), pinned to the tile corner only
+   while a reading sits outside its comfort band — it names the DIRECTION
+   (too hot / too cold, too wet / too dry) so the fix is readable without
+   parsing numbers. Decorative: the .env-status text stays the real signal. */
+.env-condition-badge { position:absolute; top:6px; right:6px; width:26px; height:26px; image-rendering:pixelated; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.22)); pointer-events:none; }
 .env-hud-card.is-temp { --hud-accent:#ef8d64; }.env-hud-card.is-hum { --hud-accent:#4da1ed; }.env-hud-card.is-light { --hud-accent:#e9b936; }.env-hud-card.is-ph { --hud-accent:#69b957; }
 .env-hud-card > i { display:grid; place-items:center; width:32px; height:32px; border:2px solid var(--color-outline); border-radius:8px; background:color-mix(in srgb,var(--hud-accent) 25%,white); font:18px/1 sans-serif; }
 .env-hud-copy { min-width:0; display:flex; flex-direction:column; }
@@ -1146,14 +1151,21 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     pointer-events: none; /* taps keep landing on the wrapper pipeline */
 }
 /* Head-anchored overlay art (shop hats/glasses + Lv.7 ribbon keepsake)
-   tracks the drawn head per growth phase: measured content tops of the
-   committed 4x PNGs sit at y≈158 (p1 seed), y≈134 (p2 sprout), y≈97 (p3),
-   y≈78 (p4) in the 300×350 box, so the small phases pull the crown anchor
-   down ~25px above their head start. jamkachu-sprite.js stamps
-   .sprite-phase-N from the stage→phase table on every repaint; p3/p4 keep
-   the markup's translate(0 72) calibration. */
-.mascot-svg.sprite-phase-1 .acc-anchor { transform: translate(0px, 133px); }
-.mascot-svg.sprite-phase-2 .acc-anchor { transform: translate(0px, 109px); }
+   tracks the drawn head per growth phase. jamkachu-sprite.js stamps
+   .sprite-phase-N from the stage→phase table on every repaint; p4 keeps
+   the markup's own calibration and the smaller phases override it here.
+   Measured from the committed 4x PNGs (scratch/measure-head.mjs):
+   head top y78/97/134/158 and head width 149/121/93/60 for p4/p3/p2/p1,
+   eye centre y118/132/162/167. Overlay art was drawn for the p4 head, so
+   the smaller phases scale it about the head centre (x150) as well as
+   re-seating it — a full-size hat on the seed would be twice its width. */
+.mascot-svg.sprite-phase-3 .acc-anchor-crown { transform: translate(150px, 84px) scale(0.81) translate(-150px, 0px); }
+.mascot-svg.sprite-phase-2 .acc-anchor-crown { transform: translate(150px, 125px) scale(0.62) translate(-150px, 0px); }
+.mascot-svg.sprite-phase-1 .acc-anchor-crown { transform: translate(150px, 154px) scale(0.4) translate(-150px, 0px); }
+/* Eye line: lenses land on the drawn eyes, never the forehead. */
+.mascot-svg.sprite-phase-3 .acc-anchor-eyes { transform: translate(150px, 128px) scale(0.81) translate(-150px, 0px); }
+.mascot-svg.sprite-phase-2 .acc-anchor-eyes { transform: translate(150px, 159px) scale(0.62) translate(-150px, 0px); }
+.mascot-svg.sprite-phase-1 .acc-anchor-eyes { transform: translate(150px, 188px) scale(0.4) translate(-150px, 0px); }
 /* Plain-mood status chip (🥶/💦/🧪): floats by the sprite head; PMSprite
    writes the glyph, :empty keeps it out of the layout otherwise. Static —
    the float drift below is reduced-motion gated. */
@@ -1168,6 +1180,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     z-index: 2;
 }
 #mood-status-chip:empty { display: none; }
+/* Designer mood badge (assets/moods): 128px art shown at 40px so the pixel
+   grid stays crisp; the emoji fallback keeps the font-size above. */
+#mood-status-chip img { display: block; width: 40px; height: 40px; image-rendering: pixelated; }
 @media (prefers-reduced-motion: no-preference) {
     #mood-status-chip { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
 }
@@ -1200,8 +1215,11 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
 .mascot-svg .decor { display: none; }
 .mascot-svg.decor-lv2 .decor-sticker { display: block; }
 .mascot-svg.decor-lv3 .decor-flag { display: block; }
-.mascot-svg.decor-lv7 .decor-ribbon { display: block; }
-.mascot-svg.decor-lv10 .decor-goldpot { display: block; }
+/* Lv.7 retired with the sprite swap — the designer art awards the head bow
+   at bond 4 and the prize ribbon at bond 8 (jamkachu-sprite.js tiers).
+   Lv.10 turns the sprite's own pot gold (goldpot ramp) and plants this
+   keepsake star on the grass. */
+.mascot-svg.decor-lv10 .decor-token { display: block; }
 
 /* Lv.5 room upgrade: subtly warmer sky gradient (live.js toggles on body). */
 body.room-warm {

@@ -4743,13 +4743,16 @@ window.PMFx = {
 // are state, not celebration). Only the LEVEL-UP diff adds a short T3
 // reveal after the level-up overlay.
 
-const DECOR_LEVELS = [2, 3, 5, 7, 10];
-const DECOR_KEY_BY_LEVEL = { 2: "sticker", 3: "flag", 5: "room", 7: "ribbon", 10: "goldpot" };
+// Lv.7 ("head ribbon") retired with the designer sprites: the drawn art
+// already awards a head bow at bond 4 and a prize ribbon at bond 8
+// (jamkachu-sprite.js tiers), so announcing a third ribbon promised a
+// reward the character could not show.
+const DECOR_LEVELS = [2, 3, 5, 10];
+const DECOR_KEY_BY_LEVEL = { 2: "sticker", 3: "flag", 5: "room", 10: "goldpot" };
 const DECOR_ANCHOR = {
   sticker: ".decor-sticker",
   flag: ".decor-flag",
-  ribbon: ".decor-ribbon",
-  goldpot: ".decor-goldpot",
+  goldpot: ".decor-token",
   // "room" has no single element — sparkles fall back to the mascot stage.
 };
 const DECOR_FALLBACK = {
@@ -4757,7 +4760,6 @@ const DECOR_FALLBACK = {
   sticker: "Pot heart sticker",
   flag: "Pot flag",
   room: "Warmer room glow",
-  ribbon: "Head ribbon",
   goldpot: "Golden pot",
   bffToken: "Best Friend 💛",
 };
@@ -4772,7 +4774,6 @@ function applyDecorations(level) {
   if (svg) {
     svg.classList.toggle("decor-lv2", lv >= 2);
     svg.classList.toggle("decor-lv3", lv >= 3);
-    svg.classList.toggle("decor-lv7", lv >= 7);
     svg.classList.toggle("decor-lv10", lv >= 10);
   }
   document.body?.classList.toggle("room-warm", lv >= 5);
@@ -5495,6 +5496,43 @@ const GAUGE_NEUTRAL_DOMAIN = {
  *  disagree), the legacy VITAL_* constants only as the profile-null
  *  fallback. Alert sides mirror mood semantics: temp = too hot, humidity =
  *  too dry, pH = outside either side. */
+/** Designer condition badge for a vital that has drifted out of its comfort
+ *  band (assets/moods). Icons name the DIRECTION — too hot vs too cold, too
+ *  wet vs too dry — so a child reads which way to correct without decoding
+ *  numbers. Returns "" while a reading sits in range. */
+function vitalConditionBadge(kind, value) {
+  const band = gaugeDomainAndBand(kind, cropProfile).band;
+  if (!band) return "";
+  if (kind === "temp") return value > band.max ? "mood-02-overheating" : value < band.min ? "mood-11-too-cold" : "";
+  if (kind === "hum") return value > band.max ? "mood-09-too-wet" : value < band.min ? "mood-08-thirsty" : "";
+  if (kind === "light") return value > band.max ? "mood-10-too-bright" : "";
+  if (kind === "ph") return value < band.min ? "mood-05-soil-acidic" : value > band.max ? "mood-06-soil-alkaline" : "";
+  return "";
+}
+
+/** Paint (or clear) the condition badge on one vital tile. Idempotent: the
+ *  element is created once and reused, and a missing badge file simply
+ *  leaves the tile as it was — the text status is the real signal. */
+function renderVitalBadge(card, kind, value) {
+  if (!card) return;
+  const key = vitalConditionBadge(kind, value);
+  let badge = card.querySelector(".env-condition-badge");
+  if (!key) {
+    if (badge) badge.remove();
+    return;
+  }
+  if (!badge) {
+    badge = document.createElement("img");
+    badge.className = "env-condition-badge";
+    badge.alt = "";
+    badge.setAttribute("aria-hidden", "true");
+    badge.addEventListener("error", () => badge.remove(), { once: true });
+    card.appendChild(badge);
+  }
+  const src = `/farm/assets/moods/4x/${key}.png`;
+  if (!badge.src.endsWith(src)) badge.src = src;
+}
+
 function vitalAlert(kind, value) {
   const band = gaugeDomainAndBand(kind, cropProfile).band;
   if (kind === "temp") return band ? value > band.max : value > VITAL_TEMP_HOT;
@@ -5665,6 +5703,7 @@ function renderSensors(reading) {
     emphasiseVital(kind, value, beforeLeft, afterLeft);
     card.classList.toggle("is-alert", alert);
     card.classList.toggle("is-stale", staleText != null);
+    renderVitalBadge(card, kind, value);
     const label = card.querySelector(".env-status");
     if (label) label.textContent = staleText ?? status;
   };
