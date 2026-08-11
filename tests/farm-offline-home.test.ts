@@ -58,8 +58,11 @@ describe("farm home offline/unreachable-Supabase presentation", () => {
   });
 
   it("every offline early-return path in main() calls the shared renderer before scheduling the hatch", () => {
-    // The config-fetch failure branch.
-    expect(offlineBlock('config = await (await fetch("/api/public-config")).json();'))
+    // The config-fetch failure branch. fetchPublicConfig() (boot-resilience
+    // fix, tests/farm-boot-resilience.test.ts) wraps the raw fetch with a
+    // timeout + retries, but still funnels every exhausted attempt into
+    // this same catch → offline path.
+    expect(offlineBlock("config = await fetchPublicConfig();"))
       .toMatch(/catch\s*{\s*window\.__pmSupabaseConfigured = false;[^]*?renderOfflineHome\(\);[^]*?scheduleHatch\(null\);/);
 
     // The missing/invalid config branch.

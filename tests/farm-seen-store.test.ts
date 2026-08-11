@@ -134,7 +134,11 @@ describe("PMSeen store (pm_seen_v3)", () => {
 
 describe("host wiring (index.html + live.js)", () => {
   it("index.html loads seen.js as a classic script before the live.js module", () => {
-    const seenTag = html.indexOf('<script src="/farm/seen.js"></script>');
+    // seen.js carries `defer` (boot-resilience fix, tests/farm-boot-resilience.test.ts)
+    // so it fetches in parallel with the other classic scripts instead of
+    // blocking parsing one at a time — it still executes before the live.js
+    // module, which shares the same document-order execution queue.
+    const seenTag = html.indexOf('<script defer src="/farm/seen.js"></script>');
     const liveTag = html.indexOf('<script type="module" src="/farm/live.js"></script>');
     expect(seenTag).toBeGreaterThan(-1);
     expect(liveTag).toBeGreaterThan(seenTag);

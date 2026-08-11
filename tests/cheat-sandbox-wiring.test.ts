@@ -28,7 +28,10 @@ describe("classroom cheat sandbox wiring", () => {
     // and the <Script src="/farm/cheat.js"> in it — never runs on the main
     // demo screen. The shell must carry its own tag.
     expect(nextConfig).toContain('{ source: "/", destination: "/farm/index.html" }');
-    expect(farmHtml).toContain('<script src="/farm/cheat.js"></script>');
+    // defer (boot-resilience fix, tests/farm-boot-resilience.test.ts): fetches
+    // in parallel with the other classic scripts instead of blocking parsing
+    // one at a time; still executes before live.js (see the test below).
+    expect(farmHtml).toContain('<script defer src="/farm/cheat.js"></script>');
   });
 
   it("loads cheat.js before live.js so main() can see window.PMCheat", () => {

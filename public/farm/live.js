@@ -5721,22 +5721,6 @@ function runFirstDayTour() {
   ]);
 }
 
-// Boot-resilience timeouts (flaky school networks stall instead of cleanly
-// failing, which a plain fetch/await never notices): every network call this
-// module makes on the critical boot path gets a hard cap so a stall can
-// never hang main() forever and leave renderOfflineHome() unreached.
-const SUPABASE_FETCH_TIMEOUT_MS = 10_000;
-
-/** Every request the Supabase client issues (queries + realtime handshakes)
- *  routes through this so a stalled request against the project's origin
- *  rejects instead of hanging, same rationale as CONFIG_FETCH_TIMEOUT_MS
- *  below. Shared by both createClient call sites in loadSupabaseClient. */
-const supabaseClientOptions = {
-  global: {
-    fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS) }),
-  },
-};
-
 /** Build the Supabase client. Prefers the vendored UMD bundle (loaded via a
  *  <script> tag in index.html before this module, exposing
  *  window.supabase.createClient synchronously) so the page never depends on
@@ -6039,12 +6023,29 @@ function initCheatFarm() {
   if (window.PMCheat) window.PMCheat.onChange(applyCheatFarm);
 }
 
+// Boot-resilience timeouts (flaky school networks stall instead of cleanly
+// failing, which a plain fetch/await never notices): every network call
+// this module makes on the critical boot path gets a hard cap so a stall
+// can never hang main() forever and leave renderOfflineHome() unreached.
 // Hard cap for the config fetch itself, plus short backoff delays for up to
 // two retries — a network STALL (never resolves, never rejects) is what
 // actually strands main() forever on flaky Wi-Fi; a clean fetch failure was
 // already caught below.
 const CONFIG_FETCH_TIMEOUT_MS = 6_000;
 const CONFIG_RETRY_DELAYS_MS = [750, 1_500];
+const SUPABASE_FETCH_TIMEOUT_MS = 10_000;
+
+/** Every request the Supabase client issues (queries + realtime handshakes)
+ *  routes through this so a stalled request against the project's origin
+ *  rejects instead of hanging, same rationale as CONFIG_FETCH_TIMEOUT_MS
+ *  above. Shared by both createClient call sites in loadSupabaseClient
+ *  (defined earlier in this file — referenced here only at call time,
+ *  after main() has run this whole module top to bottom). */
+const supabaseClientOptions = {
+  global: {
+    fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS) }),
+  },
+};
 // How long to wait before the ONE retry of a stalled/thrown first refresh()
 // inside main() (below) — separate from the 15s poll's in-flight guard.
 const FIRST_REFRESH_RETRY_DELAY_MS = 2_000;
