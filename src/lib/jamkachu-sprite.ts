@@ -18,7 +18,7 @@ export type SpritePhase = 1 | 2 | 3 | 4;
 export const SPRITE_PHASES = [1, 2, 3, 4] as const;
 
 /** The 5 expressions the designer drew per phase. */
-export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"] as const;
+export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"] as const;
 export type SpriteMood = (typeof SPRITE_MOODS)[number];
 
 /** Automatic bond-level accessory rewards ("" = bare). */
@@ -56,11 +56,11 @@ export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
   TooCold: "sleepy",
-  DryAir: "thirsty",
-  HumidAir: "thirsty",
+  DryAir: "unwell",
+  HumidAir: "unwell",
   Sleepy: "sleepy",
-  SoilAcidic: "thirsty",
-  SoilAlkaline: "thirsty",
+  SoilAcidic: "unwell",
+  SoilAlkaline: "unwell",
 };
 
 /** Chip floated near the sprite head for the moods that SHARE a drawn body

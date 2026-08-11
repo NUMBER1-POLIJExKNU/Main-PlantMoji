@@ -39,7 +39,11 @@
   var PHASE_SLUG = { 1: "seed", 2: "sprout", 3: "flower", 4: "fruit" };
 
   /** The 5 expressions the designer drew per phase. */
-  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat"];
+  // "unwell" is ours, not the designer's: their thirsty frown wearing their
+  // sleepy lids (scripts/build-unwell-face.mjs). The thirsty face's big dark
+  // ovals read as sullen at mascot size, and four moods had to wear it.
+  // Replace these files if the designer draws a proper one.
+  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"];
 
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
@@ -55,11 +59,11 @@
     Happy: "happy",
     Overheating: "overheat",
     TooCold: "sleepy", // cold plants hunker down; the 🥶 badge names it
-    DryAir: "thirsty",
-    HumidAir: "thirsty",
+    DryAir: "unwell",
+    HumidAir: "unwell",
     Sleepy: "sleepy",
-    SoilAcidic: "thirsty",
-    SoilAlkaline: "thirsty",
+    SoilAcidic: "unwell",
+    SoilAlkaline: "unwell",
   };
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods

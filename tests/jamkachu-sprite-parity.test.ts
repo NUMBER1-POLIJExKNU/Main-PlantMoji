@@ -69,11 +69,11 @@ describe("React sprite mapping pins the decided design tables", () => {
       Happy: "happy",
       Overheating: "overheat",
       TooCold: "sleepy",
-      DryAir: "thirsty",
-      HumidAir: "thirsty",
+      DryAir: "unwell",
+      HumidAir: "unwell",
       Sleepy: "sleepy",
-      SoilAcidic: "thirsty",
-      SoilAlkaline: "thirsty",
+      SoilAcidic: "unwell",
+      SoilAlkaline: "unwell",
     });
   });
 
@@ -143,7 +143,7 @@ describe("React sprite mapping pins the decided design tables", () => {
     // Bond level picks the look now — `stage` is passed by some callers and
     // deliberately ignored, so these cases vary the level, not the stage.
     expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 3 })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p2-sprout-thirsty.png",
+      "/farm/assets/jamkachu/4x/plant-p2-sprout-unwell.png",
     );
     expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 24 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",

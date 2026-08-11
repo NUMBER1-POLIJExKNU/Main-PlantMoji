@@ -67,8 +67,8 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
         }
       }
     }
-    // 4 phases × 5 moods × (1+1+2+3 tiers summed per phase) × 3 scales.
-    expect(checked).toBe((5 + 5 + 10 + 15) * 3);
+    // 4 phases × 6 moods × (1+1+2+3 tiers summed per phase) × 3 scales.
+    expect(checked).toBe((6 + 6 + 12 + 18) * 3);
   });
 
   it("the driver serves the 4x pack (image-rendering: pixelated does the rest)", () => {
@@ -78,9 +78,11 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
   });
 });
 
-describe("full designer pack ships (all 145 files reachable — plan contract)", () => {
+describe("full designer pack ships (every delivered file reachable — plan contract)", () => {
   // 105 plant PNGs (matrix above) + 9 jamkachu GIFs + 24 NPC PNGs
-  // + 7 NPC GIFs = 145 committed files, every one asserted on disk.
+  // + 7 NPC GIFs = the 145 files the designer delivered, every one asserted
+  // on disk. (The 21 "unwell" frames above are ours, derived from their art
+  // — see scripts/build-unwell-face.mjs — and are covered by the matrix.)
   const packFile = (rel: string) => resolve(process.cwd(), "public/farm/assets", rel);
 
   it("ships both growth strips and the moods strip across all three tiers", () => {
@@ -154,11 +156,11 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
       Happy: "happy",
       Overheating: "overheat",
       TooCold: "sleepy",
-      DryAir: "thirsty",
-      HumidAir: "thirsty",
+      DryAir: "unwell",
+      HumidAir: "unwell",
       Sleepy: "sleepy",
-      SoilAcidic: "thirsty",
-      SoilAlkaline: "thirsty",
+      SoilAcidic: "unwell",
+      SoilAlkaline: "unwell",
     });
     // Moods that share a drawn face stay distinguishable via the chip
     // (aria-hidden; #char-mood text remains the accessible signal).
