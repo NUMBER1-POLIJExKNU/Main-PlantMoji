@@ -85,7 +85,10 @@ function Metric({ icon, label, guideLabel, guide, value, status, locale }: {
 }) {
   return (
     <article className="pm-panel">
-      <div className="flex items-start justify-between gap-3">
+      {/* flex-wrap: the badge is shrink-proof, so on tight cards it must drop
+          below the title — otherwise the title column collapses and the
+          route-wide overflow-wrap:anywhere shatters words mid-syllable. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div><span className="text-2xl">{icon}</span><h2 className="mt-2 pm-heading text-xs">{label}</h2></div>
         <span className={`shrink-0 rounded-full border-2 px-3 py-1 [font-family:var(--pm-font-pixel)] text-[9px] leading-relaxed ${STATUS_STYLE[status]}`}>{STATUS_COPY[locale][status]}</span>
       </div>
