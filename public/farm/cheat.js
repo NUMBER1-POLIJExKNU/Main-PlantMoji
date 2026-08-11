@@ -105,12 +105,188 @@
       shop: { ownAll: seed.shop && seed.shop.ownAll ? true : false },
       // Collection: reveal every mood / badge / chapter.
       collection: { revealAll: seed.collection && seed.collection.revealAll ? true : false },
+      // Care actions currently held (see ACTIONS below).
+      actions: defaultActions(seed.actions),
     };
   }
 
   function numOr(value, fallback) {
     var n = Number(value);
     return Number.isFinite(n) ? n : fallback;
+  }
+
+  // ── Care actions ────────────────────────────────────────────────────────
+  // Typing 34 into a box teaches nothing. Pressing "put it in the sun" and
+  // watching the thermometer climb teaches the whole lesson, which is what
+  // this sandbox exists for. So the sensors are driven by the physical things
+  // a child can actually do to a pot.
+  //
+  // Two kinds, because the real world has two kinds:
+  //   toggle — a state the plant is left IN. Holds until the opposing action
+  //            is pressed, and the readings keep moving the whole time.
+  //   delta  — one act, one fixed change. Pressing again does it again.
+  //
+  // Toggles live in exclusive slots: you cannot have a pot in the sun AND in
+  // the shade, or cup it in your hands while a box is over it. Picking one in
+  // a slot releases the other, which is what "the opposing action" means.
+  //
+  // The simulation lives here, in the store, rather than in either panel —
+  // that way the readings keep flowing while the presenter walks from
+  // Monitoring to My Garden, and the mascot reacts in real time.
+
+  // Mirror of SENSOR_LIMITS in src/types/raw-sensors.ts (what the real ingest
+  // endpoint accepts). Pinned by tests/cheat-sandbox-wiring.test.ts.
+  var VITAL_LIMITS = {
+    temperature: { min: -40, max: 100 },
+    humidity: { min: 0, max: 100 },
+    light: { min: 0, max: 100 },
+    soilPh: { min: 0, max: 14 },
+  };
+
+  // Thresholds the targets are expressed against, so "put it in the sun"
+  // overheats a strawberry and a cayenne at their own different temperatures.
+  // Defaults are the strawberry profile; setBands swaps in the live crop.
+  var bands = {
+    temp: { recMin: 20, recMax: 24, overheatEnter: 28, coldEnter: 14 },
+    humidity: { recMin: 40, recMax: 60, dryEnter: 40, humidEnter: 60 },
+    ph: { recMin: 5.5, recMax: 6.5 },
+    light: { min: 30 },
+  };
+
+  var mid = function (a, b) { return (a + b) / 2; };
+
+  /** Where each toggle is trying to drag the readings. Absolute values, not
+   *  steps — the tick eases toward them, so nothing runs away. */
+  function toggleTargets(id) {
+    var t = bands.temp, h = bands.humidity;
+    switch (id) {
+      case "sun": return { temperature: t.overheatEnter + 6, light: 95 };
+      case "shade": return { temperature: mid(t.recMin, t.recMax), light: 25 };
+      case "cold": return { temperature: t.coldEnter - 4, humidity: h.dryEnter - 3 };
+      case "warm": return { temperature: mid(t.recMin, t.recMax) };
+      case "hands": return { temperature: t.overheatEnter + 2, light: 5, humidity: h.humidEnter };
+      case "box": return { light: 2 };
+      case "bag": return { humidity: h.humidEnter + 15, temperature: t.overheatEnter };
+      case "vent": return { humidity: h.dryEnter - 5 };
+      case "lamp": return { light: 70 };
+      default: return {};
+    }
+  }
+
+  var ACTIONS = [
+    // toggles — the plant is left in this state
+    { id: "sun", kind: "toggle", slot: "place", emoji: "☀️", id_label: "Jemur di bawah matahari", en_label: "Put it in the sun" },
+    { id: "shade", kind: "toggle", slot: "place", emoji: "🌳", id_label: "Pindahkan ke tempat teduh", en_label: "Move it to the shade" },
+    { id: "cold", kind: "toggle", slot: "place", emoji: "❄️", id_label: "Kenakan angin dingin", en_label: "Sit it in cold air" },
+    { id: "warm", kind: "toggle", slot: "place", emoji: "🧥", id_label: "Pindahkan ke tempat hangat", en_label: "Move it somewhere warm" },
+    { id: "hands", kind: "toggle", slot: "cover", emoji: "🤲", id_label: "Tangkupkan dengan tangan", en_label: "Cup it in your hands" },
+    { id: "box", kind: "toggle", slot: "cover", emoji: "📦", id_label: "Tutup dengan kardus", en_label: "Put a box over it" },
+    { id: "bag", kind: "toggle", slot: "cover", emoji: "🫙", id_label: "Selubungi dengan plastik", en_label: "Cover it with a clear bag" },
+    { id: "vent", kind: "toggle", slot: "vent", emoji: "🪟", id_label: "Buka jendela", en_label: "Open a window" },
+    { id: "lamp", kind: "toggle", slot: "lamp", emoji: "💡", id_label: "Nyalakan lampu", en_label: "Switch a lamp on" },
+    // deltas — one act, one change
+    { id: "mist", kind: "delta", emoji: "💦", id_label: "Semprot daunnya", en_label: "Mist the leaves" },
+    { id: "fan", kind: "delta", emoji: "🌬️", id_label: "Kipasi", en_label: "Fan it" },
+    { id: "ash", kind: "delta", slow: true, emoji: "🪵", id_label: "Taburkan abu kayu", en_label: "Sprinkle wood ash" },
+    { id: "leafmould", kind: "delta", slow: true, emoji: "🍂", id_label: "Campur humus daun", en_label: "Mix in leaf mould" },
+    { id: "rinse", kind: "delta", slow: true, emoji: "💧", id_label: "Bilas dengan air biasa", en_label: "Rinse with plain water" },
+    { id: "freshsoil", kind: "delta", slow: true, emoji: "🪴", id_label: "Campur tanah baru", en_label: "Mix in fresh potting soil" },
+  ];
+
+  /** One press of a delta action. `toward` pulls pH into the healthy band
+   *  instead of shoving it a fixed way, which is what a rinse or fresh soil
+   *  actually does. */
+  function applyDelta(id, vitals) {
+    var p = bands.ph;
+    var toward = function (value, lo, hi, step) {
+      if (value < lo) return Math.min(lo, value + step);
+      if (value > hi) return Math.max(hi, value - step);
+      return value;
+    };
+    switch (id) {
+      case "mist": return { humidity: vitals.humidity + 8, temperature: vitals.temperature - 0.5 };
+      case "fan": return { humidity: vitals.humidity - 6, temperature: vitals.temperature - 1 };
+      case "ash": return { soilPh: vitals.soilPh + 0.4 };
+      case "leafmould": return { soilPh: vitals.soilPh - 0.4 };
+      case "rinse": return { soilPh: toward(vitals.soilPh, p.recMin, p.recMax, 0.5) };
+      case "freshsoil": return { soilPh: toward(vitals.soilPh, p.recMin, p.recMax, 0.5) };
+      default: return {};
+    }
+  }
+
+  function fit(key, value) {
+    var limit = VITAL_LIMITS[key];
+    var clamped = limit ? Math.min(limit.max, Math.max(limit.min, value)) : value;
+    // Temperature and pH read in tenths; humidity and light are whole percent.
+    return key === "humidity" || key === "light" ? Math.round(clamped) : Math.round(clamped * 10) / 10;
+  }
+
+  function defaultActions(seed) {
+    seed = seed || {};
+    return {
+      place: seed.place || null,
+      cover: seed.cover || null,
+      vent: seed.vent || null,
+      lamp: seed.lamp || null,
+    };
+  }
+
+  /** Compose every held toggle into one set of targets. Later entries win, so
+   *  a cover beats where the pot is standing and beats the lamp — which is
+   *  true: a box over the plant is darker than any room. */
+  function activeTargets(actions) {
+    var targets = {};
+    ["place", "vent", "lamp", "cover"].forEach(function (slot) {
+      var id = actions && actions[slot];
+      if (!id) return;
+      var next = toggleTargets(id);
+      Object.keys(next).forEach(function (axis) { targets[axis] = next[axis]; });
+    });
+    return targets;
+  }
+
+  // Newton's law of cooling, near enough: each tick closes a fixed fraction of
+  // the remaining gap. Reaching a mood takes a few seconds of holding rather
+  // than one press, which is the point — and nothing can run away, because the
+  // target is where it stops.
+  var TICK_MS = 250;
+  var TAU_MS = 6000;
+  var ticker = null;
+
+  function tick() {
+    var state = read();
+    if (!state) { stopTicking(); return; }
+    var targets = activeTargets(state.actions);
+    var axes = Object.keys(targets);
+    if (axes.length === 0) return; // every toggle released: freeze in place
+    var ease = 1 - Math.exp(-TICK_MS / TAU_MS);
+    var changed = false;
+    axes.forEach(function (axis) {
+      var from = numOr(state.vitals[axis], 0);
+      var next = fit(axis, from + (targets[axis] - from) * ease);
+      if (next !== from) { state.vitals[axis] = next; changed = true; }
+    });
+    if (!changed) return; // settled on the target — stop churning localStorage
+    write(state);
+    emit();
+  }
+
+  function startTicking() {
+    if (ticker !== null || typeof window === "undefined") return;
+    ticker = window.setInterval(tick, TICK_MS);
+  }
+
+  function stopTicking() {
+    if (ticker === null) return;
+    window.clearInterval(ticker);
+    ticker = null;
+  }
+
+  /** Run the clock only while something is actually being held. */
+  function syncTicker() {
+    var state = read();
+    if (state && Object.keys(activeTargets(state.actions)).length > 0) startTicking();
+    else stopTicking();
   }
 
   // ── Public API ──────────────────────────────────────────────────────────
@@ -128,10 +304,12 @@
       setCookie(true);
       mountBanner();
       emit();
+      syncTicker();
     },
 
     /** Leave the sandbox — wipes all cheat values; app returns to normal. */
     deactivate: function () {
+      stopTicking();
       try { window.localStorage.removeItem(KEY); } catch {}
       setCookie(false);
       unmountBanner();
@@ -171,6 +349,51 @@
       });
       write(state);
       emit();
+    },
+
+    /** The care actions both panels render. One list so My Garden and
+     *  Monitoring can never drift apart. */
+    ACTIONS: ACTIONS,
+
+    /** Point the toggle targets at the live crop's thresholds, so "put it in
+     *  the sun" overheats each crop at its own temperature. Called by whoever
+     *  knows the profile; without it the strawberry defaults apply. */
+    setBands: function (next) {
+      if (!next) return;
+      if (next.temp) Object.keys(next.temp).forEach(function (k) { bands.temp[k] = numOr(next.temp[k], bands.temp[k]); });
+      if (next.humidity) Object.keys(next.humidity).forEach(function (k) { bands.humidity[k] = numOr(next.humidity[k], bands.humidity[k]); });
+      if (next.ph) Object.keys(next.ph).forEach(function (k) { bands.ph[k] = numOr(next.ph[k], bands.ph[k]); });
+      if (next.light) Object.keys(next.light).forEach(function (k) { bands.light[k] = numOr(next.light[k], bands.light[k]); });
+    },
+
+    /** Which toggle is held in each slot: { place, cover, vent, lamp }. */
+    getActions: function () {
+      var state = read();
+      return state ? defaultActions(state.actions) : defaultActions(null);
+    },
+
+    /**
+     * Press a care action. A toggle claims its slot (or releases it when it
+     * was already held); a delta applies its change once. Client-only, like
+     * every other sandbox write — localStorage and nothing else.
+     */
+    press: function (id) {
+      var state = read();
+      if (!state) return;
+      var action = ACTIONS.find(function (a) { return a.id === id; });
+      if (!action) return;
+      if (action.kind === "toggle") {
+        state.actions = defaultActions(state.actions);
+        // Pressing the held action again releases it; the readings then stay
+        // exactly where they are rather than drifting back on their own.
+        state.actions[action.slot] = state.actions[action.slot] === id ? null : id;
+      } else {
+        var patch = applyDelta(id, state.vitals);
+        Object.keys(patch).forEach(function (axis) { state.vitals[axis] = fit(axis, patch[axis]); });
+      }
+      write(state);
+      emit();
+      syncTicker();
     },
 
     /** Subscribe to sandbox changes (this tab + other tabs via storage). */
@@ -239,7 +462,10 @@
 
   // Mount on load if a sandbox is already active (survives page navigation).
   function boot() {
-    if (PMCheat.isActive()) mountBanner();
+    if (!PMCheat.isActive()) return;
+    mountBanner();
+    // A toggle held before navigating keeps running on the next page.
+    syncTicker();
   }
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {

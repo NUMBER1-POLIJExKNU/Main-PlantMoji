@@ -14,6 +14,30 @@ export interface CheatVitals {
   soilPh: number;
 }
 
+/** Which toggle is held in each exclusive slot; null = nothing held. */
+export interface CheatActions {
+  place: string | null;
+  cover: string | null;
+  vent: string | null;
+  lamp: string | null;
+}
+
+export type CheatActionSlot = keyof CheatActions;
+
+/** One care action a presenter can press. Authored once in cheat.js so both
+ *  panels render the same list. */
+export interface CheatAction {
+  id: string;
+  kind: "toggle" | "delta";
+  /** Toggles only — the exclusive slot this action claims. */
+  slot?: CheatActionSlot;
+  emoji: string;
+  id_label: string;
+  en_label: string;
+  /** True when the real-world change takes days, not seconds (soil pH). */
+  slow?: boolean;
+}
+
 export interface CheatState {
   active: boolean;
   status: { level: number; totalXp: number; days: number; seeds: number };
@@ -21,6 +45,15 @@ export interface CheatState {
   quests: Record<string, string>;
   shop: { ownAll: boolean };
   collection: { revealAll: boolean };
+  actions: CheatActions;
+}
+
+/** Crop thresholds the toggle targets aim at. Mirrors CropProfile's bands. */
+export interface CheatBands {
+  temp?: { recMin?: number; recMax?: number; overheatEnter?: number; coldEnter?: number };
+  humidity?: { recMin?: number; recMax?: number; dryEnter?: number; humidEnter?: number };
+  ph?: { recMin?: number; recMax?: number };
+  light?: { min?: number };
 }
 
 export interface PMCheatApi {
@@ -31,6 +64,10 @@ export interface PMCheatApi {
   get: (path: string, fallback?: unknown) => unknown;
   set: (patch: Record<string, unknown>) => void;
   onChange: (cb: () => void) => () => void;
+  ACTIONS: CheatAction[];
+  setBands: (bands: CheatBands) => void;
+  getActions: () => CheatActions;
+  press: (id: string) => void;
 }
 
 declare global {

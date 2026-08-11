@@ -129,13 +129,13 @@ export const QUEST_COPY_ID: Record<QuestKey, LocalizedQuestCopy> = {
   },
   BALANCE_SOIL_ACIDIC: {
     title: "Seimbangkan Tanahku",
-    description: "Tanah terlalu asam. Gunakan perawatan lembut, lalu jaga pH stabil selama 5 menit.",
-    why: "pH 5,5–6,5 membantu akar stroberi menyerap unsur hara. Hindari menambahkan bahan kimia kuat.",
+    description: "Tanah terlalu asam. Taburkan sedikit abu kayu atau campur tanah baru, lalu jaga pH stabil selama 5 menit.",
+    why: "pH 5,5–6,5 membantu akar stroberi menyerap unsur hara. Abu kayu bersifat basa dan menaikkan pH perlahan — cukup sedikit saja, dan hindari bahan kimia kuat.",
   },
   BALANCE_SOIL_ALKALINE: {
     title: "Seimbangkan Tanahku",
-    description: "Tanah terlalu basa. Gunakan perawatan lembut, lalu jaga pH stabil selama 5 menit.",
-    why: "pH 5,5–6,5 membantu unsur mikro tetap tersedia bagi akar stroberi. Hindari bahan kimia kuat.",
+    description: "Tanah terlalu basa. Bilas dengan air biasa atau campur humus daun, lalu jaga pH stabil selama 5 menit.",
+    why: "pH 5,5–6,5 membantu unsur mikro tetap tersedia bagi akar stroberi. Humus daun bersifat asam dan menurunkan pH perlahan. Hindari bahan kimia kuat.",
   },
 };
 

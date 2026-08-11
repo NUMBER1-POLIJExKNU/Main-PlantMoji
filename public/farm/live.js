@@ -4993,12 +4993,40 @@ let cropProfile = null; // toDeviceCropProfile() shape from /api/crop-profile, o
 let cropProfileFetchedOnce = false;
 let lastReading = null; // latest raw sensor row, replayed once the profile lands
 
+/** Hand the live crop's thresholds to the cheat store. Defensive throughout:
+ *  the device profile shape is whatever /api/crop-profile returned, and a
+ *  missing branch just leaves the store's strawberry defaults in place. */
+function pushCheatBands(profile) {
+  if (!window.PMCheat?.setBands || !profile) return;
+  window.PMCheat.setBands({
+    temp: {
+      recMin: profile.temperature?.recommended?.min,
+      recMax: profile.temperature?.recommended?.max,
+      overheatEnter: profile.temperature?.overheating?.enterAtOrAbove,
+      coldEnter: profile.temperature?.cold?.enterAtOrBelow,
+    },
+    humidity: {
+      recMin: profile.airHumidity?.recommended?.min,
+      recMax: profile.airHumidity?.recommended?.max,
+      dryEnter: profile.airHumidity?.dryAir?.enterBelow,
+      humidEnter: profile.airHumidity?.humidAir?.enterAbove,
+    },
+    ph: { recMin: profile.soilPh?.recommended?.min, recMax: profile.soilPh?.recommended?.max },
+    light: { min: profile.light?.minimumPercentDuringLightingHours },
+  });
+}
+
 async function refreshCropProfile() {
   try {
     const res = await fetch(`/api/crop-profile?plantId=${encodeURIComponent(PLANT_ID)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data?.ok && data.profile) cropProfile = data.profile;
+      if (data?.ok && data.profile) {
+        cropProfile = data.profile;
+        // Point the sandbox's care-action targets at this crop, so "put it in
+        // the sun" overheats a strawberry and a cayenne at their own numbers.
+        pushCheatBands(cropProfile);
+      }
       // A non-ok body (404 unknown plant, 503 no supabase) is left as-is:
       // keep whatever the last known-good profile was rather than blanking
       // the range lines over a transient hiccup.
@@ -5793,8 +5821,8 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
 /** Physically possible range per sensor — mirror of SENSOR_LIMITS in
@@ -5874,6 +5902,52 @@ function applyCheatFarm() {
   // Same sleepShown guard as renderOfflineHome: a night visit owns the bubble.
   const bubble = $(".speech-bubble");
   if (bubble && !sleepShown) bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy);
+  // A held toggle moves the readings four times a second; the panel has to
+  // follow, or the buttons and the numbers behind them go stale mid-demo.
+  repaintCheatActions(null);
+}
+
+/** Render one kind of care action from cheat.js's single list. Held toggles
+ *  carry .is-held; the slow (soil pH) ones carry the time badge that keeps the
+ *  demo honest about pH taking days rather than seconds. */
+function cheatActionButtons(kind) {
+  const api = window.PMCheat;
+  if (!api || !Array.isArray(api.ACTIONS)) return "";
+  const L = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
+  const held = api.getActions ? api.getActions() : {};
+  return api.ACTIONS.filter((a) => a.kind === kind).map((a) => {
+    const on = a.kind === "toggle" && a.slot && held[a.slot] === a.id;
+    const label = appLocale === "id" ? a.id_label : a.en_label;
+    return `<button type="button" class="pm-cheat-action${on ? " is-held" : ""}" data-cheat-action="${a.id}"` +
+      (a.kind === "toggle" ? ` aria-pressed="${on ? "true" : "false"}" title="${L.held}"` : "") +
+      `><span aria-hidden="true">${a.emoji}</span><span>${label}</span>` +
+      (a.slow ? `<em>⏳ ${L.slow}</em>` : "") +
+      `</button>`;
+  }).join("");
+}
+
+/** Push the store's current state back onto the panel: which toggles are held,
+ *  and the by-value fields, which the toggle tick is moving underneath them.
+ *  Never touches the field being typed into. */
+function repaintCheatActions(panel) {
+  const root = panel || document.getElementById("pm-cheat-panel");
+  const api = window.PMCheat;
+  if (!root || !api) return;
+  const held = api.getActions ? api.getActions() : {};
+  const byId = new Map((api.ACTIONS || []).map((a) => [a.id, a]));
+  root.querySelectorAll("[data-cheat-action]").forEach((btn) => {
+    const action = byId.get(btn.getAttribute("data-cheat-action"));
+    if (!action || action.kind !== "toggle" || !action.slot) return;
+    const on = held[action.slot] === action.id;
+    btn.classList.toggle("is-held", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  root.querySelectorAll('.pm-cheat-byvalue-body input[data-cheat]').forEach((input) => {
+    if (input === document.activeElement) return;
+    const key = input.getAttribute("data-cheat");
+    const value = api.get(`vitals.${key}`, null);
+    if (value != null) input.value = String(value);
+  });
 }
 
 function buildCheatPanel() {
@@ -5911,17 +5985,48 @@ function buildCheatPanel() {
     field("days", L.days, s.status.days, 1, 0) +
     field("seeds", L.seeds, s.status.seeds, 1, 0) +
     `</div>` +
-    `<div class="pm-cheat-group"><h3>🌿 ${L.vitalsTitle}</h3>` +
+    // Care actions come before the raw numbers, because "put it in the sun" is
+    // the lesson and 34 is just a number. cheat.js owns the list so this panel
+    // and the Monitoring one can never drift apart.
+    `<div class="pm-cheat-group"><h3>🌿 ${L.actionsTitle}</h3>` +
+    `<div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div>` +
+    `<div class="pm-cheat-actions">${cheatActionButtons("delta")}</div>` +
+    `<p class="pm-cheat-hint">${L.slowNote}</p>` +
+    `</div>` +
+    `<p class="pm-cheat-hint">${L.hint}</p>` +
+    // Exact figures still reachable, just folded away.
+    `<div class="pm-cheat-byvalue">` +
+    `<button type="button" data-cheat-byvalue aria-expanded="false">▸ ${L.byValue}</button>` +
+    `<div class="pm-cheat-byvalue-body" hidden>` +
     // Ranges come from CHEAT_VITAL_LIMITS, never hand-typed here, so the
     // spinner, the tooltip and the clamp below can never disagree.
     vitalField("temperature", L.temp, s.vitals.temperature, 0.1) +
     vitalField("humidity", L.hum, s.vitals.humidity, 1) +
     vitalField("light", L.light, s.vitals.light, 1) +
     vitalField("soilPh", L.ph, s.vitals.soilPh, 0.1) +
-    `</div>` +
-    `<p class="pm-cheat-hint">${L.hint}</p>` +
+    `</div></div>` +
     `</div>`;
   document.body.appendChild(panel);
+
+  // Care actions: the store owns the physics, this only forwards the press and
+  // repaints the held state (its own change event brings the new values back).
+  panel.querySelectorAll("[data-cheat-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      window.PMCheat?.press(btn.getAttribute("data-cheat-action"));
+      repaintCheatActions(panel);
+    });
+  });
+
+  const byValueBtn = panel.querySelector("[data-cheat-byvalue]");
+  const byValueBody = panel.querySelector(".pm-cheat-byvalue-body");
+  byValueBtn?.addEventListener("click", () => {
+    const open = byValueBody.hasAttribute("hidden");
+    if (open) byValueBody.removeAttribute("hidden");
+    else byValueBody.setAttribute("hidden", "");
+    byValueBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    const L2 = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
+    byValueBtn.textContent = `${open ? "▾" : "▸"} ${L2.byValue}`;
+  });
 
   const collapseBtn = panel.querySelector("[data-cheat-collapse]");
   collapseBtn?.addEventListener("click", () => {

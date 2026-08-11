@@ -153,7 +153,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     key: "BALANCE_SOIL_ACIDIC",
     title: "Balance My Soil",
     description:
-      "My soil feels too sour. Try a gentle rinse with plain water or mix in some fresh potting soil, then keep me steady for 5 minutes.",
+      "My soil feels too sour. Sprinkle a little wood ash or mix in some fresh potting soil, then keep me steady for 5 minutes.",
     emoji: "🧪",
     xpReward: 25,
     kind: "recovery",
@@ -165,7 +165,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     key: "BALANCE_SOIL_ALKALINE",
     title: "Balance My Soil",
     description:
-      "My soil feels too chalky. Try a gentle rinse with plain water or mix in some fresh potting soil, then keep me steady for 5 minutes.",
+      "My soil feels too chalky. Rinse it gently with plain water or mix in some leaf mould, then keep me steady for 5 minutes.",
     emoji: "🧪",
     xpReward: 25,
     kind: "recovery",

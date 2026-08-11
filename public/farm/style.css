@@ -2379,6 +2379,62 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
   letter-spacing: .04em;
   color: #8A2B5B;
 }
+/* Care actions: what a child can actually do to a pot, which is the whole
+   point of the sandbox. Held toggles fill in solid so "the plant is in the sun
+   right now" is readable across a classroom. */
+#pm-cheat-panel .pm-cheat-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#pm-cheat-panel .pm-cheat-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  cursor: pointer;
+  padding: 5px 7px;
+  border: 2px solid #E0B0C6;
+  border-radius: 10px;
+  background: #fff;
+  color: #3a2600;
+  font: 600 11px/1.25 var(--font-body, system-ui, sans-serif);
+  text-align: left;
+}
+#pm-cheat-panel .pm-cheat-action > span:nth-child(2) { flex: 1; min-width: 0; }
+#pm-cheat-panel .pm-cheat-action.is-held {
+  border-color: #8A2B5B;
+  background: #8A2B5B;
+  color: #fff;
+}
+/* The soil-pH time badge — that change takes days in a real pot, and the
+   sandbox says so rather than pretending pH moves like temperature. */
+#pm-cheat-panel .pm-cheat-action em {
+  flex: none;
+  padding: 1px 4px;
+  border-radius: 6px;
+  background: #FFF1D6;
+  color: #7A5B12;
+  font: 700 9px/1.3 var(--font-body, system-ui, sans-serif);
+  font-style: normal;
+}
+#pm-cheat-panel .pm-cheat-action.is-held em { background: #FFD86B; color: #3a2600; }
+#pm-cheat-panel .pm-cheat-byvalue > button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: #8A2B5B;
+  font: 700 10px/1.3 var(--font-body, system-ui, sans-serif);
+  text-decoration: underline;
+}
+#pm-cheat-panel .pm-cheat-byvalue-body {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 7px;
+}
+#pm-cheat-panel .pm-cheat-byvalue-body[hidden] { display: none; }
 #pm-cheat-panel .pm-cheat-field {
   display: flex;
   align-items: center;

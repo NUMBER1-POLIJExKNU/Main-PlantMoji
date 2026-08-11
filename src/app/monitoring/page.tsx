@@ -65,7 +65,7 @@ export default async function MonitoringPage() {
 
       {/* Cheat-mode sensor editor (feature 6) — self-hides unless the demo
           sandbox is active; edits are client-only, never touching hardware. */}
-      <CheatSensorPanel locale={locale} />
+      <CheatSensorPanel locale={locale} cropProfile={cropProfile} />
 
       <MonitoringLive locale={locale} plantId={PLANT_ID} cropProfile={cropProfile} />
     </main>
