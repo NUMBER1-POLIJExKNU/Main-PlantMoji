@@ -620,8 +620,12 @@
                     <span class="quiz-chip-xp">+9 XP</span>
                 </button>
 
-                <!-- Current Quest (fed by the existing quests query) -->
-                <div id="current-quest" class="panel-glass"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></div>
+                <!-- Current Quest (fed by the existing quests query). The whole
+                     panel is a REAL link to /quests (kid-guide Task 1): one big
+                     honest tap target (≥44px, style.css) instead of a dead
+                     card. Inner ids/classes are unchanged so live.js's
+                     renderQuestSlot keeps writing into the same anchors. -->
+                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
 
                 <!-- Bond / XP / HP / Streak (character state, moved down from
                      hud-top). Identity diet: the old pixel CAT avatar and the
@@ -753,6 +757,10 @@
          screen. Classic script (not a module) so it runs before live.js. -->
     <script src="/farm/cheat.js"></script>
     <script src="/farm/strings.js"></script>
+    <!-- Unified one-time seen-store (window.PMSeen, pm_seen_v3): migrates the
+         legacy hatch/tour/guide flags on its first read. Classic script so it
+         runs before the live.js module below (same pattern as strings.js). -->
+    <script src="/farm/seen.js"></script>
     <script src="/farm/companion-ladder.js"></script>
     <script src="/farm/companion-skins.js"></script>
     <script src="/farm/sfx.js"></script>

@@ -496,24 +496,46 @@ document.querySelectorAll("[data-locale]").forEach((button) => {
 });
 applyLocale();
 
+// ── Unified seen-store bridge (public/farm/seen.js → window.PMSeen) ─────
+// Every one-time moment on the farm (hatch "hatch", tour "tour", guide
+// "guide.farm", tile invite "tiles.tried", future "dare.*"/"coach.*")
+// reads and writes ONLY the pm_seen_v3 blob through these two helpers.
+// seen.js migrated the legacy per-flag keys on its first read — live.js
+// never touches them again. Fail-closed: a missing script or unreadable
+// storage reports everything as SEEN, so a one-time moment can never
+// replay forever (the same silence the old per-flag guards kept).
+function pmSeenFlag(id) {
+  try {
+    return window.PMSeen ? window.PMSeen.seen(id) === true : true;
+  } catch {
+    return true;
+  }
+}
+function pmMarkSeen(id) {
+  try {
+    window.PMSeen?.markSeen(id);
+  } catch {}
+}
+
 // One small first-use guide, always reopenable with ?. Imperative dialog
 // state keeps it independent of sensor/network initialization.
 const farmGuide = $("#farm-guide");
 const openFarmGuide = () => typeof farmGuide?.showModal === "function" && farmGuide.showModal();
 $("#farm-guide-open")?.addEventListener("click", openFarmGuide);
-$("#farm-guide-close")?.addEventListener("click", () => { try { localStorage.setItem("plantmoji_guide_seen_v1", "1"); } catch {} farmGuide?.close(); });
+$("#farm-guide-close")?.addEventListener("click", () => { pmMarkSeen("guide.farm"); farmGuide?.close(); });
+// Coach dare hook: the first-day tour's final card dares the kid to open
+// the sticker book — pmCoach dispatches this event after the confetti.
+window.addEventListener("pm-open-guide", () => openFarmGuide());
 // First-day tour coexistence: while the spotlight tour is still owed
-// (pm_tour_seen_v1 absent — see runFirstDayTour), the tour speaks first and
-// its final step points at the ? FAB above, so the modal must not stack on
-// top of it: mark the guide seen instead of auto-opening. Unreadable
-// storage keeps the old fail-closed silence (no auto-open either way).
-try {
-  if (!localStorage.getItem("pm_tour_seen_v1")) {
-    localStorage.setItem("plantmoji_guide_seen_v1", "1");
-  } else if (!localStorage.getItem("plantmoji_guide_seen_v1")) {
-    openFarmGuide();
-  }
-} catch {}
+// (PMSeen "tour" unseen — see runFirstDayTour), the tour speaks first and
+// its final card points at the ? FAB above, so the modal must not stack on
+// top of it: mark the guide seen instead of auto-opening. A broken store
+// fails closed (everything reads seen), keeping the old silence.
+if (!pmSeenFlag("tour")) {
+  pmMarkSeen("guide.farm");
+} else if (!pmSeenFlag("guide.farm")) {
+  openFarmGuide();
+}
 
 // ── Wardrobe picker (milestone20, display-only) ─────────────────────────
 // Small button under the companion stage label → the same imperative
@@ -2798,7 +2820,24 @@ function vitalComment(kind) {
   return null;
 }
 
+// One-time pressable invite (kid-guide Task 1): until the very first tile
+// tap ever, the tiles carry .env-invite (a gentle CSS wiggle, reduced-motion
+// gated) so they read as buttons. The first tap retires it FOREVER via
+// PMSeen "tiles.tried" — cosmetic only, nothing granted.
+const TILES_SEEN_ID = "tiles.tried";
+let tileInviteRetired = pmSeenFlag(TILES_SEEN_ID);
+
+function retireTileInvite() {
+  if (tileInviteRetired) return;
+  tileInviteRetired = true;
+  pmMarkSeen(TILES_SEEN_ID);
+  for (const el of document.querySelectorAll(".env-hud-card.env-invite")) el.classList.remove("env-invite");
+}
+
 function onVitalTap(kind) {
+  // Retire the invite wiggle on ANY tile tap — even one that lands inside
+  // the comment cooldown or has nothing true to say.
+  retireTileInvite();
   const now = Date.now();
   if (now < vitalTapCooldownUntil) return;
   const line = vitalComment(kind);
@@ -2866,6 +2905,11 @@ function setupCareInteractions() {
         onVitalTap(kind);
       }
     });
+  }
+  // Tile invite wiggle (kid-guide Task 1): only while "tiles.tried" is
+  // unseen — the first onVitalTap above retires it forever.
+  if (!tileInviteRetired) {
+    for (const el of document.querySelectorAll(".env-hud-card")) el.classList.add("env-invite");
   }
 
   // Streak flame press (Task 15): tap → "N days in a row! Care today makes
@@ -5247,7 +5291,8 @@ async function refreshWeather() {
 }
 
 // ── Hatching intro (spec §6.3, one-time) ────────────────────────────────
-// First visit only (localStorage pm_hatched): pot trembles → Jamkachu pops
+// First visit only (PMSeen "hatch" — migrated from the legacy pm_hatched
+// flag by seen.js): pot trembles → Jamkachu pops
 // out (confetti + fanfare + name card) → personality/rename card → finale
 // highlighting the contextual care button and the current quest slot.
 // ENTIRELY presentation: no writes, no XP. Text-diet pass: the four
@@ -5258,7 +5303,7 @@ async function refreshWeather() {
 // shake/pop/confetti. Runs after the first render settles — with Supabase
 // unconfigured too (default happy character); the flag is set either way.
 
-const HATCH_KEY = "pm_hatched";
+const HATCH_SEEN_ID = "hatch";
 const HATCH_STEP_MS = 5000;
 const HATCH_SETTLE_MS = 800;
 const HATCH_FALLBACK = {
@@ -5270,30 +5315,23 @@ const HATCH_FALLBACK = {
   finale: "This button always shows what I need!",
 };
 let hatchActive = false;
-// First-day tour (see runFirstDayTour below): quiets the same systems
-// hatchActive quiets — every suppression gate checks both flags.
+// Coach engine (pmCoach below — the first-day tour and every future coach
+// card run through it): quiets the same systems hatchActive quiets — every
+// suppression gate checks both flags.
 let tourActive = false;
 
 /** True while the intro is running OR still owed to this browser — used by
- *  the memory rotation so a bubble never talks over the hatching. */
+ *  the memory rotation so a bubble never talks over the hatching. A broken
+ *  seen-store fails closed (pmSeenFlag reports seen ⇒ never pending). */
 function hatchPendingOrActive() {
-  if (hatchActive) return true;
-  try {
-    return !window.localStorage.getItem(HATCH_KEY);
-  } catch {
-    return true;
-  }
+  return hatchActive || !pmSeenFlag(HATCH_SEEN_ID);
 }
 
 /** Schedule the one-time intro after the first render settles. Unreadable
- *  storage ⇒ skip: without the flag we could not keep it one-time. */
+ *  storage ⇒ skip (pmSeenFlag fails closed): without a working flag we
+ *  could not keep it one-time. */
 function scheduleHatch(plantName) {
-  let seen = null;
-  try {
-    seen = window.localStorage.getItem(HATCH_KEY);
-  } catch {
-    return;
-  }
+  const seen = pmSeenFlag(HATCH_SEEN_ID);
   if (seen || hatchActive) {
     // Hatched on an earlier visit (possibly before the tour existed) — the
     // first-day tour may still be owed. scheduleTour re-checks its own flag.
@@ -5306,11 +5344,9 @@ function scheduleHatch(plantName) {
 function runHatchIntro(plantName) {
   if (hatchActive || !document.body) return;
   hatchActive = true;
-  // One-time either way (spec §6.3) — flag first, so a mid-sequence reload
-  // can never replay the intro.
-  try {
-    window.localStorage.setItem(HATCH_KEY, "1");
-  } catch {}
+  // One-time either way (spec §6.3) — seen-flag FIRST (PMSeen "hatch"), so
+  // a mid-sequence reload can never replay the intro.
+  pmMarkSeen(HATCH_SEEN_ID);
   const H = PM().hatch ?? {};
   const F = HATCH_FALLBACK;
   const name = typeof plantName === "string" && plantName.trim() ? plantName.trim() : "Jamkachu";
@@ -5415,8 +5451,9 @@ function runHatchIntro(plantName) {
     wrapper?.classList.remove("hatch-shake");
     $("#care-action")?.classList.remove("hatch-highlight");
     $("#current-quest")?.classList.remove("hatch-highlight");
-    // Brand-new players roll straight into the first-day tour: pm_hatched
-    // was written up front, so hatchPendingOrActive() no longer blocks it.
+    // Brand-new players roll straight into the first-day tour: the hatch
+    // seen-flag was written up front, so hatchPendingOrActive() no longer
+    // blocks it.
     scheduleTour();
   };
   const advance = () => {
@@ -5443,151 +5480,63 @@ function runHatchIntro(plantName) {
   advance();
 }
 
-// ── First-day tour (display-only, one-time) ─────────────────────────────
-// Closes the gap after the hatch intro: four spotlight cards pointing at
-// the REAL interface — sensor HUD, contextual care button, daily quiz
-// chip, and the quest slot + ? guide FAB. Reuses the hatch card/step
-// engine style (own layer + Skip + tap-to-advance + 5s auto-advance +
-// .hatch-highlight spotlights). ENTIRELY presentation: no network, no
-// XP/seeds, no celebrations — only two localStorage flags. Runs once,
-// gated by pm_tour_seen_v1 (write-first like pm_hatched): right after the
-// hatch intro's finish() for brand-new players, or on page load for
-// players who hatched before this update — never while the hatch intro is
-// pending or active. tourActive (declared beside hatchActive) quiets the
-// same idle/petting/FX/farmer systems for the duration.
+// ── Coach engine (pmCoach) — dim + spotlight + emoji + ONE sentence ─────
+// Generalized from the first-day tour so every coach (the tour today,
+// future "dare.*"/"coach.*" cards) shares one host. Card schema:
+//   cards = [{ target: cssSelector|null, emoji, text,
+//              dare?: { label, event } }]
+// Rules (kid-guide plan): a light dim with the shared .hatch-highlight
+// spotlight on each card's target, one big emoji, ONE short sentence (a
+// "\n" splits an honesty add-on onto its own line), and the FINAL card
+// carries an action dare — a real button with a verb label. Completing
+// the dare celebrates COSMETICALLY through the existing celebration queue
+// (confetti + fanfare only — zero rewards, zero game writes), marks the
+// coach seen (PMSeen), and dispatches the dare's window event so the host
+// page can act (e.g. open the sticker book). Skip stays visible;
+// tap-to-advance + 5s auto-advance, except dare cards, which wait for the
+// kid (tapping through still works). Reuses the hatch card chrome and the
+// shared tourActive quiet flag, so everything the hatch/tour quieted
+// stays quiet for every coach.
 
-const TOUR_KEY = "pm_tour_seen_v1";
-const TOUR_STEP_MS = 5000;
-const TOUR_SETTLE_MS = 900;
-const TOUR_FALLBACK = {
-  skip: "Skip",
-  senses: {
-    title: "MY REAL SENSES",
-    line: "These four tiles are my real senses — they feel my room for real!",
-    waiting: "My sensors haven't sent anything yet — the tiles will fill in on their own once my device is connected.",
-  },
-  care: { title: "WHAT I NEED", line: "This button always shows what I need — and it changes with my mood!" },
-  quiz: { title: "DAILY QUIZ", line: "Learn and earn here every day — a fresh farm case is waiting!" },
-  quest: { title: "MISSIONS", line: "When my sensors feel a change, a mission appears here — tap ? anytime for the full story." },
-};
-// One entry per step; step 4 pairs the quest slot with the ? guide FAB.
-const TOUR_STEP_TARGETS = [
-  ["#env-strip"],
-  ["#care-action"],
-  ["#daily-quiz-open"],
-  ["#current-quest", "#farm-guide-open"],
-];
+const COACH_STEP_MS = 5000;
+// Let the dare confetti read before the dare's event opens any UI.
+const COACH_DARE_EVENT_DELAY_MS = 650;
 
-/** Schedule the one-time tour after the page settles. Never while the
- *  hatch intro is pending or active — the hatch finish() re-schedules.
- *  Unreadable storage ⇒ stay silent: without the flag we could not keep
- *  the tour one-time (same fail-closed rule as pm_hatched). */
-function scheduleTour() {
-  if (hatchPendingOrActive()) return;
-  let seen = null;
-  try {
-    seen = window.localStorage.getItem(TOUR_KEY);
-  } catch {
-    return;
-  }
-  if (seen || tourActive) return;
-  setTimeout(runFirstDayTour, TOUR_SETTLE_MS);
-}
-
-function runFirstDayTour() {
-  if (tourActive || hatchActive || !document.body) return;
-  // The one-time guarantee lives HERE, not at the scheduler call sites:
-  // scheduleHatch can legitimately run twice in one load (main() plus its
-  // .catch fallback), queueing two timers that both passed scheduleTour's
-  // flag check. Re-reading the flag makes the second firing a no-op.
-  try {
-    if (window.localStorage.getItem(TOUR_KEY)) return;
-  } catch {
-    return;
-  }
+function pmCoach(id, cards) {
+  if (tourActive || hatchActive || !document.body) return false;
+  const deck = (Array.isArray(cards) ? cards : []).filter(
+    (entry) => entry && typeof entry.text === "string" && entry.text.trim(),
+  );
+  if (deck.length === 0) return false;
   tourActive = true;
-  // One-time either way — flag first, so a mid-tour reload can never
-  // replay it. The guide-seen flag rides along: the final step points the
-  // player at the ? FAB, so the modal must not auto-open on a later visit.
-  try {
-    window.localStorage.setItem(TOUR_KEY, "1");
-    window.localStorage.setItem("plantmoji_guide_seen_v1", "1");
-  } catch {}
-  const T = PM().tour ?? {};
-  const F = TOUR_FALLBACK;
   const reduce = prefersReducedMotion();
 
   const layer = document.createElement("div");
-  layer.id = "tour-layer";
+  layer.className = "coach-layer";
   const card = document.createElement("div");
-  card.className = "hatch-card";
+  card.className = "hatch-card coach-card";
   const skip = document.createElement("button");
   skip.type = "button";
   skip.className = "pixel-btn hatch-skip";
-  skip.textContent = T.skip ?? F.skip;
+  skip.textContent = PM().tour?.skip ?? TOUR_FALLBACK.skip;
   layer.appendChild(card);
   layer.appendChild(skip);
   document.body.appendChild(layer);
 
-  /** Same card builder as the hatch intro: pixel title + body lines. */
-  const setCard = (title, lines) => {
-    card.innerHTML = "";
-    if (title) {
-      const titleEl = document.createElement("div");
-      titleEl.className = "hatch-card-title";
-      titleEl.textContent = title;
-      card.appendChild(titleEl);
-    }
-    for (const line of lines ?? []) {
-      const lineEl = document.createElement("div");
-      lineEl.className = "hatch-card-line";
-      lineEl.textContent = line;
-      card.appendChild(lineEl);
-    }
-  };
-  /** Move the .hatch-highlight spotlight(s) onto this step's targets. The
-   *  tour layer's backdrop is fully transparent (style.css), so env-card
-   *  safety alerts (.is-alert) stay visible underneath throughout. */
-  const spotlight = (selectors) => {
+  const clearSpotlights = () => {
     for (const el of document.querySelectorAll(".hatch-highlight")) el.classList.remove("hatch-highlight");
-    for (const selector of selectors) $(selector)?.classList.add("hatch-highlight");
+  };
+  /** Move the .hatch-highlight spotlight onto this card's target (if any). */
+  const spotlight = (selector) => {
+    clearSpotlights();
+    if (!selector) return;
+    const el = $(selector);
+    el?.classList.add("hatch-highlight");
     try {
-      $(selectors[0])?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+      el?.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
     } catch {}
   };
-  const stepCard = (key) => {
-    const group = T[key] ?? {};
-    setCard(group.title ?? F[key].title, [group.line ?? F[key].line]);
-  };
 
-  const steps = [
-    () => {
-      // (1) Sensor HUD. If no reading has ever arrived (lastReading unset),
-      // say so honestly instead of pretending the dashes are data.
-      spotlight(TOUR_STEP_TARGETS[0]);
-      const senses = T.senses ?? {};
-      const lines = [senses.line ?? F.senses.line];
-      if (lastReading == null) lines.push(senses.waiting ?? F.senses.waiting);
-      setCard(senses.title ?? F.senses.title, lines);
-    },
-    () => {
-      // (2) Contextual care button — always shows what I need, mood-driven.
-      spotlight(TOUR_STEP_TARGETS[1]);
-      stepCard("care");
-    },
-    () => {
-      // (3) Daily quiz chip — learn and earn every day.
-      spotlight(TOUR_STEP_TARGETS[2]);
-      stepCard("quiz");
-    },
-    () => {
-      // (4) Quest slot + the ? guide FAB, spotlit together.
-      spotlight(TOUR_STEP_TARGETS[3]);
-      stepCard("quest");
-    },
-  ];
-
-  let index = -1;
   let stepTimer = null;
   let ended = false;
   const finish = () => {
@@ -5597,23 +5546,92 @@ function runFirstDayTour() {
     tourActive = false;
     layer.remove();
     // Undo every spotlight the sequence may have left behind.
-    for (const el of document.querySelectorAll(".hatch-highlight")) el.classList.remove("hatch-highlight");
+    clearSpotlights();
+    // Seen either way (Skip included) — a coach never nags twice.
+    pmMarkSeen(id);
   };
+
+  /** Action dare completed: celebrate cosmetically through the existing
+   *  celebration queue (nothing is granted — this is charm, not payout),
+   *  then hand the dare's event to the page. */
+  const completeDare = (entry) => {
+    if (ended) return;
+    const anchor = (entry.target ? $(entry.target) : null) ?? card;
+    const rect = anchor.getBoundingClientRect();
+    finish();
+    fxEnqueue(
+      2,
+      (done) => {
+        window.PMSfx?.play("fanfare");
+        spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, 18);
+        setTimeout(done, 900);
+      },
+      1200,
+      { kind: "coach" },
+    );
+    if (entry.dare?.event) {
+      setTimeout(() => {
+        try {
+          window.dispatchEvent(new CustomEvent(entry.dare.event));
+        } catch {}
+      }, COACH_DARE_EVENT_DELAY_MS);
+    }
+  };
+
+  /** One card: big emoji + one short sentence (+ the dare button, which is
+   *  the single interactive island inside the pointer-events:none card). */
+  const renderCard = (entry) => {
+    card.innerHTML = "";
+    if (entry.emoji) {
+      const emojiEl = document.createElement("div");
+      emojiEl.className = "coach-emoji";
+      emojiEl.setAttribute("aria-hidden", "true");
+      emojiEl.textContent = entry.emoji;
+      card.appendChild(emojiEl);
+    }
+    for (const line of String(entry.text).split("\n")) {
+      const lineEl = document.createElement("div");
+      lineEl.className = "hatch-card-line";
+      lineEl.textContent = line;
+      card.appendChild(lineEl);
+    }
+    if (entry.dare?.label) {
+      const dareBtn = document.createElement("button");
+      dareBtn.type = "button";
+      dareBtn.className = "pixel-btn coach-dare";
+      dareBtn.textContent = entry.dare.label;
+      dareBtn.addEventListener("pointerdown", () => completeDare(entry));
+      // Keyboard activation: click with detail 0 means Enter/Space.
+      dareBtn.addEventListener("click", (event) => {
+        if (event.detail === 0) completeDare(entry);
+      });
+      card.appendChild(dareBtn);
+    }
+  };
+
+  let index = -1;
   const advance = () => {
     if (ended) return;
     index++;
-    if (index >= steps.length) {
+    if (index >= deck.length) {
       finish();
       return;
     }
+    const entry = deck[index];
     try {
-      steps[index]();
+      spotlight(entry.target ?? null);
+      renderCard(entry);
     } catch {}
+    // The final dare card drops the dim so the dare target pops (CSS).
+    layer.classList.toggle("coach-final", Boolean(entry.dare));
     if (stepTimer !== null) clearTimeout(stepTimer);
-    stepTimer = setTimeout(advance, TOUR_STEP_MS);
+    // Dare cards never auto-advance — the whole point is the kid's tap.
+    stepTimer = entry.dare ? null : setTimeout(advance, COACH_STEP_MS);
   };
   layer.addEventListener("pointerdown", (event) => {
-    if (event.target === skip || skip.contains(event.target)) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".coach-dare")) return; // the dare button handles itself
+    if (target && (target === skip || skip.contains(target))) {
       finish();
       return;
     }
@@ -5621,6 +5639,80 @@ function runFirstDayTour() {
     advance();
   });
   advance();
+  return true;
+}
+
+// ── First-day tour (pmCoach consumer, display-only, one-time) ───────────
+// Closes the gap after the hatch intro: five coach cards pointing at the
+// REAL interface — senses HUD, contextual care button, daily quiz chip,
+// the quest link, and Grandpa's sticker-book handoff (the action dare).
+// ENTIRELY presentation: no network, nothing granted — only seen-flags.
+// Runs once, gated by PMSeen "tour" (write-first like the hatch intro,
+// migrated from the legacy pm_tour_seen_v1 flag by seen.js): right after
+// the hatch intro's finish() for brand-new players, or on page load for
+// players who hatched before this update — never while the hatch intro is
+// pending or active.
+
+const TOUR_SEEN_ID = "tour";
+const TOUR_SETTLE_MS = 900;
+const TOUR_FALLBACK = {
+  skip: "Skip",
+  senses: {
+    line: "These four tiles are my real senses — they feel my room for real!",
+    waiting: "My senses haven't felt anything yet — the tiles will fill in on their own once my device is connected.",
+  },
+  care: { line: "This button always shows what I need — and it changes with my mood!" },
+  quiz: { line: "Learn and earn here every day — a fresh farm case is waiting!" },
+  quest: { line: "When my senses feel a change, a mission appears here!" },
+  grandpa: { line: "Lost? Tap me — or fill my sticker book here →", dare: "Open my sticker book!" },
+};
+
+/** Schedule the one-time tour after the page settles. Never while the
+ *  hatch intro is pending or active — the hatch finish() re-schedules.
+ *  Unreadable storage ⇒ stay silent (pmSeenFlag fails closed): without
+ *  the flag we could not keep the tour one-time. */
+function scheduleTour() {
+  if (hatchPendingOrActive()) return;
+  if (pmSeenFlag(TOUR_SEEN_ID) || tourActive) return;
+  setTimeout(runFirstDayTour, TOUR_SETTLE_MS);
+}
+
+function runFirstDayTour() {
+  if (tourActive || hatchActive || !document.body) return;
+  // The one-time guarantee lives HERE, not at the scheduler call sites:
+  // scheduleHatch can legitimately run twice in one load (main() plus its
+  // .catch fallback), queueing two timers that both passed scheduleTour's
+  // flag check. Re-reading the flag makes the second firing a no-op.
+  if (pmSeenFlag(TOUR_SEEN_ID)) return;
+  // Write-first, before the first card can render: a mid-tour reload can
+  // never replay the tour. The guide-seen flag rides along — the final
+  // card points the player at the ? FAB, so the sticker-book modal must
+  // not auto-open on a later visit.
+  pmMarkSeen(TOUR_SEEN_ID);
+  pmMarkSeen("guide.farm");
+  const T = PM().tour ?? {};
+  const F = TOUR_FALLBACK;
+  const senses = T.senses ?? {};
+  // Honesty add-on (card 1): if no reading has ever arrived (lastReading
+  // unset), say so on its own line instead of pretending dashes are data.
+  const sensesLine = senses.line ?? F.senses.line;
+  const sensesText = lastReading == null ? `${sensesLine}\n${senses.waiting ?? F.senses.waiting}` : sensesLine;
+  const grandpa = T.grandpa ?? {};
+  pmCoach(TOUR_SEEN_ID, [
+    { target: "#env-strip", emoji: "👀", text: sensesText },
+    { target: "#care-action", emoji: "💛", text: T.care?.line ?? F.care.line },
+    { target: "#daily-quiz-open", emoji: "🧠", text: T.quiz?.line ?? F.quiz.line },
+    { target: "#current-quest", emoji: "🔥", text: T.quest?.line ?? F.quest.line },
+    // Final card (kid-guide Task 5): Grandpa waves — the handoff to the
+    // sticker book, the ONE replayable help home. The dare's event is
+    // caught next to the farm-guide wiring above (pm-open-guide).
+    {
+      target: "#farm-guide-open",
+      emoji: "👨‍🌾",
+      text: grandpa.line ?? F.grandpa.line,
+      dare: { label: grandpa.dare ?? F.grandpa.dare, event: "pm-open-guide" },
+    },
+  ]);
 }
 
 /** Build the Supabase client. Prefers the vendored UMD bundle (loaded via a

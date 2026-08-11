@@ -404,13 +404,24 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     gap: 14px;
 }
 
+/* Whole-card quest link (kid-guide Task 1): #current-quest is a real
+   <a href="/quests"> now — link resets + a ≥44px tap target + the same
+   gentle press feel as the env tiles, so it reads as tappable. */
 #current-quest {
+    display: block;
+    min-height: 44px;
     font-family: var(--font-heading);
     font-size: 11px;
     line-height: 1.8;
     text-align: center;
     padding: 14px 20px;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
 }
+#current-quest:hover { transform: translateY(-1px); }
+#current-quest:active { transform: translateY(2px); }
+#current-quest:focus-visible { outline: 3px solid var(--color-water); outline-offset: 2px; }
 #cq-progress { color: var(--color-primary); }
 
 /* Verifying shimmer (Task 12): while the sensor is confirming real care the
@@ -495,6 +506,26 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .env-hud-card:hover { transform:translateY(-1px); box-shadow:0 5px 0 var(--color-outline); }.env-hud-card:active { transform:translateY(3px); box-shadow:0 1px 0 var(--color-outline); }.env-hud-card:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
 @media (max-width:430px) { .env-hud-copy strong { font-size:23px; } }
 @media (max-width:360px) { .env-hud-copy strong { font-size:21px; }.env-hud-card { padding:8px 7px 9px; min-height:126px; } }
+
+/* One-time pressable invite (kid-guide Task 1): until the kid's very first
+   tile tap EVER, the sensor tiles do a brief gentle wiggle (a few staggered
+   rounds per visit) so they read as buttons, not labels. live.js adds
+   .env-invite only while PMSeen "tiles.tried" is unseen and retires it
+   forever on the first tap (retireTileInvite). Motion-gated: reduced motion
+   just sees the normal pressable tiles. */
+@media (prefers-reduced-motion: no-preference) {
+    .env-hud-card.env-invite { animation: pm-tile-invite 2.8s ease-in-out 1.1s 3; transform-origin: 50% 85%; }
+    .env-hud-card.env-invite:nth-child(2) { animation-delay: 1.4s; }
+    .env-hud-card.env-invite:nth-child(3) { animation-delay: 1.7s; }
+    .env-hud-card.env-invite:nth-child(4) { animation-delay: 2s; }
+}
+@keyframes pm-tile-invite {
+    0%, 24%, 100% { transform: none; }
+    4% { transform: rotate(-1.4deg); }
+    9% { transform: rotate(1.2deg); }
+    14% { transform: rotate(-0.8deg); }
+    19% { transform: rotate(0.5deg); }
+}
 
 /* Actions */
 .actions-panel {
@@ -1241,21 +1272,34 @@ body.room-warm {
     50% { outline-color: transparent; }
 }
 
-/* ── First-day tour (display-only, one-time) ───────────────────────────
-   Same card/skip components as the hatch intro, but the backdrop stays
-   fully transparent throughout: every step spotlights REAL UI with the
-   shared .hatch-highlight outline, and env-card safety alerts (.is-alert)
-   must stay completely visible underneath. */
-#tour-layer {
+/* ── Coach engine (pmCoach: first-day tour + future dare/coach cards) ──
+   Same card/skip chrome as the hatch intro. A light dim keeps the focus on
+   the spotlighted REAL UI (shared .hatch-highlight outline) while env-card
+   safety alerts (.is-alert) stay readable through it; the final action-dare
+   card drops the dim entirely (like .hatch-final) so the dare target pops. */
+.coach-layer {
     position: fixed;
     inset: 0;
     z-index: 1010;
-    background: transparent;
+    background: rgba(36, 52, 33, 0.22);
     display: flex;
     align-items: flex-end;
     justify-content: center;
     padding: 24px;
     cursor: pointer;
+}
+.coach-layer.coach-final { background: transparent; }
+/* Big pictorial anchor: one emoji per card instead of a pixel title. */
+.coach-emoji { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+/* The card itself blocks no taps (.hatch-card is pointer-events:none, so
+   layer taps advance) — the dare button is the one interactive island. */
+.coach-card .coach-dare {
+    pointer-events: auto;
+    margin: 14px auto 0;
+    justify-content: center;
+    min-height: 44px;
+    font-size: 11px;
+    padding: 12px 20px;
 }
 
 /* Honest sensor-waiting note under the env board (renderSensorsWaiting):

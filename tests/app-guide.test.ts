@@ -14,13 +14,23 @@ describe("first-use game guide", () => {
   it("teaches the real educational loop and AI boundary", () => {
     expect(guide).toContain("MEET JAMKACHU"); expect(guide).toContain("READ THE SENSORS");
     expect(guide).toContain("OPEN A MISSION"); expect(guide).toContain("VERIFY AND GROW");
-    expect(guide).toContain("plantmoji_guide_seen_v2");
-    expect(guide).toContain("pm-tutorial-spotlight");
     expect(guide).toContain('"Back"');
-    expect(guide).toContain("scrollIntoView");
-    expect(guide).toContain("prefers-reduced-motion: reduce");
-    expect(guide).toContain("keepFocusInside");
-    expect(guide).toContain("returnFocusTo?.focus()");
+  });
+  // Task 2/3 migration: app-guide.tsx no longer owns a raw localStorage flag
+  // or the spotlight/focus-trap mechanics directly — both moved out to the
+  // shared pm_seen_v3 store and the reusable CoachMark host respectively
+  // (pinned in tests/coach-store-contract.test.ts). This file only pins
+  // that app-guide.tsx correctly *consumes* both.
+  it("reads/writes the shared seen-store under id \"guide.home\", not a private flag", () => {
+    expect(guide).toContain('from "@/lib/seen"');
+    expect(guide).toContain('"guide.home"');
+    expect(guide).not.toContain("plantmoji_guide_seen_v2");
+    expect(guide).not.toMatch(/localStorage\.(get|set)Item/);
+  });
+  it("is a CoachMark consumer and keeps the replay event working", () => {
+    expect(guide).toContain('from "@/components/coach-mark"');
+    expect(guide).toContain("<CoachMark");
+    expect(guide).toContain("plantmoji:open-guide");
   });
   it("keeps the floating help control above the mobile navigation", () => {
     expect(styles).toMatch(/\.pm-guide-button\s*\{[\s\S]*?bottom:\s*calc\(92px \+ env\(safe-area-inset-bottom\)\)/);
