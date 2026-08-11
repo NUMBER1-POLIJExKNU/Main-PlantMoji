@@ -203,17 +203,28 @@
                          INSIDE .grass-floor (like .grass-decor) so the props stand
                          on the fixed viewport-bottom grass at every screen height,
                          not at the content-height stage's lower edge. -->
+                    <!-- The designer's shop sprites (images/icons/shop), one
+                         <img> per catalog key. These were box-shadow drawings
+                         before: a bought scarecrow rendered as a 12x74 brown
+                         stick, so nobody could tell they owned anything. Three
+                         catalog items had no drawing at all and simply never
+                         appeared. Every decor key in the catalog now has a
+                         picture here, and SHOP_DECOR_KEYS in live.js must list
+                         exactly these. -->
                     <div class="shop-decor-layer" aria-hidden="true">
-                        <div class="shop-decor shop-decor-scarecrow"><i></i><b></b></div>
-                        <div class="shop-decor shop-decor-fence"><i></i></div>
-                        <div class="shop-decor shop-decor-lantern"><i></i></div>
-                        <div class="shop-decor shop-decor-pond"><i></i></div>
-                        <div class="shop-decor shop-decor-coffee-sign"><i>☕</i></div>
-                        <div class="shop-decor shop-decor-greenhouse"><i></i></div>
-                        <div class="shop-decor shop-decor-rain-barrel"><i></i></div>
-                        <div class="shop-decor shop-decor-compost"><i>♻</i></div>
-                        <div class="shop-decor shop-decor-tobacco-barn"><i></i></div>
-                        <div class="shop-decor shop-decor-puger-pinwheel"><i></i></div>
+                        <img class="shop-decor shop-decor-scarecrow" src="/icons/shop/decor_scarecrow.png" alt="" width="72" height="72">
+                        <img class="shop-decor shop-decor-fence" src="/icons/shop/decor_fence.png" alt="" width="64" height="64">
+                        <img class="shop-decor shop-decor-lantern" src="/icons/shop/decor_lantern.png" alt="" width="52" height="52">
+                        <img class="shop-decor shop-decor-pond" src="/icons/shop/decor_pond.png" alt="" width="80" height="80">
+                        <img class="shop-decor shop-decor-coffee-sign" src="/icons/shop/decor_coffee_sign.png" alt="" width="66" height="66">
+                        <img class="shop-decor shop-decor-greenhouse" src="/icons/shop/decor_greenhouse.png" alt="" width="88" height="88">
+                        <img class="shop-decor shop-decor-rain-barrel" src="/icons/shop/decor_rain_barrel.png" alt="" width="60" height="60">
+                        <img class="shop-decor shop-decor-compost" src="/icons/shop/decor_compost.png" alt="" width="66" height="66">
+                        <img class="shop-decor shop-decor-tobacco-barn" src="/icons/shop/decor_tobacco_barn.png" alt="" width="84" height="84">
+                        <img class="shop-decor shop-decor-puger-pinwheel" src="/icons/shop/decor_puger_pinwheel.png" alt="" width="58" height="58">
+                        <img class="shop-decor shop-decor-jfc-banner" src="/icons/shop/decor_jfc_banner.png" alt="" width="60" height="60">
+                        <img class="shop-decor shop-decor-indonesia-flag" src="/icons/shop/decor_indonesia_flag.png" alt="" width="58" height="58">
+                        <img class="shop-decor shop-decor-mugunghwa" src="/icons/shop/decor_mugunghwa.png" alt="" width="54" height="54">
                     </div>
                 </div>
 

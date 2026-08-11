@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { equipShopItem, purchaseShopItem, type ShopActionResult } from "@/app/shop/actions";
 import { useCheat } from "@/lib/pm-cheat";
-import { SHOP_UI_COPY, type ShopCategory } from "@/game/economy/shop-catalog";
+import { SHOP_UI_COPY, shopItemArt, type ShopCategory } from "@/game/economy/shop-catalog";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import ShopPreviewStage from "@/components/shop-preview";
 import type { AppLocale } from "@/lib/i18n";
@@ -218,10 +218,18 @@ export default function ShopGrid({
             <div className="pm-shop-grid">
               {shownItems.map((item) => {
                   const isPreviewed = previewKey === item.key;
+                  // A card used to show a picture, a name, a blurb and a
+                  // Preview button — no price, no idea whether you owned it,
+                  // no idea whether you could afford it. Buying rightly lives
+                  // on the stage above, but the browsing surface still has to
+                  // answer "what does this cost and do I have it".
+                  const owned = ownedRow(item.key);
+                  const affordable = seeds >= item.price;
+                  const art = shopItemArt(item.key);
                   return (
                     <article
                       key={item.key}
-                      className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}`}
+                      className={`pm-panel pm-shop-card${busyKey === item.key ? " is-busy" : ""}${isPreviewed ? " is-previewed" : ""}${owned ? " is-owned" : affordable ? "" : " is-locked"}`}
                       aria-busy={busyKey === item.key}
                       // Tapping the card selects it into the try-on stage
                       // above — buy/equip live exclusively on that stage now
@@ -230,10 +238,19 @@ export default function ShopGrid({
                       // toggling control for the same selection.
                       onClick={() => setPreviewKey(item.key)}
                     >
-                      <span className="pm-shop-emoji" aria-hidden="true">{item.emoji}</span>
+                      <span className="pm-shop-emoji" aria-hidden="true">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                        {art ? <img src={art} alt="" className="pm-shop-art" width={128} height={128} draggable={false} /> : item.emoji}
+                      </span>
                       <h3>{item.name}</h3>
                       <p>{item.blurb}</p>
                       {item.category === "decor" && <small className="pm-shop-auto">↳ {copy.decorAuto}</small>}
+                      <div className="pm-shop-card-foot">
+                        <span className="pm-shop-price"><span aria-hidden="true">🌰</span> {item.price}</span>
+                        {owned
+                          ? <span className="pm-shop-state is-owned">✓ {owned.equipped ? copy.equipped : copy.owned}</span>
+                          : !affordable && <span className="pm-shop-state is-short">{item.price - seeds} {copy.needMore}</span>}
+                      </div>
                       <button type="button" className={`pm-shop-preview-btn${isPreviewed ? " is-active" : ""}`} onClick={(event) => { event.stopPropagation(); setPreviewKey(isPreviewed ? null : item.key); }}>{isPreviewed ? `✓ ${copy.previewing}` : `👁 ${copy.preview}`}</button>
                     </article>
                   );

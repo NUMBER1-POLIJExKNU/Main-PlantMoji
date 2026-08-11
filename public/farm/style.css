@@ -2090,9 +2090,11 @@ body.farmer-dragging {
     .hud-top { order:0; }
     .care-focus { order:1; align-self:center; flex:0 0 auto; width:calc(100vw - 28px); min-width:0; max-width:640px; margin-inline:0; }
     .mascot-stage { order:2; }
-    #current-quest { order:3; width:100%; max-width:640px; margin-inline:auto; }
-    #quest-verify-console { order:4; width:100%; max-width:640px; margin-inline:auto; }
-    #env-strip { order:5; width:100%; max-width:640px; margin-inline:auto; }
+    /* Vitals above the mission (see the ≥801px block for why). The verify
+       console stays welded to the mission it belongs to. */
+    #env-strip { order:3; width:100%; max-width:640px; margin-inline:auto; }
+    #current-quest { order:4; width:100%; max-width:640px; margin-inline:auto; }
+    #quest-verify-console { order:5; width:100%; max-width:640px; margin-inline:auto; }
     .user-gamification { order:6; max-width:640px; margin-inline:auto; }
     .quiz-chip { order:7; max-width:640px; margin-inline:auto; }
     .hud-top { width:calc(100% - 60px); min-width:0; justify-content:center; }
@@ -2280,9 +2282,13 @@ body.farmer-dragging {
     }
 
     .care-focus { order:-5; }
-    #current-quest { order:-4; }
-    #quest-verify-console { order:-3; }
-    #env-strip { order:-2; }
+    /* Vitals sit directly under the care card: both are readings, and the
+       care card's advice is about the numbers this strip shows, so they read
+       as one block. The mission follows, with its verify console attached —
+       those two must never be separated. */
+    #env-strip { order:-4; }
+    #current-quest { order:-3; }
+    #quest-verify-console { order:-2; }
     .home-stack .user-gamification { order:-1; }
     .quiz-chip { order:0; }
     .home-divider { display: none; }
@@ -2421,29 +2427,46 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 .shop-decor-layer.own-decor_compost .shop-decor-compost { display: block; }
 .shop-decor-layer.own-decor_tobacco_barn .shop-decor-tobacco-barn { display: block; }
 .shop-decor-layer.own-decor_puger_pinwheel .shop-decor-puger-pinwheel { display: block; }
+.shop-decor-layer.own-decor_jfc_banner .shop-decor-jfc-banner { display: block; }
+.shop-decor-layer.own-decor_indonesia_flag .shop-decor-indonesia-flag { display: block; }
+.shop-decor-layer.own-decor_mugunghwa .shop-decor-mugunghwa { display: block; }
 
-/* Scarecrow: post + head + arms (box-shadow sprite, .grass-tuft technique) */
-.shop-decor-scarecrow { position: absolute; left: 6%; bottom: 60px; width: 12px; height: 74px; background: #8a6b48; border: 3px solid #243421; }
-.shop-decor-scarecrow i { position: absolute; left: -26px; top: 10px; width: 64px; height: 10px; background: #8a6b48; border: 3px solid #243421; }
-.shop-decor-scarecrow b { position: absolute; left: -8px; top: -24px; width: 28px; height: 24px; background: #f4c95d; border: 3px solid #243421; }
+/* One sprite per owned decoration, standing on the grass. `bottom` is measured
+   from the bottom of the grass strip, so a value near 20px plants the sprite
+   in the turf rather than on the horizon; the strip does not clip, so tall
+   pieces rise above the grass line as they should.
 
-/* Bamboo fence: three posts via box-shadow */
-.shop-decor-fence { position: absolute; right: 4%; bottom: 56px; width: 10px; height: 46px; background: #c9a24b; border: 3px solid #243421; box-shadow: 22px 6px 0 #c9a24b, 44px 0 0 #c9a24b; }
-.shop-decor-fence i { position: absolute; left: -6px; top: 10px; width: 66px; height: 8px; background: #e0bc6a; border: 3px solid #243421; }
+   The left offsets deliberately skip roughly 20%–38%: that is where Jamkachu
+   stands, and a barn growing out of the plant's pot is not the look. Owning
+   all thirteen fills the farm without a single overlap. */
+.shop-decor { position: absolute; width: auto; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(36,52,33,.16)); }
 
-/* Lantern: warm glowing box on a hook */
-.shop-decor-lantern { position: absolute; left: 16%; bottom: 118px; width: 22px; height: 30px; background: #ffb84d; border: 3px solid #243421; box-shadow: 0 0 18px 6px rgba(255, 184, 77, 0.45); }
-.shop-decor-lantern i { position: absolute; left: 6px; top: -12px; width: 6px; height: 12px; background: #243421; }
+.shop-decor-tobacco-barn   { left: 1%;    bottom: 16px; width: 84px; }
+.shop-decor-scarecrow      { left: 9%;    bottom: 18px; width: 72px; }
+.shop-decor-lantern        { left: 16.5%; bottom: 34px; width: 52px; }
+.shop-decor-mugunghwa      { left: 40%;   bottom: 14px; width: 54px; }
+.shop-decor-compost        { left: 45%;   bottom: 16px; width: 66px; }
+.shop-decor-coffee-sign    { left: 52%;   bottom: 18px; width: 66px; }
+.shop-decor-greenhouse     { left: 59.5%; bottom: 16px; width: 88px; }
+.shop-decor-fence          { left: 68%;   bottom: 16px; width: 64px; }
+.shop-decor-rain-barrel    { left: 75%;   bottom: 16px; width: 60px; }
+/* The pond is water, not an object standing in the grass — it lies lower and
+   flatter than everything else on purpose. */
+.shop-decor-pond           { left: 81%;   bottom: 8px;  width: 80px; }
+.shop-decor-puger-pinwheel { left: 87%;   bottom: 20px; width: 58px; }
+.shop-decor-jfc-banner     { left: 92%;   bottom: 22px; width: 60px; }
+.shop-decor-indonesia-flag { left: 96.5%; bottom: 18px; width: 58px; }
 
-/* Mini pond: water oval + lily pad */
-.shop-decor-pond { position: absolute; right: 12%; bottom: 34px; width: 84px; height: 26px; background: #4da1ed; border: 3px solid #243421; border-radius: 50%; }
-.shop-decor-pond i { position: absolute; left: 14px; top: 4px; width: 22px; height: 10px; background: #69b957; border: 2px solid #243421; border-radius: 50%; }
-.shop-decor-coffee-sign { position:absolute; left:27%; bottom:62px; width:58px; height:34px; border:3px solid #243421; background:#8a6b48; color:#fff; text-align:center; }.shop-decor-coffee-sign::after { content:""; position:absolute; left:24px; top:32px; width:7px; height:35px; background:#6d4e32; }.shop-decor-coffee-sign i { font-style:normal; font-size:20px; }
-.shop-decor-greenhouse { position:absolute; right:28%; bottom:57px; width:92px; height:64px; border:4px solid #243421; background:rgba(166,225,220,.72); clip-path:polygon(12% 28%,50% 0,88% 28%,100% 28%,100% 100%,0 100%,0 28%); }.shop-decor-greenhouse i { position:absolute; left:43px; top:18px; width:4px; height:46px; background:#397a2b; }
-.shop-decor-rain-barrel { position:absolute; right:6%; bottom:58px; width:38px; height:48px; border:3px solid #243421; border-radius:5px; background:#4389b8; box-shadow:inset 0 8px #69add5; }.shop-decor-rain-barrel i { position:absolute; right:-11px; bottom:8px; width:12px; height:7px; border:3px solid #243421; background:#b9c2c9; }
-.shop-decor-compost { position:absolute; left:38%; bottom:54px; width:48px; height:35px; border:3px solid #243421; background:#7c593c; color:#d8efad; text-align:center; }.shop-decor-compost i { font-style:normal; font-size:22px; }
-.shop-decor-tobacco-barn { position:absolute; left:2%; bottom:58px; width:72px; height:55px; border:3px solid #243421; background:#9a6845; clip-path:polygon(50% 0,100% 28%,100% 100%,0 100%,0 28%); }.shop-decor-tobacco-barn i { position:absolute; left:29px; bottom:0; width:18px; height:31px; background:#493426; }
-.shop-decor-puger-pinwheel { position:absolute; right:20%; bottom:61px; width:8px; height:58px; background:#e7ddd0; border:2px solid #243421; }.shop-decor-puger-pinwheel i { position:absolute; left:-17px; top:-20px; width:38px; height:38px; background:conic-gradient(#ffca55 0 25%,#58b9d1 0 50%,#ef7a74 0 75%,#8fd36f 0); clip-path:polygon(50% 50%,0 15%,40% 38%,50% 0,62% 40%,100% 50%,62% 62%,50% 100%,40% 62%,0 85%); }
+/* The lantern is the one light source out here, so it earns a glow after
+   dark — matching the fireflies and the night grass filter. */
+body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.75)) drop-shadow(0 3px 0 rgba(36,52,33,.16)); }
+
+/* Phones give the grass much less width; shrink the sprites so thirteen of
+   them stay individual objects instead of a smear along the bottom. */
+@media (max-width: 800px) {
+    .shop-decor { width: 44px !important; }
+    .shop-decor-greenhouse, .shop-decor-tobacco-barn, .shop-decor-pond { width: 56px !important; }
+}
 
 /* ── Classroom cheat sandbox panel (public/farm/cheat.js + live.js) ────────
    Fixed docked editor shown only while the sandbox is active. Client-only,

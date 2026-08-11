@@ -4820,7 +4820,11 @@ function fxDecorReveal(level) {
 
 const SHOP_POT_KEYS = ["pot_terracotta", "pot_batik", "pot_tincan", "pot_coffee_sack", "pot_bamboo", "pot_jember_mosaic"];
 const SHOP_ACC_KEYS = ["acc_strawhat", "acc_ribbon", "acc_glasses", "acc_coffee_crown", "acc_bandana", "acc_goggles"];
-const SHOP_DECOR_KEYS = ["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond", "decor_coffee_sign", "decor_greenhouse", "decor_rain_barrel", "decor_compost", "decor_tobacco_barn", "decor_puger_pinwheel"];
+// Every decor key in SHOP_CATALOG, in catalog order. The last three were
+// missing, so buying the JFC banner, the flag or the Mugunghwa patch put a row
+// in the table and changed nothing on the farm — the item simply never existed
+// out here. tests/shop-farm-decor.test.ts pins this list against the catalog.
+const SHOP_DECOR_KEYS = ["decor_scarecrow", "decor_fence", "decor_lantern", "decor_pond", "decor_coffee_sign", "decor_greenhouse", "decor_rain_barrel", "decor_compost", "decor_tobacco_barn", "decor_puger_pinwheel", "decor_jfc_banner", "decor_indonesia_flag", "decor_mugunghwa"];
 
 function renderShopPurchases(rows) {
   const svg = $(".mascot-svg");

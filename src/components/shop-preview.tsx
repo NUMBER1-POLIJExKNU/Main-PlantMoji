@@ -16,7 +16,7 @@
 import { useEffect, useState } from "react";
 import type { ShopGridItem, ShopPurchaseRow } from "@/components/shop-grid";
 import { npcIdleGifSrc, npcSpriteSrcSet } from "@/components/npc-badge";
-import { SHOP_UI_COPY } from "@/game/economy/shop-catalog";
+import { SHOP_UI_COPY, shopItemArt } from "@/game/economy/shop-catalog";
 import { spriteSrc } from "@/lib/jamkachu-sprite";
 import { GOLDPOT_RAMP, potRampFor, swapPotPalette } from "@/lib/sprite-palette";
 import { npcNameLabel, type AppLocale } from "@/lib/i18n";
@@ -101,7 +101,10 @@ export default function ShopPreviewStage({
           </div>
           {item && item.category === "decor" && (
             <span className="pm-shop-stage-decor-prop" aria-hidden="true">
-              {item.emoji}
+              {/* The same sprite the farm will stand on the grass, so the
+                  try-on is an honest promise rather than an emoji stand-in. */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+              {shopItemArt(item.key) ? <img src={shopItemArt(item.key) as string} alt="" draggable={false} /> : item.emoji}
             </span>
           )}
           <div className="pm-shop-stage-npc">

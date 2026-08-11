@@ -159,6 +159,20 @@ export function shopItemByKey(key: string): ShopItem | null {
   return SHOP_CATALOG.find((item) => item.key === key) ?? null;
 }
 
+/**
+ * The designer's sprite for an item, or null where the catalog is still on
+ * emoji. Decorations have real art (images/icons/shop → public/icons/shop);
+ * pots recolor the plant sprite and accessories overlay it, so neither has a
+ * standalone drawing to show.
+ *
+ * The farm shell needs the same pictures and cannot import this module, so
+ * public/farm/index.html hard-codes the paths — tests/shop-farm-decor.test.ts
+ * keeps the two in step.
+ */
+export function shopItemArt(key: string): string | null {
+  return key.startsWith("decor_") ? `/icons/shop/${key}.png` : null;
+}
+
 // ── Error copy (honest, never optimistic — spec "Error handling") ───────
 
 export const PURCHASE_ERROR_CODES = [
@@ -224,8 +238,8 @@ export const SHOP_UI_COPY = {
     purchased: "Yay! It's yours!",
     equippedToast: "Looking good!",
     filters: { all: "All", affordable: "Can buy", owned: "Owned" },
-    preview: "Preview",
-    previewing: "Previewing",
+    preview: "Try it on",
+    previewing: "Trying on",
     closePreview: "Close preview",
     decorAuto: "Appears automatically on My Garden",
     needMore: "more Seeds needed",
@@ -259,7 +273,7 @@ export const SHOP_UI_COPY = {
     purchased: "Hore! Jadi milikmu!",
     equippedToast: "Keren!",
     filters: { all: "Semua", affordable: "Bisa dibeli", owned: "Dimiliki" },
-    preview: "Pratinjau",
+    preview: "Coba pakai",
     previewing: "Sedang dicoba",
     closePreview: "Tutup pratinjau",
     decorAuto: "Otomatis tampil di Kebun Saya",

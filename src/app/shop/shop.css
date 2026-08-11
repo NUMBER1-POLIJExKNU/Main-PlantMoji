@@ -52,6 +52,8 @@
 .pm-shop-stage-jamkachu img { display:block; width:100%; height:100%; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.22)); }
 .pm-shop-stage-acc-icon { position:absolute; top:-4px; right:-8px; font-size:24px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.3)); }
 .pm-shop-stage-decor-prop { flex:none; align-self:flex-end; margin-bottom:6px; font-size:28px; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.25)); }
+/* The real sprite, at the size it will stand on the farm grass. */
+.pm-shop-stage-decor-prop img { display:block; width:54px; height:54px; object-fit:contain; image-rendering:pixelated; }
 .pm-shop-stage-npc { position:relative; flex:none; display:flex; flex-direction:column; align-items:center; gap:2px; }
 .pm-shop-stage-npc picture { display:block; }
 .pm-shop-stage-npc img { display:block; width:46px; height:41px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(2px 3px 0 rgba(36,52,33,.16)); }
@@ -86,10 +88,28 @@ html[data-theme="night"] .pm-shop-stage-balance { border-color:var(--color-borde
 }
 .pm-shop-card.is-previewed { border-color: var(--color-forest); box-shadow: 0 4px 0 var(--color-forest); }
 
-.pm-shop-card .pm-shop-emoji { font-size: 34px; line-height: 1; }
+.pm-shop-card .pm-shop-emoji { display:grid; place-items:center; min-height:52px; font-size: 34px; line-height: 1; }
+/* Decorations ship as real sprites; the box is fixed so a card's height does
+   not depend on which drawing landed in it. */
+.pm-shop-art { width:52px; height:52px; object-fit:contain; image-rendering:pixelated; filter:drop-shadow(1px 2px 0 rgba(36,52,33,.22)); }
 .pm-shop-card h3 { font-size: 12px; }
 .pm-shop-card p { font-size: 11px; opacity: 0.8; min-height: 2.2em; }
 .pm-shop-auto { min-height:2.6em; color:var(--color-forest); font-size:9px; line-height:1.4; }
+
+/* Price and ownership. The card had neither: you could not tell what a thing
+   cost, whether you already owned it, or why it was out of reach — all three
+   answers lived on the try-on stage, one item at a time. */
+.pm-shop-card-foot { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px 8px; margin-top:auto; padding-top:2px; }
+.pm-shop-price { display:inline-flex; align-items:center; gap:4px; border:2px solid #E8C46B; border-radius:999px; padding:3px 9px; color:#6B4F10; background:var(--color-yellow); font:bold 11px/1 var(--font-body); }
+.pm-shop-state { font-size:9px; font-weight:800; line-height:1.3; }
+.pm-shop-state.is-owned { color:var(--color-forest); }
+.pm-shop-state.is-short { color:#B4573F; }
+/* Owned reads as achieved, not unavailable, so it brightens rather than dims.
+   Only genuinely out-of-reach items recede. */
+.pm-shop-card.is-owned { border-color:var(--color-grass); }
+.pm-shop-card.is-locked .pm-shop-emoji,
+.pm-shop-card.is-locked h3,
+.pm-shop-card.is-locked p { opacity:.55; }
 .pm-shop-preview-btn { border:2px dashed var(--color-border); border-radius:8px; padding:6px 8px; color:var(--color-text); background:var(--color-bg); cursor:pointer; font-size:10px; font-weight:800; }.pm-shop-preview-btn.is-active { border-style:solid; border-color:var(--color-forest); color:var(--color-forest); }
 .pm-shop-empty { grid-column:1/-1; padding:26px; border:2px dashed var(--color-border); border-radius:12px; text-align:center; opacity:.7; }
 
