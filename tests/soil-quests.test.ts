@@ -82,6 +82,8 @@ describe("sensorBlocksRecovery", () => {
   const acidic = QUEST_DEFINITIONS.BALANCE_SOIL_ACIDIC;
   const coolDown = QUEST_DEFINITIONS.COOL_ME_DOWN;
   const humidify = QUEST_DEFINITIONS.HUMIDIFY_MY_AIR;
+  const warmUp = QUEST_DEFINITIONS.WARM_ME_UP;
+  const dehumidify = QUEST_DEFINITIONS.DEHUMIDIFY_MY_AIR;
 
   it("blocks BALANCE_SOIL_ACIDIC below the strawberry range", () => {
     expect(sensorBlocksRecovery(acidic, { soilPH: 5.49 })).toBe(true);
@@ -124,5 +126,17 @@ describe("sensorBlocksRecovery", () => {
     expect(sensorBlocksRecovery(humidify, { temperature: 25 })).toBe(false);
     expect(sensorBlocksRecovery(humidify, {})).toBe(false);
     expect(sensorBlocksRecovery(humidify, undefined)).toBe(false);
+  });
+
+  it("blocks WARM_ME_UP while the air is still cold (15°C < cold-OFF 16°C)", () => {
+    expect(sensorBlocksRecovery(warmUp, { temperature: 15 })).toBe(true);
+    expect(sensorBlocksRecovery(warmUp, { temperature: 16 })).toBe(false);
+    expect(sensorBlocksRecovery(warmUp, {})).toBe(false);
+  });
+
+  it("blocks DEHUMIDIFY_MY_AIR while the air is still humid (56% > humid-OFF 55%)", () => {
+    expect(sensorBlocksRecovery(dehumidify, { humidity: 56 })).toBe(true);
+    expect(sensorBlocksRecovery(dehumidify, { humidity: 55 })).toBe(false);
+    expect(sensorBlocksRecovery(dehumidify, {})).toBe(false);
   });
 });

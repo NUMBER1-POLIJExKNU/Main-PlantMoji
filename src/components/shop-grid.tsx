@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { equipShopItem, purchaseShopItem, type ShopActionResult } from "@/app/shop/actions";
+import { useCheat } from "@/lib/pm-cheat";
 import { SHOP_UI_COPY, type ShopCategory } from "@/game/economy/shop-catalog";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { AppLocale } from "@/lib/i18n";
@@ -67,6 +68,9 @@ export default function ShopGrid({
   const [category, setCategory] = useState<ShopCategory>("pot");
   const [filter, setFilter] = useState<OwnershipFilter>("all");
   const [previewKey, setPreviewKey] = useState<string | null>(null);
+  // Cheat sandbox (feature 3): buy/equip stay client-only so a classroom demo
+  // never writes purchases or equips to Supabase.
+  const { active: cheatActive } = useCheat();
 
   // Seeds balance stays live: bond_state is already realtime (milestone3),
   // so earned Seeds appear here without a reload. Display only.
@@ -96,6 +100,16 @@ export default function ShopGrid({
 
   const buy = async (item: ShopGridItem, anchor: HTMLElement) => {
     if (busyKey) return;
+    if (cheatActive) {
+      setPurchases((prev) =>
+        prev.some((p) => p.item_key === item.key)
+          ? prev
+          : [...prev, { item_key: item.key, category: item.category, equipped: false }],
+      );
+      window.PMSfx?.play("coin");
+      popConfetti(anchor);
+      return;
+    }
     setBusyKey(item.key);
     try {
       const result = await purchaseShopItem(item.key, locale);
@@ -118,6 +132,17 @@ export default function ShopGrid({
 
   const equip = async (item: ShopGridItem, nextEquipped: boolean) => {
     if (busyKey) return;
+    if (cheatActive) {
+      setPurchases((prev) =>
+        prev.map((p) => {
+          if (p.item_key === item.key) return { ...p, equipped: nextEquipped };
+          if (nextEquipped && p.category === item.category) return { ...p, equipped: false };
+          return p;
+        }),
+      );
+      window.PMSfx?.play("coin");
+      return;
+    }
     setBusyKey(item.key);
     try {
       const result = await equipShopItem(item.key, nextEquipped, locale);

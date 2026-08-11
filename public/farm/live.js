@@ -3445,7 +3445,14 @@ function startFarmerDrag(event) {
   if (farmerRestartTimer !== null) window.clearTimeout(farmerRestartTimer);
   farmerRestartTimer = null;
   farmerMotionEpoch += 1;
-  try { farmerMotionAnimation?.cancel(); } catch {}
+  // Every farmerAnimate() runs with fill:"forwards" but only the newest is
+  // held in farmerMotionAnimation — which farmerAnimate itself nulls once the
+  // animation finishes. A finished forwards-filling animation keeps applying
+  // its end left/top from the animation origin, and that outranks the inline
+  // styles moveFarmerDrag writes, so the sprite refused to follow the pointer.
+  // Cancel every animation on the element, not just the tracked one. `rect` is
+  // measured above, while they still hold him, so he does not jump on grab.
+  try { farmer.getAnimations().forEach((animation) => animation.cancel()); } catch {}
   farmerMotionAnimation = null;
   clearFarmerBubble();
   farmer.style.left = `${rect.left}px`;
@@ -5640,9 +5647,135 @@ function renderOfflineHome() {
   if (levelEl) levelEl.textContent = `${t("bond")} Lv.1`;
 }
 
+// ── Classroom cheat sandbox (public/farm/cheat.js) ──────────────────────
+// When the sandbox is active, main() skips EVERY Supabase read/write and
+// realtime subscription (below) so nothing here can touch real data or
+// hardware. The sandbox drives the existing display functions (renderBond,
+// renderSensors, setMascotMood) with localStorage-only values, and a docked
+// editor lets the presenter change status + sensors and see the mascot react
+// instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
+
+const CHEAT_LABELS = {
+  id: { statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Ubah nilai → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", level: "Level", xp: "XP", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Change a value → Jamkachu reacts instantly. Real data stays untouched." },
+};
+
+/** Mood the sandbox shows for a sensor set — mirrors determinePlantMood's
+ *  priority (heat→cold→dry→humid→dark→soil) without hysteresis, so a demo
+ *  value maps to one predictable face. Reads the live crop profile when the
+ *  /api/crop-profile fetch has landed, else strawberry-ish fallbacks. */
+function cheatMoodFor(v, p) {
+  const t = p?.temperature ?? {};
+  const a = p?.airHumidity ?? {};
+  const ph = p?.soilPh?.recommended ?? { min: 5.5, max: 6.5 };
+  const lightMin = Number(p?.light?.minimumPercentDuringLightingHours ?? 30);
+  const hotAt = Number(t.overheating?.enterAtOrAbove ?? 28);
+  const coldAt = Number(t.cold?.enterAtOrBelow ?? 14);
+  const dryBelow = Number(a.dryAir?.enterBelow ?? 40);
+  const humidAbove = Number(a.humidAir?.enterAbove ?? 60);
+  if (v.temperature >= hotAt) return "Overheating";
+  if (v.temperature <= coldAt) return "TooCold";
+  if (v.humidity < dryBelow) return "DryAir";
+  if (v.humidity > humidAbove) return "HumidAir";
+  if (v.light < lightMin) return "Sleepy";
+  if (v.soilPh < Number(ph.min)) return "SoilAcidic";
+  if (v.soilPh > Number(ph.max)) return "SoilAlkaline";
+  return "Happy";
+}
+
+/** Repaint the whole home from the sandbox: status card (reusing renderBond,
+ *  so level-up / XP count-up FX still fire), sensor cards (renderSensors), and
+ *  the mascot mood derived from the sandbox sensors. */
+function applyCheatFarm() {
+  const s = window.PMCheat && window.PMCheat.getState();
+  if (!s) return;
+  renderBond(
+    { total_xp: s.status.totalXp, bond_level: s.status.level, current_streak: s.status.days, seeds: s.status.seeds },
+    "JAMKACHU",
+  );
+  renderSensors({
+    temperature: s.vitals.temperature,
+    humidity: s.vitals.humidity,
+    soil_ph: s.vitals.soilPh,
+    light: s.vitals.light,
+    recorded_at: null,
+  });
+  if (typeof window.setMascotMood === "function") {
+    window.setMascotMood(cheatMoodFor(s.vitals, cropProfile));
+  }
+}
+
+function buildCheatPanel() {
+  if (document.getElementById("pm-cheat-panel")) return;
+  const s = window.PMCheat && window.PMCheat.getState();
+  if (!s) return;
+  const L = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
+  const panel = document.createElement("section");
+  panel.id = "pm-cheat-panel";
+  panel.setAttribute("aria-label", "Cheat controls");
+  const field = (key, label, value, step, min, max) =>
+    `<label class="pm-cheat-field"><span>${label}</span><input type="number" data-cheat="${key}" value="${value}" step="${step}"${min != null ? ` min="${min}"` : ""}${max != null ? ` max="${max}"` : ""}></label>`;
+  panel.innerHTML =
+    `<div class="pm-cheat-group"><h3>🎛️ ${L.statusTitle}</h3>` +
+    `<div class="pm-cheat-level"><span>${L.level}</span><button type="button" data-cheat-level="-1">−</button><output data-cheat-out="level">${s.status.level}</output><button type="button" data-cheat-level="1">+</button></div>` +
+    field("totalXp", L.xp, s.status.totalXp, 1, 0) +
+    field("days", L.days, s.status.days, 1, 0) +
+    field("seeds", L.seeds, s.status.seeds, 1, 0) +
+    `</div>` +
+    `<div class="pm-cheat-group"><h3>🌿 ${L.vitalsTitle}</h3>` +
+    field("temperature", L.temp, s.vitals.temperature, 0.1) +
+    field("humidity", L.hum, s.vitals.humidity, 1, 0, 100) +
+    field("light", L.light, s.vitals.light, 1, 0, 100) +
+    field("soilPh", L.ph, s.vitals.soilPh, 0.1, 0, 14) +
+    `</div>` +
+    `<p class="pm-cheat-hint">${L.hint}</p>`;
+  document.body.appendChild(panel);
+
+  const STATUS_KEYS = { totalXp: 1, days: 1, seeds: 1 };
+  panel.querySelectorAll("input[data-cheat]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const key = input.getAttribute("data-cheat");
+      const num = Number(input.value);
+      if (!Number.isFinite(num)) return;
+      if (key in STATUS_KEYS) window.PMCheat.set({ status: { [key]: num } });
+      else window.PMCheat.set({ vitals: { [key]: num } });
+      applyCheatFarm();
+    });
+  });
+  panel.querySelectorAll("button[data-cheat-level]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const delta = Number(btn.getAttribute("data-cheat-level")) || 0;
+      const cur = Number(window.PMCheat.get("status.level", 1)) || 1;
+      const next = Math.max(1, cur + delta);
+      window.PMCheat.set({ status: { level: next } });
+      const out = panel.querySelector('[data-cheat-out="level"]');
+      if (out) out.textContent = String(next);
+      applyCheatFarm();
+    });
+  });
+}
+
+function initCheatFarm() {
+  buildCheatPanel();
+  // Apply now and again after the hatch reveal so the mascot exists.
+  applyCheatFarm();
+  setTimeout(applyCheatFarm, 400);
+  setTimeout(applyCheatFarm, 1600);
+  if (window.PMCheat) window.PMCheat.onChange(applyCheatFarm);
+}
+
 async function main() {
   refreshWeather();
   setInterval(refreshWeather, 30 * 60_000);
+  // Classroom cheat sandbox: skip ALL Supabase reads/writes + realtime so
+  // nothing touches real data or hardware; the sandbox drives the screen.
+  if (window.PMCheat && window.PMCheat.isActive()) {
+    window.__pmSupabaseConfigured = false;
+    refreshCropProfile();
+    scheduleHatch(null);
+    initCheatFarm();
+    return;
+  }
   let config;
   try {
     config = await (await fetch("/api/public-config")).json();

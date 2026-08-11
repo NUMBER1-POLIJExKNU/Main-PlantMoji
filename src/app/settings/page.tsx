@@ -5,6 +5,7 @@ import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
 import DemoControlCenter from "@/components/demo-control-center";
+import CheatModeToggle from "@/components/cheat-mode-toggle";
 import ReplayGuideButton from "@/components/replay-guide-button";
 import HowToPlayMap from "@/components/how-to-play-map";
 import { BADGE_KEYS } from "@/types/game";
@@ -284,6 +285,13 @@ export default async function SettingsPage({
         <DemoControlCenter locale={locale} progress={demoProgress} />
       </section>
       )}
+
+      {/* Classroom-demo cheat sandbox entry — always at the very bottom.
+          Client-only (window.PMCheat); never writes Supabase or hardware. */}
+      <CheatModeToggle
+        locale={locale}
+        seed={{ level: demoProgress.level, totalXp: demoProgress.totalXp, days: demoProgress.streak }}
+      />
       </div>
     </main>
   );

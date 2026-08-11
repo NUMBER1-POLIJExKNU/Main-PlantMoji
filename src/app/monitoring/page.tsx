@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import MonitoringLive from "@/components/monitoring-live";
+import CheatSensorPanel from "@/components/cheat-sensor-panel";
 import PageHeader from "@/components/page-header";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
@@ -61,6 +62,10 @@ export default async function MonitoringPage() {
           ? "Pembacaan langsung dari sensor tanaman, diperbarui setiap 10 detik."
           : "Live readings from the plant's sensors, refreshed every 10 seconds."}
       />
+
+      {/* Cheat-mode sensor editor (feature 6) — self-hides unless the demo
+          sandbox is active; edits are client-only, never touching hardware. */}
+      <CheatSensorPanel locale={locale} />
 
       <MonitoringLive locale={locale} plantId={PLANT_ID} cropProfile={cropProfile} />
     </main>
