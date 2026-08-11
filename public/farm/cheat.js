@@ -99,8 +99,12 @@
         light: numOr(vitals.light, 60),
         soilPh: numOr(vitals.soilPh, 6.2),
       },
-      // Quest key -> forced status ("ACTIVE" | "VERIFYING" | "COMPLETED").
+      // Quest key -> forced stage (1..4), 0/absent = let the sensors speak.
       quests: seed.quests || {},
+      // Which quest the HERO MISSION card shows. Null = whichever one Supabase
+      // actually made active. The board sets this so a presenter can demo any
+      // quest, not only the one the real plant happens to be running.
+      heroQuest: seed.heroQuest || null,
       // Shop: unlock/own everything for the demo.
       shop: { ownAll: seed.shop && seed.shop.ownAll ? true : false },
       // Collection: reveal every mood / badge / chapter.

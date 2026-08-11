@@ -43,6 +43,8 @@ export interface CheatState {
   status: { level: number; totalXp: number; days: number; seeds: number };
   vitals: CheatVitals;
   quests: Record<string, string>;
+  /** Quest the HERO MISSION card should show; null = the real active one. */
+  heroQuest: string | null;
   shop: { ownAll: boolean };
   collection: { revealAll: boolean };
   actions: CheatActions;

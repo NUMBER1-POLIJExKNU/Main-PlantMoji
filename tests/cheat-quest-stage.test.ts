@@ -193,8 +193,36 @@ describe("cheat quest stage", () => {
     expect(panel).not.toMatch(/quests: \{ \[key\]: 0 \} \},\s*vitals/);
     // The note has to say both halves — a hidden toggle is not a feature.
     expect(panel).toContain("the sensors move to match");
-    expect(panel).toContain("Click it again to hand the quest back to the sensor editor");
+    expect(panel).toContain("click it again to hand the quest back to the sensor editor");
     expect(panel).toContain("nilai sensor ikut menyesuaikan");
+  });
+
+  it("lets the board choose which quest the hero card shows", () => {
+    const panel = readFileSync("src/components/cheat-quest-panel.tsx", "utf8");
+    // Nine rows and no sign of which one the hero card was on — and with two
+    // quests sharing the "Balance My Soil" title, pressing the wrong row moved
+    // the card only through the sensors, which reach ACT and VERIFY but never
+    // SENSE or REWARD. That read as "SENSE and REWARD are broken".
+    expect(panel).toContain("const isHero = state?.heroQuest === quest.key;");
+    expect(panel).toContain("onClick={() => api.set({ heroQuest: isHero ? null : quest.key })}");
+    expect(panel).toContain("★ makes it the hero mission");
+    expect(panel).toContain("Jadikan Misi Utama");
+
+    const hero = readFileSync("src/components/quest-hero-stages.tsx", "utf8");
+    expect(hero).toContain("const heroKey = (active && state?.heroQuest && catalogue[state.heroQuest] ? state.heroQuest : defaultKey)");
+    // A promoted quest has no Supabase row, so only the sandbox may speak for
+    // it — and its live countdown must not be borrowed from the real one.
+    expect(hero).toContain('questStatus: promoted ? "ACTIVE" : questStatus,');
+    expect(hero).toContain("{progress && !promoted && (");
+  });
+
+  it("keeps the hero card off the sandbox entirely when it is not running", () => {
+    const hero = readFileSync("src/components/quest-hero-stages.tsx", "utf8");
+    expect(hero).toContain(": stageFromQuestStatus(questStatus);");
+    // The whole catalogue is localized on the server, so no copy table ships.
+    const page = readFileSync("src/app/quests/page.tsx", "utf8");
+    expect(page).toContain("function heroCatalogue(locale: AppLocale)");
+    expect(page).toContain("catalogue={heroCatalogue(locale)}");
   });
 
   it("keeps the sensor rule out of the client bundle's server dependencies", () => {

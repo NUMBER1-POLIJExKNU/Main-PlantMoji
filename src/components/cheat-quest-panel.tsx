@@ -22,12 +22,16 @@ export interface CheatQuestItem {
 const COPY = {
   id: {
     title: "🎛️ Papan Misi (Mode Curang)",
-    note: "Klik sebuah tahap untuk melompat ke sana — nilai sensor ikut menyesuaikan. Klik lagi untuk mengembalikannya ke editor sensor. Hanya tampilan demo; misi asli dan perangkat tidak berubah.",
+    note: "★ menjadikannya Misi Utama. Klik sebuah tahap untuk melompat ke sana — nilai sensor ikut menyesuaikan; klik lagi untuk mengembalikannya ke editor sensor. Hanya tampilan demo; misi asli dan perangkat tidak berubah.",
+    heroOff: "Jadikan Misi Utama",
+    heroOn: "Kembalikan ke misi asli",
     steps: ["RASAKAN", "BERTINDAK", "VERIFIKASI", "HADIAH"],
   },
   en: {
     title: "🎛️ Quest Board (Cheat Mode)",
-    note: "Click a stage to jump there — the sensors move to match. Click it again to hand the quest back to the sensor editor. Demo view only; real quests and hardware stay untouched.",
+    note: "★ makes it the hero mission. Click a stage to jump there — the sensors move to match; click it again to hand the quest back to the sensor editor. Demo view only; real quests and hardware stay untouched.",
+    heroOff: "Show as hero mission",
+    heroOn: "Back to the real hero mission",
     steps: ["SENSE", "ACT", "VERIFY", "REWARD"],
   },
 } as const;
@@ -88,8 +92,26 @@ export default function CheatQuestPanel({
       <ul className="flex flex-col gap-2">
         {quests.map((quest) => {
           const current = stages[quest.key] ?? 0;
+          const isHero = state?.heroQuest === quest.key;
           return (
             <li key={quest.key} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {/* Promote to hero. Without this the presenter had to guess which
+                  of nine rows the hero card was showing — and with two quests
+                  sharing the "Balance My Soil" title, pressing the wrong one
+                  moved the card only indirectly through the sensors, which can
+                  land on ACT or VERIFY and never on SENSE or REWARD. */}
+              <button
+                type="button"
+                onClick={() => api.set({ heroQuest: isHero ? null : quest.key })}
+                aria-pressed={isHero}
+                title={isHero ? t.heroOn : t.heroOff}
+                className="shrink-0 cursor-pointer rounded-md border-2 px-1.5 py-0.5 text-[11px] leading-none"
+                style={isHero
+                  ? { borderColor: "#8A2B5B", background: "#8A2B5B", color: "#fff" }
+                  : { borderColor: "#E0B0C6", background: "#fff", color: "#C2618A" }}
+              >
+                {isHero ? "★" : "☆"}
+              </button>
               <span className="text-xl leading-none" role="img" aria-hidden="true">
                 {quest.emoji}
               </span>

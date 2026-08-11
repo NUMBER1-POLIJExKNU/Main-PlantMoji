@@ -10,7 +10,7 @@ import QuestCelebration from "@/components/quest-celebration";
 import QuestDonePill from "@/components/quest-done-pill";
 import QuestProgress from "@/components/quest-progress";
 import CheatQuestPanel, { type CheatQuestItem } from "@/components/cheat-quest-panel";
-import QuestHeroStages from "@/components/quest-hero-stages";
+import QuestHeroStages, { type HeroQuestEntry } from "@/components/quest-hero-stages";
 import { getCropProfile, type CropProfile } from "@/lib/crop-profiles";
 import { getPlant } from "@/lib/queries";
 import { QUEST_WHY, WHY_CARDS } from "@/game/education/why-cards";
@@ -73,20 +73,76 @@ const STATUS_PILL: Partial<Record<QuestStatus, { label: string; style: CSSProper
   },
 };
 
+/** Localized target line for a quest's verification threshold. */
+function questTarget(key: QuestKey, locale: AppLocale): string {
+  const def = QUEST_DEFINITIONS[key];
+  return def.verifyTemperatureMax != null ? `≤ ${def.verifyTemperatureMax}°C`
+    : def.verifyHumidityMin != null ? `≥ ${def.verifyHumidityMin}% RH`
+      : def.verifyPhRange ? `pH ${def.verifyPhRange.min}–${def.verifyPhRange.max}`
+        : locale === "id" ? "Kondisi nyaman dan stabil" : "Comfortable and stable";
+}
+
+/** Every quest the cheat board can promote to hero, localized here so no copy
+ *  table has to be shipped to the browser. */
+function heroCatalogue(locale: AppLocale): Record<string, HeroQuestEntry> {
+  const out: Record<string, HeroQuestEntry> = {};
+  for (const key of Object.keys(QUEST_DEFINITIONS) as QuestKey[]) {
+    const def = QUEST_DEFINITIONS[key];
+    const localized = locale === "id" ? QUEST_COPY_ID[key] : def;
+    out[key] = {
+      key,
+      emoji: def.emoji,
+      title: localized.title,
+      description: localized.description,
+      target: questTarget(key, locale),
+      xp: def.xpReward,
+      why: locale === "id" ? QUEST_COPY_ID[key].why : QUEST_WHY[key],
+      whyExtra: locale === "en" ? WHY_CARDS[def.triggerMood].why : undefined,
+      recoveryLine: def.kind !== "recovery" ? undefined : locale === "id"
+        ? `Masih ${MOOD_COPY.id[def.triggerMood]} — setelah kondisinya membaik, sensor akan memeriksa kestabilan selama ${Math.round(def.requiredSeconds / 60)} menit.`
+        : `Still ${MOOD_LABELS[def.triggerMood]} — once I feel better, a ${Math.round(def.requiredSeconds / 60)}-minute check confirms the rescue.`,
+    };
+  }
+  return out;
+}
+
 function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }: { quest: QuestRow; locale: AppLocale; featured?: boolean; cropProfile?: CropProfile | null }) {
   const def = QUEST_DEFINITIONS[quest.quest_key];
   const localized = locale === "id" ? QUEST_COPY_ID[quest.quest_key] : def;
   const verifying = quest.status === "VERIFYING" && quest.verifying_since != null;
-  const target = def.verifyTemperatureMax != null ? `≤ ${def.verifyTemperatureMax}°C`
-    : def.verifyHumidityMin != null ? `≥ ${def.verifyHumidityMin}% RH`
-      : def.verifyPhRange ? `pH ${def.verifyPhRange.min}–${def.verifyPhRange.max}`
-        : locale === "id" ? "Kondisi nyaman dan stabil" : "Comfortable and stable";
+  const target = questTarget(quest.quest_key, locale);
 
   return (
     // Active quests get the grass-green border accent — same white surface
     // family as every farm panel, but clearly "alive" next to history rows.
     <article className={`pm-panel ${featured ? "pm-quest-hero" : "pm-quest-side"}${verifying ? " is-verifying" : ""}`}>
       <div className="pm-quest-ribbon">{featured ? (locale === "id" ? "MISI UTAMA" : "HERO MISSION") : (locale === "id" ? "MISI SAMPINGAN" : "SIDE MISSION")}</div>
+
+      {/* The hero card's whole body is a client island: the cheat sandbox can
+          jump its stage AND swap which quest it shows, neither of which the
+          Supabase row behind it can do during a classroom demo. With the
+          sandbox off it renders this very quest at its real status. */}
+      {featured ? (
+        <QuestHeroStages
+          defaultKey={quest.quest_key}
+          // `verifying` already demands a non-null verifying_since, so pass it
+          // rather than quest.status: a row stuck on VERIFYING with no
+          // timestamp is not verifying, and forwarding the raw status would
+          // light the VERIFY step for it outside the sandbox.
+          questStatus={verifying ? "VERIFYING" : "ACTIVE"}
+          locale={locale}
+          catalogue={heroCatalogue(locale)}
+          cropProfile={cropProfile}
+          progress={
+            verifying
+              ? { mode: "verifying", sinceIso: quest.verifying_since as string, requiredSeconds: def.requiredSeconds, plantId: PLANT_ID, questId: quest.id }
+              : quest.status === "ACTIVE" && def.kind === "maintain"
+                ? { mode: "maintain", sinceIso: quest.started_at, requiredSeconds: def.requiredSeconds, plantId: PLANT_ID, questId: quest.id }
+                : null
+          }
+        />
+      ) : (
+      <>
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" role="img" aria-hidden="true">
           {def.emoji}
@@ -98,32 +154,11 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
               +{quest.xp_reward} XP
             </span>
           </div>
-          {!featured && (
-            <p className="mt-2 text-sm leading-6" style={{ color: "#555555" }}>
-              {localized.description}
-            </p>
-          )}
+          <p className="mt-2 text-sm leading-6" style={{ color: "#555555" }}>
+            {localized.description}
+          </p>
         </div>
       </div>
-
-      {/* Stage row + its copy live in a client island: the cheat sandbox drives
-          them off the board and the sensor editor, since the Supabase quest row
-          they otherwise read can never move during a classroom demo. With the
-          sandbox off it renders the real status, exactly as before. */}
-      {featured && (
-        <QuestHeroStages
-          questKey={quest.quest_key}
-          // `verifying` already demands a non-null verifying_since, so pass it
-          // rather than quest.status: a row stuck on VERIFYING with no
-          // timestamp is not verifying, and forwarding the raw status would
-          // light the VERIFY step for it outside the sandbox.
-          questStatus={verifying ? "VERIFYING" : "ACTIVE"}
-          locale={locale}
-          description={localized.description}
-          target={target}
-          cropProfile={cropProfile}
-        />
-      )}
 
       {quest.status === "ACTIVE" && def.kind === "maintain" && (
         <QuestProgress
@@ -169,6 +204,8 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
           {locale === "en" && <p className="mt-1.5">{WHY_CARDS[def.triggerMood].why}</p>}
         </div>
       </details>
+      </>
+      )}
     </article>
   );
 }
