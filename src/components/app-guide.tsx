@@ -6,9 +6,10 @@ import type { AppLocale } from "@/lib/i18n";
 import { seen } from "@/lib/seen";
 import CoachMark, { type CoachCard } from "@/components/coach-mark";
 
-// The home tour's seen.ts id — the store's shared migration maps the old
-// plantmoji_guide_seen_v2 flag onto this exact id, so a player who already
-// saw the pre-migration tour never sees it replay.
+// The home tour's seen.ts id — the shared store's one-time migration maps
+// the old per-feature localStorage flag onto this exact id (see LEGACY_KEYS
+// in src/lib/seen.ts), so a player who already saw the pre-migration tour
+// never sees it replay.
 const GUIDE_ID = "guide.home";
 
 const cardSets: Record<AppLocale, CoachCard[]> = {

@@ -165,7 +165,12 @@ describe("src/components/coach-mark.tsx — shared coach contract", () => {
   it("makes zero reward writes: no XP/seeds/quest/FX/network calls anywhere in the file", () => {
     expect(coach).not.toMatch(/fetch\s*\(/);
     expect(coach).not.toMatch(/supabase/i);
-    expect(coach).not.toMatch(/fxEnqueue|orbCascade|fxXpGain|spawnConfetti|total_xp|seeds|xp/i);
+    // Code-shaped patterns (calls, property/variable access) rather than
+    // bare prose words — this file's own doc comments legitimately discuss
+    // "no XP" / "no seeds" in the negative, which bare-word matching would
+    // wrongly flag.
+    expect(coach).not.toMatch(/fxEnqueue\s*\(|orbCascade\s*\(|fxXpGain\s*\(|spawnConfetti\s*\(/);
+    expect(coach).not.toMatch(/total_xp|\.seeds\b|\bseeds\s*[+\-]?=|\bxp\s*[+\-]?=/i);
   });
 
   it("keeps focus/escape handling and prefers-reduced-motion patterns", () => {

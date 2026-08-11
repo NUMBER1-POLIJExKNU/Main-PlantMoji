@@ -439,30 +439,33 @@
         finale: "This button always shows what I need!",
       },
 
-      // First-day tour (display-only follow-up to the hatch intro): four
-      // spotlight cards pointing at the REAL interface — sensor HUD, care
-      // button, daily quiz chip, quest slot + ? guide. Pure presentation,
-      // no writes/XP; the seen-flag lives in localStorage (pm_tour_seen_v1).
-      // `senses.waiting` is the honest extra line for step 1 when no sensor
-      // reading has ever arrived.
+      // First-day tour (display-only follow-up to the hatch intro, hosted
+      // by live.js's pmCoach engine): five coach cards — emoji + ONE short
+      // sentence each, no titles — pointing at the REAL interface: senses
+      // HUD, care button, daily quiz chip, quest link, and Grandpa's
+      // sticker-book handoff (`grandpa`, whose `dare` is the action-button
+      // verb label). Pure presentation, no writes/XP; the seen-flag lives
+      // in the unified pm_seen_v3 store (PMSeen "tour"). `senses.waiting`
+      // is the honest extra line for card 1 when no reading has ever
+      // arrived. Kid-copy rule: always "senses", never "sensors".
       tour: {
         skip: "Skip",
         senses: {
-          title: "MY REAL SENSES",
           line: "These four tiles are my real senses — they feel my room for real!",
-          waiting: "My sensors haven't sent anything yet — the tiles will fill in on their own once my device is connected.",
+          waiting: "My senses haven't felt anything yet — the tiles will fill in on their own once my device is connected.",
         },
         care: {
-          title: "WHAT I NEED",
           line: "This button always shows what I need — and it changes with my mood!",
         },
         quiz: {
-          title: "DAILY QUIZ",
           line: "Learn and earn here every day — a fresh farm case is waiting!",
         },
         quest: {
-          title: "MISSIONS",
-          line: "When my sensors feel a change, a mission appears here — tap ? anytime for the full story.",
+          line: "When my senses feel a change, a mission appears here!",
+        },
+        grandpa: {
+          line: "Lost? Tap me — or fill my sticker book here →",
+          dare: "Open my sticker book!",
         },
       },
 
@@ -924,27 +927,29 @@
         finale: "Tombol ini selalu menunjukkan apa yang aku butuhkan!",
       },
 
-      // Tur hari pertama (lanjutan intro penetasan, tampilan saja) — lihat
-      // catatan di pohon en. `senses.waiting` = baris jujur saat belum ada
-      // satu pun data sensor yang masuk.
+      // Tur hari pertama (lanjutan intro penetasan, dijalankan mesin coach
+      // pmCoach di live.js) — lihat catatan di pohon en: lima kartu, emoji
+      // + SATU kalimat pendek, tanpa judul; kartu terakhir = kartu Kakek
+      // dengan tombol tantangan (`grandpa.dare`). Aturan bahasa anak:
+      // selalu "indra", jangan "sensor".
       tour: {
         skip: "Lewati",
         senses: {
-          title: "INDRA ASLIKU",
           line: "Empat kotak ini indra asliku — mereka benar-benar merasakan kamarku!",
-          waiting: "Sensorku belum mengirim apa-apa — kotaknya akan terisi sendiri begitu perangkatnya terhubung.",
+          waiting: "Indraku belum merasakan apa-apa — kotaknya akan terisi sendiri begitu perangkatnya terhubung.",
         },
         care: {
-          title: "YANG KUBUTUHKAN",
           line: "Tombol ini selalu menunjukkan yang kubutuhkan — dan berubah mengikuti suasana hatiku!",
         },
         quiz: {
-          title: "QUIZ HARIAN",
           line: "Belajar dan dapat hadiah di sini setiap hari — ada kasus kebun baru menunggumu!",
         },
         quest: {
-          title: "MISI",
-          line: "Saat sensorku merasakan perubahan, misi muncul di sini — ketuk ? kapan saja untuk cerita lengkapnya.",
+          line: "Saat indraku merasakan perubahan, misi muncul di sini!",
+        },
+        grandpa: {
+          line: "Bingung? Ketuk aku, atau isi buku stikerku di sini →",
+          dare: "Buka buku stikerku!",
         },
       },
 

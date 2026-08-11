@@ -43,7 +43,7 @@
   function persist() {
     try {
       window.localStorage.setItem(KEY, JSON.stringify({ v: 3, seen: state }));
-    } catch (err) {
+    } catch {
       // Private mode / quota: keep the in-memory state, persist nothing.
     }
   }
@@ -54,7 +54,7 @@
     var raw = null;
     try {
       raw = window.localStorage.getItem(KEY);
-    } catch (err) {
+    } catch {
       broken = true;
       return;
     }
@@ -68,7 +68,7 @@
           }
           return;
         }
-      } catch (err) {
+      } catch {
         // Corrupted blob — fall through and rebuild from the legacy flags.
       }
     }
@@ -78,7 +78,7 @@
       var value = null;
       try {
         value = window.localStorage.getItem(legacyKey);
-      } catch (err) {
+      } catch {
         // A single unreadable legacy key just stays unmigrated.
       }
       if (value) state[LEGACY[legacyKey]] = 1;

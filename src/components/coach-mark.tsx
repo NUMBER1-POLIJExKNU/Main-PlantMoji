@@ -11,9 +11,10 @@
 // Contract: every card is dim + spotlight + one emoji + ONE sentence — never
 // a wall of text. The final card in `cards` always renders as an action dare
 // (a verb-first button, never a read-only "Close"); completing it marks `id`
-// seen via src/lib/seen.ts and nothing else — no FX, no XP, no seeds, no
-// network. Coaches only ever grant cosmetic reward writes *elsewhere* (the
-// sticker book); this component makes zero reward writes of its own.
+// seen via src/lib/seen.ts and nothing else. Coaches only ever grant
+// cosmetic rewards *elsewhere* (the sticker book) — this component itself
+// never touches the network, a progression currency, or a celebration
+// queue of any kind.
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { markSeen } from "@/lib/seen";
