@@ -153,6 +153,18 @@ describe("shared PlantMoji application shell", () => {
     expect(reactCss).toContain(".pm-mood-dex-slot");
   });
 
+  it("mood dex cells render the designer's badge icon pack, not a generic emoji or ❔ silhouette (see tests/mood-dex.test.ts for the full pins)", () => {
+    const collectionTabs = source("src/components/collection-tabs.tsx");
+    expect(collectionTabs).not.toContain("❔");
+    expect(collectionTabs).toContain("moodIconSrc");
+    expect(collectionTabs).toContain("MOOD_LOCKED_ICON_FILE");
+    // The shared ProgressCounter replaced the old static x/y counter chip.
+    expect(collectionTabs).toContain("<ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />");
+    // NEW discovery ribbon reuses the existing badge-flip celebration.
+    expect(collectionTabs).toContain("pm-mood-dex-ribbon");
+    expect(collectionTabs).toContain('moodFlipping.has(mood.mood) ? " pm-badge-flip" : ""');
+  });
+
   it("keeps presenter controls behind the explicit demo settings route", () => {
     const settings = source("src/app/settings/page.tsx");
     const controls = source("src/components/demo-control-center.tsx");

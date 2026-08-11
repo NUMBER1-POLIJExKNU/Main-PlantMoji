@@ -21,9 +21,10 @@ import { getSeenMoods, getUnlockedBadges } from "@/lib/queries";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { BADGE_COPY_ID, MOOD_COPY, MOOD_EDUCATION_ID } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
+import { stagePhase } from "@/lib/jamkachu-sprite";
 import { maybeScheduleGameTick } from "@/lib/tick-gate";
 import { MOOD_LABELS, PLANT_MOODS, type PlantMood } from "@/types/events";
-import { STREAK_TIMEZONE, normalizePersonality } from "@/types/game";
+import { COMPANION_STAGES, STREAK_TIMEZONE, normalizePersonality, type CompanionStage } from "@/types/game";
 import { cookies } from "next/headers";
 
 // Discovery state changes with live events — always render fresh.
@@ -81,18 +82,30 @@ export default async function CollectionPage() {
   let currentChapter: number;
   let plantName = "Sprout";
   let personality = normalizePersonality(null);
+  // Mood dex hero art (Task: Moods tab redesign) shows Jamkachu at the
+  // player's REAL current phase — same companion_state.stage read the shop
+  // try-on preview already relies on (src/app/shop/page.tsx). An
+  // unavailable/unrecognized stage degrades to undefined, and stagePhase()
+  // falls back to the full-grown p4 default, same graceful default the rest
+  // of the app uses.
+  let companionStage: CompanionStage | undefined;
   try {
-    const [moods, badges, bond, plantRes] = await Promise.all([
+    const [moods, badges, bond, plantRes, companionRes] = await Promise.all([
       getSeenMoods(supabase, PLANT_ID),
       getUnlockedBadges(supabase, PLANT_ID),
       getBondState(supabase, PLANT_ID),
       supabase.from("plants").select("name, personality").eq("id", PLANT_ID).maybeSingle(),
+      supabase.from("companion_state").select("stage").eq("plant_id", PLANT_ID).maybeSingle(),
     ]);
     seenMoods = moods;
     badgeRows = badges;
     currentChapter = bond?.current_chapter ?? 1;
     if (plantRes.data?.name) plantName = plantRes.data.name as string;
     personality = normalizePersonality(plantRes.data?.personality);
+    const companionStageRaw = (companionRes.data as { stage?: string } | null)?.stage;
+    companionStage = (COMPANION_STAGES as readonly string[]).includes(companionStageRaw ?? "")
+      ? (companionStageRaw as CompanionStage)
+      : undefined;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : String(cause);
     return (
@@ -109,6 +122,11 @@ export default async function CollectionPage() {
     return {
       mood,
       label: locale === "id" ? MOOD_COPY.id[mood] : MOOD_LABELS[mood],
+      // Detail panel shows English AND Indonesian together (both locales
+      // ship regardless of the request locale — this is presentation copy,
+      // not a translation switch).
+      labelEn: MOOD_LABELS[mood],
+      labelId: MOOD_COPY.id[mood],
       emoji: MOOD_EMOJI[mood],
       discovered,
       // The science card unlocks with discovery — undiscovered moods never
@@ -116,6 +134,9 @@ export default async function CollectionPage() {
       whyCard: discovered ? (locale === "id" ? MOOD_EDUCATION_ID[mood] : WHY_CARDS[mood]) : null,
     };
   });
+
+  // Player's real current growth phase, for the mood dex hero sprite.
+  const spritePhase = stagePhase(companionStage);
 
   const wisdom: WisdomCollectionItem[] = FARMER_WISDOM.map((entry) => ({
     id: entry.id,
@@ -183,7 +204,7 @@ export default async function CollectionPage() {
           : "Everything we've discovered together."}
       />
 
-      <CollectionTabs locale={locale} moods={moods} badges={badges} chapters={chapters} wisdom={wisdom} />
+      <CollectionTabs locale={locale} moods={moods} badges={badges} chapters={chapters} wisdom={wisdom} spritePhase={spritePhase} />
     </main>
   );
 }

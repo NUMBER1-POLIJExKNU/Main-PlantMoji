@@ -116,7 +116,11 @@ const VITAL_KEYS = [
   "phOff",
 ];
 const HATCH_TEXT_KEYS = ["skip", "rumble", "hello", "personality", "rename", "finale"] as const;
-const DECOR_NAME_KEYS = ["sticker", "flag", "room", "ribbon", "goldpot", "bffToken"];
+// "ribbon" retired with the designer sprites: the drawn art awards a head
+// bow at bond 4 and a prize ribbon at bond 8, so the Lv.7 SVG bow (and the
+// chip announcing it) went away rather than promise a second ribbon the
+// character never wore.
+const DECOR_NAME_KEYS = ["sticker", "flag", "room", "goldpot", "bffToken"];
 const MEMORY_DAY_KEYS = ["today", "yesterday", "earlier"];
 
 // Import-free literal check (plan T17): the six en chapter titles must match

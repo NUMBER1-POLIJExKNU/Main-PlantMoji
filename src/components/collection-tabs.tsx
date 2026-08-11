@@ -18,6 +18,8 @@ import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { ChapterScene } from "@/game/story/story-dialogue";
 import type { AppLocale } from "@/lib/i18n";
 import { BADGE_EFFECTS, BADGE_EFFECT_STORAGE_KEY } from "@/game/badges/keepsakes";
+import { MOOD_SPRITE, MOOD_STATUS_CHIP, spriteAssetPath, type SpritePhase } from "@/lib/jamkachu-sprite";
+import { normalizeMood, type PlantMood } from "@/types/events";
 import type { BadgeKey } from "@/types/game";
 
 declare global {
@@ -35,6 +37,10 @@ declare global {
 export interface MoodCollectionItem {
   mood: string;
   label: string;
+  /** English/Indonesian mood names, always both present regardless of
+   *  request locale — the detail panel shows them together. */
+  labelEn: string;
+  labelId: string;
   emoji: string;
   discovered: boolean;
   /** Plant-science why-card, present only once the mood is discovered. */
@@ -75,6 +81,9 @@ export interface CollectionTabsProps {
   badges: BadgeCollectionItem[];
   chapters: StoryCollectionItem[];
   wisdom: WisdomCollectionItem[];
+  /** Player's real current growth phase (src/lib/jamkachu-sprite.ts) — the
+   *  mood dex hero always shows Jamkachu as they actually look today. */
+  spritePhase: SpritePhase;
 }
 
 const TABS = [
@@ -86,6 +95,105 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 type RewardPreview = { kind: TabId; emoji: string; title: string; line: string; particles: string[] };
+
+// Designer mood badge icon pack (public/farm/assets/moods/) — the dex CELL's
+// art. Each PlantMood maps to its own drawn icon file so the grid never
+// leans on the shared Jamkachu "plain" body (that collision is what forced
+// the old shared 🧪 status chip); SoilAcidic/SoilAlkaline get visually
+// distinct icons (a red down-arrow tube vs. a purple up-arrow tube) straight
+// from the art, no extra differentiator needed. Two files in the pack (#8
+// and #10) belong to moods this build doesn't have — never map to them here.
+const MOOD_ICON_FILE: Record<string, string> = {
+  Happy: "mood-01-happy",
+  Overheating: "mood-02-overheating",
+  DryAir: "mood-03-dry-air",
+  Sleepy: "mood-04-sleepy",
+  SoilAcidic: "mood-05-soil-acidic",
+  SoilAlkaline: "mood-06-soil-alkaline",
+  HumidAir: "mood-09-too-wet",
+  TooCold: "mood-11-too-cold",
+};
+const MOOD_LOCKED_ICON_FILE = "mood-07-locked";
+function moodIconSrc(file: string, variant: "4x" | "badge4x" = "4x"): string {
+  return `/farm/assets/moods/${variant}/${file}.png`;
+}
+
+// Locked cells hint at WHICH real sensor the mood comes from without naming
+// the mood itself (Pokédex-style tease, honesty rule: never invent a fake
+// category). Two moods per bucket keeps the hint non-spoiling.
+const MOOD_CATEGORY: Record<string, "temperature" | "air" | "light" | "soil" | "comfort"> = {
+  Happy: "comfort",
+  Overheating: "temperature",
+  TooCold: "temperature",
+  DryAir: "air",
+  HumidAir: "air",
+  Sleepy: "light",
+  SoilAcidic: "soil",
+  SoilAlkaline: "soil",
+};
+const MOOD_CATEGORY_COPY: Record<AppLocale, Record<string, { icon: string; label: string }>> = {
+  id: {
+    temperature: { icon: "🌡️", label: "Suhu" },
+    air: { icon: "💧", label: "Udara" },
+    light: { icon: "☀️", label: "Cahaya" },
+    soil: { icon: "🧪", label: "Tanah" },
+    comfort: { icon: "🌟", label: "Serba Nyaman" },
+  },
+  en: {
+    temperature: { icon: "🌡️", label: "Temperature" },
+    air: { icon: "💧", label: "Air" },
+    light: { icon: "☀️", label: "Light" },
+    soil: { icon: "🧪", label: "Soil" },
+    comfort: { icon: "🌟", label: "All-Around" },
+  },
+};
+
+// Kid-facing one-liner naming the real sensor behind the mood (honesty
+// rule: moods always come from real sensors, never invented). Shown above
+// the plant-science why/action cards, which stay untouched.
+const MOOD_SENSOR_HINT: Record<string, { id: string; en: string }> = {
+  Happy: { id: "Semua sensor — suhu, udara, cahaya, dan tanah — menunjukkan angka yang nyaman.", en: "Every sensor — temperature, air, light, and soil — is reading comfortable." },
+  Overheating: { id: "Sensor suhu mendeteksi udara terlalu panas.", en: "The temperature sensor is reading too hot." },
+  TooCold: { id: "Sensor suhu mendeteksi udara terlalu dingin.", en: "The temperature sensor is reading too cold." },
+  DryAir: { id: "Sensor kelembapan udara mendeteksi udara terlalu kering.", en: "The air humidity sensor is reading too dry." },
+  HumidAir: { id: "Sensor kelembapan udara mendeteksi udara terlalu lembap.", en: "The air humidity sensor is reading too damp." },
+  Sleepy: { id: "Sensor cahaya mendeteksi cahaya terlalu redup.", en: "The light sensor is reading too dark." },
+  SoilAcidic: { id: "Sensor pH tanah mendeteksi tanah terlalu asam.", en: "The soil pH sensor is reading too acidic." },
+  SoilAlkaline: { id: "Sensor pH tanah mendeteksi tanah terlalu basa.", en: "The soil pH sensor is reading too alkaline." },
+};
+
+// Wisdom cards answered correctly, kept in this browser so the tab's
+// progress meter does not reset to zero on reload and read as lost work.
+// Presentation only — the engine owns every real reward.
+const WISDOM_MASTERED_STORAGE_KEY = "pm-wisdom-mastered";
+function persistWisdomMastered(ids: ReadonlySet<string>) {
+  try {
+    localStorage.setItem(WISDOM_MASTERED_STORAGE_KEY, JSON.stringify(Array.from(ids)));
+  } catch {
+    // Private mode / quota exceeded — the tally just won't survive a
+    // reload. Never block the UI for it.
+  }
+}
+
+const MOOD_SEEN_STORAGE_KEY = "pm-mood-dex-seen";
+function readOpenedMoods(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(MOOD_SEEN_STORAGE_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+function persistOpenedMoods(moodKeys: ReadonlySet<string>) {
+  try {
+    localStorage.setItem(MOOD_SEEN_STORAGE_KEY, JSON.stringify(Array.from(moodKeys)));
+  } catch {
+    // Private mode / quota exceeded — the NEW ribbon just won't persist
+    // across reloads. Never block the UI for it.
+  }
+}
 
 const MOOD_REACTIONS: Record<string, { id: string; en: string; particles: string[] }> = {
   Happy: { id: "Yay! Daunku ikut menari!", en: "Yay! My leaves are dancing!", particles: ["💚", "✨", "🌱"] },
@@ -147,6 +255,18 @@ function cascadeStyle(index: number): CSSProperties {
   return { animationDelay: `${Math.min(index, CASCADE_CAP - 1) * CASCADE_STAGGER_MS}ms` };
 }
 
+/** Wisdom card header icon: one glyph standing in for the jargon-heavy
+ *  sensor metric string (e.g. "air temperature (°C) + air humidity (%)")
+ *  so the always-visible card face never reads like a spec sheet. The full
+ *  metric text still lives in the tap-in "See the why" detail view. */
+function wisdomMetricIcon(metric: string): string {
+  if (/temperature/i.test(metric)) return "🌡️";
+  if (/humidity/i.test(metric)) return "💧";
+  if (/light/i.test(metric)) return "☀️";
+  if (/ph/i.test(metric)) return "🧪";
+  return "📡";
+}
+
 /** Chunky pixel progress bar (shell .pm-bar contract) replacing the plain
  *  "x / y" text counters (Task 16). */
 function ProgressCounter({ value, total, label }: { value: number; total: number; label: string }) {
@@ -188,7 +308,7 @@ function OneMorePill({ label }: { label: string }) {
   );
 }
 
-export default function CollectionTabs({ locale, moods, badges, chapters, wisdom }: CollectionTabsProps) {
+export default function CollectionTabs({ locale, moods, badges, chapters, wisdom, spritePhase }: CollectionTabsProps) {
   const [tab, setTab] = useState<TabId>("moods");
   const [selectedBadgeKey, setSelectedBadgeKey] = useState(() => badges.find((badge) => badge.unlockedLabel !== null)?.key ?? badges[0]?.key ?? "");
   const [selectedMoodKey, setSelectedMoodKey] = useState(() => moods.find((mood) => mood.discovered)?.mood ?? moods[0]?.mood ?? "");
@@ -196,6 +316,33 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   // and the subset currently playing their flip celebration.
   const [liveUnlocked, setLiveUnlocked] = useState<ReadonlySet<string>>(() => new Set());
   const [flipping, setFlipping] = useState<ReadonlySet<string>>(() => new Set());
+  // Moods discovered by a live `plants` current_state change after the
+  // server render (mirrors liveUnlocked/flipping above), the subset
+  // currently playing their flip celebration, and which moods the player
+  // has already opened the detail of — clears the NEW ribbon and persists
+  // across reloads (same localStorage idiom as activeEffect below).
+  const [liveDiscoveredMoods, setLiveDiscoveredMoods] = useState<ReadonlySet<string>>(() => new Set());
+  const [moodFlipping, setMoodFlipping] = useState<ReadonlySet<string>>(() => new Set());
+  const [openedMoods, setOpenedMoods] = useState<ReadonlySet<string>>(() => {
+    const stored = readOpenedMoods();
+    const initialMood = moods.find((mood) => mood.discovered)?.mood;
+    if (initialMood && !stored.has(initialMood)) {
+      stored.add(initialMood);
+      persistOpenedMoods(stored);
+    }
+    return stored;
+  });
+  const moodFlipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const discoveredMoodKeysRef = useRef<Set<string>>(new Set(moods.filter((mood) => mood.discovered).map((mood) => mood.mood)));
+  const markMoodOpened = (key: string) => {
+    setOpenedMoods((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      persistOpenedMoods(next);
+      return next;
+    });
+  };
   const [activeEffect, setActiveEffect] = useState<BadgeKey | null>(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -209,6 +356,17 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const [previewPulse, setPreviewPulse] = useState(0);
   const [wisdomTrial, setWisdomTrial] = useState<string | null>(null);
   const [wisdomAnswer, setWisdomAnswer] = useState<number | null>(null);
+  // "Collected" signal for the Wisdom grid: which cards this visitor has
+  // answered correctly. Kept in this browser (same idiom as the badge
+  // effect above) so the meter does not reset to zero on reload and read
+  // as lost progress. Presentation only — no engine or table writes.
+  const [wisdomMastered, setWisdomMastered] = useState<ReadonlySet<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(WISDOM_MASTERED_STORAGE_KEY) ?? "[]");
+      return new Set(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : []);
+    } catch { return new Set(); }
+  });
   const [selectedChapterNumber, setSelectedChapterNumber] = useState(() => [...chapters].reverse().find((chapter) => chapter.unlocked)?.chapter ?? chapters[0]?.chapter ?? 1);
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const previewRef = useRef<HTMLElement | null>(null);
@@ -276,12 +434,64 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
     };
   }, []);
 
+  // Mirrors the badges realtime effect above, independently: a live `plants`
+  // update carrying a mood this session doesn't already know about (server
+  // props OR an earlier live update) plays the same flip + coin celebration
+  // and flags it NEW, presentation only — no engine/table writes here, the
+  // discovery truth still comes entirely from the server-rendered `moods`
+  // prop on the next navigation.
+  useEffect(() => {
+    const supabase = getBrowserSupabase();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel("collection-moods")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "plants" },
+        (payload) => {
+          const mood = normalizeMood((payload.new as { current_state?: string } | null)?.current_state);
+          if (!mood || discoveredMoodKeysRef.current.has(mood)) return;
+          discoveredMoodKeysRef.current.add(mood);
+          setLiveDiscoveredMoods((prev) => {
+            const next = new Set(prev);
+            next.add(mood);
+            return next;
+          });
+          setMoodFlipping((prev) => {
+            const next = new Set(prev);
+            next.add(mood);
+            return next;
+          });
+          window.PMSfx?.play("coin");
+          moodFlipTimers.current.push(
+            setTimeout(() => {
+              setMoodFlipping((prev) => {
+                if (!prev.has(mood)) return prev;
+                const next = new Set(prev);
+                next.delete(mood);
+                return next;
+              });
+            }, 4000),
+          );
+        },
+      )
+      .subscribe();
+
+    const timers = moodFlipTimers.current;
+    return () => {
+      supabase.removeChannel(channel);
+      timers.forEach(clearTimeout);
+      timers.length = 0;
+    };
+  }, []);
+
   // Copy lives inline per locale (same mechanism as the rest of this file).
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi." }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again." };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", wisdomSource: "Kearifan tani turun-temurun.", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", newBadge: "BARU", moodComplete: "◆ KOLEKSI LENGKAP ◆", moodCompleteLine: "Semua suasana sudah ditemukan! Hadiah kejutan sedang disiapkan." }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", wisdomSource: "Traditional farming wisdom.", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", newBadge: "NEW", moodComplete: "◆ COLLECTION COMPLETE ◆", moodCompleteLine: "Every mood has been discovered! A surprise reward is on its way." };
 
-  const discoveredMoods = moods.filter((mood) => mood.discovered).length;
+  const discoveredMoods = moods.filter((mood) => mood.discovered || liveDiscoveredMoods.has(mood.mood)).length;
   const unlockedBadges = badges.filter(
     (badge) => badge.unlockedLabel !== null || liveUnlocked.has(badge.key),
   ).length;
@@ -438,24 +648,127 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
+          <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div><b>{discoveredMoods}/{moods.length}</b></div>
+          <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div></div>
+          {/* Grid + detail split at >=800px (.pm-badge-layout — same shared
+              class the Badges tab already established two-column with). */}
+          <div className="pm-badge-layout">
           <ul className="pm-mood-dex-grid" aria-label={locale === "id" ? "Daftar suasana Jamkachu" : "Jamkachu mood list"}>
-            {moods.map((mood, index) => (
-              <li key={mood.mood} className="pm-card-cascade" style={cascadeStyle(index)}>
-                <button type="button" className={`pm-mood-dex-slot${selectedMood?.mood === mood.mood ? " active" : ""}${mood.discovered ? " discovered" : " locked"}`} aria-pressed={selectedMood?.mood === mood.mood} onClick={() => { setSelectedMoodKey(mood.mood); setPreview(null); window.PMSfx?.play(mood.discovered ? "tick" : "error"); }}>
-                  <span className={mood.discovered ? "" : "is-silhouette"} role="img" aria-hidden="true">{mood.discovered ? mood.emoji : "❔"}</span><small>{mood.discovered ? mood.label : copy.locked}</small><b>{mood.discovered ? "✓" : "🔒"}</b>
-                </button>
-              </li>
-            ))}
+            {moods.map((mood, index) => {
+              const discovered = mood.discovered || liveDiscoveredMoods.has(mood.mood);
+              const selected = selectedMood?.mood === mood.mood;
+              const isNew = discovered && !openedMoods.has(mood.mood);
+              const category = MOOD_CATEGORY[mood.mood] ?? "comfort";
+              const categoryHint = MOOD_CATEGORY_COPY[locale][category];
+              // Locked cells always show the same generic padlock icon — the
+              // designer's badge pack, not a mood-specific silhouette, so no
+              // shape ever leaks which mood is behind the card.
+              const iconFile = discovered ? (MOOD_ICON_FILE[mood.mood] ?? MOOD_LOCKED_ICON_FILE) : MOOD_LOCKED_ICON_FILE;
+              return (
+                <li key={mood.mood} className="pm-card-cascade" style={cascadeStyle(index)}>
+                  <button
+                    type="button"
+                    className={`pm-mood-dex-slot${selected ? " active" : ""}${discovered ? " discovered" : " locked"}`}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      setSelectedMoodKey(mood.mood);
+                      setPreview(null);
+                      window.PMSfx?.play(discovered ? "tick" : "error");
+                      // Opening a discovered mood's detail clears its NEW ribbon.
+                      if (discovered) markMoodOpened(mood.mood);
+                    }}
+                  >
+                    <span className={`pm-mood-dex-well${moodFlipping.has(mood.mood) ? " pm-badge-flip" : ""}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                      <img className="pm-mood-dex-icon" src={moodIconSrc(iconFile)} alt="" aria-hidden="true" draggable={false} />
+                    </span>
+                    <small>{discovered ? mood.label : `${categoryHint.icon} ${categoryHint.label}`}</small>
+                    <b className={`pm-mood-dex-badge ${discovered ? "is-check" : "is-locked"}`} aria-hidden="true">{discovered ? "✓" : "🔒"}</b>
+                    {isNew && <span className="pm-chip pm-mood-dex-ribbon">{copy.newBadge}</span>}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-          {selectedMood && <article className={`pm-mood-stage mood-${selectedMood.mood.toLowerCase()}${selectedMood.discovered ? "" : " is-locked"}`}>
-            <div className="pm-mood-stage-scene"><span className={selectedMood.discovered ? "" : "is-silhouette"} role="img" aria-label={selectedMood.discovered ? selectedMood.label : copy.locked}>{selectedMood.discovered ? selectedMood.emoji : "❔"}</span><i aria-hidden="true">🌱</i><div><small>{selectedMood.discovered ? (locale === "id" ? "SUASANA DITEMUKAN" : "MOOD DISCOVERED") : copy.locked}</small><h3>{selectedMood.discovered ? selectedMood.label : "???"}</h3></div></div>
-            {selectedMood.discovered ? <div className="pm-mood-stage-info">
-              {selectedMood.whyCard ? <><div className="pm-mood-lesson"><span>💡</span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div><div className="pm-mood-action"><span>🎯</span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div></> : <p>{locale === "id" ? "Pelajaran sensor akan muncul setelah tersedia." : "Its sensor lesson will appear when available."}</p>}
-              <button type="button" className="pm-btn pm-btn-primary w-full" onClick={() => { const reaction = MOOD_REACTIONS[selectedMood.mood]; if (reaction) playReward({ kind: "moods", emoji: selectedMood.emoji, title: selectedMood.label, line: reaction[locale], particles: reaction.particles }); }}>▶ {copy.tryIt}</button>
-            </div> : <div className="pm-mood-locked-copy"><b>🔒</b><p>{locale === "id" ? "Mood ini akan terbuka saat sensor benar-benar melihat kondisi tersebut." : "This mood unlocks when the sensors truly observe that condition."}</p></div>}
-          </article>}
+          {selectedMood && (() => {
+            const discovered = selectedMood.discovered || liveDiscoveredMoods.has(selectedMood.mood);
+            const category = MOOD_CATEGORY[selectedMood.mood] ?? "comfort";
+            const categoryHint = MOOD_CATEGORY_COPY[locale][category];
+            // The real Jamkachu sprite (four moods share the "plain" body —
+            // MOOD_STATUS_CHIP tells them apart, same contract as mascot.tsx).
+            const chip = MOOD_STATUS_CHIP[selectedMood.mood as PlantMood];
+            const heroSpriteSrc = spriteAssetPath(spritePhase, MOOD_SPRITE[selectedMood.mood as PlantMood] ?? "plain");
+            // Small reinforcement icon ties the hero back to the dex card's
+            // art — this is also what fully disambiguates SoilAcidic from
+            // SoilAlkaline here, since the big sprite + chip alone still
+            // collide (both are the shared "plain" body + 🧪 chip).
+            const badgeIconFile = MOOD_ICON_FILE[selectedMood.mood] ?? MOOD_LOCKED_ICON_FILE;
+            const primaryLabel = locale === "id" ? selectedMood.labelId : selectedMood.labelEn;
+            const secondaryLabel = locale === "id" ? selectedMood.labelEn : selectedMood.labelId;
+            const sensorHint = MOOD_SENSOR_HINT[selectedMood.mood];
+            return (
+              <article className={`pm-mood-stage${discovered ? ` mood-${selectedMood.mood.toLowerCase()}` : " is-locked"}`}>
+                <div className="pm-mood-stage-scene">
+                  <span role="img" aria-label={discovered ? primaryLabel : copy.locked}>
+                    {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                    <img className={discovered ? "" : "is-silhouette"} src={heroSpriteSrc} alt="" aria-hidden="true" draggable={false} />
+                    {discovered && chip && <span className="pm-mood-stage-chip" aria-hidden="true">{chip}</span>}
+                    {discovered && (
+                      <span className="pm-mood-stage-badge" aria-hidden="true">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                        <img src={moodIconSrc(badgeIconFile)} alt="" draggable={false} />
+                      </span>
+                    )}
+                  </span>
+                  <i aria-hidden="true">🌱</i>
+                  <div>
+                    <small>{discovered ? (locale === "id" ? "SUASANA DITEMUKAN" : "MOOD DISCOVERED") : copy.locked}</small>
+                    <h3>{discovered ? primaryLabel : "???"}</h3>
+                    {discovered && <small className="pm-mood-stage-altname">{secondaryLabel}</small>}
+                  </div>
+                </div>
+                {discovered ? (
+                  <div className="pm-mood-stage-info">
+                    {/* Kid-facing one-liner naming the real sensor (honesty
+                        rule) — above the plant-science why/action cards,
+                        whose copy stays exactly as written. */}
+                    {sensorHint && (
+                      <p className="pm-mood-sensor-hint"><span aria-hidden="true">📡</span> {sensorHint[locale]}</p>
+                    )}
+                    {selectedMood.whyCard ? (
+                      <>
+                        <div className="pm-mood-lesson"><span>💡</span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div>
+                        <div className="pm-mood-action"><span>🎯</span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div>
+                      </>
+                    ) : (
+                      <p>{locale === "id" ? "Pelajaran sensor akan muncul setelah tersedia." : "Its sensor lesson will appear when available."}</p>
+                    )}
+                    <button type="button" className="pm-btn pm-btn-primary w-full" onClick={() => { const reaction = MOOD_REACTIONS[selectedMood.mood]; if (reaction) playReward({ kind: "moods", emoji: selectedMood.emoji, title: selectedMood.label, line: reaction[locale], particles: reaction.particles }); }}>▶ {copy.tryIt}</button>
+                  </div>
+                ) : (
+                  <div className="pm-mood-locked-copy">
+                    <b aria-hidden="true">🔒</b>
+                    <div>
+                      <p className="pm-mood-locked-category">{categoryHint.icon} {categoryHint.label}</p>
+                      <p>{locale === "id" ? "Mood ini akan terbuka saat sensor benar-benar melihat kondisi tersebut." : "This mood unlocks when the sensors truly observe that condition."}</p>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })()}
+          </div>
+          {/* Completion callout placeholder — reuses the shared reward-pop
+              styling/motion. The actual reward is engine-owned; this never
+              grants XP/seeds, it only announces that one is coming. */}
+          {discoveredMoods === moods.length && (
+            <div className="pm-panel pm-reward-pop mt-4 text-center" role="status" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
+              <span className="text-3xl" aria-hidden="true">🏆</span>
+              <p className="pm-heading mt-2 text-[10px]" style={{ color: "#A97B12" }}>{copy.moodComplete}</p>
+              <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{copy.moodCompleteLine}</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -561,6 +874,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             <span className="pm-wisdom-hero-icon" aria-hidden="true">🎮</span>
             <div><b>{locale === "id" ? "PILIH MISI TANAMAN" : "PICK A PLANT MISSION"}</b><p>{locale === "id" ? "Baca petunjuk singkat → pilih jawaban → dapatkan umpan balik." : "Read the clue → pick an answer → get instant feedback."}</p></div>
           </div>
+          <ProgressCounter value={wisdomMastered.size} total={wisdom.length} label={copy.learned} />
+          {wisdomMastered.size === wisdom.length - 1 && <OneMorePill label={copy.oneMore} />}
           <ul className="pm-wisdom-grid">
             {wisdom.map((entry, index) => (
               <li
@@ -568,13 +883,20 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 className="pm-panel pm-wisdom-card pm-card-cascade"
                 style={{ borderColor: "#A9D2F2", ...cascadeStyle(index) }}
               >
-                <div className="pm-wisdom-card-head"><span className="pm-wisdom-number">{String(index + 1).padStart(2, "0")}</span><span className="pm-wisdom-metric">📡 {entry.metric}</span></div>
+                <div className="pm-wisdom-card-head">
+                  <span className={`pm-wisdom-number${wisdomMastered.has(entry.id) ? " is-mastered" : ""}`}>{wisdomMastered.has(entry.id) ? "✓" : String(index + 1).padStart(2, "0")}</span>
+                  <span className="pm-wisdom-metric" role="img" aria-hidden="true">{wisdomMetricIcon(entry.metric)}</span>
+                </div>
                 <p className="pm-wisdom-saying">“{entry.saying}”</p>
-                <div className="pm-wisdom-clue"><span aria-hidden="true">🧩</span><p>{entry.example}</p></div>
-                <button type="button" className="pm-btn pm-btn-primary mt-3 w-full cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
+                <button type="button" className="pm-btn pm-btn-primary mt-3 w-full min-h-11 cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
                   🎯 {copy.challenge}
                 </button>
-                <details className="pm-wisdom-details"><summary>💡 {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary><p>{entry.translation}</p><small>{entry.source}</small></details>
+                <details className="pm-wisdom-details">
+                  <summary>💡 {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary>
+                  <p>{entry.translation}</p>
+                  <div className="pm-wisdom-clue"><span aria-hidden="true">🧩</span><p>{entry.example}</p></div>
+                  <small>{copy.wisdomSource}</small>
+                </details>
                 {wisdomTrial === entry.id && WISDOM_TRIALS[entry.id] && (
                   <div className="pm-wisdom-trial mt-3 rounded-xl border-2 border-[#A9D2F2] bg-[#EEF8FF] p-3" aria-live="polite">
                     <div className="pm-wisdom-trial-label">⚡ {locale === "id" ? "CEPAT, PILIH!" : "QUICK PICK!"}</div><p className="mt-1 text-sm font-bold leading-5">{WISDOM_TRIALS[entry.id].prompt[locale]}</p>
@@ -582,7 +904,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                       {WISDOM_TRIALS[entry.id].choices[locale].map((choice, choiceIndex) => {
                         const answered = wisdomAnswer !== null;
                         const correct = choiceIndex === WISDOM_TRIALS[entry.id].answer;
-                        return <button key={choice} type="button" disabled={answered} onClick={() => { setWisdomAnswer(choiceIndex); window.PMSfx?.play(correct ? "coin" : "tick"); }} className="cursor-pointer rounded-xl border-2 px-3 py-2 text-xs font-semibold disabled:cursor-default" style={answered && correct ? { borderColor: "#397A2B", background: "#E8F6E0", color: "#397A2B" } : answered && choiceIndex === wisdomAnswer ? { borderColor: "#D66B6B", background: "#FFE9E9", color: "#A03030" } : { borderColor: "#A9D2F2", background: "#fff" }}>{choice}</button>;
+                        return <button key={choice} type="button" disabled={answered} onClick={() => { setWisdomAnswer(choiceIndex); window.PMSfx?.play(correct ? "coin" : "tick"); if (correct) setWisdomMastered((prev) => { if (prev.has(entry.id)) return prev; const next = new Set(prev).add(entry.id); persistWisdomMastered(next); return next; }); }} className="min-h-11 cursor-pointer rounded-xl border-2 px-3 py-2 text-xs font-semibold disabled:cursor-default" style={answered && correct ? { borderColor: "#397A2B", background: "#E8F6E0", color: "#397A2B" } : answered && choiceIndex === wisdomAnswer ? { borderColor: "#D66B6B", background: "#FFE9E9", color: "#A03030" } : { borderColor: "#A9D2F2", background: "#fff" }}>{choice}</button>;
                       })}
                     </div>
                     {wisdomAnswer !== null && (
