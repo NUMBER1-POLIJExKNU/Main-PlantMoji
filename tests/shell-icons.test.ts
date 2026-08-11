@@ -1,0 +1,84 @@
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+
+// The designer's icon set (images/icons) replaced the emoji nav and the old
+// logo. It has to land on BOTH shells: next.config.ts rewrites "/" to
+// public/farm/index.html, which never runs React, so wiring an icon only in
+// reno-app-shell.tsx leaves My Garden — the screen the demo opens on — showing
+// the old art. That gap has already caused three separate bugs.
+
+const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
+const html = source("public/farm/index.html");
+const shell = source("src/components/reno-app-shell.tsx");
+const farmCss = source("public/farm/style.css");
+const reactCss = source("src/app/globals.css");
+
+// destination -> shipped file. Collection is absent on purpose: the designer
+// drew no icon for it, so it keeps its emoji rather than borrowing another's.
+const NAV_ICONS = {
+  "my-garden": "/",
+  quests: "/quests",
+  "crop-explorer": "/plants",
+  "camera-ai": "/camera",
+  "growth-diary": "/diary",
+  shop: "/shop",
+  monitoring: "/monitoring",
+  reports: "/reports",
+  settings: "/settings",
+} as const;
+
+const VITAL_ICONS = ["temperature", "humidity", "brightness", "acidity"] as const;
+
+describe("designer icon set", () => {
+  it("ships every icon both shells reference", () => {
+    for (const name of [...Object.keys(NAV_ICONS), ...VITAL_ICONS]) {
+      expect(existsSync(resolve(process.cwd(), `public/icons/${name}.png`)), `public/icons/${name}.png`).toBe(true);
+    }
+  });
+
+  it("uses the icons on the static farm shell", () => {
+    for (const name of [...Object.keys(NAV_ICONS), ...VITAL_ICONS]) {
+      expect(html, `farm shell should use ${name}.png`).toContain(`/icons/${name}.png`);
+    }
+  });
+
+  it("uses the same icons on the React shell, for the same destinations", () => {
+    for (const [name, href] of Object.entries(NAV_ICONS)) {
+      const item = shell.match(new RegExp(`href: "${href.replace("/", "\\/")}",[^\\n]*`))?.[0];
+      expect(item, `${href} nav entry`).toBeTruthy();
+      expect(item, `${href} should use ${name}.png`).toContain(`art: "/icons/${name}.png"`);
+    }
+    // One <i> renderer for all three nav surfaces (sidebar, tool pocket, More
+    // sheet) — three copies is how one of them silently keeps the old emoji.
+    expect(shell).toContain("function NavIcon(");
+    expect(shell.match(/<NavIcon item=\{item\} \/>/g) ?? []).toHaveLength(3);
+    expect(shell).not.toMatch(/<i[^>]*>\{item\.icon\}<\/i>/);
+    // next/image, so the nav art is served in the optimised size.
+    expect(shell).toContain('<Image src={item.art} alt="" className="reno-nav-art"');
+    expect(shell).toContain('{ key: "collection", href: "/collection", icon: "💎", art: null');
+  });
+
+  it("uses the designer title art as the brand on both shells", () => {
+    for (const file of ["title-pot.png", "title-letter.png"]) {
+      const path = resolve(process.cwd(), `public/farm/assets/${file}`);
+      expect(existsSync(path), path).toBe(true);
+      // Derivatives, not the originals: "Entire title.png" is 463KB for a slot
+      // 44px tall, and the brand is in the first paint of every route.
+      expect(statSync(path).size, `${file} should stay a small derivative`).toBeLessThan(80 * 1024);
+    }
+    expect(html).toContain('src="/farm/assets/title-pot.png"');
+    expect(html).toContain('src="/farm/assets/title-letter.png"');
+    expect(shell).toContain('src="/farm/assets/title-pot.png"');
+    expect(shell).toContain('src="/farm/assets/title-letter.png"');
+    expect(shell).not.toContain('src="/farm/assets/logo.png"');
+  });
+
+  it("never forces the title art square", () => {
+    // The pot is 434x564. The rules it inherited were the old 1:1 logo's, and
+    // a fixed 44x44 squashes it.
+    expect(farmCss).toMatch(/\.logo-img \{\s*width: 44px; height: auto;/);
+    expect(reactCss).toMatch(/\.reno-logo \{\s*width: 44px;\s*height: auto;/);
+    expect(reactCss).not.toMatch(/\.reno-logo \{[^}]*height: 38px/);
+  });
+});

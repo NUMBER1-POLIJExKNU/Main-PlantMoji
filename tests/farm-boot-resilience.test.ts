@@ -215,10 +215,13 @@ describe("index.html: classic scripts fetch in parallel via defer, order preserv
   });
 });
 
-describe("index.html: sidebar logo reserves its CSS box to avoid layout shift", () => {
-  it("the logo <img> carries width/height matching the .logo-img CSS box (44px)", () => {
-    expect(html).toContain(
-      '<img src="/farm/assets/logo-small.png" alt="Logo" class="logo-img" width="44" height="44">',
-    );
+describe("index.html: sidebar title art reserves its CSS box to avoid layout shift", () => {
+  // Both halves of the designer title need width/height, and the heights must
+  // follow each source's real aspect ratio — the pot is 434x564, so the 44x44
+  // the old square logo used would reserve too short a box and shift the nav
+  // down on first paint.
+  it("the brand images carry width/height matching their CSS boxes", () => {
+    expect(html).toContain('<img src="/farm/assets/title-pot.png" alt="" class="logo-img" width="44" height="57">');
+    expect(html).toContain('<img src="/farm/assets/title-letter.png" alt="PLANT MOJI" class="brand-wordmark" width="96" height="55">');
   });
 });

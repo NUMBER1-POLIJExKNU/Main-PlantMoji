@@ -917,11 +917,29 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   text-decoration: none;
 }
 
+/* The designer pot is 434x564, not square — height is derived so it is not
+   flattened into the old logo's 1:1 box. */
 .reno-logo {
   width: 44px;
-  height: 44px;
+  height: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.reno-wordmark {
+  width: 96px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
+}
+
+/* Sized in em so it tracks the `i` font-size the responsive rules already set,
+   instead of needing its own second set of breakpoints. */
+.reno-nav-art {
+  width: 1.15em;
+  height: 1.15em;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 
 .reno-nav-links {
@@ -1303,7 +1321,11 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
 
   .reno-logo {
     width: 38px;
-    height: 38px;
+    height: auto;
+  }
+
+  .reno-wordmark {
+    width: 82px;
   }
 
   .reno-nav-links {
@@ -1437,7 +1459,9 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
 
 @media (max-width: 360px) {
   .reno-nav-item { font-size: 6px; }
-  .reno-brand span { display: none; }
+  /* The wordmark is art now, not a <span>. On the narrowest phones the pot
+     alone stands for the brand so the nav keeps its width. */
+  .reno-wordmark { display: none; }
 }
 
 /* Mood Dex — one selectable game collection with the science lesson attached

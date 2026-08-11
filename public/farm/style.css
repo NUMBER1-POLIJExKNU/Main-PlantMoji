@@ -144,17 +144,23 @@ body {
     border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
 }
 
+/* The designer pot is taller than it is wide (434x564), so height is derived
+   rather than forced square — the old logo was 1:1 and squashing this one
+   flattened the pot. */
 .logo-img {
-    width: 44px; height: 44px;
+    width: 44px; height: auto;
     image-rendering: pixelated;
     filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
 }
 
-.brand h1 {
-    font-family: var(--font-heading);
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--color-forest);
+/* The heading is the designer's wordmark now. It keeps the <h1> (and the page
+   its heading) — the words live in the image's alt. line-height:0 stops the
+   inline box adding a descender gap under the art. */
+.brand h1 { line-height: 0; }
+.brand-wordmark {
+    width: 96px; height: auto;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.1));
 }
 
 .nav-links {

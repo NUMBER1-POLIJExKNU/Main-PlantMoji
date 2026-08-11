@@ -93,28 +93,37 @@
         <!-- Sidebar Navigation (de-technicalized labels, spec §2.3) -->
         <aside class="sidebar">
             <div class="brand">
-                <!-- logo-small.png is a 128px derivative of logo.png (which the
-                     design owner keeps byte-identical); this slot renders at
-                     44px, so the raw 1254px/544KB original cost ~520KB of
-                     first paint for no visible difference. -->
-                <img src="/farm/assets/logo-small.png" alt="Logo" class="logo-img" width="44" height="44">
-                <h1>PLANT<br>MOJI</h1>
+                <!-- Designer title art (images/icons "Title pot" + "Title
+                     Letter"), shipped as 128px-tall derivatives — the combined
+                     "Entire title.png" original is 463KB for a slot this size.
+                     Split rather than combined so the pot and the wordmark can
+                     be laid out independently, as they were as img + <h1>.
+                     The <h1> keeps the page's heading; its text now lives in
+                     the wordmark's alt. -->
+                <img src="/farm/assets/title-pot.png" alt="" class="logo-img" width="44" height="57">
+                <h1><img src="/farm/assets/title-letter.png" alt="PLANT MOJI" class="brand-wordmark" width="96" height="55"></h1>
             </div>
             <nav class="nav-links">
                 <span class="nav-section-title" data-i18n="nav.play">DUNIAKU</span>
-                <a href="/" class="nav-item active"><i class="icon">🌱</i> <span data-i18n="nav.home">Kebunku</span></a>
-                <a href="/quests" class="nav-item"><i class="icon">💚</i> <span data-i18n="nav.quests">Misi</span></a>
-                <a href="/plants" class="nav-item"><i class="icon">🗺️</i> <span data-i18n="nav.plants">Eksplor Tanaman</span></a>
-                <a href="/camera" class="nav-item"><i class="icon">📷</i> <span data-i18n="nav.camera">Kamera AI</span></a>
-                <a href="/diary" class="nav-item"><i class="icon">📖</i> <span data-i18n="nav.memories">Diari Tumbuh</span></a>
+                <!-- Designer icon sprites (images/icons, served as 64px
+                     derivatives in public/icons — same rationale as
+                     logo-small.png). They stay inside the existing <i class="icon">
+                     so every nav rule keeps applying; Koleksi has no designer
+                     sprite yet and keeps its emoji. alt="" because the label
+                     next to each icon already names the destination. -->
+                <a href="/" class="nav-item active"><i class="icon"><img src="/icons/my-garden.png" alt="" width="18" height="18"></i> <span data-i18n="nav.home">Kebunku</span></a>
+                <a href="/quests" class="nav-item"><i class="icon"><img src="/icons/quests.png" alt="" width="18" height="18"></i> <span data-i18n="nav.quests">Misi</span></a>
+                <a href="/plants" class="nav-item"><i class="icon"><img src="/icons/crop-explorer.png" alt="" width="18" height="18"></i> <span data-i18n="nav.plants">Eksplor Tanaman</span></a>
+                <a href="/camera" class="nav-item"><i class="icon"><img src="/icons/camera-ai.png" alt="" width="18" height="18"></i> <span data-i18n="nav.camera">Kamera AI</span></a>
+                <a href="/diary" class="nav-item"><i class="icon"><img src="/icons/growth-diary.png" alt="" width="18" height="18"></i> <span data-i18n="nav.memories">Diari Tumbuh</span></a>
                 <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Koleksi</span></a>
-                <a href="/shop" class="nav-item"><i class="icon">🛒</i> <span data-i18n="nav.shop">Toko</span></a>
+                <a href="/shop" class="nav-item"><i class="icon"><img src="/icons/shop.png" alt="" width="18" height="18"></i> <span data-i18n="nav.shop">Toko</span></a>
                 <div class="nav-tool-pocket" aria-label="Alat penjaga">
                     <span class="nav-section-title" data-i18n="nav.tools">ALAT</span>
                     <div class="nav-tool-grid">
-                        <a href="/monitoring" class="nav-item nav-tool" title="Pemantauan"><i class="icon">📡</i><span data-i18n="nav.status">Pemantauan</span></a>
-                        <a href="/reports" class="nav-item nav-tool" title="Laporan"><i class="icon">📜</i><span data-i18n="nav.reports">Laporan</span></a>
-                        <a href="/settings" class="nav-item nav-tool" title="Pengaturan"><i class="icon">🧰</i><span data-i18n="nav.settings">Pengaturan</span></a>
+                        <a href="/monitoring" class="nav-item nav-tool" title="Pemantauan"><i class="icon"><img src="/icons/monitoring.png" alt="" width="16" height="16"></i><span data-i18n="nav.status">Pemantauan</span></a>
+                        <a href="/reports" class="nav-item nav-tool" title="Laporan"><i class="icon"><img src="/icons/reports.png" alt="" width="16" height="16"></i><span data-i18n="nav.reports">Laporan</span></a>
+                        <a href="/settings" class="nav-item nav-tool" title="Pengaturan"><i class="icon"><img src="/icons/settings.png" alt="" width="16" height="16"></i><span data-i18n="nav.settings">Pengaturan</span></a>
                     </div>
                 </div>
             </nav>
@@ -428,10 +437,10 @@
                 <section id="env-strip" class="panel-glass" aria-label="Current environment">
                     <div class="env-hud-title"><span data-i18n="env.title">KONDISI KEBUN</span><a href="/monitoring" data-i18n="env.details">Lihat detail ›</a></div>
                     <div class="env-hud-grid">
-                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true">🌡️</i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true">💧</i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true">☀️</i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em></span></button>
-                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true">🧪</i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-temp" type="button" data-vital="temp"><i aria-hidden="true"><img src="/icons/temperature.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.temperature">SUHU</small><strong id="env-temp">--°C</strong><span class="env-gauge" data-gauge="temp" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-hum" type="button" data-vital="hum"><i aria-hidden="true"><img src="/icons/humidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.humidity">UDARA</small><strong id="env-hum">--%</strong><span class="env-gauge" data-gauge="hum" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-light" type="button" data-vital="light"><i aria-hidden="true"><img src="/icons/brightness.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.light">CAHAYA</small><strong id="env-light">--</strong><span class="env-gauge" data-gauge="light" aria-hidden="true"></span><em class="env-status">--</em></span></button>
+                        <button class="env-hud-card is-ph" type="button" data-vital="ph"><i aria-hidden="true"><img src="/icons/acidity.png" alt="" width="20" height="20"></i><span class="env-hud-copy"><small data-i18n="env.ph">TANAH</small><strong id="env-ph">pH --</strong><span class="env-gauge" data-gauge="ph" aria-hidden="true"></span><em class="env-status">--</em></span></button>
                     </div>
                     <p id="env-waiting-note" class="env-waiting-note" hidden></p>
                 </section>

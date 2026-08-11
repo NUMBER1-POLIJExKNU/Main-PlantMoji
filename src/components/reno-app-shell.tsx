@@ -15,20 +15,30 @@ import NetworkStatus from "@/components/network-status";
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. Keep
 // public/farm/index.html in sync until the static home has been retired.
+// `art` is the designer's icon (public/icons, from images/icons); `icon` is the
+// emoji it replaced and stays as the fallback for the one destination with no
+// drawing yet — Collection. The static shell renders the same set from
+// public/farm/index.html, so a file added here belongs there too.
 const NAV_ITEMS = [
-  { key: "home", href: "/", icon: "🌱", id: "Kebun Saya", en: "My Garden" },
-  { key: "quests", href: "/quests", icon: "💚", id: "Misi", en: "Quests" },
-  { key: "plants", href: "/plants", icon: "🗺️", id: "Eksplor Tanaman", en: "Crop Explorer" },
-  { key: "camera", href: "/camera", icon: "📷", id: "Kamera AI", en: "Camera AI" },
-  { key: "diary", href: "/diary", icon: "📖", id: "Diari Tumbuh", en: "Growth Diary" },
-  { key: "collection", href: "/collection", icon: "💎", id: "Koleksi", en: "Collection" },
-  { key: "shop", href: "/shop", icon: "🛒", id: "Toko", en: "Shop" },
+  { key: "home", href: "/", icon: "🌱", art: "/icons/my-garden.png", id: "Kebun Saya", en: "My Garden" },
+  { key: "quests", href: "/quests", icon: "💚", art: "/icons/quests.png", id: "Misi", en: "Quests" },
+  { key: "plants", href: "/plants", icon: "🗺️", art: "/icons/crop-explorer.png", id: "Eksplor Tanaman", en: "Crop Explorer" },
+  { key: "camera", href: "/camera", icon: "📷", art: "/icons/camera-ai.png", id: "Kamera AI", en: "Camera AI" },
+  { key: "diary", href: "/diary", icon: "📖", art: "/icons/growth-diary.png", id: "Diari Tumbuh", en: "Growth Diary" },
+  { key: "collection", href: "/collection", icon: "💎", art: null, id: "Koleksi", en: "Collection" },
+  { key: "shop", href: "/shop", icon: "🛒", art: "/icons/shop.png", id: "Toko", en: "Shop" },
 ] as const;
 const TOOL_ITEMS = [
-  { key: "status", href: "/monitoring", icon: "📡", id: "Pemantauan", en: "Monitoring" },
-  { key: "reports", href: "/reports", icon: "📜", id: "Laporan", en: "Reports" },
-  { key: "settings", href: "/settings", icon: "🧰", id: "Pengaturan", en: "Settings" },
+  { key: "status", href: "/monitoring", icon: "📡", art: "/icons/monitoring.png", id: "Pemantauan", en: "Monitoring" },
+  { key: "reports", href: "/reports", icon: "📜", art: "/icons/reports.png", id: "Laporan", en: "Reports" },
+  { key: "settings", href: "/settings", icon: "🧰", art: "/icons/settings.png", id: "Pengaturan", en: "Settings" },
 ] as const;
+
+// The label next to it already names the destination, so the drawing is
+// decorative — an alt here would make every nav item read its name twice.
+function NavIcon({ item }: { item: { icon: string; art: string | null } }) {
+  return <i aria-hidden="true">{item.art ? <Image src={item.art} alt="" className="reno-nav-art" width={18} height={18} /> : item.icon}</i>;
+}
 
 function changeAppLocale(nextLocale: AppLocale) {
   document.cookie = `${APP_LOCALE_COOKIE}=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
@@ -84,15 +94,12 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
       <div className="reno-app-layout">
         <aside className="reno-sidebar">
           <Link href="/" className="reno-brand" aria-label="PLANT MOJI home">
-            <Image
-              src="/farm/assets/logo.png"
-              alt="PLANT MOJI logo"
-              width={44}
-              height={44}
-              className="reno-logo"
-              priority
-            />
-            <span>PLANT<br />MOJI</span>
+            {/* Designer title art, same two files the static shell uses: the
+                pot and the wordmark stay separate so they can be laid out
+                independently. The link's aria-label carries the name, so both
+                images are decorative. */}
+            <Image src="/farm/assets/title-pot.png" alt="" width={44} height={57} className="reno-logo" priority />
+            <Image src="/farm/assets/title-letter.png" alt="" width={96} height={55} className="reno-wordmark" priority />
           </Link>
 
           <nav className="reno-nav-links" aria-label="Main navigation">
@@ -108,7 +115,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
                   className={`reno-nav-item${["collection", "shop"].includes(item.key) ? " reno-nav-overflow" : ""}${active ? " active" : ""}`}
                   onClick={() => window.PMSfx?.play("tick")}
                 >
-                  <i>{item.icon}</i>
+                  <NavIcon item={item} />
                   <span className="reno-nav-label">{label}</span>
                 </Link>
               );
@@ -121,7 +128,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
               <div className="reno-nav-tool-grid">
                 {TOOL_ITEMS.map((item) => {
                   const active = pathname.startsWith(item.href);
-                  return <Link key={item.key} href={item.href} title={locale === "id" ? item.id : item.en} aria-current={active ? "page" : undefined} className={`reno-nav-item reno-nav-tool${active ? " active" : ""}`} onClick={() => window.PMSfx?.play("tick")}><i>{item.icon}</i><span>{locale === "id" ? item.id : item.en}</span></Link>;
+                  return <Link key={item.key} href={item.href} title={locale === "id" ? item.id : item.en} aria-current={active ? "page" : undefined} className={`reno-nav-item reno-nav-tool${active ? " active" : ""}`} onClick={() => window.PMSfx?.play("tick")}><NavIcon item={item} /><span>{locale === "id" ? item.id : item.en}</span></Link>;
                 })}
               </div>
             </div>
@@ -132,7 +139,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
               <header><strong>{locale === "id" ? "TEMPAT LAIN" : "MORE PLACES"}</strong><button type="button" onClick={() => setMoreOpen(false)} aria-label={locale === "id" ? "Tutup" : "Close"}>×</button></header>
               <div>{overflowItems.map((item) => {
                 const active = pathname.startsWith(item.href);
-                return <Link key={item.key} href={item.href} aria-current={active ? "page" : undefined} className={active ? "active" : ""} onClick={() => { setMoreOpen(false); window.PMSfx?.play("tick"); }}><i aria-hidden="true">{item.icon}</i><span>{locale === "id" ? item.id : item.en}</span><b aria-hidden="true">›</b></Link>;
+                return <Link key={item.key} href={item.href} aria-current={active ? "page" : undefined} className={active ? "active" : ""} onClick={() => { setMoreOpen(false); window.PMSfx?.play("tick"); }}><NavIcon item={item} /><span>{locale === "id" ? item.id : item.en}</span><b aria-hidden="true">›</b></Link>;
               })}</div>
             </section>
           </div>}
