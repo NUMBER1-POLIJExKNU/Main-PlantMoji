@@ -13,6 +13,7 @@ import { ALL_DESTINATIONS, NAV_DESTINATIONS, NAV_TOOLS, navDestination } from "@
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const shell = read("src/components/reno-app-shell.tsx");
 const header = read("src/components/page-header.tsx");
+const iconRenderer = read("src/components/destination-icon.tsx");
 
 /** Every React route that draws a PageHeader, and the destination it is. */
 const ROUTED_HEADERS: ReadonlyArray<readonly [string, string]> = [
@@ -53,8 +54,10 @@ describe("nav destinations", () => {
   });
 
   it("is the same list every board header draws from", () => {
-    expect(header).toContain('import { navDestination } from "@/lib/nav-destinations"');
-    expect(header).toContain("entry?.art");
+    expect(header).toContain('import DestinationIcon from "@/components/destination-icon"');
+    expect(shell).toContain('import DestinationIcon from "@/components/destination-icon"');
+    expect(iconRenderer).toContain('navDestination(destination)');
+    expect(header).toContain("const fallback = entry?.icon ?? icon ?? \"\";");
     for (const [path, key] of ROUTED_HEADERS) {
       const page = read(path);
       expect(page, `${path} should name its destination`).toContain(`destination="${key}"`);

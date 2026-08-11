@@ -89,9 +89,9 @@
     SoilAlkaline: "mood-06-soil-alkaline",
   };
 
-  /** Bond→tier thresholds — the `from` levels of the two bands that add an
-   *  ornament (bands 4 and 6). LEVEL_BANDS below is the real table. */
-  var TIER_THRESHOLDS = { bow: 9, ribbon: 24 };
+  /** Bond→tier thresholds — the `from` levels of the two bands that first add
+   *  an ornament (bands 8 and 14). LEVEL_BANDS below is the real table. */
+  var TIER_THRESHOLDS = { bow: 15, ribbon: 27 };
 
   /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
   var PHASE_TIER_CAP = { 1: "", 2: "", 3: "bow", 4: "ribbon" };
@@ -107,13 +107,21 @@
   // disagree in front of a class.
   var MAX_BOND_LEVEL = 30;
   var LEVEL_BANDS = [
-    { band: 1, from: 1, phase: 1, tier: "" },
-    { band: 2, from: 3, phase: 2, tier: "" },
-    { band: 3, from: 6, phase: 3, tier: "" },
-    { band: 4, from: 9, phase: 3, tier: "bow" },
-    { band: 5, from: 13, phase: 4, tier: "" },
-    { band: 6, from: 18, phase: 4, tier: "bow" },
-    { band: 7, from: 24, phase: 4, tier: "ribbon" },
+    { band: 1, from: 1, phase: 1, tier: "", scale: 0.9 },
+    { band: 2, from: 3, phase: 1, tier: "", scale: 1 },
+    { band: 3, from: 5, phase: 2, tier: "", scale: 0.9 },
+    { band: 4, from: 7, phase: 2, tier: "", scale: 0.95 },
+    { band: 5, from: 9, phase: 2, tier: "", scale: 1 },
+    { band: 6, from: 11, phase: 3, tier: "", scale: 0.9 },
+    { band: 7, from: 13, phase: 3, tier: "", scale: 0.95 },
+    { band: 8, from: 15, phase: 3, tier: "bow", scale: 0.96 },
+    { band: 9, from: 17, phase: 3, tier: "bow", scale: 1 },
+    { band: 10, from: 19, phase: 4, tier: "", scale: 0.9 },
+    { band: 11, from: 21, phase: 4, tier: "", scale: 0.95 },
+    { band: 12, from: 23, phase: 4, tier: "bow", scale: 0.96 },
+    { band: 13, from: 25, phase: 4, tier: "bow", scale: 1 },
+    { band: 14, from: 27, phase: 4, tier: "ribbon", scale: 1 },
+    { band: 15, from: 29, phase: 4, tier: "ribbon", scale: 1 },
   ];
 
   function bandForLevel(level) {
@@ -124,6 +132,10 @@
       if (clamped >= LEVEL_BANDS[i].from) found = LEVEL_BANDS[i];
     }
     return found;
+  }
+
+  function visualStageForLevel(level) {
+    return bandForLevel(level).band;
   }
 
   // ── Designer pot ramp ───────────────────────────────────────────────────
@@ -372,6 +384,8 @@
       var stageBox = img.parentElement;
       if (stageBox && stageBox.classList) {
         for (var p = 1; p <= 4; p++) stageBox.classList.toggle("sprite-phase-" + p, p === phase);
+        for (var v = 1; v <= 15; v++) stageBox.classList.toggle("visual-stage-" + v, v === band.band);
+        stageBox.style.setProperty("--jamkachu-growth-scale", String(band.scale || 1));
       }
       var potImg = document.getElementById("shop-pot-sprite");
       var potSrc = state.potItemKey ? POT_ITEM_ART[state.potItemKey] || "" : "";
@@ -465,6 +479,7 @@
     },
     stagePhase: stagePhase,
     accessoryTier: accessoryTier,
+    visualStageForLevel: visualStageForLevel,
   };
   // Uppercase alias for the cross-layer parity suite
   // (tests/jamkachu-sprite-parity.test.ts) — same frozen object.

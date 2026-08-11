@@ -115,10 +115,19 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(enqueueIdx).toBeGreaterThan(setIdx); // crash-safe: marked first
   });
 
-  it("the strobe's setStage swaps both the class AND the drawn sprite frame", () => {
+  it("the strobe's setLook swaps both the class and the bond-owned sprite form", () => {
     const seq = live.slice(live.indexOf("async function runEvolutionSequence"), live.indexOf("function fxEvolveNow"));
     expect(seq).toContain("svg.classList.add(`companion-${stage}`)");
-    expect(seq).toContain("window.PMSprite?.set({ stage })");
+    expect(seq).toContain("window.PMSprite?.set(bondLevel === null ? { stage } : { stage, bondLevel })");
+  });
+
+  it("runs the full ceremony when a bond level crosses a two-level visual band", () => {
+    expect(live).toContain("function fxBondEvolve(oldLevel, newLevel)");
+    expect(live).toContain("if (nextVisual > previousVisual) fxBondEvolve(prevLevel, level);");
+    expect(live).toContain("else fxLevelUp(level);");
+    expect(live).toContain("oldBondLevel: oldLevel");
+    expect(live).toContain("newBondLevel: newLevel");
+    expect(live).toContain('grand: newVisual === 15');
   });
 
   it("same-phase strobes still alternate two visibly distinct silhouettes", () => {

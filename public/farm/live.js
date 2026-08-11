@@ -4525,7 +4525,7 @@ function ensureEvoTint() {
 
 /** Full-screen ceremony HUD. Visual labels stay aria-hidden while a single
  *  polite status node announces only the final result. */
-function createEvolutionHud(oldStage, newStage, grand) {
+function createEvolutionHud(oldLabel, newLabel, grand) {
   if (!document.body) return null;
   const hud = document.createElement("div");
   hud.className = `evo-ceremony-hud${grand ? " is-grand" : ""}`;
@@ -4533,7 +4533,7 @@ function createEvolutionHud(oldStage, newStage, grand) {
   const evolving = appLocale === "id" ? "EVOLUSI DIMULAI" : "EVOLUTION START";
   hud.innerHTML =
     `<div class="evo-ceremony-kicker" aria-hidden="true">${kicker}</div>` +
-    `<div class="evo-ceremony-reel" aria-hidden="true"><span>${localizedStage(oldStage)}</span><b>◆</b><span>${localizedStage(newStage)}</span></div>` +
+    `<div class="evo-ceremony-reel" aria-hidden="true"><span>${oldLabel}</span><b>◆</b><span>${newLabel}</span></div>` +
     `<div class="evo-ceremony-charge" aria-hidden="true">${evolving}</div>` +
     `<div class="evo-ceremony-result" aria-hidden="true"></div>` +
     `<div class="sr-only evo-ceremony-status" role="status" aria-live="polite"></div>`;
@@ -4690,12 +4690,16 @@ window.__pmEvoFF = () => evoFastForward?.();
  *  Reduced motion: a single 900ms crossfade, no strobe/flash/shake.
  *  Presentation only — real stage classes re-assert on the next
  *  renderCompanion(), same self-healing contract as PMFx.levelUp(). */
-async function runEvolutionSequence(oldStage, newStage) {
+async function runEvolutionSequence(oldStage, newStage, options = {}) {
   const svg = $(".mascot-svg");
   const wrap = $(".mascot-wrapper");
   if (!svg || !wrap) return;
   const reduce = prefersReducedMotion();
-  const grand = newStage === STAGE_ORDER.at(-1);
+  const oldBondLevel = typeof options.oldBondLevel === "number" ? options.oldBondLevel : null;
+  const newBondLevel = typeof options.newBondLevel === "number" ? options.newBondLevel : null;
+  const oldLabel = options.oldLabel ?? localizedStage(oldStage);
+  const newLabel = options.newLabel ?? localizedStage(newStage);
+  const grand = typeof options.grand === "boolean" ? options.grand : newStage === STAGE_ORDER.at(-1);
   let ff = false; // fast-forward flag: a tap jumps the remaining strobe steps
   const ffTap = () => { ff = true; };
   evoFastForward = ffTap;
@@ -4707,20 +4711,20 @@ async function runEvolutionSequence(oldStage, newStage) {
   // the strobe would freeze into a static shape. .evo-sil-alt marks the
   // new-stage beats so style.css can stretch the silhouette upward, keeping
   // two visibly distinct shapes alternating on every transition pair.
-  const strobeSamePhase =
-    typeof window.PMSprite?.stagePhase === "function" &&
-    window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage);
-  const setStage = (stage) => {
+  const strobeSamePhase = oldBondLevel !== null && newBondLevel !== null
+    ? window.PMSprite?.visualStageForLevel?.(oldBondLevel) === window.PMSprite?.visualStageForLevel?.(newBondLevel)
+    : typeof window.PMSprite?.stagePhase === "function" &&
+      window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage);
+  const setLook = (stage, bondLevel) => {
     for (const cls of [...svg.classList]) if (cls.startsWith("companion-")) svg.classList.remove(cls);
     svg.classList.add(`companion-${stage}`);
     svg.classList.toggle("evo-sil-alt", strobeSamePhase && stage === newStage && svg.classList.contains("evo-sil"));
-    // Designer sprite: each strobe step swaps the drawn phase frame too
-    // (stage→phase table in jamkachu-sprite.js), so the silhouette
-    // alternation stays visible on the img.
-    window.PMSprite?.set({ stage });
+    // Bond evolution passes the old/new bond level because bond level owns
+    // the 15 visible forms. Companion evolution falls back to stage-only.
+    window.PMSprite?.set(bondLevel === null ? { stage } : { stage, bondLevel });
   };
   const tint = ensureEvoTint();
-  const hud = createEvolutionHud(oldStage, newStage, grand);
+  const hud = createEvolutionHud(oldLabel, newLabel, grand);
   let riser = null;
   try {
     document.body?.classList.add("evolution-active");
@@ -4729,7 +4733,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     // Anticipation must show the PRE-evolution form — renderCompanion already
     // applied the new stage class before enqueuing, which would spoil the
     // reveal (and turn the reduced-motion crossfade into a dim-and-undim).
-    setStage(oldStage);
+    setLook(oldStage, oldBondLevel);
     // ── ACT 1: anticipate (~1.3-1.8s) — dialog + tint + pulse
     speechBubble(PM().evo?.noticing?.(currentPlantName()) ?? EVO_FALLBACK.noticing(currentPlantName()));
     tint?.classList.add("on");
@@ -4739,7 +4743,7 @@ async function runEvolutionSequence(oldStage, newStage) {
       await sleep(900);
       svg.classList.add("evo-xfade");
       await sleep(450);
-      setStage(newStage);
+      setLook(newStage, newBondLevel);
       await sleep(450);
       svg.classList.remove("evo-xfade");
     } else {
@@ -4752,13 +4756,14 @@ async function runEvolutionSequence(oldStage, newStage) {
       for (let i = 0; i < EVO_WAITS.length && !ff; i++) {
         await sleep(EVO_WAITS[i]);
         for (let k = 0; k <= i && !ff; k++) {
-          setStage(k % 2 === 0 ? newStage : oldStage);
+          if (k % 2 === 0) setLook(newStage, newBondLevel);
+          else setLook(oldStage, oldBondLevel);
           await sleep(EVO_SWAP_MS);
         }
       }
       riser?.stop();
       riser = null;
-      setStage(newStage);
+      setLook(newStage, newBondLevel);
       wrap.classList.remove("evo-pulse");
       // Silence beat: eye and ear stop together right before the sting.
       hud?.classList.add("is-hold");
@@ -4780,7 +4785,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     }
     // Announcement precedence: full evo line → strings.js companionEvolved
     // (still localized, stage-only) → hard-coded English EVO_FALLBACK.
-    const evoStageName = localizedStage(newStage);
+    const evoStageName = newLabel;
     const evolvedLine =
       PM().evo?.evolved?.(currentPlantName(), evoStageName) ??
       PM().companionEvolved?.(evoStageName) ??
@@ -4790,7 +4795,7 @@ async function runEvolutionSequence(oldStage, newStage) {
     if (hud) {
       const result = hud.querySelector(".evo-ceremony-result");
       const status = hud.querySelector(".evo-ceremony-status");
-      const stageLabel = localizedStage(newStage);
+      const stageLabel = newLabel;
       // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of a
       // growth arc a student spent days on. It used to be announced as "GRAND
       // JACKPOT": slot-machine wording for the one thing here that is entirely
@@ -4815,7 +4820,9 @@ async function runEvolutionSequence(oldStage, newStage) {
     document.body?.classList.remove("evolution-active");
     wrap.classList.remove("evo-arena", "evo-pulse", "evo-shake-lg");
     svg.classList.remove("evo-sil", "evo-sil-alt", "evo-reveal-bounce", "evo-xfade");
-    // real companion_state re-asserts stage classes on the next data render
+    // Re-assert authoritative presentation immediately; a 15s poll should not
+    // be required to recover from the old/new strobe frames.
+    window.PMSprite?.set({ stage: currentCompanionStage, bondLevel: lastBondLevel });
   }
 }
 
@@ -4828,6 +4835,27 @@ function fxEvolveNow(oldStage, newStage) {
  *  trigger, and PMFx.evolve() below). */
 function fxEvolve(oldStage, newStage) {
   fxEnqueue(5, (done) => { fxEvolveNow(oldStage, newStage).then(done, done); }, EVO_SEQUENCE_QUEUE_MS);
+}
+
+/** Bond growth owns the visible Jamkachu body. Crossing one of the 15
+ *  two-level appearance bands therefore runs the full evolution ceremony;
+ *  ordinary in-band levels keep the smaller level-up card. */
+function fxBondEvolve(oldLevel, newLevel) {
+  const oldVisual = window.PMSprite?.visualStageForLevel?.(oldLevel) ?? Math.ceil(Math.max(1, oldLevel) / 2);
+  const newVisual = window.PMSprite?.visualStageForLevel?.(newLevel) ?? Math.ceil(Math.max(1, newLevel) / 2);
+  const label = (visual) => appLocale === "id" ? `PERTUMBUHAN ${visual}/15` : `GROWTH ${visual}/15`;
+  const options = {
+    oldBondLevel: oldLevel,
+    newBondLevel: newLevel,
+    oldLabel: label(oldVisual),
+    newLabel: label(newVisual),
+    grand: newVisual === 15,
+  };
+  fxEnqueue(
+    5,
+    (done) => { runEvolutionSequence(currentCompanionStage, currentCompanionStage, options).then(done, done); },
+    EVO_SEQUENCE_QUEUE_MS,
+  );
 }
 
 // ── End evolution ceremony ───────────────────────────────────────────────
@@ -5257,7 +5285,12 @@ function renderBond(bond, plantName) {
     }, XP_CHIP_GRACE_MS);
   }
   if (leveledUp) {
-    fxLevelUp(level);
+    const previousVisual = window.PMSprite?.visualStageForLevel?.(prevLevel) ?? Math.ceil(Math.max(1, prevLevel) / 2);
+    const nextVisual = window.PMSprite?.visualStageForLevel?.(level) ?? Math.ceil(Math.max(1, level) / 2);
+    // The body changes every two bond levels. Crossing that boundary is an
+    // evolution (full silhouette ceremony), not a routine level-up card.
+    if (nextVisual > previousVisual) fxBondEvolve(prevLevel, level);
+    else fxLevelUp(level);
     // Level decorations (spec §6.4): when the new level unlocks one, extend
     // the level-up celebration with a short T3 reveal (highest new unlock
     // on a multi-level jump — the decorations themselves are all applied).

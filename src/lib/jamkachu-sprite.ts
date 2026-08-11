@@ -77,11 +77,11 @@ export const MOOD_STATUS_CHIP: Partial<Record<PlantMood, string>> = {
 
 /**
  * Bond→tier thresholds. These are the `from` levels of the two bands that
- * introduce an ornament (LEVEL_BANDS 4 and 6) — kept as named constants because
+ * introduce an ornament (LEVEL_BANDS 8 and 14) — kept as named constants because
  * the farm shell mirrors them and several tests read them, but the band table
  * in @/game/progression/level-bands is the source of truth.
  */
-export const TIER_THRESHOLDS = { bow: 9, ribbon: 24 } as const;
+export const TIER_THRESHOLDS = { bow: 15, ribbon: 27 } as const;
 
 /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
 export const PHASE_TIER_CAP: Record<SpritePhase, SpriteTier> = {

@@ -12,6 +12,7 @@ import AppGuide from "@/components/app-guide";
 import BroadcastOverlay from "@/components/broadcast-overlay";
 import LiveActivityBar from "@/components/live-activity-bar";
 import NetworkStatus from "@/components/network-status";
+import DestinationIcon from "@/components/destination-icon";
 
 // The static farm home and every React route share five game destinations,
 // with operational views tucked into a small tool pocket. The list itself
@@ -24,8 +25,8 @@ const TOOL_ITEMS = NAV_TOOLS;
 
 // The label next to it already names the destination, so the drawing is
 // decorative — an alt here would make every nav item read its name twice.
-function NavIcon({ item }: { item: { icon: string; art: string | null } }) {
-  return <i aria-hidden="true">{item.art ? <Image src={item.art} alt="" className="reno-nav-art" width={18} height={18} /> : item.icon}</i>;
+function NavIcon({ item }: { item: { key: string } }) {
+  return <i aria-hidden="true"><DestinationIcon destination={item.key} className="reno-nav-art" size={18} /></i>;
 }
 
 function changeAppLocale(nextLocale: AppLocale) {

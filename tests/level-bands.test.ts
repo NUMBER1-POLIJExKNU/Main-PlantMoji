@@ -41,9 +41,10 @@ describe("bond level cap", () => {
 
 describe("level bands", () => {
   it("starts at Lv.1, never goes backwards, and stays inside the cap", () => {
+    expect(LEVEL_BANDS).toHaveLength(15);
     expect(LEVEL_BANDS[0].from).toBe(1);
     for (let i = 1; i < LEVEL_BANDS.length; i += 1) {
-      expect(LEVEL_BANDS[i].from).toBeGreaterThan(LEVEL_BANDS[i - 1].from);
+      expect(LEVEL_BANDS[i].from).toBe(LEVEL_BANDS[i - 1].from + 2);
       expect(LEVEL_BANDS[i].band).toBe(LEVEL_BANDS[i - 1].band + 1);
     }
     expect(LEVEL_BANDS[LEVEL_BANDS.length - 1].from).toBeLessThanOrEqual(MAX_BOND_LEVEL);
@@ -75,9 +76,14 @@ describe("level bands", () => {
     }
   });
 
-  it("never repeats a look, so every band change is visible", () => {
-    const looks = LEVEL_BANDS.map((band) => `${band.phase}/${band.tier}`);
-    expect(new Set(looks).size).toBe(LEVEL_BANDS.length);
+  it("stamps all 15 visible stages and ends in the lush strawberry form", () => {
+    for (const band of LEVEL_BANDS) {
+      expect(farmSprite).toContain(`visual-stage-" + v`);
+      expect(band.scale).toBeGreaterThanOrEqual(0.9);
+      expect(band.scale).toBeLessThanOrEqual(1);
+    }
+    expect(farmSprite).toContain('for (var v = 1; v <= 15; v++)');
+    expect(existsSync(resolve(process.cwd(), "public/farm/assets/jamkachu/lush-strawberry-canopy.png"))).toBe(true);
   });
 
   it("points at a sprite file that exists, for every band and every mood", () => {
@@ -108,7 +114,7 @@ describe("level bands", () => {
     expect(farmSprite).toContain(`var MAX_BOND_LEVEL = ${MAX_BOND_LEVEL};`);
     for (const band of LEVEL_BANDS) {
       expect(farmSprite, `farm mirror is missing band ${band.band}`).toContain(
-        `{ band: ${band.band}, from: ${band.from}, phase: ${band.phase}, tier: "${band.tier}" }`,
+        `{ band: ${band.band}, from: ${band.from}, phase: ${band.phase}, tier: "${band.tier}", scale: ${band.scale} }`,
       );
     }
     expect(farmSprite.match(/\{ band: \d+, from: \d+/g) ?? []).toHaveLength(LEVEL_BANDS.length);
