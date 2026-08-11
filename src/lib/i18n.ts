@@ -243,7 +243,7 @@ export function companionFormLabel(locale: AppLocale, form: string): string {
 export type NpcKey = "pak-tani" | "botanis" | "penjelajah" | "pedagang" | "moji-bot" | "mbah-tani";
 
 export const npcNames: Record<NpcKey, { en: string; id: string }> = {
-  "pak-tani": { en: "Pak Tani", id: "Pak Tani" },
+  "pak-tani": { en: "Farmer Tani", id: "Farmer Tani" },
   botanis: { en: "Botanis", id: "Botanis" },
   penjelajah: { en: "Penjelajah", id: "Penjelajah" },
   pedagang: { en: "Pedagang", id: "Pedagang" },

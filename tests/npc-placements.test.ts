@@ -47,7 +47,7 @@ describe("NPC cast placements", () => {
   it("keeps the cast names en+id via the shared i18n table", () => {
     const i18n = read("src/lib/i18n.ts");
     expect(i18n).toContain("export const npcNames");
-    for (const name of ["Pak Tani", "Botanis", "Penjelajah", "Pedagang", "Moji-Bot", "Mbah Tani"]) {
+    for (const name of ["Farmer Tani", "Botanis", "Penjelajah", "Pedagang", "Moji-Bot", "Mbah Tani"]) {
       // Designer names are proper nouns in BOTH locales — en and id entries
       // exist and carry the same string.
       expect(i18n).toContain(`en: "${name}", id: "${name}"`);
