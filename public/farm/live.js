@@ -250,7 +250,7 @@ function endVitalEpisode(kind) {
   const card = $(`[data-vital="${kind}"]`);
   delete vitalEpisode[kind];
   if (!card) return;
-  card.classList.remove("is-changing");
+  card.classList.remove("is-changing", "is-rising", "is-falling");
   card.querySelector(".env-hud-delta")?.remove();
   const trail = card.querySelector(".env-gauge-trail");
   if (trail) trail.hidden = true;
@@ -280,9 +280,13 @@ function emphasiseVital(kind, value, fromLeft, toLeft) {
     episode.baseLeft = Number.isFinite(fromLeft) ? fromLeft : toLeft;
   }
 
-  card.classList.add("is-changing");
-
   const delta = value - episode.base;
+  card.classList.add("is-changing");
+  // Which edge the glow hugs is the third direction cue, after the trail's
+  // gradient and the chip's fill — light spills down from the top as a reading
+  // climbs and up from the bottom as it drops.
+  card.classList.toggle("is-rising", delta > 0);
+  card.classList.toggle("is-falling", delta < 0);
   let chip = card.querySelector(".env-hud-delta");
   if (!chip) {
     chip = document.createElement("b");

@@ -582,10 +582,28 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     background:var(--color-surface);
 }
 
-/* (C) Which tile answered, readable from the back of the room. */
+/* (C) Which tile answered, readable from the back of the room — and which way
+   it is going, from the edge the light spills off. Rising lights the top edge,
+   falling the bottom, so at classroom distance the direction survives even
+   once the chip's text and the trail's gradient are too small to resolve.
+   ::after belongs to the mood pulse, so this takes ::before. */
 .env-hud-card.is-changing {
     border-color:var(--hud-accent);
     box-shadow:0 4px 0 var(--color-outline), 0 0 0 3px color-mix(in srgb,var(--hud-accent) 45%,transparent);
+}
+.env-hud-card.is-changing::before {
+    content:"";
+    position:absolute; left:0; right:0; height:16px;
+    pointer-events:none;
+    z-index:1;
+}
+.env-hud-card.is-rising::before {
+    top:0;
+    background:linear-gradient(to bottom,color-mix(in srgb,var(--hud-accent) 75%,transparent),transparent);
+}
+.env-hud-card.is-falling::before {
+    bottom:0;
+    background:linear-gradient(to top,color-mix(in srgb,var(--hud-accent) 75%,transparent),transparent);
 }
 @media (prefers-reduced-motion:no-preference) {
     .env-gauge-trail, .env-hud-delta { transition:opacity .2s ease; }

@@ -129,6 +129,7 @@ describe("the tile that moved is findable at a glance", () => {
     expect(css).toContain(".env-gauge-trail {"); // (A) where it came from
     expect(live).toContain('chip.className = "env-hud-delta"'); // (B) how far
     expect(live).toContain('card.classList.add("is-changing")'); // (C) which tile
+    expect(live).toContain('card.classList.remove("is-changing", "is-rising", "is-falling")');
   });
 
   it("tells rising from falling by shape, not by a second colour", () => {
@@ -142,8 +143,16 @@ describe("the tile that moved is findable at a glance", () => {
     expect(css).toMatch(/\.env-gauge-trail\.is-down \{[^}]*linear-gradient\(to left/);
     // Chip: filled when rising, hollow and dashed when falling.
     expect(css).toMatch(/\.env-hud-delta\.is-down \{[^}]*border-style:dashed/);
+    // Card: the glow hugs the top edge climbing, the bottom edge dropping —
+    // the cue that survives longest at classroom distance.
+    expect(live).toContain('card.classList.toggle("is-rising", delta > 0);');
+    expect(live).toContain('card.classList.toggle("is-falling", delta < 0);');
+    expect(css).toMatch(/\.env-hud-card\.is-rising::before \{[^}]*top:0/);
+    expect(css).toMatch(/\.env-hud-card\.is-falling::before \{[^}]*bottom:0/);
+    // ::after is the mood pulse's; the direction glow must not steal it.
+    expect(css).toContain(".env-hud-card.is-changing::before");
     // Neither direction may introduce a hue of its own.
-    for (const selector of [".env-gauge-trail.is-down", ".env-hud-delta.is-down"]) {
+    for (const selector of [".env-gauge-trail.is-down", ".env-hud-delta.is-down", ".env-hud-card.is-rising::before", ".env-hud-card.is-falling::before"]) {
       const start = css.indexOf(`${selector} {`);
       const block = css.slice(start, css.indexOf("}", start));
       expect(block, `${selector} must stay on --hud-accent`).not.toMatch(/#[0-9a-f]{3,6}\b/i);
