@@ -978,6 +978,12 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    relies on clipping. */
 .mascot-svg { width: 100%; height: auto; overflow: visible; }
 .mascot-svg .crop-variant { display:none; pointer-events:none; }
+.mascot-svg .crop-fruit-detail { opacity:0; transition:opacity .25s steps(2,end); }
+.mascot-svg.companion-Fruit .crop-fruit-detail,
+.mascot-svg.companion-Guardian .crop-fruit-detail,
+.mascot-svg.companion-Elder .crop-fruit-detail,
+.mascot-svg.companion-Radiant .crop-fruit-detail,
+.mascot-svg.companion-Legend .crop-fruit-detail { opacity:1; }
 .mascot-svg.crop-strawberry .crop-form-strawberry,
 .mascot-svg.crop-blueberry .crop-form-blueberry,
 .mascot-svg.crop-soybean .crop-form-soybean,
