@@ -94,6 +94,7 @@ function heroCatalogue(locale: AppLocale): Record<string, HeroQuestEntry> {
     out[key] = {
       key,
       emoji: def.emoji,
+      art: def.art ?? null,
       title: localized.title,
       // Null for the seven quests whose title already stands alone.
       subtitle: questSubtitle(key, locale),
@@ -150,7 +151,8 @@ function ActiveQuestCard({ quest, locale, featured = false, cropProfile = null }
       <>
       <div className="flex items-start gap-4">
         <span className="text-4xl leading-none" role="img" aria-hidden="true">
-          {def.emoji}
+          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+          {def.art ? <img src={def.art} alt="" className="pm-param-icon" draggable={false} /> : def.emoji}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
@@ -280,7 +282,8 @@ function HistoryItem({ quest, locale }: { quest: QuestRow; locale: AppLocale }) 
     // grass) keeps them visually quieter than active quests.
     <li className="pm-panel flex items-center gap-3" style={{ padding: "12px 16px" }}>
       <span className="text-2xl leading-none" role="img" aria-hidden="true">
-        {def.emoji}
+        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+        {def.art ? <img src={def.art} alt="" className="pm-param-icon" draggable={false} /> : def.emoji}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{localized.title}</p>
@@ -365,6 +368,7 @@ export default async function QuestsPage() {
     key,
     title: questLabel(key, locale),
     emoji: QUEST_DEFINITIONS[key].emoji,
+    art: QUEST_DEFINITIONS[key].art ?? null,
     xp: QUEST_DEFINITIONS[key].xpReward,
   }));
 

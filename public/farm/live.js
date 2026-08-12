@@ -286,12 +286,12 @@ const HP_BY_MOOD = {
 // targetMin only on 'maintain' quests — drives the "23/30 min" progress in the
 // home quest slot (renderQuestSlot); recovery quests show a verifying state.
 const QUEST_META = {
-  KEEP_ME_HAPPY: { emoji: "🌱", targetMin: 30 },
-  STAY_COMFY: { emoji: "🛋️", targetMin: 120 },
-  COOL_ME_DOWN: { emoji: "❄️" }, WARM_ME_UP: { emoji: "🧣" },
-  GIVE_ME_MORE_LIGHT: { emoji: "☀️" }, HUMIDIFY_MY_AIR: { emoji: "💦" },
-  DEHUMIDIFY_MY_AIR: { emoji: "🌬️" }, BALANCE_SOIL_ACIDIC: { emoji: "🧪" },
-  BALANCE_SOIL_ALKALINE: { emoji: "🧪" },
+  KEEP_ME_HAPPY: { emoji: "🌱", art: "/icons/quests/keep-me-happy.png", targetMin: 30 },
+  STAY_COMFY: { emoji: "🛋️", art: "/icons/quests/stay-comfy.png", targetMin: 120 },
+  COOL_ME_DOWN: { emoji: "❄️", art: "/icons/quests/cool-me-down.png" }, WARM_ME_UP: { emoji: "🧣", art: "/icons/quests/warm-me-up.png" },
+  GIVE_ME_MORE_LIGHT: { emoji: "☀️", art: "/icons/quests/give-me-more-light.png" }, HUMIDIFY_MY_AIR: { emoji: "💦", art: "/icons/quests/humidify-my-air.png" },
+  DEHUMIDIFY_MY_AIR: { emoji: "🌬️", art: "/icons/quests/dehumidify-my-air.png" }, BALANCE_SOIL_ACIDIC: { emoji: "🧪", art: "/icons/quests/balance-soil-acidic.png" },
+  BALANCE_SOIL_ALKALINE: { emoji: "🧪", art: "/icons/quests/balance-soil-alkaline.png" },
 };
 
 // Mood word + emoji shown under the character name (#char-mood). Words come
@@ -5213,7 +5213,19 @@ function renderQuestSlot(rows) {
     return;
   }
   const meta = QUEST_META[quest.quest_key];
-  nameEl.textContent = meta ? `${meta.emoji} ${questTitle(quest.quest_key)}` : prettifyKey(quest.quest_key);
+  // Drawn icon where the designer has one, the emoji it replaced otherwise.
+  // The title stays textContent — it is data — and the icon is a real element,
+  // so nothing here builds markup out of a quest key.
+  nameEl.textContent = "";
+  if (meta?.art) {
+    const icon = document.createElement("img");
+    icon.className = "pm-inline-art";
+    icon.src = meta.art;
+    icon.alt = "";
+    nameEl.append(icon, ` ${questTitle(quest.quest_key)}`);
+  } else {
+    nameEl.textContent = meta ? `${meta.emoji} ${questTitle(quest.quest_key)}` : prettifyKey(quest.quest_key);
+  }
   if (quest.status === "VERIFYING") {
     // Static structure via innerHTML, dynamic copy via textContent (safe).
     progressEl.innerHTML =

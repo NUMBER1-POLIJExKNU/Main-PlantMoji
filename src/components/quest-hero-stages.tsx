@@ -28,6 +28,8 @@ import type { QuestKey } from "@/types/game";
 export interface HeroQuestEntry {
   key: QuestKey;
   emoji: string;
+  /** Designer icon; `emoji` is the fallback where none is drawn. */
+  art?: string | null;
   title: string;
   /** What separates this quest from another wearing the same title — the
    *  translated trigger mood, e.g. "Soil Too Acidic". Null when the title is
@@ -96,7 +98,8 @@ export default function QuestHeroStages({
   return (
     <>
       <div className="flex items-start gap-4">
-        <span className="text-4xl leading-none" role="img" aria-hidden="true">{quest.emoji}</span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+        <span className="text-4xl leading-none" role="img" aria-hidden="true">{quest.art ? <img src={quest.art} alt="" className="pm-param-icon" draggable={false} /> : quest.emoji}</span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="pm-heading text-xs">{quest.title}</h2>

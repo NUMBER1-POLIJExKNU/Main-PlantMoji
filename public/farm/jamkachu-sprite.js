@@ -74,6 +74,12 @@
   // apart properly — the two soil moods finally differ (red-down tube vs
   // purple-up tube) instead of sharing one test-tube emoji.
   var MOOD_CHIP_ART = {
+    // Happy and Overheating were the two moods with no badge here, so the
+    // thought cloud never appeared in the state players sit in most of the
+    // time — and the mood word under the badge went with it. Both files were
+    // already shipped in assets/moods; only the mapping was missing.
+    Happy: "mood-01-happy",
+    Overheating: "mood-02-overheating",
     TooCold: "mood-11-too-cold",
     Sleepy: "mood-04-sleepy",
     DryAir: "mood-03-dry-air",
