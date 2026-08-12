@@ -19,12 +19,33 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
 
-/** The one phone-dock media block this contract is about. */
+/** Every ≤800px block in the stylesheet, concatenated.
+ *
+ *  This used to take the FIRST such block and cut it at the next "@media" it
+ *  could find, and both halves of that were wrong: style.css carries more than
+ *  one ≤800px block and the dock rules are not in the first, while a nested
+ *  at-rule ends the slice early. The contract was then reading a nearly empty
+ *  string and reporting the dock rules missing when they had been there the
+ *  whole time — four standing failures that were never about the dock.
+ *
+ *  Brace-matching rather than hunting for a delimiter, so nesting is handled
+ *  by construction. */
 function mobileBlock(): string {
-  const start = css.indexOf("@media (max-width: 800px)");
-  expect(start, "style.css lost its ≤800px block").toBeGreaterThan(-1);
-  const next = css.indexOf("@media", start + 1);
-  return css.slice(start, next === -1 ? css.length : next);
+  const marker = "@media (max-width: 800px)";
+  const blocks: string[] = [];
+  for (let at = css.indexOf(marker); at !== -1; at = css.indexOf(marker, at + 1)) {
+    const open = css.indexOf("{", at);
+    if (open === -1) continue;
+    let depth = 0;
+    let end = open;
+    for (; end < css.length; end++) {
+      if (css[end] === "{") depth++;
+      else if (css[end] === "}" && --depth === 0) break;
+    }
+    blocks.push(css.slice(at, end + 1));
+  }
+  expect(blocks.length, "style.css lost its ≤800px block").toBeGreaterThan(0);
+  return blocks.join("\n");
 }
 
 describe("farm mobile dock (≤800px) reaches all ten destinations", () => {
