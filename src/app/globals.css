@@ -802,7 +802,14 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
 /* Route containment contract: utility grids and user-authored copy must stay
    inside the narrow route rail on phones and translated interfaces. */
 .reno-route-page,.reno-route-page *{min-width:0;max-width:100%}
-.reno-route-page :where(h1,h2,h3,h4,p,small,button,label){overflow-wrap:anywhere}
+/* break-word, NOT anywhere. Both break a word that genuinely cannot fit, but
+   `anywhere` also lets the browser use the smallest possible min-content width
+   when sizing the box — so in a narrow grid column (the badge detail beside the
+   wheel is the worst case) the text wraps far earlier than it needs to and
+   arrives shredded across many short lines. `break-word` keeps the same
+   overflow protection this rule was added for without touching intrinsic
+   sizing. */
+.reno-route-page :where(h1,h2,h3,h4,p,small,button,label){overflow-wrap:break-word}
 .reno-route-page :where([class*="grid-cols-"])>*{min-width:0}
 .reno-route-page [class*="grid-cols-4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
 
@@ -1459,7 +1466,7 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   }
 
   .reno-wordmark {
-    width: 82px;
+    width: 82px;
   }
 
   .reno-nav-links {
