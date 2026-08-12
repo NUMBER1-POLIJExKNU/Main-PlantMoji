@@ -10,6 +10,7 @@ import {
   TRIAL_SOIL_SKIP_DAYS,
   TRIAL_TIMING,
   TRIAL_XP,
+  trialDripCeiling,
   trialLevelForXp,
 } from "@/game/dev/trial-constants";
 import { XP_PER_LEVEL, levelForXp } from "@/types/game";
@@ -244,6 +245,22 @@ async function playHappily(sb: Sandbox, ms: number) {
   const step = 1000;
   for (let elapsed = 0; elapsed < ms; elapsed += step) {
     sb.setVitals(HAPPY);
+    await run(step);
+  }
+}
+
+/**
+ * Stand in a healthy garden doing absolutely nothing for `ms`.
+ *
+ * Hazards are pushed out of reach each step, which is what separates this from
+ * playHappily: solving a hazard is an ACT and pays 10 XP, so a test about what
+ * idling alone earns has to keep hazards out of the measurement entirely.
+ */
+async function idleHappily(sb: Sandbox, ms: number) {
+  const step = 1000;
+  for (let elapsed = 0; elapsed < ms; elapsed += step) {
+    sb.setVitals(HAPPY);
+    sb.PMCheat.set({ trial: { nextHazardAt: Date.now() + 3_600_000 } });
     await run(step);
   }
 }
@@ -539,6 +556,60 @@ describe("the Happy drip", () => {
     // is the rule under test, not a way around it.
     await playHappily(sb, TRIAL_TIMING.dripIntervalMs * 4);
     expect(sb.state().status.totalXp).toBeGreaterThan(banked);
+  });
+
+  it("fills the level's bar but never tips it over", async () => {
+    const sb = bootSandbox();
+    startTrial(sb);
+
+    // Long enough to have crossed several levels if the drip were uncapped.
+    await idleHappily(sb, 120_000);
+
+    const s = sb.state();
+    expect(s.status.level).toBe(1);
+    expect(s.status.totalXp).toBe(trialDripCeiling(1));
+    expect(s.status.totalXp).toBe(XP_PER_LEVEL - 1);
+  });
+
+  it("hands the level-up back the moment the student does something", async () => {
+    const sb = bootSandbox();
+    startTrial(sb);
+    await idleHappily(sb, 60_000);
+    expect(sb.state().status.level).toBe(1);
+    expect(sb.state().status.totalXp).toBe(trialDripCeiling(1));
+
+    // One care press is all it takes — the bar was already full.
+    sb.setVitals({ temperature: 34 });
+    sb.PMCheat.press("shade");
+    expect(sb.state().status.level).toBe(2);
+  });
+
+  it("banks nothing while capped, so a level-up is not followed by a flood", async () => {
+    const sb = bootSandbox();
+    startTrial(sb);
+    await idleHappily(sb, 90_000); // long spell sitting at the cap
+    sb.setVitals({ temperature: 34 });
+    sb.PMCheat.press("shade"); // +5 XP, crosses into Lv.2
+    const justAfter = sb.state().status.totalXp;
+
+    // A stockpile of idle seconds would show up here as a jump.
+    sb.setVitals(HAPPY);
+    await run(TRIAL_TIMING.dripIntervalMs);
+    expect(sb.state().status.totalXp - justAfter).toBeLessThanOrEqual(TRIAL_XP.dripPerTick);
+  });
+
+  it("can never open the gate on its own", async () => {
+    // The gate sits on a level floor, and the drip stops one short of every
+    // floor — so the last step through it is always something the student did.
+    const sb = bootSandbox();
+    startTrial(sb);
+    const gates = sb.capture("pmtrial:gate");
+    sb.PMCheat.set({ status: { totalXp: TRIAL_GATE_XP - 1, level: TRIAL_GATE_LEVEL - 1 } });
+
+    await idleHappily(sb, 60_000);
+    expect(sb.state().status.totalXp).toBe(TRIAL_GATE_XP - 1);
+    expect(gates).toHaveLength(0);
+    expect(trialDripCeiling(TRIAL_GATE_LEVEL - 1)).toBe(TRIAL_GATE_XP - 1);
   });
 
   it("credits a throttled or sleeping tab as one ordinary step", async () => {

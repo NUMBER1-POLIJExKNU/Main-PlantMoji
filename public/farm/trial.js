@@ -298,6 +298,14 @@
     return Math.min(MAX_LEVEL, Math.floor(safe / XP_PER_LEVEL) + 1);
   }
 
+  /** The most XP a level can hold — one short of the next level's floor. The
+   *  idle drip stops here so sitting still can fill the bar but never level
+   *  up. At the cap there is no next level to reach, so nothing is withheld. */
+  function dripCeiling(level) {
+    if (level >= MAX_LEVEL) return Infinity;
+    return level * XP_PER_LEVEL - 1;
+  }
+
   function isTrial() {
     return !!(window.PMCheat && window.PMCheat.isActive() && window.PMCheat.getMode() === "trial");
   }
@@ -461,8 +469,21 @@
         runtime.dripAccumMs -= TIMING.dripIntervalMs;
         payouts += 1;
       }
+      // Standing still fills the bar but never tips it over. The drip exists
+      // to reward keeping Jamkachu healthy, not to be a way of playing; left
+      // uncapped, a student could put the pot right once and then watch levels
+      // arrive for doing nothing, which is the opposite of what the two
+      // minutes are for. So every level is crossed by an ACT — a care press, a
+      // hazard solved — and since the gate sits on a level floor (90 XP), it
+      // can never be opened by idling either.
+      var banked = Math.max(0, Math.floor(Number(state.status.totalXp) || 0));
+      var room = Math.max(0, dripCeiling(levelForXp(banked)) - banked);
+      var pay = Math.min(payouts * XP.dripPerTick, room);
+      // Bank nothing while capped, or the moment an action lifted the level a
+      // stockpile of idle seconds would pour in behind it.
+      if (room === 0) runtime.dripAccumMs = 0;
       // Only a payout is worth a write (see the hazard branch above for why).
-      if (payouts > 0) commit(state, trial, payouts * XP.dripPerTick, 0, t.reasonDrip);
+      if (pay > 0) commit(state, trial, pay, 0, t.reasonDrip);
 
       // Hazards only ever interrupt a healthy plant, so problems never stack —
       // and a student who put the pot in the sun themselves is left to work
@@ -571,6 +592,9 @@
     },
     /** Exposed for tests and for live.js's mood-driven copy. */
     moodFor: moodFor,
+    /** The XP the idle drip will not go past for a given level. Exposed so a
+     *  console can confirm which build is actually running. */
+    dripCeiling: dripCeiling,
     HAZARDS: HAZARDS,
   };
 

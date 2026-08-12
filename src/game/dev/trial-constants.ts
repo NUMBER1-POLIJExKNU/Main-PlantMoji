@@ -49,7 +49,8 @@ export const TRIAL_XP = {
   invalidAction: 1,
   /** Mood returns to Happy after a hazard event. */
   eventResolved: 10,
-  /** Paid once per drip interval while the mood is Happy. */
+  /** Paid once per drip interval while the mood is Happy — but only up to
+   *  trialDripCeiling, so idling never levels you up. */
   dripPerTick: 1,
 } as const;
 
@@ -96,6 +97,23 @@ export const TRIAL_SOIL_SKIP_DAYS = 3;
 export function trialLevelForXp(totalXp: number): number {
   const safe = Math.max(0, Math.floor(Number(totalXp) || 0));
   return Math.min(TRIAL_MAX_LEVEL, Math.floor(safe / XP_PER_LEVEL) + 1);
+}
+
+/**
+ * The most XP a level can hold — one short of the next level's floor.
+ *
+ * The idle drip is capped here: standing in a healthy garden fills the bar but
+ * never tips it over. The drip is a reward for keeping Jamkachu well, not a way
+ * of playing, and uncapped it let a student put the pot right once and then
+ * collect levels for doing nothing. Every level is crossed by an ACT instead —
+ * a care press, a hazard solved — and because the gate sits on a level floor,
+ * idling can never open it either.
+ *
+ * At MAX_BOND_LEVEL there is no next level to reach, so nothing is withheld.
+ */
+export function trialDripCeiling(level: number): number {
+  if (level >= TRIAL_MAX_LEVEL) return Number.POSITIVE_INFINITY;
+  return level * XP_PER_LEVEL - 1;
 }
 
 /** XP still owed before the gate opens; 0 once it has. */
