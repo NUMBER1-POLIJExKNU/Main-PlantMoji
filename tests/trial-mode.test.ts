@@ -437,6 +437,25 @@ describe("the classroom escape hatch", () => {
     expect(sb.state().status.totalXp).toBe(xp);
   });
 
+  it("still shows its card when the gate was crossed on another route", () => {
+    // The engine runs everywhere but only My Garden can draw the card, so a
+    // gate crossed while reading Collection or Shop fired its event into
+    // nothing — the student lost both the moment and the button that opens
+    // cheat mode. My Garden now catches up on arrival, exactly once.
+    expect(trialSource).toContain("gateSeen: false,");
+    const start = live.indexOf("function initTrialFarm(");
+    const body = live.slice(start, live.indexOf("function flashDayChange("));
+    expect(body).toContain('window.PMCheat?.get("trial.gateReached")');
+    expect(body).toContain('!window.PMCheat?.get("trial.gateSeen")');
+    // Drawing the card is what marks it seen, so the catch-up cannot repeat.
+    const gateFn = live.slice(live.indexOf("function showTrialGate("));
+    expect(gateFn.slice(0, 500)).toContain('window.PMCheat?.set({ trial: { gateSeen: true } })');
+    // The catch-up line takes the level from the engine instead of repeating
+    // it, so moving the gate cannot leave it announcing the old one.
+    expect(live).toContain("trialLabels.gate(window.PMTrial?.GATE_LEVEL");
+    expect(live).not.toMatch(/gate: \(level\) => `Lv\.\d/);
+  });
+
   it("leaves the settings button always usable, never locked behind the gate", () => {
     expect(cheatToggle).toContain('if (api.getMode?.() === "trial")');
     expect(cheatToggle).toContain("api.switchToCheat();");

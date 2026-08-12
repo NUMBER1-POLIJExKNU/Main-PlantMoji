@@ -289,6 +289,11 @@
       nextHazardAt: now + TIMING.firstEventDelayMs,
       recent: [],
       gateReached: false,
+      // Whether the gate CARD has actually been put in front of the student.
+      // Separate from gateReached because the engine runs on every route while
+      // only My Garden can draw the card: crossing the gate on Shop must not
+      // silently spend the one moment the whole run builds toward.
+      gateSeen: false,
       pressAt: {},
     };
   }

@@ -7197,10 +7197,16 @@ const TRIAL_LABELS = {
   id: {
     panelTitle: "RAWAT JAMKACHU",
     hint: "Tekan tombol perawatan → Jamkachu bereaksi. Ini kebun latihan; data asli tidak berubah.",
+    // Used only by the catch-up path, when the gate was crossed on another
+    // route and its event carried its text away with it. Takes the level from
+    // the engine rather than repeating it, so moving the gate cannot leave
+    // this line quietly announcing the old one.
+    gate: (level) => `Lv.${level} tercapai — Mode Curang terbuka! 🎉`,
   },
   en: {
     panelTitle: "CARE FOR JAMKACHU",
     hint: "Press a care button → Jamkachu reacts. This is a practice garden; real data stays untouched.",
+    gate: (level) => `Lv.${level} reached — Cheat Mode is open! 🎉`,
   },
 };
 
@@ -7316,6 +7322,16 @@ function initTrialFarm() {
     showTrialGate(d.text ?? "");
     window.PMSfx?.play("chapter"); // the kit's biggest moment, for its biggest moment
   });
+
+  // The engine runs on every route, but only this page can draw the card — so
+  // a gate crossed while the student was reading Collection or Shop would fire
+  // its event into nothing and the run would lose the moment it was built
+  // toward, along with the button that opens cheat mode. Catch it on arrival.
+  const trialLabels = TRIAL_LABELS[appLocale] || TRIAL_LABELS.en;
+  if (window.PMCheat?.get("trial.gateReached") && !window.PMCheat?.get("trial.gateSeen")) {
+    showTrialGate(trialLabels.gate(window.PMTrial?.GATE_LEVEL ?? ""));
+    window.PMSfx?.play("chapter");
+  }
 }
 
 /** A quick wash of light across the whole farm when the in-game day turns, so
@@ -7339,6 +7355,9 @@ function flashDayChange() {
  */
 function showTrialGate(text) {
   if (document.getElementById("pm-trial-gate")) return;
+  // Mark it seen the moment it is actually drawn, so the deferred catch-up in
+  // initTrialFarm shows it once and never greets the student with it again.
+  window.PMCheat?.set({ trial: { gateSeen: true } });
   const id = appLocale === "id";
   const card = document.createElement("div");
   card.id = "pm-trial-gate";
