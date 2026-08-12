@@ -16,6 +16,8 @@ export interface CheatQuestItem {
   key: string;
   title: string;
   emoji: string;
+  /** Designer icon; `emoji` is the fallback where none is drawn. */
+  art?: string | null;
   xp: number;
 }
 
@@ -114,7 +116,8 @@ export default function CheatQuestPanel({
                 className="pm-cheat-hero-check shrink-0"
               />
               <span className="text-xl leading-none" role="img" aria-hidden="true">
-                {quest.emoji}
+                {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                {quest.art ? <img src={quest.art} alt="" className="pm-param-icon" draggable={false} /> : quest.emoji}
               </span>
               <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">{quest.title}</span>
               <span className="pm-chip shrink-0" style={{ background: "var(--color-yellow)", borderColor: "#E8C46B", color: "#6B4F10" }}>
