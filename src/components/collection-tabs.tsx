@@ -867,15 +867,21 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               <h3 className="mt-2 text-base font-bold">{selectedBadge.name}</h3>
               <p className="mt-1 text-xs leading-5" style={{ color: INK_MUTED }}>{selectedBadge.description}</p>
               {selectedBadge.unlockedLabel && <p className="mt-2 text-[11px] font-semibold" style={{ color: "#A97B12" }}>{copy.unlockedOn} {selectedBadge.unlockedLabel}</p>}
+              {/* Two columns, with the buttons on their own row underneath.
+                  It was [52px, 1fr, auto], and `auto` let the widest button set
+                  that column — which in this narrow rail starved the 1fr text
+                  down to a couple of characters and stacked "TAP EFFECT ON MY
+                  GARDEN" into vertical fragments. Adding the preview button is
+                  what pushed it over the edge. */}
               {selectedEffect && (
-                <div className="pm-badge-effect-row mx-auto mt-4 grid max-w-sm grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
+                <div className="pm-badge-effect-row mx-auto mt-4 grid max-w-sm grid-cols-[52px_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
                   <span className="pm-badge-effect-icon grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#C99B32] bg-white text-xl" aria-hidden="true">{selectedEffect.particles.slice(0,2).map((particle, index) => <i className="not-italic" key={`${particle}-${index}`}>{particle}</i>)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="pm-heading text-[8px] text-[#A97B12]">{copy.reward}</p>
                     <p className="mt-1 text-sm font-bold">{selectedEffect.name[locale]}</p>
                     <p className="text-[11px]" style={{ color: INK_MUTED }}>{selectedEffect.particles.join(" · ")}</p>
                   </div>
-                  <div className="flex flex-col gap-1.5">
+                  <div className="col-span-2 grid grid-cols-2 gap-2">
                     <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
                       {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
                     </button>
