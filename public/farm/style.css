@@ -3165,6 +3165,26 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   font: 700 10px/1 ui-monospace, monospace;
   cursor: help;
 }
+/* Evolution row: the same [label ......... control] skeleton as the level and
+   XP rows above it, but the control is a wide action button rather than a
+   value, because pressing it performs the ceremony instead of setting a
+   number. Colours follow the level row's buttons so it reads as one family. */
+#pm-cheat-panel .pm-cheat-evolve {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#pm-cheat-panel .pm-cheat-evolve > span { flex: 1; }
+#pm-cheat-panel .pm-cheat-evolve button {
+  padding: 5px 9px;
+  cursor: pointer;
+  border: 2px solid #8A2B5B;
+  border-radius: 8px;
+  background: #FFD86B;
+  color: #3a2600;
+  font: 700 10px/1 ui-monospace, monospace;
+}
+#pm-cheat-panel .pm-cheat-evolve button:active { transform: translateY(1px); }
 #pm-cheat-panel .pm-cheat-hint {
   margin: 0;
   font-size: 10px;

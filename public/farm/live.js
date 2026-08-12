@@ -6683,8 +6683,8 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", drag: "Seret untuk memindahkan panel", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", heldTitle: "Tekan & tahan", oneShotTitle: "Sekali tekan", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", drag: "Drag to move this panel", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", heldTitle: "Press & hold", oneShotTitle: "One-time actions", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", drag: "Seret untuk memindahkan panel", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", heldTitle: "Tekan & tahan", oneShotTitle: "Sekali tekan", evolveTitle: "Evolusi", evolveBtn: "▶ Putar upacara", evolveHint: "Memutar upacara evolusi tahap berikutnya. Hanya tampilan — tahap asli tidak berubah.", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", drag: "Drag to move this panel", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", heldTitle: "Press & hold", oneShotTitle: "One-time actions", evolveTitle: "Evolution", evolveBtn: "▶ Play ceremony", evolveHint: "Plays the next stage's evolution ceremony. Presentation only — the real stage is unchanged.", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
 /** Physically possible range per sensor — mirror of SENSOR_LIMITS in
@@ -6995,6 +6995,13 @@ function buildCheatPanel() {
     `<output class="pm-cheat-bound" data-cheat-out="xpMax" title="${L.xpMax}" aria-label="${L.xpMax}"></output></div>` +
     field("days", L.days, s.status.days, 1, 0) +
     field("seeds", L.seeds, s.status.seeds, 1, 0) +
+    // The ceremony lost its only trigger when presentation mode was deleted
+    // (5167133 removed demo.js, which bound hotkey E to PMFx.evolve). It sits
+    // beside Level because the level row is what the ladder climbs, and it is
+    // a button rather than a number because the ceremony is a performance:
+    // pressing it walks one rung and plays that rung's theme.
+    `<div class="pm-cheat-evolve"><span>${L.evolveTitle}</span>` +
+    `<button type="button" data-cheat-evolve title="${L.evolveHint}">${L.evolveBtn}</button></div>` +
     `</div>` +
     // Care actions come before the raw numbers, because "put it in the sun" is
     // the lesson and 34 is just a number. cheat.js owns the list so this panel
@@ -7030,6 +7037,13 @@ function buildCheatPanel() {
       window.PMCheat?.press(btn.getAttribute("data-cheat-action"));
       repaintCheatActions(panel);
     });
+  });
+
+  // Pure presentation: PMFx.evolve walks its own preview cursor and queues the
+  // T5 sequence. It writes nothing — not to the sandbox, not to Supabase — so
+  // the real ladder position is whatever the next data render says it is.
+  panel.querySelector("[data-cheat-evolve]")?.addEventListener("click", () => {
+    window.PMFx?.evolve();
   });
 
   const byValueBtn = panel.querySelector("[data-cheat-byvalue]");
