@@ -1,4 +1,4 @@
-import { getServerSupabase } from "@/lib/supabase/server";
+import { getServerSupabaseForBulkRead } from "@/lib/supabase/server";
 import { isMissingColumnError, isMissingTableError } from "@/lib/supabase-errors";
 import { clampMinutes, downsample } from "@/components/sensor-gauge";
 
@@ -29,7 +29,9 @@ export async function GET(request: Request) {
     requested && /^[A-Za-z0-9_-]{1,64}$/.test(requested) ? requested : "plant-01";
   const minutes = clampMinutes(params.get("minutes"));
 
-  const supabase = getServerSupabase();
+  // Bulk read: an hour of readings is hundreds of rows and the page-render
+  // timeout misjudges it as a dead project (see lib/supabase/server.ts).
+  const supabase = getServerSupabaseForBulkRead();
   if (!supabase) {
     return Response.json({ ok: false, error: "no_env" }, { status: 503 });
   }
@@ -62,34 +64,48 @@ export async function GET(request: Request) {
     historyQuery("recorded_at, light, light_lux"),
   ]);
 
-  if (latestResult.error) {
-    if (isMissingTableError(latestResult.error)) {
-      return Response.json({ latest: null, history: [] });
-    }
+  // The two reads are independent, so one failing must not throw the other
+  // away. It used to: any `latest` error became a 500, the client dropped the
+  // whole payload on !res.ok, and the light chart — which needs only `history`
+  // — went blank while the gauges above it kept showing the previous poll's
+  // numbers. `latest` is the one that fails in practice: this route is polled
+  // every 5s by the activity bar and every 10s by /monitoring, and overlapping
+  // requests abort each other ("AbortError: This operation was aborted").
+  //
+  // Each half is now reported on its own. A missing table stays a setup state
+  // rather than an error, exactly as before.
+  if (latestResult.error && !isMissingTableError(latestResult.error)) {
     console.error("sensor-history latest failed:", latestResult.error.message);
-    return Response.json({ ok: false, error: "query_failed" }, { status: 500 });
   }
+  const latest = latestResult.error ? null : latestResult.data ?? null;
 
-  let rows: HistoryRow[];
+  let rows: HistoryRow[] | null = null;
   if (!withLux.error) {
     rows = (withLux.data ?? []) as unknown as HistoryRow[];
   } else if (isMissingColumnError(withLux.error)) {
     const withoutLux = await historyQuery("recorded_at, light");
     if (withoutLux.error) {
       console.error("sensor-history fallback failed:", withoutLux.error.message);
-      return Response.json({ ok: false, error: "query_failed" }, { status: 500 });
+    } else {
+      rows = ((withoutLux.data ?? []) as unknown as Omit<HistoryRow, "light_lux">[]).map(
+        (row) => ({ ...row, light_lux: null }),
+      );
     }
-    rows = ((withoutLux.data ?? []) as unknown as Omit<HistoryRow, "light_lux">[]).map(
-      (row) => ({ ...row, light_lux: null }),
-    );
+  } else if (isMissingTableError(withLux.error)) {
+    rows = [];
   } else {
     console.error("sensor-history history failed:", withLux.error.message);
+  }
+
+  // Only when BOTH halves are unusable is there nothing to answer with.
+  if (rows === null && latest === null) {
     return Response.json({ ok: false, error: "query_failed" }, { status: 500 });
   }
+  rows = rows ?? [];
 
   rows.reverse();
   return Response.json({
-    latest: latestResult.data ?? null,
+    latest,
     history: downsample(rows, HISTORY_CAP),
   });
 }
