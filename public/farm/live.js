@@ -3393,7 +3393,10 @@ function applyNightUi() {
     if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
     farmerNightSleepTimer = null;
     document.body?.classList.remove("farmer-night-awake");
-    $("#npc-farmer")?.classList.remove("npc-night-awake");
+    const farmer = $("#npc-farmer");
+    farmer?.classList.remove("npc-night-awake");
+    farmer?.style.removeProperty("--farmer-awake-left");
+    farmer?.style.removeProperty("--farmer-awake-top");
   }
   if (night) $("#npc-farmer")?.classList.remove("npc-farming");
   const celestial = $(".env-sun");
@@ -3936,7 +3939,10 @@ function scheduleFarmerNightSleep() {
     if (!isNightWIB() || farmerDrag) return;
     clearFarmerBubble();
     document.body?.classList.remove("farmer-night-awake");
-    $("#npc-farmer")?.classList.remove("npc-night-awake", "npc-grabbed", "npc-landing");
+    const farmer = $("#npc-farmer");
+    farmer?.classList.remove("npc-night-awake", "npc-grabbed", "npc-landing");
+    farmer?.style.removeProperty("--farmer-awake-left");
+    farmer?.style.removeProperty("--farmer-awake-top");
     restartFarmerMotion();
   }, 3000);
 }
@@ -3963,6 +3969,8 @@ function wakeFarmerAtNight() {
       : rect.left;
     farmer.style.left = `${wakeLeft}px`;
     farmer.style.top = `${ground?.top ?? rect.top}px`;
+    farmer.style.setProperty("--farmer-awake-left", `${wakeLeft}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${ground?.top ?? rect.top}px`);
     farmer.style.transform = "none";
     setFarmerFacing(1);
   }
@@ -3990,6 +3998,10 @@ function startFarmerDrag(event) {
   clearFarmerBubble();
   farmer.style.left = `${rect.left}px`;
   farmer.style.top = `${rect.top}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", `${rect.left}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${rect.top}px`);
+  }
   farmer.style.transform = "none";
   setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
   farmer.classList.remove("npc-walking", "npc-talking", "npc-farming");
@@ -4024,6 +4036,10 @@ function moveFarmerDrag(event) {
   const height = farmer.offsetHeight || 56;
   farmer.style.left = `${Math.max(0, Math.min(window.innerWidth - width, event.clientX - drag.offsetX))}px`;
   farmer.style.top = `${Math.max(0, Math.min(window.innerHeight - height, event.clientY - drag.offsetY))}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", farmer.style.left);
+    farmer.style.setProperty("--farmer-awake-top", farmer.style.top);
+  }
   if (farmerBubbleEl) {
     const left = Number.parseFloat(farmer.style.left) || 0;
     const top = Number.parseFloat(farmer.style.top) || 0;
@@ -4070,6 +4086,10 @@ async function endFarmerDrag(event) {
   farmer.classList.remove("npc-landing");
   farmer.style.left = `${landingLeft}px`;
   farmer.style.top = `${ground.top}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", `${landingLeft}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${ground.top}px`);
+  }
   farmer.style.transform = "scaleX(1)";
   setFarmerFacing(1);
   restartFarmerMotion();

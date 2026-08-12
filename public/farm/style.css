@@ -2126,6 +2126,10 @@ body.night:not(.farmer-night-awake) .npc-farmer.npc-ready {
 }
 body.night .npc-farmer .npc-ai-tag { bottom:calc(100% + 10px); color:#f8e68e; background:#354463; box-shadow:0 2px 0 #182238; }
 body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; filter:none; cursor:grab; z-index:950; }
+body.night.farmer-night-awake .npc-farmer.npc-ready {
+    left: var(--farmer-awake-left) !important;
+    top: var(--farmer-awake-top) !important;
+}
 body.night.farmer-night-awake .npc-farmer .npc-ai-tag { display:none; }
 .npc-farmer-bed {
     position: fixed;

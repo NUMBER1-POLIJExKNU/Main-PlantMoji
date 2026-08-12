@@ -54,6 +54,9 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
     expect(css).toContain("body.night:not(.farmer-night-awake) .npc-farmer.npc-ready");
+    expect(css).toContain("left: var(--farmer-awake-left) !important");
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-left"');
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-top"');
     const wakeBlock = live.match(/function wakeFarmerAtNight\(\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
     expect(wakeBlock).toContain("const ground = farmerGround();");
     expect(wakeBlock).toContain("Math.min(ground.right");
