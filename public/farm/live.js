@@ -455,11 +455,11 @@ function setMascotMood(state) {
   const moodEmoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
   const moodEl = $("#char-mood");
   if (moodEl) moodEl.textContent = `${moodWord} ${moodEmoji}`;
-  // The caption under the speech bubble is the one people actually read.
-  // The emoji is left off here — the bubble above already shows the face,
-  // and repeating it beside the word says the same thing twice.
-  const moodCaption = $("#mood-caption");
-  if (moodCaption) moodCaption.textContent = moodWord;
+  // The word inside the thought bubble, under the badge that pictures the same
+  // mood. No emoji here: the badge directly above it already is the picture.
+  // (jamkachu-sprite.js owns the bubble's own hidden state and the badge art.)
+  const moodWordEl = $("#mood-word");
+  if (moodWordEl) moodWordEl.textContent = moodWord;
   applyMoodPulse(state);
   // Contextual care button + night sleep (spec §6.1/§6.2): every mood
   // render re-derives the one safe action and the sleep presentation —

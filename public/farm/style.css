@@ -928,17 +928,6 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     white-space: nowrap;
 }
 
-/* Mood in words, directly under the bubble. */
-.mood-caption {
-    margin: -2px 0 2px;
-    font-family: var(--font-heading);
-    font-size: 11px;
-    line-height: 1.5;
-    color: var(--color-forest);
-    text-align: center;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, .85);
-}
-.mood-caption:empty { display: none; }
 .quiz-chip {
     width: 100%; min-height: 66px; border: 3px solid var(--color-yellow); cursor: pointer;
     display: flex; align-items: center; gap: 12px; padding: 11px 14px; color: var(--color-text);
@@ -1459,15 +1448,30 @@ body.evolution-active .fx-layer { z-index:1390; }
     right: -3%;
     z-index: 3;
     display: grid;
-    width: 62px;
-    height: 56px;
-    place-items: center;
+    /* Two rows now — the badge, and the mood in words under it — so the cloud
+       grows to its content instead of holding a fixed 62x56. min-width keeps
+       it round-ish for a short word ("Happy"); longer ones wrap inside
+       max-width rather than stretching the cloud into an oval. */
+    min-width: 62px;
+    max-width: 96px;
+    min-height: 56px;
+    gap: 2px;
+    padding: 7px 8px 9px;
+    justify-items: center;
+    align-content: center;
     border: 3px solid var(--color-border);
     border-radius: 48% 52% 46% 54%;
     background: var(--color-surface);
     box-shadow: 0 5px 0 rgba(36,52,33,.2), inset 0 0 0 3px rgba(255,255,255,.55);
     pointer-events: none;
 }
+.mood-word {
+    font: 7px/1.35 var(--font-heading);
+    color: var(--color-forest);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+.mood-word:empty { display: none; }
 .mood-thought-bubble[hidden] { display: none; }
 .mood-thought-bubble::before,
 .mood-thought-bubble::after {
