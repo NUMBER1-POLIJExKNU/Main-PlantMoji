@@ -856,13 +856,34 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   .reno-skin-actions { bottom: -16px; margin: 14px -16px -16px; padding: 12px 16px max(14px,env(safe-area-inset-bottom)); }
 }
 
+/* Same painted scenes the farm home uses (public/farm/assets/bg), so every
+   route sits in one world instead of the home being a picture and the rest a
+   gradient. The React shell's day/night switch is html[data-theme="night"] —
+   the farm home's is body.night — but both are driven from the same WIB hour.
+
+   cover + bottom keeps the horizon on the floor of the viewport at any aspect
+   ratio. The CSS sun/clouds/particles below are hidden here because the art
+   already contains them; the per-skin treatments that tint .reno-env-particles
+   still apply to the skins that use them, they simply have nothing to tint on
+   the default skin now. */
 .reno-env-background {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  background-image: url("/farm/assets/bg/day.png");
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
+html[data-theme="night"] .reno-env-background { background-image: url("/farm/assets/bg/night.png"); }
+/* Painted into the art now. */
+.reno-env-background .reno-env-sun,
+.reno-env-background .reno-env-cloud,
+.reno-env-background [class*="reno-env-cloud-"],
+.reno-env-background .reno-env-particles { display: none; }
 
 .reno-env-sun {
   position: absolute;

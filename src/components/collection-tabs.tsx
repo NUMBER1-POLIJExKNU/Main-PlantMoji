@@ -395,18 +395,21 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const previewRef = useRef<HTMLElement | null>(null);
 
-  // The reward pop renders once, directly under the tab bar — but the buttons
-  // that fire it sit at the BOTTOM of their section (Story's "Play scene" is
-  // below the chapter map AND the chapter card). Landing off-screen above, the
-  // click read as a dead button. Bring the pop to the reader rather than
-  // moving it, so all three trigger sites keep sharing one slot.
-  // Instant, not smooth: a smooth scrollIntoView silently no-ops inside
-  // .reno-route-content. Measured on the deployed page — with "smooth" the pop
-  // stayed put at top -381, with the default it landed at +276. Arriving at
-  // once is also what a reduced-motion reader wants, so there is no branch.
+  // One slot shared by all three trigger sites, and it now sits BELOW the tab
+  // panels rather than under the tab bar. Every button that fires it — Moods'
+  // "Try it now", the badge preview, Story's "Play scene" — is at the bottom
+  // of its section, so a pop that appears underneath lets the reader carry on
+  // downward instead of being thrown back up the page to find it.
+  //
+  // block:"nearest" for the same reason: it scrolls only when the pop is not
+  // already on screen, so the common case (it opened just below the button
+  // that was clicked) does not move the page at all. Instant, not smooth — a
+  // smooth scrollIntoView silently no-ops inside .reno-route-content, measured
+  // on the deployed page, and arriving at once is what a reduced-motion reader
+  // wants anyway, so there is no branch.
   useEffect(() => {
     if (!preview || previewPulse === 0) return;
-    previewRef.current?.scrollIntoView({ block: "center" });
+    previewRef.current?.scrollIntoView({ block: "nearest" });
   }, [preview, previewPulse]);
 
   useEffect(() => {
@@ -675,25 +678,6 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         })}
       </div>
 
-      {preview && (
-        <section ref={previewRef} key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
-          <div className="relative mx-auto mt-2 grid size-24 place-items-center overflow-hidden rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
-            <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
-            {Array.from({ length: 9 }, (_, index) => (
-              <span key={`${previewPulse}-${index}`} className="pm-reward-particle pointer-events-none absolute text-xl" style={{ "--reward-x": `${((index % 5) - 2) * 20}px`, animationDelay: `${index * 45}ms` } as CSSProperties} aria-hidden="true">
-                {preview.particles[index % preview.particles.length]}
-              </span>
-            ))}
-          </div>
-          <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
-          <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
-          <div className="mx-auto mt-3 max-w-[260px] rounded-xl border-2 border-dashed border-[#9bb88c] bg-[#f7fbe9] px-3 py-2 text-left text-[11px] font-bold text-[#397a2b]">
-            <div className="flex items-center justify-between"><span>✨ {locale === "id" ? "KOMBO SEMANGAT" : "CARE COMBO"}</span><b>{Math.min(3, previewPulse)} / 3</b></div>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#dce8d3]"><span className="block h-full rounded-full bg-[#f4c95d] transition-all" style={{ width: `${Math.min(100, previewPulse * 33.333)}%` }} /></div>
-          </div>
-          <button type="button" className="pm-btn pm-btn-secondary mt-3" onClick={() => setPreview(null)}>{locale === "id" ? "KEMBALI KE KOLEKSI" : "BACK TO COLLECTION"}</button>
-        </section>
-      )}
 
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
@@ -993,6 +977,26 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {preview && (
+        <section ref={previewRef} key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
+          <div className="relative mx-auto mt-2 grid size-24 place-items-center overflow-hidden rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
+            <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
+            {Array.from({ length: 9 }, (_, index) => (
+              <span key={`${previewPulse}-${index}`} className="pm-reward-particle pointer-events-none absolute text-xl" style={{ "--reward-x": `${((index % 5) - 2) * 20}px`, animationDelay: `${index * 45}ms` } as CSSProperties} aria-hidden="true">
+                {preview.particles[index % preview.particles.length]}
+              </span>
+            ))}
+          </div>
+          <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
+          <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
+          <div className="mx-auto mt-3 max-w-[260px] rounded-xl border-2 border-dashed border-[#9bb88c] bg-[#f7fbe9] px-3 py-2 text-left text-[11px] font-bold text-[#397a2b]">
+            <div className="flex items-center justify-between"><span>✨ {locale === "id" ? "KOMBO SEMANGAT" : "CARE COMBO"}</span><b>{Math.min(3, previewPulse)} / 3</b></div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#dce8d3]"><span className="block h-full rounded-full bg-[#f4c95d] transition-all" style={{ width: `${Math.min(100, previewPulse * 33.333)}%` }} /></div>
+          </div>
+          <button type="button" className="pm-btn pm-btn-secondary mt-3" onClick={() => setPreview(null)}>{locale === "id" ? "KEMBALI KE KOLEKSI" : "BACK TO COLLECTION"}</button>
         </section>
       )}
     </div>

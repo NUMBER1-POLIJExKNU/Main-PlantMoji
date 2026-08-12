@@ -248,15 +248,19 @@ describe("cheat quest stage", () => {
 describe("collection reward preview", () => {
   const tabs = readFileSync("src/components/collection-tabs.tsx", "utf8");
 
-  it("brings the reward pop into view, since it renders above the button", () => {
-    // Story's "Play scene" sits below the chapter map and the chapter card,
-    // while the pop renders under the tab bar — it fired off-screen and read
-    // as a dead button.
+  it("opens the reward pop below the panels, without throwing the page around", () => {
+    // The pop used to render under the tab bar, above every button that fires
+    // it, so it needed block:"center" to drag the reader back up. It sits BELOW
+    // the tab panels now — right where those buttons are — so "nearest" is the
+    // right call: it scrolls only when the pop is genuinely off-screen, and the
+    // common case does not move the page at all.
     expect(tabs).toContain("const previewRef = useRef<HTMLElement | null>(null);");
     expect(tabs).toContain("ref={previewRef}");
+    expect(tabs).toContain('previewRef.current?.scrollIntoView({ block: "nearest" });');
     // Instant, not smooth — a smooth scrollIntoView no-ops inside
     // .reno-route-content, which left the pop exactly where it was.
-    expect(tabs).toContain('previewRef.current?.scrollIntoView({ block: "center" });');
     expect(tabs).not.toContain('behavior: "smooth"');
+    // The slot has to come AFTER the tab panels, or it is back above them.
+    expect(tabs.indexOf("ref={previewRef}")).toBeGreaterThan(tabs.indexOf('{tab === "moods" && ('));
   });
 });
