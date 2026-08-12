@@ -6774,10 +6774,93 @@ function repaintCheatActions(panel) {
  * On a stage too narrow to hold the panel without covering the plant, this
  * leaves the stylesheet's left dock alone.
  */
+const CHEAT_PANEL_POS_KEY = "plantmoji_cheat_panel_pos_v1";
+/** Set once the presenter has dragged the panel (or a saved drag was
+ *  restored). From then on the auto-dock below stops moving it — a window you
+ *  placed by hand that jumps back on the next resize is not a window. */
+let cheatPanelMoved = false;
+
+/** Writes an absolute viewport position, clamped so no part of the panel can
+ *  end up off-screen and out of reach. The stylesheet docks it with
+ *  bottom+left, so `bottom` is released here: leaving it set would make the
+ *  panel grow upward from wherever it was dropped instead of downward. */
+function placeCheatPanel(panel, left, top) {
+  const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight);
+  panel.style.left = `${Math.round(Math.min(Math.max(0, left), maxLeft))}px`;
+  panel.style.top = `${Math.round(Math.min(Math.max(0, top), maxTop))}px`;
+  panel.style.bottom = "auto";
+}
+
+/** Drag the panel by its header. Pointer events (not mouse) so pen and touch
+ *  work the same way, with capture on the handle so a fast drag that outruns
+ *  the cursor does not drop the panel mid-move. */
+function makeCheatPanelDraggable(panel) {
+  const handle = panel.querySelector(".pm-cheat-head");
+  if (!handle) return;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHEAT_PANEL_POS_KEY) || "null");
+    if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+      cheatPanelMoved = true;
+      placeCheatPanel(panel, saved.left, saved.top);
+    }
+  } catch { /* unreadable storage just means the default dock */ }
+
+  let startX = 0, startY = 0, originLeft = 0, originTop = 0, dragging = false;
+
+  handle.addEventListener("pointerdown", (event) => {
+    // The collapse button lives inside the handle and is not a drag surface.
+    if (event.target.closest("button")) return;
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    const rect = panel.getBoundingClientRect();
+    originLeft = rect.left;
+    originTop = rect.top;
+    startX = event.clientX;
+    startY = event.clientY;
+    dragging = true;
+    // Pin the box to where it currently sits before the first move, so the
+    // switch from bottom-anchored to top-anchored is invisible.
+    placeCheatPanel(panel, originLeft, originTop);
+    panel.classList.add("is-dragging");
+    try { handle.setPointerCapture(event.pointerId); } catch {}
+    event.preventDefault();
+  });
+
+  handle.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    placeCheatPanel(panel, originLeft + (event.clientX - startX), originTop + (event.clientY - startY));
+  });
+
+  const endDrag = (event) => {
+    if (!dragging) return;
+    dragging = false;
+    cheatPanelMoved = true;
+    panel.classList.remove("is-dragging");
+    try { handle.releasePointerCapture(event.pointerId); } catch {}
+    const rect = panel.getBoundingClientRect();
+    try {
+      localStorage.setItem(CHEAT_PANEL_POS_KEY, JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+    } catch { /* the position is a convenience, not state worth failing over */ }
+  };
+  handle.addEventListener("pointerup", endDrag);
+  handle.addEventListener("pointercancel", endDrag);
+
+  // A window narrowed after the drag could leave the panel outside the
+  // viewport; re-clamping keeps its header reachable.
+  window.addEventListener("resize", () => {
+    if (!cheatPanelMoved) return;
+    const rect = panel.getBoundingClientRect();
+    placeCheatPanel(panel, rect.left, rect.top);
+  });
+}
+
 function positionCheatPanel() {
   const panel = document.getElementById("pm-cheat-panel");
   const stage = $(".mascot-stage");
   if (!panel || !stage) return;
+  // Hand placement wins over the automatic dock.
+  if (cheatPanelMoved) return;
   const rect = stage.getBoundingClientRect();
   const width = panel.offsetWidth || 232;
   // Room for the panel plus the plant it must not sit on top of.
@@ -6869,6 +6952,8 @@ function buildCheatPanel() {
     const L2 = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
     byValueBtn.textContent = `${open ? "▾" : "▸"} ${L2.byValue}`;
   });
+
+  makeCheatPanelDraggable(panel);
 
   const collapseBtn = panel.querySelector("[data-cheat-collapse]");
   collapseBtn?.addEventListener("click", () => {
