@@ -3199,6 +3199,13 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   width: 190px;
 }
 #pm-cheat-panel[data-mode="trial"] .pm-cheat-head { color: #1E5E12; }
+/* One column here, whatever the shared panel does. The cheat panel is 232px
+   and went two-across; this one is 190px because it lives in the strip beside
+   Jamkachu, and two columns there crushed "Sprinkle wood ash" into its own
+   "⏳ days later" badge. */
+#pm-cheat-panel[data-mode="trial"] .pm-cheat-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
 #pm-cheat-panel[data-mode="trial"] .pm-cheat-action {
   border-color: #A8CE95;
   padding: 4px 6px;

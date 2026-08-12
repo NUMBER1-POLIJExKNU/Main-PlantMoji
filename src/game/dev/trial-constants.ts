@@ -19,11 +19,18 @@ import { MAX_BOND_LEVEL, XP_PER_LEVEL } from "@/types/game";
 /**
  * Reaching this level opens cheat mode.
  *
- * Lv.6 is the second sprite change in LEVEL_BANDS (Lv.3 sprout → Lv.6 flower),
- * so the gate lands on the same beat as the flower opening: the unlock
- * celebration and the growth change play as one peak instead of two near-misses.
- * Lv.5 arrives too early to have taught the loop, and Lv.7 buys no visual
- * change while risking the two-minute budget.
+ * Chosen for the time budget: 75 XP lands at roughly 80–105 seconds of play,
+ * inside the two minutes a first-time student gives us, with room for a slow
+ * one to still get there.
+ *
+ * It was ALSO chosen to coincide with the flower opening — under the old
+ * seven-band ladder Lv.6 was a sprite change, so the unlock and the growth
+ * played as one peak. LEVEL_BANDS has since been redrawn into fifteen bands
+ * that step every ODD level (1, 3, 5, 7…), which moved the flower out to Lv.15
+ * and left Lv.6 in the middle of a band, changing nothing on screen. The gate
+ * still works; it just no longer rhymes with the art. Moving it to Lv.5 (60 XP,
+ * the seed → sprout phase change, ~65–90s) would restore that, and is the open
+ * question in implementation.md §12.
  */
 export const TRIAL_GATE_LEVEL = 6;
 

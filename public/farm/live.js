@@ -7333,9 +7333,9 @@ function flashDayChange() {
 /**
  * The gate card: the peak of the whole trial run.
  *
- * It lands on the same beat as the Lv.6 flower opening, which is why Lv.6 was
- * chosen — the growth change and the unlock read as one moment. Two ways out,
- * because both are legitimate: keep playing, or take the cheat wheel.
+ * Two ways out, because both are legitimate: keep playing, or take the cheat
+ * wheel. (See TRIAL_GATE_LEVEL for why Lv.6, and for the sprite-band redraw
+ * that has since decoupled the gate from a growth change.)
  */
 function showTrialGate(text) {
   if (document.getElementById("pm-trial-gate")) return;
