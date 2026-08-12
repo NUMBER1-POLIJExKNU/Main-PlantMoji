@@ -3790,24 +3790,17 @@ function farmerGround() {
 
   // Vertically he must stand ON the grass, so `top` stays measured from it.
   //
-  // Horizontally the grass is NOT a safe lane. From 801px up the game world is
-  // a two-column grid and the grass strip runs under BOTH columns, while the
-  // status cards (.home-stack) sit on top of it. .mascot-stage carries
-  // z-index 5 and .home-stack z-index 10, so the stage becomes its own
-  // stacking context and the farmer's own z-index 15 cannot lift him out of
-  // it — walking right simply made him vanish behind the cards.
-  //
-  // Clamping the lane to the character column keeps him on screen for the
-  // whole lap. Below 801px the stage spans the game world anyway, so this
-  // intersection is a no-op there apart from respecting its padding.
-  const stage = $(".mascot-stage")?.getBoundingClientRect();
-  const laneLeft = Math.max(rect.left, stage ? stage.left : rect.left);
-  const laneRight = Math.min(rect.right, stage ? stage.right : rect.right);
-
-  const left = Math.round(laneLeft + 12);
+  // Horizontally the whole grass strip is his: the status rail (.home-stack)
+  // used to sit ON the grass, and since .mascot-stage is its own stacking
+  // context the farmer's z-index could not lift him over those cards — walking
+  // right made him vanish behind them, so the lane was clamped to the
+  // character column. The rail now ends well above the floor (it carries its
+  // own clamp(44px,8vh,92px) bottom margin), leaving the grass clear across
+  // the full width, so the clamp is gone and he laps the whole garden.
+  const left = Math.round(rect.left + 12);
   return {
     left,
-    right: Math.round(Math.max(left, laneRight - width - 12)),
+    right: Math.round(Math.max(left, rect.right - width - 12)),
     top: Math.round(rect.top - height + 8),
   };
 }

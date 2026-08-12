@@ -72,20 +72,18 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).not.toContain("pm-npc-wander");
   });
 
-  it("keeps the walk lane inside the character column, clear of the status cards", () => {
-    // The grass runs under both desktop grid columns, but .mascot-stage
-    // (z-index 5) is its own stacking context and .home-stack sits at 10 —
-    // the farmer's z-index 15 cannot lift him above the cards, so the lane
-    // itself has to stop where the character column does.
-    expect(live).toContain('const stage = $(".mascot-stage")?.getBoundingClientRect()');
-    expect(live).toContain("Math.max(rect.left, stage ? stage.left : rect.left)");
-    expect(live).toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
-    // Footing still comes from the grass, only the horizontal span is clamped.
+  it("walks the whole grass strip, which the status rail no longer sits on", () => {
+    // The lane used to stop at .mascot-stage's right edge: the rail
+    // (.home-stack, z-index 10) sat ON the grass, and since .mascot-stage is
+    // its own stacking context the farmer's z-index 15 could not lift him over
+    // those cards — he vanished behind them. The rail now ends above the floor
+    // (its own clamp(44px,8vh,92px) bottom margin), so the grass is clear edge
+    // to edge and the lane is the grass itself.
+    expect(live).toContain("const left = Math.round(rect.left + 12);");
+    expect(live).toContain("Math.max(left, rect.right - width - 12)");
+    expect(live).not.toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
+    // Footing still comes from the grass.
     expect(live).toContain("top: Math.round(rect.top - height + 8)");
-    // A column narrower than the sprite must not produce right < left.
-    expect(live).toContain("Math.max(left, laneRight - width - 12)");
-    // Lane depends on the stage now, so its resize has to restart the wander.
-    expect(live).toContain('for (const el of [$(".grass-floor"), $(".mascot-stage")])');
 
     // The weather/clock row must not sit under the fixed 44px mute button.
     expect(css).toMatch(/\.hud-top \{[\s\S]*?right:\s*44px/);
