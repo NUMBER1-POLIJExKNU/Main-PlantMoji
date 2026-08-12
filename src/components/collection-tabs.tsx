@@ -86,15 +86,27 @@ export interface CollectionTabsProps {
   spritePhase: SpritePhase;
 }
 
+// `art` is the designer's drawing; `emoji` stays as the fallback for the two
+// tabs that have no drawing yet (Badges, Wisdom) — same contract as
+// lib/nav-destinations.
 const TABS = [
-  { id: "moods", emoji: "🎭" },
-  { id: "badges", emoji: "🏅" },
-  { id: "story", emoji: "📜" },
-  { id: "wisdom", emoji: "🌾" },
+  { id: "moods", emoji: "🎭", art: "/icons/collection-moods.png" },
+  { id: "badges", emoji: "🏅", art: null },
+  { id: "story", emoji: "📜", art: "/icons/collection-story.png" },
+  { id: "wisdom", emoji: "🌾", art: null },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 type RewardPreview = { kind: TabId; emoji: string; title: string; line: string; particles: string[] };
+
+/** A designer icon standing in for an inline emoji. Sized in em so it lands at
+ *  exactly the size the emoji it replaced was drawn at, inheriting whatever
+ *  font-size the surrounding span already set — no second set of sizes to keep
+ *  in sync. Decorative: the copy beside it carries the meaning. */
+function InlineIcon({ src }: { src: string }) {
+  // eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels
+  return <img src={src} alt="" className="pm-inline-icon" draggable={false} />;
+}
 
 // Designer mood badge icon pack (public/farm/assets/moods/) — the dex CELL's
 // art. Each PlantMood maps to its own drawn icon file so the grid never
@@ -558,6 +570,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
            plain :active transform, so it stays on for everyone. */
         .pm-tab-btn { transition: transform 0.08s ease-out; }
         .pm-tab-btn:active { transform: translateY(2px); }
+        /* Matches the 20px emoji box the drawn tabs replace, so swapping art in
+           does not disturb the tab's vertical centring. */
+        .pm-tab-art { display: block; width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; }
+        .pm-inline-icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; object-fit: contain; image-rendering: pixelated; }
         /* One-screen badges tab: wheel + detail side by side on wide
            viewports, wheel diameter clamped to viewport height. Nodes and
            the hub size in cqw (container width), so the whole radial design
@@ -627,7 +643,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               }
             >
               <span className="text-xl leading-none" role="img" aria-hidden="true">
-                {entry.emoji}
+                {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                {entry.art ? <img src={entry.art} alt="" width={20} height={20} className="pm-tab-art" draggable={false} /> : entry.emoji}
               </span>
               {copy[entry.id]}
             </button>
@@ -659,7 +676,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
           <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div></div>
+          <div className="pm-mood-dex-head"><span aria-hidden="true"><InlineIcon src="/icons/mood-dex.png" /></span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div></div>
           {/* Grid + detail split at >=800px (.pm-badge-layout — same shared
               class the Badges tab already established two-column with). */}
           <div className="pm-badge-layout">
@@ -743,12 +760,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                         rule) — above the plant-science why/action cards,
                         whose copy stays exactly as written. */}
                     {sensorHint && (
-                      <p className="pm-mood-sensor-hint"><span aria-hidden="true">📡</span> {sensorHint[locale]}</p>
+                      <p className="pm-mood-sensor-hint"><span aria-hidden="true"><InlineIcon src="/icons/sensor.png" /></span> {sensorHint[locale]}</p>
                     )}
                     {selectedMood.whyCard ? (
                       <>
-                        <div className="pm-mood-lesson"><span>💡</span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div>
-                        <div className="pm-mood-action"><span>🎯</span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div>
+                        <div className="pm-mood-lesson"><span><InlineIcon src="/icons/lesson.png" /></span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div>
+                        <div className="pm-mood-action"><span><InlineIcon src="/icons/action.png" /></span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div>
                       </>
                     ) : (
                       <p>{locale === "id" ? "Pelajaran sensor akan muncul setelah tersedia." : "Its sensor lesson will appear when available."}</p>
@@ -880,7 +897,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
       {tab === "wisdom" && (
         <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
           <div className="pm-wisdom-hero" role="status">
-            <span className="pm-wisdom-hero-icon" aria-hidden="true">🎮</span>
+            <span className="pm-wisdom-hero-icon" aria-hidden="true"><InlineIcon src="/icons/mood-dex.png" /></span>
             <div><b>{locale === "id" ? "PILIH MISI TANAMAN" : "PICK A PLANT MISSION"}</b><p>{locale === "id" ? "Baca petunjuk singkat → pilih jawaban → dapatkan umpan balik." : "Read the clue → pick an answer → get instant feedback."}</p></div>
           </div>
           <ProgressCounter value={wisdomMastered.size} total={wisdom.length} label={copy.learned} />
@@ -898,10 +915,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 </div>
                 <p className="pm-wisdom-saying">“{entry.saying}”</p>
                 <button type="button" className="pm-btn pm-btn-primary mt-3 w-full min-h-11 cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
-                  🎯 {copy.challenge}
+                  <InlineIcon src="/icons/action.png" /> {copy.challenge}
                 </button>
                 <details className="pm-wisdom-details">
-                  <summary>💡 {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary>
+                  <summary><InlineIcon src="/icons/lesson.png" /> {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary>
                   <p>{entry.translation}</p>
                   <div className="pm-wisdom-clue"><span aria-hidden="true">🧩</span><p>{entry.example}</p></div>
                   <small>{copy.wisdomSource}</small>

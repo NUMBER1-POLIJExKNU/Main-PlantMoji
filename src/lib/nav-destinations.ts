@@ -11,10 +11,10 @@
 // pins every route's header to the entry it belongs to.
 //
 // `art` is the designer's icon (public/icons, exported from images/icons);
-// `icon` is the emoji it replaced, and stays as the fallback for the one
-// destination with no drawing yet — Collection. The static farm shell renders
-// the same set from public/farm/index.html, so a file added here belongs
-// there too.
+// `icon` is the emoji it replaced and is kept as the fallback for any entry
+// whose drawing is still missing — every destination has one now. The static
+// farm shell renders the same set from public/farm/index.html, so a file added
+// here belongs there too.
 
 export interface NavDestination {
   key: string;
@@ -32,7 +32,7 @@ export const NAV_DESTINATIONS: readonly NavDestination[] = [
   { key: "plants", href: "/plants", icon: "🗺️", art: "/icons/crop-explorer.png", id: "Eksplor Tanaman", en: "Crop Explorer" },
   { key: "camera", href: "/camera", icon: "📷", art: "/icons/camera-ai.png", id: "Kamera AI", en: "Camera AI" },
   { key: "diary", href: "/diary", icon: "📖", art: "/icons/growth-diary.png", id: "Diari Tumbuh", en: "Growth Diary" },
-  { key: "collection", href: "/collection", icon: "💎", art: null, id: "Koleksi", en: "Collection" },
+  { key: "collection", href: "/collection", icon: "💎", art: "/icons/collection.png", id: "Koleksi", en: "Collection" },
   { key: "shop", href: "/shop", icon: "🛒", art: "/icons/shop.png", id: "Toko", en: "Shop" },
 ];
 

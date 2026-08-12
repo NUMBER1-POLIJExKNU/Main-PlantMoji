@@ -108,15 +108,14 @@
                 <!-- Designer icon sprites (images/icons, served as 64px
                      derivatives in public/icons — same rationale as
                      logo-small.png). They stay inside the existing <i class="icon">
-                     so every nav rule keeps applying; Koleksi has no designer
-                     sprite yet and keeps its emoji. alt="" because the label
+                     so every nav rule keeps applying. alt="" because the label
                      next to each icon already names the destination. -->
                 <a href="/" class="nav-item active"><i class="icon"><img src="/icons/my-garden.png" alt="" width="18" height="18"></i> <span data-i18n="nav.home">Kebunku</span></a>
                 <a href="/quests" class="nav-item"><i class="icon"><img src="/icons/quests.png" alt="" width="18" height="18"></i> <span data-i18n="nav.quests">Misi</span></a>
                 <a href="/plants" class="nav-item"><i class="icon"><img src="/icons/crop-explorer.png" alt="" width="18" height="18"></i> <span data-i18n="nav.plants">Eksplor Tanaman</span></a>
                 <a href="/camera" class="nav-item"><i class="icon"><img src="/icons/camera-ai.png" alt="" width="18" height="18"></i> <span data-i18n="nav.camera">Kamera AI</span></a>
                 <a href="/diary" class="nav-item"><i class="icon"><img src="/icons/growth-diary.png" alt="" width="18" height="18"></i> <span data-i18n="nav.memories">Diari Tumbuh</span></a>
-                <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Koleksi</span></a>
+                <a href="/collection" class="nav-item"><i class="icon"><img src="/icons/collection.png" alt="" width="18" height="18"></i> <span data-i18n="nav.collection">Koleksi</span></a>
                 <a href="/shop" class="nav-item"><i class="icon"><img src="/icons/shop.png" alt="" width="18" height="18"></i> <span data-i18n="nav.shop">Toko</span></a>
                 <div class="nav-tool-pocket" aria-label="Alat penjaga">
                     <span class="nav-section-title" data-i18n="nav.tools">ALAT</span>
@@ -433,7 +432,7 @@
                              "wardrobe" group) and fills the #wardrobe-panel
                              dialog below from window.PM_SKINS + bond level.
                              Display-only — a skin is state, never a reward. -->
-                        <button id="wardrobe-open" class="wardrobe-open" type="button" aria-haspopup="dialog"><span aria-hidden="true">👕</span> <span id="wardrobe-open-label">Kostum</span></button>
+                        <button id="wardrobe-open" class="wardrobe-open" type="button" aria-haspopup="dialog"><span aria-hidden="true"><img class="pm-inline-art" src="/icons/wardrobe.png" alt="" width="16" height="16"></span> <span id="wardrobe-open-label">Kostum</span></button>
                     </div>
                 </div>
             </div>
@@ -446,7 +445,7 @@
                      honest tap target (≥44px, style.css) instead of a dead
                      card. Inner ids/classes are unchanged so live.js's
                      renderQuestSlot keeps writing into the same anchors. -->
-                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
+                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line"><img class="pm-inline-art" src="/icons/streak.png" alt="" width="20" height="20"> <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
 
                 <!-- Environment evidence follows the decision card: students
                      can inspect the values without having to interpret them
@@ -464,7 +463,7 @@
 
 
                 <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
-                    <span aria-hidden="true">🧠</span>
+                    <span aria-hidden="true"><img class="pm-inline-art" src="/icons/quiz.png" alt="" width="27" height="27"></span>
                     <span class="quiz-bonus-label" data-i18n="hud.bonus">BONUS</span>
                     <span class="quiz-chip-copy"><strong data-i18n="hud.quiz">QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
                     <span class="quiz-chip-xp">+9 XP</span>

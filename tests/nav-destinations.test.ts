@@ -36,11 +36,10 @@ describe("nav destinations", () => {
     }
   });
 
-  it("leaves an emoji fallback on the one destination with no drawing", () => {
-    // Collection is the only undrawn one. It falls back to the rail's emoji,
-    // not to a second different emoji picked by the page.
-    const undrawn = ALL_DESTINATIONS.filter((entry) => !entry.art);
-    expect(undrawn.map((entry) => entry.key)).toEqual(["collection"]);
+  it("keeps an emoji fallback on every destination, drawn or not", () => {
+    // Every destination has a drawing now (Collection was the last one), but
+    // the fallback still has to be there: an entry that loses its art must
+    // land on the rail's own emoji, not on a second one picked by the page.
     for (const entry of ALL_DESTINATIONS) expect(entry.icon, `${entry.key} needs a fallback`).not.toBe("");
   });
 

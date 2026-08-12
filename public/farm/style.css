@@ -172,6 +172,19 @@ body {
     filter: drop-shadow(0 3px 5px rgba(0,0,0,0.1));
 }
 
+/* Designer icons standing in for inline emoji (today's mission, quiz chip,
+   outfits button, sunny forecast). Sized in em so each lands at exactly the
+   size the emoji it replaced rendered at — including the responsive font-size
+   steps those containers already have — instead of needing its own set of
+   breakpoints. Mirrors .pm-param-icon in src/app/globals.css. */
+.pm-inline-art {
+    display: inline-block;
+    width: 1em; height: 1em;
+    vertical-align: -.14em;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
 /* Mirrors .reno-nav-links in src/app/globals.css: on short screens this list
    is cut off, and a hidden bar left players unaware the nav continued, so the
    track is drawn permanently (`scroll`, not `auto`). The phone dock below
@@ -335,24 +348,14 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
 .hud-top {
     display: flex;
     justify-content: flex-end;
-    /* stretch, not flex-start: the clock and the weather card sit side by side
-       and used to end at different heights, because each carried its own
-       padding. They now share the box below and read as one pair. */
-    align-items: stretch;
+    align-items: flex-start;
     gap: 10px;
     z-index: 10;
 }
 
-/* One shared frame for the two top-right cards. Their widths still follow
-   their content, but padding and height are identical. */
-.jember-clock,
-.hud-top .weather-widget {
-    min-height: 74px;
-    padding: 12px 16px;
-}
-
 .jember-clock {
     min-width: 148px;
+    padding: 11px 14px;
     display: flex;
     align-items: center;
     gap: 9px;
@@ -1062,6 +1065,10 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     cursor: pointer;
 }
 .wardrobe-open:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-outline); }
+/* This button's label is the 8px pixel face, so a 1em icon comes out at 8px —
+   smaller than the 👕 it replaced, because emoji glyphs overflow their em box.
+   2em restores the size the emoji actually occupied. */
+.wardrobe-open .pm-inline-art { width: 2em; height: 2em; vertical-align: -.35em; }
 .wardrobe-card { max-height: min(560px, 84dvh); overflow-y: auto; }
 /* Wardrobe mascot (kiki design integration): moods-p4 GIF (or its static
    reduced-motion twin) for the CURRENT accessory tier — live.js's
@@ -2694,8 +2701,10 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
         place-items:stretch;
         padding:12px 15px 17px;
         border-color:var(--color-forest);
-        border-bottom-right-radius:5px;
-        border-bottom-left-radius:5px;
+        /* Full --ui-radius on all four corners. The squared-off bottom pair
+           existed so the verifying console could sit flush underneath, but
+           that console was removed from the farm home (its markup is gone from
+           index.html), leaving the card mismatched: 20px on top, 5px below. */
         background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 12%,var(--color-surface)),var(--color-surface));
         text-align:left;
     }

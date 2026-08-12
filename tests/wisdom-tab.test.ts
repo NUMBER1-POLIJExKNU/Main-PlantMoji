@@ -31,8 +31,9 @@ describe("Wisdom tab — simplified card face", () => {
     expect(wisdomSection).toContain('wisdomMetricIcon(entry.metric)');
     expect(wisdomSection).toMatch(/pm-wisdom-metric" role="img" aria-hidden="true"/);
     expect(wisdomSection).not.toMatch(/pm-wisdom-metric">\s*📡\s*\{entry\.metric\}/);
-    // Exactly one primary action on the face: the prediction challenge.
-    expect(wisdomSection).toContain("🎯 {copy.challenge}");
+    // Exactly one primary action on the face: the prediction challenge. Its
+    // 🎯 became the designer's drawn target in the 2026-08-12 icon drop.
+    expect(wisdomSection).toContain('<InlineIcon src="/icons/action.png" /> {copy.challenge}');
   });
 
   it("moves the technical clue and the science translation behind the existing tap-to-expand, instead of always showing them inline", () => {

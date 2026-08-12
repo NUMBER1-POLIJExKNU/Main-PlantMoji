@@ -6083,6 +6083,15 @@ function weatherIcon(description) {
   return "🌤️";
 }
 
+/** True only for the one forecast the designer has drawn so far. The other
+ *  five states (thunder, rain, mist, cloudy, and the partly-cloudy fallback)
+ *  keep their emoji — a single sun standing in for all of them would tell the
+ *  player it is clear outside while it rains. */
+function isSunnyDescription(description) {
+  const normalized = String(description ?? "").toLowerCase();
+  return normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear");
+}
+
 /** Weather widget, text-diet edition: icon + temperature + one short
  *  description line. Provenance (BMKG credit, forecast timestamp) and the
  *  indoor duplicate line moved out — /monitoring keeps the full detail.
@@ -6105,7 +6114,12 @@ function renderWeather(context) {
     : null;
   setText(".weather-text .desc", humidityNote ? `${description} · ${humidityNote}` : description);
   const icon = $(".weather-icon");
-  if (icon) icon.textContent = weatherIcon(description);
+  if (icon) {
+    // Static markup, no user input — the src is a constant and `description`
+    // never reaches innerHTML (it only picks the branch).
+    if (isSunnyDescription(description)) icon.innerHTML = '<img class="pm-inline-art" src="/icons/weather-sunny.png" alt="">';
+    else icon.textContent = weatherIcon(description);
+  }
   widget?.classList.toggle("weather-stale", Boolean(context.stale));
 }
 

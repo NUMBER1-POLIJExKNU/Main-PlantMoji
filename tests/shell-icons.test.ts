@@ -19,14 +19,15 @@ const pageHeader = source("src/components/page-header.tsx");
 const farmCss = source("public/farm/style.css");
 const reactCss = source("src/app/globals.css");
 
-// destination -> shipped file. Collection is absent on purpose: the designer
-// drew no icon for it, so it keeps its emoji rather than borrowing another's.
+// destination -> shipped file. Every destination has a drawing now; Collection
+// was the last one without and got its diamond in the 2026-08-12 icon drop.
 const NAV_ICONS = {
   "my-garden": "/",
   quests: "/quests",
   "crop-explorer": "/plants",
   "camera-ai": "/camera",
   "growth-diary": "/diary",
+  collection: "/collection",
   shop: "/shop",
   monitoring: "/monitoring",
   reports: "/reports",
@@ -61,7 +62,7 @@ describe("designer icon set", () => {
     expect(shell).not.toMatch(/<i[^>]*>\{item\.icon\}<\/i>/);
     // next/image, so the nav art is served in the optimised size.
     expect(shell).toContain('<Image src={item.art} alt="" className="reno-nav-art"');
-    expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: null');
+    expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: "/icons/collection.png"');
     // And the board that destination opens onto draws that same entry, instead
     // of an emoji of its own choosing.
     expect(pageHeader).toContain('import { navDestination } from "@/lib/nav-destinations"');

@@ -954,6 +954,18 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
 }
 
+/* Designer icons standing in for inline emoji (Crop Explorer parameter rows).
+   Sized in em so each lands at exactly the size the emoji it replaced rendered
+   at, whatever font-size its container already sets. */
+.pm-param-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.14em;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 /* Sized in em so it tracks the `i` font-size the responsive rules already set,
    instead of needing its own second set of breakpoints. */
 .reno-nav-art {
