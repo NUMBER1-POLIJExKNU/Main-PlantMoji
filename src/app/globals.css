@@ -1022,11 +1022,12 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
   box-shadow: 0 8px 16px rgba(105, 196, 85, 0.4);
 }
 
-/* Quests is a mid-green heart and the active pill is mid-green, so on the one
-   row where it matters the icon nearly disappears. Lifting brightness and
-   dropping saturation pushes it towards the pill's white text instead. Only
-   this destination: every other icon already reads on green. */
-.reno-nav-item.active[href="/quests"] .reno-nav-art { filter: brightness(1.75) saturate(0.55); }
+/* Quests is a mid-green heart on a mid-green active pill. A white pixel halo
+   preserves the artwork's real green — and therefore its match with the page
+   header — while still separating it from the active background. */
+.reno-nav-item.active[href="/quests"] .reno-nav-art {
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
 .reno-more-button,.reno-more-backdrop { display:none; }
 
 /* Nav sprout hop: a one-shot 2-frame pixel hop on hover/focus, and a slow

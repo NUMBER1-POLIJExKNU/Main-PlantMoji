@@ -261,7 +261,7 @@ const MOODS = Object.fromEntries(["Happy", "Overheating", "TooCold", "DryAir", "
 // dictionary — whose en tree is the last-resort English fallback via t().
 const moodBubble = (mood) => {
   const key = mood?.key ?? "Happy";
-  return `&quot;${PM().moodBubbles?.[key] ?? t(`bubble.${key}`)}&quot;`;
+  return PM().moodBubbles?.[key] ?? t(`bubble.${key}`);
 };
 // Localized quest title for the MISI HARI INI slot + quest-complete banner:
 // strings.js questTitles (id names verbatim from src/lib/i18n.ts
@@ -2172,7 +2172,7 @@ function updateCareUi() {
     cancelPetBubble(); // a stale pet-line restore must never stomp the sleep bubble
     clearPetExpression(); // tap-reaction faces yield to the closed-eye sleep face
     gazeReset(); // curious gaze: pupils ease home before the lids close
-    if (bubble) bubble.textContent = `"${PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble}"`;
+    if (bubble) bubble.textContent = PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble;
     if (!firstEval) window.PMSfx?.play("pet");
   } else if (!firstEval && bubble) {
     // Waking (06:00 flip, or a problem mood overriding sleep): restore the
@@ -2604,7 +2604,7 @@ function showTransientBubble(line, ms) {
   const bubble = $(".speech-bubble");
   if (!bubble) return;
   if (petSavedBubble === null) petSavedBubble = bubble.innerHTML;
-  bubble.textContent = `"${line}"`;
+  bubble.textContent = line;
   if (petRestoreTimer !== null) clearTimeout(petRestoreTimer);
   petRestoreTimer = setTimeout(() => {
     petRestoreTimer = null;
@@ -4492,14 +4492,13 @@ const EVO_FALLBACK = {
   finalForm: "FINAL FORM",
 };
 
-/** Evolution-ceremony speech-bubble line — quoted like every other spoken
- *  line in this file (mood templates, sleep bubble, dialogue fetch), and
- *  cancels a stale petting-bubble restore so it can never stomp mid-scene. */
+/** Evolution-ceremony speech-bubble line. Cancels a stale petting-bubble
+ *  restore so it can never stomp mid-scene. */
 function speechBubble(text) {
   if (!text) return;
   cancelPetBubble();
   const bubble = $(".speech-bubble");
-  if (bubble) bubble.textContent = `"${text}"`;
+  if (bubble) bubble.textContent = text;
 }
 
 /** Localized {stage} name for the ceremony dialog, from strings.js's
@@ -5163,7 +5162,7 @@ function renderPlant(plant) {
         if (petRestoreTimer !== null || petSavedBubble !== null) return;
         const el = $(".speech-bubble");
         const fresh = chooseFreshDialogue(data.candidates ?? [data.message]);
-        if (el && fresh) el.textContent = `"${fresh}"`;
+        if (el && fresh) el.textContent = fresh;
       })
       .catch(() => {});
   }
@@ -6508,8 +6507,8 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", drag: "Seret untuk memindahkan panel", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", heldTitle: "Tekan & tahan", oneShotTitle: "Sekali tekan", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", drag: "Drag to move this panel", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", heldTitle: "Press & hold", oneShotTitle: "One-time actions", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
 /** Physically possible range per sensor — mirror of SENSOR_LIMITS in
@@ -6651,12 +6650,28 @@ function repaintCheatActions(panel) {
  * On a stage too narrow to hold the panel without covering the plant, this
  * leaves the stylesheet's left dock alone.
  */
+function clampCheatPanel(panel) {
+  const margin = 6;
+  const maxLeft = Math.max(margin, window.innerWidth - panel.offsetWidth - margin);
+  const maxTop = Math.max(margin, window.innerHeight - panel.offsetHeight - margin);
+  const left = Math.min(maxLeft, Math.max(margin, Number.parseFloat(panel.style.left) || margin));
+  const top = Math.min(maxTop, Math.max(margin, Number.parseFloat(panel.style.top) || margin));
+  panel.style.left = `${Math.round(left)}px`;
+  panel.style.top = `${Math.round(top)}px`;
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+}
+
 function positionCheatPanel() {
   const panel = document.getElementById("pm-cheat-panel");
   const stage = $(".mascot-stage");
   if (!panel || !stage) return;
+  if (panel.dataset.dragged === "true") {
+    clampCheatPanel(panel);
+    return;
+  }
   const rect = stage.getBoundingClientRect();
-  const width = panel.offsetWidth || 232;
+  const width = panel.offsetWidth || 268;
   // Room for the panel plus the plant it must not sit on top of.
   if (rect.width < width + 250) {
     panel.style.removeProperty("left");
@@ -6685,7 +6700,7 @@ function buildCheatPanel() {
     // Collapse control: the panel is docked over the sky beside the mascot, but
     // a presenter on a short screen still needs a way to clear it off the
     // stage mid-demo without leaving the sandbox.
-    `<header class="pm-cheat-head"><strong>🎛️ ${L.panelTitle}</strong>` +
+    `<header class="pm-cheat-head" title="${L.drag}"><strong>🎛️ ${L.panelTitle}<small>${L.drag}</small></strong>` +
     `<button type="button" data-cheat-collapse aria-expanded="true" aria-label="${L.collapse}" title="${L.collapse}">−</button></header>` +
     `<div class="pm-cheat-body">` +
     `<div class="pm-cheat-group"><h3>🎛️ ${L.statusTitle}</h3>` +
@@ -6708,8 +6723,8 @@ function buildCheatPanel() {
     // "the plant is thirsty": this game's whole point is that dry AIR is not
     // dry soil, and a watering can next to that lesson would undo it.
     `<div class="pm-cheat-group"><h3><img class="pm-cheat-heading-icon" src="/icons/watering-can.png" alt="" width="14" height="14"> ${L.actionsTitle}</h3>` +
-    `<div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div>` +
-    `<div class="pm-cheat-actions">${cheatActionButtons("delta")}</div>` +
+    `<div class="pm-cheat-action-set"><h4>${L.heldTitle}</h4><div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div></div>` +
+    `<div class="pm-cheat-action-set"><h4>${L.oneShotTitle}</h4><div class="pm-cheat-actions">${cheatActionButtons("delta")}</div></div>` +
     `<p class="pm-cheat-hint">${L.slowNote}</p>` +
     `</div>` +
     `<p class="pm-cheat-hint">${L.hint}</p>` +
@@ -6726,6 +6741,37 @@ function buildCheatPanel() {
     `</div></div>` +
     `</div>`;
   document.body.appendChild(panel);
+
+  // The header is a pointer-based drag handle. Controls inside the header
+  // (especially collapse) remain ordinary buttons and never start a drag.
+  const dragHandle = panel.querySelector(".pm-cheat-head");
+  let dragState = null;
+  dragHandle?.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest("button")) return;
+    const rect = panel.getBoundingClientRect();
+    panel.dataset.dragged = "true";
+    panel.classList.add("is-dragging");
+    panel.style.left = `${rect.left}px`;
+    panel.style.top = `${rect.top}px`;
+    panel.style.bottom = "auto";
+    dragState = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+    dragHandle.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+  dragHandle?.addEventListener("pointermove", (event) => {
+    if (!dragState) return;
+    panel.style.left = `${event.clientX - dragState.offsetX}px`;
+    panel.style.top = `${event.clientY - dragState.offsetY}px`;
+    clampCheatPanel(panel);
+  });
+  const stopDragging = (event) => {
+    if (!dragState) return;
+    dragState = null;
+    panel.classList.remove("is-dragging");
+    dragHandle.releasePointerCapture?.(event.pointerId);
+  };
+  dragHandle?.addEventListener("pointerup", stopDragging);
+  dragHandle?.addEventListener("pointercancel", stopDragging);
 
   // Care actions: the store owns the physics, this only forwards the press and
   // repaints the held state (its own change event brings the new values back).

@@ -86,7 +86,7 @@ describe("designer icon set", () => {
     expect(shell).not.toContain('src="/farm/assets/logo.png"');
   });
 
-  it("lifts the Quests icon so it reads on the active green pill", () => {
+  it("keeps the Quests icon's real color while separating it from the active pill", () => {
     // The heart and the active pill are both mid-green; on that one row the
     // icon all but vanishes. Keyed off href, not the file name, because
     // next/image rewrites the React side's src into an /_next/image URL.
@@ -95,8 +95,10 @@ describe("designer icon set", () => {
       [reactCss, '.reno-nav-item.active[href="/quests"] .reno-nav-art'],
     ] as const) {
       const rule = css.match(new RegExp(`${selector.replace(/[.[\]"/]/g, (c) => `\\${c}`)} \\{[^}]*\\}`))?.[0];
-      expect(rule, `${selector} needs a contrast filter`).toBeTruthy();
-      expect(rule).toContain("brightness(");
+      expect(rule, `${selector} needs a contrast halo`).toBeTruthy();
+      expect(rule).toContain("drop-shadow(");
+      expect(rule).not.toContain("brightness(");
+      expect(rule).not.toContain("saturate(");
     }
   });
 

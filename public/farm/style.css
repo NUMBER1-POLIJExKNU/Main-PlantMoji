@@ -269,11 +269,11 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
 }
 .nav-item .icon { font-size: 18px; font-style: normal; }
 
-/* Quests is a mid-green heart and the active pill is mid-green, so on the one
-   row where it matters the icon nearly disappears. Lifting brightness and
-   dropping saturation pushes it towards the pill's white text instead. Only
-   this destination: every other icon already reads on green. */
-.nav-item.active[href="/quests"] .icon img { filter: brightness(1.75) saturate(0.55); }
+/* Preserve the heart's real green so it matches the Quests page header; the
+   white pixel halo supplies contrast against the active green pill. */
+.nav-item.active[href="/quests"] .icon img {
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+}
 
 /* Main Game World — character-first vertical flow (spec §2.1) */
 .game-world {
@@ -2690,7 +2690,7 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   bottom: 12px;
   left: 268px;
   z-index: 99998;
-  width: 232px;
+  width: 268px;
   max-height: calc(100vh - 68px);
   overflow-y: auto;
   display: flex;
@@ -2712,6 +2712,21 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   font: 700 11px/1.2 var(--font-heading, ui-monospace, monospace);
   letter-spacing: .04em;
   color: #8A2B5B;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+#pm-cheat-panel .pm-cheat-head:active,
+#pm-cheat-panel.is-dragging .pm-cheat-head { cursor: grabbing; }
+#pm-cheat-panel .pm-cheat-head strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+#pm-cheat-panel .pm-cheat-head small {
+  color: #A46B80;
+  font: 600 9px/1.2 var(--font-body, system-ui, sans-serif);
+  letter-spacing: 0;
 }
 #pm-cheat-panel .pm-cheat-head button {
   width: 24px;
@@ -2748,22 +2763,31 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
    point of the sandbox. Held toggles fill in solid so "the plant is in the sun
    right now" is readable across a classroom. */
 #pm-cheat-panel .pm-cheat-actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
+}
+#pm-cheat-panel .pm-cheat-action-set { display: grid; gap: 4px; }
+#pm-cheat-panel .pm-cheat-action-set + .pm-cheat-action-set { margin-top: 7px; }
+#pm-cheat-panel h4 {
+  margin: 0;
+  color: #A46B80;
+  font: 700 9px/1.2 var(--font-body, system-ui, sans-serif);
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
 #pm-cheat-panel .pm-cheat-action {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
+  min-width: 0;
   cursor: pointer;
   padding: 5px 7px;
   border: 2px solid #E0B0C6;
   border-radius: 10px;
   background: #fff;
   color: #3a2600;
-  font: 600 11px/1.25 var(--font-body, system-ui, sans-serif);
+  font: 600 10px/1.2 var(--font-body, system-ui, sans-serif);
   text-align: left;
 }
 #pm-cheat-panel .pm-cheat-action > span:nth-child(2) { flex: 1; min-width: 0; }
@@ -2873,5 +2897,7 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
    stage. */
 @media (max-width: 900px) {
   #pm-cheat-panel { left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 52vh; }
+  #pm-cheat-panel .pm-cheat-head small { display: none; }
+  #pm-cheat-panel .pm-cheat-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #pm-cheat-panel.is-collapsed { width: auto; }
 }
