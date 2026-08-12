@@ -141,7 +141,12 @@ body {
 .brand {
     display: flex;
     align-items: center;
-    gap: 16px;
+    /* gap:0 pairs with the h1's auto inline margins below — flexbox splits the
+       leftover width evenly on both sides, centring the wordmark between the
+       pot's right edge and the sidebar's right padding edge. A gap would land
+       on the left side only and pull it off that centre. Mirrors .reno-brand
+       in src/app/globals.css. */
+    gap: 0;
     padding-bottom: 14px;
     border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
 }
@@ -158,7 +163,9 @@ body {
 /* The heading is the designer's wordmark now. It keeps the <h1> (and the page
    its heading) — the words live in the image's alt. line-height:0 stops the
    inline box adding a descender gap under the art. */
-.brand h1 { line-height: 0; }
+/* The h1 is the flex child here (the img is nested inside it), so the auto
+   margins that do the centring belong on the heading, not on .brand-wordmark. */
+.brand h1 { line-height: 0; margin-inline: auto; }
 .brand-wordmark {
     width: 96px; height: auto;
     image-rendering: pixelated;
