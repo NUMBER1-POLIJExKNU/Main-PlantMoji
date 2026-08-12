@@ -284,6 +284,10 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
     color: var(--color-text);
     font-family: var(--font-heading);
     font-size: 10px;
+    /* The long labels ("Eksplor Tanaman", "Diari Tumbuh") wrap to two lines,
+       and the inherited body line-height left the rows nearly touching.
+       Mirrors .reno-nav-item in src/app/globals.css. */
+    line-height: 1.75;
     padding: 9px 12px;
     border-radius: 12px;
     display: flex;

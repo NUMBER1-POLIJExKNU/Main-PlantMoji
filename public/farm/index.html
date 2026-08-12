@@ -173,7 +173,10 @@
                      indoor duplicate line moved out — /monitoring keeps the
                      full detail; the SUHU/UDARA tiles below carry indoor. -->
                 <div class="weather-widget panel-glass">
-                    <div class="weather-icon">🌤️</div>
+                    <!-- Placeholder before the forecast lands: the same
+                         sun-behind-cloud live.js uses for its catch-all, so
+                         there is no emoji flash on the way to the real icon. -->
+                    <div class="weather-icon"><img class="pm-inline-art" src="/icons/weather-cloud.png" alt=""></div>
                     <div class="weather-text">
                         <span class="temp">--°C</span>
                         <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>

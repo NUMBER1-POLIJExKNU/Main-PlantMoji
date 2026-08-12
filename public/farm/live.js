@@ -6073,23 +6073,26 @@ function renderSensors(reading) {
   renderQuestSlot(lastQuestRows);
 }
 
-function weatherIcon(description) {
+/** Forecast → the designer's drawing plus the emoji it replaced, kept as the
+ *  fallback. Branch order matters and is unchanged: BMKG says "Cerah Berawan"
+ *  for partly cloudy, so the cloud test has to run before the sunny one or
+ *  every partly-cloudy hour would claim clear skies.
+ *
+ *  The sun-behind-cloud drawing serves both "berawan" and the catch-all — the
+ *  set has no separate overcast piece, and 🌤️, the emoji the catch-all used,
+ *  pictured exactly that. */
+function weatherArt(description) {
   const normalized = String(description ?? "").toLowerCase();
-  if (normalized.includes("petir") || normalized.includes("thunder")) return "⛈️";
-  if (normalized.includes("hujan") || normalized.includes("rain")) return "🌧️";
-  if (normalized.includes("kabut") || normalized.includes("mist") || normalized.includes("fog")) return "🌫️";
-  if (normalized.includes("berawan") || normalized.includes("cloud")) return "☁️";
-  if (normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
-  return "🌤️";
+  if (normalized.includes("petir") || normalized.includes("thunder")) return { src: "/icons/weather-thunder.png", emoji: "⛈️" };
+  if (normalized.includes("hujan") || normalized.includes("rain")) return { src: "/icons/weather-rain.png", emoji: "🌧️" };
+  if (normalized.includes("kabut") || normalized.includes("mist") || normalized.includes("fog")) return { src: "/icons/weather-fog.png", emoji: "🌫️" };
+  if (normalized.includes("berawan") || normalized.includes("cloud")) return { src: "/icons/weather-cloud.png", emoji: "☁️" };
+  if (normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear")) return { src: "/icons/weather-sunny.png", emoji: "☀️" };
+  return { src: "/icons/weather-cloud.png", emoji: "🌤️" };
 }
 
-/** True only for the one forecast the designer has drawn so far. The other
- *  five states (thunder, rain, mist, cloudy, and the partly-cloudy fallback)
- *  keep their emoji — a single sun standing in for all of them would tell the
- *  player it is clear outside while it rains. */
-function isSunnyDescription(description) {
-  const normalized = String(description ?? "").toLowerCase();
-  return normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear");
+function weatherIcon(description) {
+  return weatherArt(description).emoji;
 }
 
 /** Weather widget, text-diet edition: icon + temperature + one short
@@ -6115,10 +6118,11 @@ function renderWeather(context) {
   setText(".weather-text .desc", humidityNote ? `${description} · ${humidityNote}` : description);
   const icon = $(".weather-icon");
   if (icon) {
-    // Static markup, no user input — the src is a constant and `description`
-    // never reaches innerHTML (it only picks the branch).
-    if (isSunnyDescription(description)) icon.innerHTML = '<img class="pm-inline-art" src="/icons/weather-sunny.png" alt="">';
-    else icon.textContent = weatherIcon(description);
+    // The src comes from weatherArt's fixed table — `description` only picks
+    // the branch and never reaches innerHTML. alt="" because the forecast text
+    // beside it already names the weather.
+    const art = weatherArt(description);
+    icon.innerHTML = `<img class="pm-inline-art" src="${art.src}" alt="">`;
   }
   widget?.classList.toggle("weather-stale", Boolean(context.stale));
 }
