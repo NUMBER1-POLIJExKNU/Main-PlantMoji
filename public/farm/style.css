@@ -3169,3 +3169,123 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   #pm-cheat-panel { left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 52vh; }
   #pm-cheat-panel.is-collapsed { width: auto; }
 }
+
+/* ── Trial mode (public/farm/trial.js) ────────────────────────────────────
+   The student onboarding game. It reuses the cheat panel's chrome so the
+   controls sit where they will still be after the Lv.6 unlock, but wears the
+   garden's green rather than the presenter's pink, so the two modes are never
+   confused at a glance. */
+#pm-cheat-panel[data-mode="trial"] {
+  border-color: #2F7A1E;
+  background: rgba(240, 255, 232, 0.97);
+  color: #123a1c;
+  /* Narrow, because trial mode parks the panel in the empty strip LEFT of the
+     mascot rather than over the stage (see positionCheatPanel). A presenter
+     drags the cheat panel off whatever it lands on; a fifteen-year-old meeting
+     the app for the first time will not, and everything it could cover here is
+     load-bearing — the speech bubble carries the hazard line, the hint naming
+     the button to press, and "Today is Day 3!", while Jamkachu below it is the
+     whole point of a character-first home. The strip is the one place that
+     needs neither, and it is only ~220px wide. */
+  width: 190px;
+}
+#pm-cheat-panel[data-mode="trial"] .pm-cheat-head { color: #1E5E12; }
+#pm-cheat-panel[data-mode="trial"] .pm-cheat-action {
+  border-color: #A8CE95;
+  padding: 4px 6px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+#pm-cheat-panel[data-mode="trial"] .pm-cheat-action.is-held {
+  border-color: #1E5E12;
+  background: #1E5E12;
+  color: #fff;
+}
+#pm-cheat-panel[data-mode="trial"] .pm-cheat-action em { font-size: 8px; }
+
+/* While a trial notice holds the bubble, the mood cloud steps aside — it
+   floats over the bubble's right end and was eating the end of the longest
+   lines. Jamkachu's own face still shows the mood throughout. */
+body[data-trial-notice="on"] #mood-thought-bubble,
+body[data-trial-notice="on"] .mood-thought-bubble {
+  /* Targeted by id AND marked important on purpose: the cloud carries a
+     running pm-chip-float animation, and animations outrank ordinary
+     declarations — plain `opacity: 0` on the class was silently ignored. */
+  animation: none !important;
+  opacity: 0 !important;
+  transition: opacity .15s ease;
+  pointer-events: none;
+}
+
+/* The lines trial mode puts in Jamkachu's speech bubble. Each is held
+   for a few seconds against the repaints the sensor drift fires (see
+   trialNoticeUntil in live.js), so they get to be read. */
+.pm-trial-line {
+  display: inline-block;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.pm-trial-line.is-day {
+  font-size: 1.12em;
+  color: #B45309;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .85);
+}
+.pm-trial-line.is-hazard { color: #B91C1C; }
+.pm-trial-line.is-good { color: #15803D; }
+.pm-trial-line.is-hint { color: #1D4ED8; font-weight: 600; }
+
+/* Day change: one warm sweep across the farm. Purely additive and pointer
+   transparent, and live.js skips it entirely under reduced motion. */
+.pm-trial-dayflash {
+  position: fixed;
+  inset: 0;
+  z-index: 99997;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 214, 132, 0) 0%, rgba(255, 214, 132, .55) 45%, rgba(255, 214, 132, 0) 100%);
+  animation: pm-trial-dayflash 1.1s ease-out forwards;
+}
+@keyframes pm-trial-dayflash {
+  from { opacity: 0; transform: translateX(-30%); }
+  35%  { opacity: 1; }
+  to   { opacity: 0; transform: translateX(30%); }
+}
+
+/* The gate card — the peak of the run, so it takes the whole screen. */
+#pm-trial-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(12, 40, 18, .55);
+}
+#pm-trial-gate .pm-trial-gate-card {
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  border: 4px solid #2F7A1E;
+  border-radius: 18px;
+  background: #F4FFEA;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .35);
+  text-align: center;
+  color: #123a1c;
+}
+#pm-trial-gate strong {
+  font: 700 15px/1.4 var(--font-heading, ui-monospace, monospace);
+  color: #1E5E12;
+}
+#pm-trial-gate p { font: 500 12px/1.5 var(--font-body, system-ui, sans-serif); margin: 0; }
+#pm-trial-gate .pm-trial-gate-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+#pm-trial-gate button {
+  cursor: pointer;
+  padding: 8px 14px;
+  border: 3px solid #2F7A1E;
+  border-radius: 10px;
+  background: #fff;
+  color: #1E5E12;
+  font: 700 11px/1.2 var(--font-heading, ui-monospace, monospace);
+}
+#pm-trial-gate button[data-trial-gate="cheat"] { background: #FFD86B; border-color: #8A2B5B; color: #3a2600; }

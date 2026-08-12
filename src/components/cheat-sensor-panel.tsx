@@ -82,6 +82,7 @@ export default function CheatSensorPanel({
   }, [cropProfile]);
 
   if (!active || !state || !api) return null;
+  const trial = state.mode === "trial";
   const t = COPY[locale] ?? COPY.en;
   const v = state.vitals;
   const label = (a: CheatAction) => (locale === "id" ? a.id_label : a.en_label);
@@ -152,25 +153,32 @@ export default function CheatSensorPanel({
       <p className="text-[10px] leading-4" style={{ color: "#7A5B12" }}>{t.slowNote}</p>
       <p className="text-[10px] leading-4" style={{ color: "#7A5B12" }}>{t.note}</p>
 
-      <div>
-        <button
-          type="button"
-          onClick={() => setByValue((open) => !open)}
-          aria-expanded={byValue}
-          className="cursor-pointer text-[10px] font-semibold underline"
-          style={{ color: "#8A2B5B" }}
-        >
-          {byValue ? "▾" : "▸"} {t.byValue}
-        </button>
-        {byValue && (
-          <div className="mt-2 grid grid-cols-2 gap-x-5 gap-y-2">
-            {field("temperature", t.temp, 0.1)}
-            {field("humidity", t.hum, 1)}
-            {field("light", t.light, 1)}
-            {field("soilPh", t.ph, 0.1)}
-          </div>
-        )}
-      </div>
+      {/* Trial mode keeps the care buttons — a student should be able to look
+          after the plant from Monitoring too — but never the number boxes.
+          Typing 34 into a field is exactly the cheat the Lv.6 gate exists to
+          withhold, and it would also let a hazard be dismissed without
+          learning which action answers it. */}
+      {!trial && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setByValue((open) => !open)}
+            aria-expanded={byValue}
+            className="cursor-pointer text-[10px] font-semibold underline"
+            style={{ color: "#8A2B5B" }}
+          >
+            {byValue ? "▾" : "▸"} {t.byValue}
+          </button>
+          {byValue && (
+            <div className="mt-2 grid grid-cols-2 gap-x-5 gap-y-2">
+              {field("temperature", t.temp, 0.1)}
+              {field("humidity", t.hum, 1)}
+              {field("light", t.light, 1)}
+              {field("soilPh", t.ph, 0.1)}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

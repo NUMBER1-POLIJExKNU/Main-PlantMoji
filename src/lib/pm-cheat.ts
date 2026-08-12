@@ -38,8 +38,13 @@ export interface CheatAction {
   slow?: boolean;
 }
 
+/** Which of the two sandbox modes is running. "trial" is the student
+ *  onboarding game (public/farm/trial.js); "cheat" is the presenter sandbox. */
+export type SandboxMode = "cheat" | "trial";
+
 export interface CheatState {
   active: boolean;
+  mode: SandboxMode;
   status: { level: number; totalXp: number; days: number; seeds: number };
   vitals: CheatVitals;
   quests: Record<string, string>;
@@ -60,7 +65,7 @@ export interface CheatBands {
 
 export interface PMCheatApi {
   isActive: () => boolean;
-  activate: (seed: unknown) => void;
+  activate: (seed: unknown, mode?: SandboxMode) => void;
   deactivate: () => void;
   getState: () => CheatState | null;
   get: (path: string, fallback?: unknown) => unknown;
@@ -70,11 +75,32 @@ export interface PMCheatApi {
   setBands: (bands: CheatBands) => void;
   getActions: () => CheatActions;
   press: (id: string) => void;
+  /** null while inactive. */
+  getMode: () => SandboxMode | null;
+  /** Promote a trial run to full cheat mode, keeping everything earned. */
+  switchToCheat: () => void;
+  releaseToggles: () => void;
+  getBands: () => Required<CheatBands>;
+  fitVital: (key: keyof CheatVitals, value: number) => number;
+}
+
+/** The trial-mode rules engine (public/farm/trial.js). Absent until that
+ *  script has parsed, so every call site must read it defensively. */
+export interface PMTrialApi {
+  GATE_LEVEL: number;
+  GATE_XP: number;
+  isActive: () => boolean;
+  /** XP still owed before cheat mode unlocks; 0 once it has. */
+  xpToGate: () => number;
+  /** Begin a run: empty progress, no items, nothing discovered. */
+  start: () => void;
+  switchToCheat: () => void;
 }
 
 declare global {
   interface Window {
     PMCheat?: PMCheatApi;
+    PMTrial?: PMTrialApi;
   }
 }
 

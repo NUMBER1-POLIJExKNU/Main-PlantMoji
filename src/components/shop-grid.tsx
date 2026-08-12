@@ -97,13 +97,25 @@ export default function ShopGrid({
   const [filter, setFilter] = useState<OwnershipFilter>("all");
   const [previewKey, setPreviewKey] = useState<string | null>(() => items.find((item) => item.category === "pot")?.key ?? null);
   // Cheat sandbox (feature 3): buy/equip stay client-only so a classroom demo
-  // never writes purchases or equips to Supabase.
-  const { active: cheatActive } = useCheat();
+  // never writes purchases or equips to Supabase. Trial mode shares that
+  // containment (isActive() covers both) but NOT the free-money part: a trial
+  // run's Seeds are earned by caring for the plant, and spending them is the
+  // point of earning them, so the balance comes from the sandbox and a
+  // purchase actually deducts.
+  const { active: cheatActive, state: sandbox, api: sandboxApi } = useCheat();
+  const trialActive = sandbox?.mode === "trial";
+  const trialSeeds = trialActive ? Number(sandbox?.status?.seeds ?? 0) : null;
+  const shownSeeds = trialSeeds ?? seeds;
 
   // Balance and ownership/equip state stay server-authoritative. Realtime
   // purchase events are re-read instead of reconstructed from the payload so
   // cross-tab equips and the category-exclusive unequip happen atomically in UI.
   useEffect(() => {
+    // Either sandbox owns the shelf while it is running. Without this, one
+    // realtime event from the real plant would overwrite the sandbox's
+    // ownership — revealing the demo account's purchases to a trial run that
+    // is supposed to own nothing, and wiping cheat mode's reveal-all.
+    if (cheatActive) return;
     const supabase = getBrowserSupabase();
     if (!supabase) return;
     const refreshPurchases = async () => {
@@ -132,7 +144,7 @@ export default function ShopGrid({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [plantId]);
+  }, [plantId, cheatActive]);
 
   const applyResult = (result: ShopActionResult) => {
     if (result.seeds !== null) setSeeds(result.seeds);
@@ -141,6 +153,24 @@ export default function ShopGrid({
 
   const buy = async (item: ShopGridItem, anchor: HTMLElement) => {
     if (busyKey) return;
+    if (trialActive) {
+      // Priced for real against sandbox Seeds — refuse when short, exactly as
+      // the server would. Still client-only: the deduction lands in
+      // localStorage through PMCheat and never reaches Supabase.
+      if ((trialSeeds ?? 0) < item.price) {
+        window.PMSfx?.play("tick");
+        return;
+      }
+      sandboxApi?.set({ status: { seeds: (trialSeeds ?? 0) - item.price } });
+      setPurchases((prev) =>
+        prev.some((p) => p.item_key === item.key)
+          ? prev
+          : [...prev, { item_key: item.key, category: item.category, equipped: false }],
+      );
+      window.PMSfx?.play("coin");
+      popConfetti(anchor);
+      return;
+    }
     if (cheatActive) {
       setPurchases((prev) =>
         prev.some((p) => p.item_key === item.key)
@@ -220,12 +250,12 @@ export default function ShopGrid({
   const ownedRow = (key: string) => purchases.find((p) => p.item_key === key) ?? null;
   const previewItem = items.find((item) => item.key === previewKey) ?? null;
   const previewOwned = previewItem ? ownedRow(previewItem.key) : null;
-  const previewAffordable = previewItem ? seeds >= previewItem.price : false;
+  const previewAffordable = previewItem ? shownSeeds >= previewItem.price : false;
   const shownItems = items.filter((item) => {
     if (item.category !== category) return false;
     const owned = Boolean(ownedRow(item.key));
     if (filter === "owned") return owned;
-    if (filter === "affordable") return !owned && seeds >= item.price;
+    if (filter === "affordable") return !owned && shownSeeds >= item.price;
     return true;
   });
 
@@ -246,7 +276,7 @@ export default function ShopGrid({
       <ShopPreviewStage
         locale={locale}
         mascot={{ mood: mascotMood ?? "Happy", stage: mascotStage, bondLevel: mascotBondLevel ?? 0 }}
-        seeds={seeds}
+        seeds={shownSeeds}
         item={previewItem}
         owned={previewOwned}
         wornPotKey={purchases.find((p) => p.category === "pot" && p.equipped)?.item_key ?? null}
@@ -282,7 +312,7 @@ export default function ShopGrid({
           <div className="pm-shop-grid">
             {shownItems.map((item) => {
               const owned = ownedRow(item.key);
-              const affordable = seeds >= item.price;
+              const affordable = shownSeeds >= item.price;
               const isPreviewed = previewKey === item.key;
               return (
                 <button
@@ -308,7 +338,7 @@ export default function ShopGrid({
                     ) : affordable ? (
                       <span className="pm-shop-state is-ready">{copy.preview} →</span>
                     ) : (
-                      <span className="pm-shop-state is-short">+{item.price - seeds}</span>
+                      <span className="pm-shop-state is-short">+{item.price - shownSeeds}</span>
                     )}
                   </span>
                 </button>

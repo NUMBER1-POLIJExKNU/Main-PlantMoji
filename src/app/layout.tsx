@@ -63,6 +63,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             Supabase/hardware. Loads on the farm home AND every React route so
             the cheat banner and shared sandbox state follow the presenter. */}
         <Script src="/farm/cheat.js" strategy="beforeInteractive" />
+        {/* Trial mode's rules engine (window.PMTrial) — the student onboarding
+            game that opens cheat mode at Lv.6. Must load after cheat.js, whose
+            store it drives; loading it on the React routes too keeps the drip
+            and the hazard schedule running while a student explores
+            Collection or Shop. */}
+        <Script src="/farm/trial.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

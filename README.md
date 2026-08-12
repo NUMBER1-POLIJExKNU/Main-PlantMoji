@@ -126,14 +126,15 @@ Quest completion is **sensor-verified**. A user cannot simply tap “Done” to 
 ### Bond Level
 
 ```text
-0–29 XP  → Bond Lv.1
-30–59 XP → Bond Lv.2
-60–89 XP → Bond Lv.3
+0–14 XP  → Bond Lv.1
+15–29 XP → Bond Lv.2
+30–44 XP → Bond Lv.3
 ...
 ```
 
-Every level uses a flat **30 XP step**. Early levels arrive quickly and later
-levels do not turn into a grind; the XP bar animates the real ledger change.
+Every level uses a flat **15 XP step** (`XP_PER_LEVEL` in `src/types/game.ts`,
+mirrored by the `award_xp` RPC). Early levels arrive quickly and later levels
+do not turn into a grind; the XP bar animates the real ledger change.
 
 Bond Level represents care and progression. It is intentionally separate from the plant's real biological **Growth Stage**.
 
@@ -480,10 +481,28 @@ GEMINI_API_KEY=
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
-The presentation/demo mode was removed. For classroom demonstrations use the
-classroom cheat sandbox at the bottom of **`/settings`** — a browser-only
-sandbox that never writes Supabase or hardware — or developer mode at
-**`/settings?dev=1`** when the real rows do need to change.
+The presentation/demo mode was removed. Three doors sit at the bottom of
+**`/settings`**, in the order they are meant to be met:
+
+| Mode | For | Starts from | Writes |
+|---|---|---|---|
+| 🎮 **Trial Mode** | A student meeting the app for the first time | Nothing — Lv.1, no Seeds, empty collection | Browser only |
+| 🎛️ **Cheat Mode** | A presenter driving a classroom demo | A copy of the real plant's progress | Browser only |
+| 🛠️ **Developer Mode** (`/settings?dev=1`) | The team | The real rows | **Supabase** |
+
+**Trial Mode** is a two-minute onboarding game. Care actions pay XP (more when
+the press actually helps), a Happy Jamkachu earns +1 XP every 3s, three actions
+turn an in-game day (soil work skips three at once, as it would in a real pot),
+and hazard events force a mood the student has to solve. At **Bond Lv.6** — the
+level where the flower opens — Cheat Mode unlocks, so the unlock and the growth
+change land as one moment. The gate is a celebration, **not a lock**: the Cheat
+Mode button works at any time and carries the trial's progress over, because a
+school demo goes wrong in a hundred ways. Rules live in
+`public/farm/trial.js`, numbers in `src/game/dev/trial-constants.ts`.
+
+Trial and Cheat share one localStorage store and one containment rule — neither
+ever touches Supabase or hardware — but pull in opposite directions: cheat mode
+reveals more than the plant owns, trial mode hides what it owns.
 
 The home weather card calls `GET /api/local-context`, which proxies and caches
 the official BMKG forecast for the configured `BMKG_ADM4_CODE`. BMKG is
