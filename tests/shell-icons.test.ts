@@ -16,18 +16,18 @@ const shell = source("src/components/reno-app-shell.tsx");
 // pictures for the same place.
 const destinations = source("src/lib/nav-destinations.ts");
 const pageHeader = source("src/components/page-header.tsx");
+const destinationIcon = source("src/components/destination-icon.tsx");
 const farmCss = source("public/farm/style.css");
 const reactCss = source("src/app/globals.css");
 
-// destination -> shipped file. Every destination has a drawing now; Collection
-// was the last one without and got its diamond in the 2026-08-12 icon drop.
+// destination -> shipped file. Collection is absent on purpose: the designer
+// drew no icon for it, so it keeps its emoji rather than borrowing another's.
 const NAV_ICONS = {
   "my-garden": "/",
   quests: "/quests",
   "crop-explorer": "/plants",
   "camera-ai": "/camera",
   "growth-diary": "/diary",
-  collection: "/collection",
   shop: "/shop",
   monitoring: "/monitoring",
   reports: "/reports",
@@ -60,13 +60,14 @@ describe("designer icon set", () => {
     expect(shell).toContain("function NavIcon(");
     expect(shell.match(/<NavIcon item=\{item\} \/>/g) ?? []).toHaveLength(3);
     expect(shell).not.toMatch(/<i[^>]*>\{item\.icon\}<\/i>/);
-    // next/image, so the nav art is served in the optimised size.
-    expect(shell).toContain('<Image src={item.art} alt="" className="reno-nav-art"');
+    // Both surfaces call the exact same renderer; next/image still serves the
+    // optimized asset inside that renderer.
+    expect(shell).toContain('<DestinationIcon destination={item.key} className="reno-nav-art" size={18} />');
     expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: "/icons/collection.png"');
     // And the board that destination opens onto draws that same entry, instead
     // of an emoji of its own choosing.
-    expect(pageHeader).toContain('import { navDestination } from "@/lib/nav-destinations"');
-    expect(pageHeader).toContain('className="pm-page-header-art"');
+    expect(pageHeader).toContain('<DestinationIcon destination={entry.key} className="pm-page-header-art" size={34} />');
+    expect(destinationIcon).toContain('<Image src={entry.art} alt="" className={className}');
     expect(reactCss).toContain(".pm-page-header-art {");
   });
 

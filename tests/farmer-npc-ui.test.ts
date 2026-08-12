@@ -45,7 +45,7 @@ describe("Farmer Tani living-world UI", () => {
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
-    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toMatch(/body\.night(?::not\(\.farmer-night-awake\))? \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
@@ -53,6 +53,15 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("function scheduleFarmerNightSleep()");
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
+    expect(css).toContain("body.night:not(.farmer-night-awake) .npc-farmer.npc-ready");
+    expect(css).toContain("left: var(--farmer-awake-left) !important");
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-left"');
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-top"');
+    const wakeBlock = live.match(/function wakeFarmerAtNight\(\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    expect(wakeBlock).toContain("const ground = farmerGround();");
+    expect(wakeBlock).toContain("Math.min(ground.right");
+    expect(wakeBlock).toContain("ground?.top ?? rect.top");
+    expect(wakeBlock).not.toContain('farmer.style.top = `${rect.top}px`');
   });
 
   it("keeps the bed compact but still larger than Farmer Tani", () => {
@@ -72,20 +81,18 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).not.toContain("pm-npc-wander");
   });
 
-  it("keeps the walk lane inside the character column, clear of the status cards", () => {
-    // The grass runs under both desktop grid columns, but .mascot-stage
-    // (z-index 5) is its own stacking context and .home-stack sits at 10 —
-    // the farmer's z-index 15 cannot lift him above the cards, so the lane
-    // itself has to stop where the character column does.
-    expect(live).toContain('const stage = $(".mascot-stage")?.getBoundingClientRect()');
-    expect(live).toContain("Math.max(rect.left, stage ? stage.left : rect.left)");
-    expect(live).toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
-    // Footing still comes from the grass, only the horizontal span is clamped.
+  it("walks the whole grass strip, which the status rail no longer sits on", () => {
+    // The lane used to stop at .mascot-stage's right edge: the rail
+    // (.home-stack, z-index 10) sat ON the grass, and since .mascot-stage is
+    // its own stacking context the farmer's z-index 15 could not lift him over
+    // those cards — he vanished behind them. The rail now ends above the floor
+    // (its own clamp(44px,8vh,92px) bottom margin), so the grass is clear edge
+    // to edge and the lane is the grass itself.
+    expect(live).toContain("const left = Math.round(rect.left + 12);");
+    expect(live).toContain("Math.max(left, rect.right - width - 12)");
+    expect(live).not.toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
+    // Footing still comes from the grass.
     expect(live).toContain("top: Math.round(rect.top - height + 8)");
-    // A column narrower than the sprite must not produce right < left.
-    expect(live).toContain("Math.max(left, laneRight - width - 12)");
-    // Lane depends on the stage now, so its resize has to restart the wander.
-    expect(live).toContain('for (const el of [$(".grass-floor"), $(".mascot-stage")])');
 
     // The weather/clock row must not sit under the fixed 44px mute button.
     expect(css).toMatch(/\.hud-top \{[\s\S]*?right:\s*44px/);
@@ -174,6 +181,7 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("Math.min(ground.right, currentLeft)");
     expect(live).toContain('!farmer.classList.contains("npc-ready")');
     expect(live).toContain("Math.min(ground.right, startLeft)");
+    expect(live).toMatch(/if \(!drag\.moved\) \{[\s\S]*?if \(isNightWIB\(\)\) \{[\s\S]*?scheduleFarmerNightSleep\(\);[\s\S]*?\} else \{[\s\S]*?restartFarmerMotion\(\);/);
     expect(css).toMatch(/\.npc-farmer\.npc-grabbed[\s\S]*?cursor:\s*grabbing/);
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
   });

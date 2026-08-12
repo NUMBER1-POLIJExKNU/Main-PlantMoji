@@ -38,16 +38,23 @@
   /** Filename fragment per phase (plant-p3-flower-….png). */
   var PHASE_SLUG = { 1: "seed", 2: "sprout", 3: "flower", 4: "fruit" };
 
-  /** Only faces that may be selected at runtime. Downturned care faces are
-   *  excluded; condition badges carry urgency without a miserable look. */
+  /** The 5 expressions the designer drew per phase. */
+  // "unwell" is ours, not the designer's: their thirsty frown wearing their
+  // sleepy lids (scripts/build-unwell-face.mjs). The thirsty face's big dark
+  // ovals read as sullen at mascot size, and four moods had to wear it.
+  // Replace these files if the designer draws a proper one.
   var SPRITE_MOODS = ["happy", "overheat"];
 
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
    *  (the accessible signal — all 8 moods must stay distinguishable). */
-  // Care states keep the cheerful full-body frame and are told apart by the
-  // badge beside the head and the accessible mood text. Heat keeps its
-  // energetic hot face; no sad/downturned face is reachable.
+  // The pack draws FOUR faces — happy, thirsty, sleepy, overheat. The fifth
+  // file, "plain", is the designer's faceless decorative body (their
+  // sheet-plain.png), NOT a neutral expression: it has leaf veins where the
+  // face goes. Never map a mood onto it — a plant that is cold or off-pH
+  // must still have a face. The moods that share the frowning "thirsty"
+  // body are told apart by the status badge beside the head and by the
+  // mood text, never by the body alone.
   var MOOD_SPRITE = {
     Happy: "happy",
     Overheating: "overheat",
@@ -74,12 +81,6 @@
   // apart properly — the two soil moods finally differ (red-down tube vs
   // purple-up tube) instead of sharing one test-tube emoji.
   var MOOD_CHIP_ART = {
-    // Happy and Overheating were the two moods with no badge here, so the
-    // thought cloud never appeared in the state players sit in most of the
-    // time — and the mood word under the badge went with it. Both files were
-    // already shipped in assets/moods; only the mapping was missing.
-    Happy: "mood-01-happy",
-    Overheating: "mood-02-overheating",
     TooCold: "mood-11-too-cold",
     Sleepy: "mood-04-sleepy",
     DryAir: "mood-03-dry-air",
@@ -88,9 +89,9 @@
     SoilAlkaline: "mood-06-soil-alkaline",
   };
 
-  /** Bond→tier thresholds — the `from` levels of the two bands that add an
-   *  ornament (bands 4 and 6). LEVEL_BANDS below is the real table. */
-  var TIER_THRESHOLDS = { bow: 9, ribbon: 24 };
+  /** Bond→tier thresholds — the `from` levels of the two bands that first add
+   *  an ornament (bands 8 and 14). LEVEL_BANDS below is the real table. */
+  var TIER_THRESHOLDS = { bow: 15, ribbon: 27 };
 
   /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
   var PHASE_TIER_CAP = { 1: "", 2: "", 3: "bow", 4: "ribbon" };
@@ -106,13 +107,21 @@
   // disagree in front of a class.
   var MAX_BOND_LEVEL = 30;
   var LEVEL_BANDS = [
-    { band: 1, from: 1, phase: 1, tier: "" },
-    { band: 2, from: 3, phase: 2, tier: "" },
-    { band: 3, from: 6, phase: 3, tier: "" },
-    { band: 4, from: 9, phase: 3, tier: "bow" },
-    { band: 5, from: 13, phase: 4, tier: "" },
-    { band: 6, from: 18, phase: 4, tier: "bow" },
-    { band: 7, from: 24, phase: 4, tier: "ribbon" },
+    { band: 1, from: 1, phase: 1, tier: "", scale: 0.9 },
+    { band: 2, from: 3, phase: 1, tier: "", scale: 1 },
+    { band: 3, from: 5, phase: 2, tier: "", scale: 0.9 },
+    { band: 4, from: 7, phase: 2, tier: "", scale: 0.95 },
+    { band: 5, from: 9, phase: 2, tier: "", scale: 1 },
+    { band: 6, from: 11, phase: 3, tier: "", scale: 0.9 },
+    { band: 7, from: 13, phase: 3, tier: "", scale: 0.95 },
+    { band: 8, from: 15, phase: 3, tier: "bow", scale: 0.96 },
+    { band: 9, from: 17, phase: 3, tier: "bow", scale: 1 },
+    { band: 10, from: 19, phase: 4, tier: "", scale: 0.9 },
+    { band: 11, from: 21, phase: 4, tier: "", scale: 0.95 },
+    { band: 12, from: 23, phase: 4, tier: "bow", scale: 0.96 },
+    { band: 13, from: 25, phase: 4, tier: "bow", scale: 1 },
+    { band: 14, from: 27, phase: 4, tier: "ribbon", scale: 1 },
+    { band: 15, from: 29, phase: 4, tier: "ribbon", scale: 1 },
   ];
 
   function bandForLevel(level) {
@@ -123,6 +132,10 @@
       if (clamped >= LEVEL_BANDS[i].from) found = LEVEL_BANDS[i];
     }
     return found;
+  }
+
+  function visualStageForLevel(level) {
+    return bandForLevel(level).band;
   }
 
   // ── Designer pot ramp ───────────────────────────────────────────────────
@@ -218,9 +231,8 @@
     return STAGE_PHASE[stage] || 4;
   }
 
-  /** Night sleep uses the happy frame: its raised, closed-looking eyes and
-   *  smile read as peaceful rest, unlike the pack's startled O-mouth sleepy
-   *  frame. The sleep badge and night scene keep the state unambiguous. */
+  /** Night sleep (sleepShown) forces the sleepy body; unknown moods render
+   *  the calm plain body rather than a wrong celebration. */
   function spriteMoodFor() {
     if (state.sleeping) return "happy";
     return MOOD_SPRITE[state.mood] || "happy";
@@ -354,70 +366,6 @@
     }
   }
 
-  // ── Sprite void ─────────────────────────────────────────────────────────
-  // Every frame is drawn inside the same square box, but a seed occupies only
-  // the bottom third of it while a grown plant fills it. That empty band is
-  // what pushed Jamkachu — and the captions under it — far below the speech
-  // bubble. Measuring the frame's own alpha gives the exact fraction to pull
-  // back, per frame, so it stays right as the plant grows into its frame.
-  //
-  // Same-origin art, so the canvas is never tainted; the try/catch is for the
-  // frame that fails to decode, where the answer is simply "no pull-up".
-
-  var spriteVoidCache = Object.create(null);
-
-  function applySpriteVoid(img, ratio) {
-    var wrapper = img.closest ? img.closest(".mascot-wrapper") : null;
-    if (wrapper) wrapper.style.setProperty("--pm-sprite-void-top", String(ratio));
-  }
-
-  function measureSpriteVoid(img) {
-    var key = img.currentSrc || img.src;
-    if (!key || !img.naturalWidth || !img.naturalHeight) return;
-    if (spriteVoidCache[key] != null) {
-      applySpriteVoid(img, spriteVoidCache[key]);
-      return;
-    }
-    var ratio = 0;
-    try {
-      var canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      var ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.drawImage(img, 0, 0);
-      var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      var firstRow = canvas.height;
-      for (var y = 0; y < canvas.height && firstRow === canvas.height; y++) {
-        for (var x = 0; x < canvas.width; x++) {
-          // 12, not 0: the art carries a faint anti-aliased halo whose alpha
-          // is not quite zero, and treating that as "drawn" would report no
-          // empty band at all.
-          if (data[(y * canvas.width + x) * 4 + 3] > 12) { firstRow = y; break; }
-        }
-      }
-      ratio = firstRow / canvas.height;
-      // A frame that is entirely transparent would pull the whole box off the
-      // screen; treat it as no void at all.
-      if (!(ratio >= 0 && ratio < 0.95)) ratio = 0;
-    } catch (error) {
-      ratio = 0;
-    }
-    spriteVoidCache[key] = ratio;
-    applySpriteVoid(img, ratio);
-  }
-
-  /** One listener for the life of the element — `load` fires again on each new
-   *  src, which is exactly when the void needs re-measuring. */
-  function wireSpriteVoid(img) {
-    if (img.dataset.pmVoidWired) {
-      if (img.complete) measureSpriteVoid(img);
-      return;
-    }
-    img.dataset.pmVoidWired = "1";
-    img.addEventListener("load", function () { measureSpriteVoid(img); });
-    if (img.complete) measureSpriteVoid(img);
-  }
-
   // ── Repaint ─────────────────────────────────────────────────────────────
 
   function repaint() {
@@ -436,6 +384,8 @@
       var stageBox = img.parentElement;
       if (stageBox && stageBox.classList) {
         for (var p = 1; p <= 4; p++) stageBox.classList.toggle("sprite-phase-" + p, p === phase);
+        for (var v = 1; v <= 15; v++) stageBox.classList.toggle("visual-stage-" + v, v === band.band);
+        stageBox.style.setProperty("--jamkachu-growth-scale", String(band.scale || 1));
       }
       var potImg = document.getElementById("shop-pot-sprite");
       var potSrc = state.potItemKey ? POT_ITEM_ART[state.potItemKey] || "" : "";
@@ -450,7 +400,6 @@
           potImg.removeAttribute("src");
         }
       }
-      wireSpriteVoid(img);
       var rampSpec = activeRamp();
       var want = rampSpec ? src + "|" + rampSpec.key : src;
       if (img.dataset.pmWant !== want) {
@@ -535,6 +484,7 @@
     },
     stagePhase: stagePhase,
     accessoryTier: accessoryTier,
+    visualStageForLevel: visualStageForLevel,
   };
   // Uppercase alias for the cross-layer parity suite
   // (tests/jamkachu-sprite-parity.test.ts) — same frozen object.

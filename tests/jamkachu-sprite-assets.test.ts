@@ -187,21 +187,21 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
 
   it("bond→tier thresholds sit at the band starts and clamp by phase", () => {
     // The two thresholds ARE the `from` levels of the bands that introduce an
-    // ornament (LEVEL_BANDS 4 and 6); tests/level-bands.test.ts owns the table.
-    expect(tables.TIER_THRESHOLDS).toEqual({ bow: 9, ribbon: 24 });
+    // ornament (LEVEL_BANDS 8 and 14); tests/level-bands.test.ts owns the table.
+    expect(tables.TIER_THRESHOLDS).toEqual({ bow: 15, ribbon: 27 });
     expect(tables.PHASE_TIER_CAP).toEqual({ 1: "", 2: "", 3: "bow", 4: "ribbon" });
     // p1/p2 always bare, whatever the bond.
     expect(sprite.accessoryTier(30, 1)).toBe("");
     expect(sprite.accessoryTier(30, 2)).toBe("");
     // p3 caps at bow even past the ribbon threshold.
-    expect(sprite.accessoryTier(24, 3)).toBe("bow");
-    expect(sprite.accessoryTier(9, 3)).toBe("bow");
-    expect(sprite.accessoryTier(8, 3)).toBe("");
+    expect(sprite.accessoryTier(27, 3)).toBe("bow");
+    expect(sprite.accessoryTier(15, 3)).toBe("bow");
+    expect(sprite.accessoryTier(14, 3)).toBe("");
     // p4 walks the full ladder.
-    expect(sprite.accessoryTier(8, 4)).toBe("");
-    expect(sprite.accessoryTier(9, 4)).toBe("bow");
-    expect(sprite.accessoryTier(23, 4)).toBe("bow");
-    expect(sprite.accessoryTier(24, 4)).toBe("ribbon");
+    expect(sprite.accessoryTier(14, 4)).toBe("");
+    expect(sprite.accessoryTier(15, 4)).toBe("bow");
+    expect(sprite.accessoryTier(26, 4)).toBe("bow");
+    expect(sprite.accessoryTier(27, 4)).toBe("ribbon");
     // Garbage input degrades to bare, never a broken src.
     expect(sprite.accessoryTier(Number.NaN, 4)).toBe("");
   });

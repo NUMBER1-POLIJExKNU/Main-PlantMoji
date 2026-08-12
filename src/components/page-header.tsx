@@ -6,8 +6,8 @@
 // picture means the rail and the board read one entry in
 // lib/nav-destinations.ts, and cannot disagree again.
 
-import Image from "next/image";
 import type { ReactNode } from "react";
+import DestinationIcon from "@/components/destination-icon";
 import { navDestination } from "@/lib/nav-destinations";
 
 export default function PageHeader({
@@ -30,13 +30,13 @@ export default function PageHeader({
   const entry = destination ? navDestination(destination) : null;
   // Collection is the one destination the designer hasn't drawn. It falls back
   // to the same emoji the rail falls back to, not to a second, different one.
-  const fallback = icon ?? entry?.icon ?? "";
+  const fallback = entry?.icon ?? icon ?? "";
 
   return (
     <header className="pm-page-header">
       <span className="pm-page-header-icon" role="img" aria-hidden="true">
-        {entry?.art ? (
-          <Image src={entry.art} alt="" width={34} height={34} className="pm-page-header-art" />
+        {entry ? (
+          <DestinationIcon destination={entry.key} className="pm-page-header-art" size={34} />
         ) : (
           fallback
         )}

@@ -17,7 +17,7 @@ import { bandForLevel } from "@/game/progression/level-bands";
 export type SpritePhase = 1 | 2 | 3 | 4;
 export const SPRITE_PHASES = [1, 2, 3, 4] as const;
 
-/** Only runtime-selectable faces; care badges never swap in a sad face. */
+/** The 5 expressions the designer drew per phase. */
 export const SPRITE_MOODS = ["happy", "overheat"] as const;
 export type SpriteMood = (typeof SPRITE_MOODS)[number];
 
@@ -46,8 +46,12 @@ export const PHASE_SLUG: Record<SpritePhase, string> = {
   4: "fruit",
 };
 
-/** Mood→sprite. Care states retain the cheerful full-body frame and use the
- * status badge plus accessible mood text for their condition. */
+/** Mood→sprite. The pack draws FOUR faces — happy, thirsty, sleepy,
+ * overheat. The fifth file, "plain", is the designer's faceless decorative
+ * body (their sheet-plain.png), NOT a neutral expression: leaf veins sit
+ * where the face goes. No mood may map to it — a cold or off-pH plant must
+ * still have a face. Moods sharing the frowning "thirsty" body are told
+ * apart by the status badge (MOOD_STATUS_CHIP) and the mood text. */
 export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
@@ -73,11 +77,11 @@ export const MOOD_STATUS_CHIP: Partial<Record<PlantMood, string>> = {
 
 /**
  * Bond→tier thresholds. These are the `from` levels of the two bands that
- * introduce an ornament (LEVEL_BANDS 4 and 6) — kept as named constants because
+ * introduce an ornament (LEVEL_BANDS 8 and 14) — kept as named constants because
  * the farm shell mirrors them and several tests read them, but the band table
  * in @/game/progression/level-bands is the source of truth.
  */
-export const TIER_THRESHOLDS = { bow: 9, ribbon: 24 } as const;
+export const TIER_THRESHOLDS = { bow: 15, ribbon: 27 } as const;
 
 /** Clamp by phase: p1/p2 always bare, p3 caps at bow, p4 uncapped. */
 export const PHASE_TIER_CAP: Record<SpritePhase, SpriteTier> = {
@@ -97,7 +101,7 @@ export function stagePhase(stage?: CompanionStage): SpritePhase {
   return STAGE_PHASE[stage] ?? 4;
 }
 
-/** Picks the drawn expression; night sleep uses the peaceful smiling frame. */
+/** Picks the drawn expression; night sleep overrides the live mood. */
 export function spriteMood(mood: PlantMood, sleeping = false): SpriteMood {
   if (sleeping) return "happy";
   return MOOD_SPRITE[mood] ?? "happy";

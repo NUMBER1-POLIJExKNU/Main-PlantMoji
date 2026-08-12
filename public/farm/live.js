@@ -261,7 +261,7 @@ const MOODS = Object.fromEntries(["Happy", "Overheating", "TooCold", "DryAir", "
 // dictionary — whose en tree is the last-resort English fallback via t().
 const moodBubble = (mood) => {
   const key = mood?.key ?? "Happy";
-  return `&quot;${PM().moodBubbles?.[key] ?? t(`bubble.${key}`)}&quot;`;
+  return PM().moodBubbles?.[key] ?? t(`bubble.${key}`);
 };
 // Localized quest title for the MISI HARI INI slot + quest-complete banner:
 // strings.js questTitles (id names verbatim from src/lib/i18n.ts
@@ -2174,7 +2174,7 @@ function updateCareUi() {
     cancelPetBubble(); // a stale pet-line restore must never stomp the sleep bubble
     clearPetExpression(); // tap-reaction faces yield to the closed-eye sleep face
     gazeReset(); // curious gaze: pupils ease home before the lids close
-    if (bubble) bubble.textContent = `"${PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble}"`;
+    if (bubble) bubble.textContent = PM().sleep?.bubble ?? SLEEP_FALLBACK.bubble;
     if (!firstEval) window.PMSfx?.play("pet");
   } else if (!firstEval && bubble) {
     // Waking (06:00 flip, or a problem mood overriding sleep): restore the
@@ -2606,7 +2606,7 @@ function showTransientBubble(line, ms) {
   const bubble = $(".speech-bubble");
   if (!bubble) return;
   if (petSavedBubble === null) petSavedBubble = bubble.innerHTML;
-  bubble.textContent = `"${line}"`;
+  bubble.textContent = line;
   if (petRestoreTimer !== null) clearTimeout(petRestoreTimer);
   petRestoreTimer = setTimeout(() => {
     petRestoreTimer = null;
@@ -3393,7 +3393,10 @@ function applyNightUi() {
     if (farmerNightSleepTimer !== null) window.clearTimeout(farmerNightSleepTimer);
     farmerNightSleepTimer = null;
     document.body?.classList.remove("farmer-night-awake");
-    $("#npc-farmer")?.classList.remove("npc-night-awake");
+    const farmer = $("#npc-farmer");
+    farmer?.classList.remove("npc-night-awake");
+    farmer?.style.removeProperty("--farmer-awake-left");
+    farmer?.style.removeProperty("--farmer-awake-top");
   }
   if (night) $("#npc-farmer")?.classList.remove("npc-farming");
   const celestial = $(".env-sun");
@@ -3790,24 +3793,17 @@ function farmerGround() {
 
   // Vertically he must stand ON the grass, so `top` stays measured from it.
   //
-  // Horizontally the grass is NOT a safe lane. From 801px up the game world is
-  // a two-column grid and the grass strip runs under BOTH columns, while the
-  // status cards (.home-stack) sit on top of it. .mascot-stage carries
-  // z-index 5 and .home-stack z-index 10, so the stage becomes its own
-  // stacking context and the farmer's own z-index 15 cannot lift him out of
-  // it — walking right simply made him vanish behind the cards.
-  //
-  // Clamping the lane to the character column keeps him on screen for the
-  // whole lap. Below 801px the stage spans the game world anyway, so this
-  // intersection is a no-op there apart from respecting its padding.
-  const stage = $(".mascot-stage")?.getBoundingClientRect();
-  const laneLeft = Math.max(rect.left, stage ? stage.left : rect.left);
-  const laneRight = Math.min(rect.right, stage ? stage.right : rect.right);
-
-  const left = Math.round(laneLeft + 12);
+  // Horizontally the whole grass strip is his: the status rail (.home-stack)
+  // used to sit ON the grass, and since .mascot-stage is its own stacking
+  // context the farmer's z-index could not lift him over those cards — walking
+  // right made him vanish behind them, so the lane was clamped to the
+  // character column. The rail now ends well above the floor (it carries its
+  // own clamp(44px,8vh,92px) bottom margin), leaving the grass clear across
+  // the full width, so the clamp is gone and he laps the whole garden.
+  const left = Math.round(rect.left + 12);
   return {
     left,
-    right: Math.round(Math.max(left, laneRight - width - 12)),
+    right: Math.round(Math.max(left, rect.right - width - 12)),
     top: Math.round(rect.top - height + 8),
   };
 }
@@ -3943,7 +3939,10 @@ function scheduleFarmerNightSleep() {
     if (!isNightWIB() || farmerDrag) return;
     clearFarmerBubble();
     document.body?.classList.remove("farmer-night-awake");
-    $("#npc-farmer")?.classList.remove("npc-night-awake", "npc-grabbed", "npc-landing");
+    const farmer = $("#npc-farmer");
+    farmer?.classList.remove("npc-night-awake", "npc-grabbed", "npc-landing");
+    farmer?.style.removeProperty("--farmer-awake-left");
+    farmer?.style.removeProperty("--farmer-awake-top");
     restartFarmerMotion();
   }, 3000);
 }
@@ -3956,11 +3955,22 @@ function wakeFarmerAtNight() {
   farmerNightSleepTimer = null;
   const wasSleeping = !farmer.classList.contains("npc-night-awake");
   const rect = farmer.getBoundingClientRect();
+  const ground = farmerGround();
   document.body?.classList.add("farmer-night-awake");
   farmer.classList.add("npc-night-awake");
   if (wasSleeping) {
-    farmer.style.left = `${rect.left}px`;
-    farmer.style.top = `${rect.top}px`;
+    // `rect` belongs to the rotated, scaled sleeping sprite. Reusing its top
+    // after removing that transform stands the upright farmer at mattress
+    // height, where he appears to float. Keep his horizontal bed position,
+    // but put his feet on the measured grass floor when he wakes.
+    const uprightWidth = farmer.offsetWidth || 48;
+    const wakeLeft = ground
+      ? Math.max(ground.left, Math.min(ground.right, rect.left + rect.width / 2 - uprightWidth / 2))
+      : rect.left;
+    farmer.style.left = `${wakeLeft}px`;
+    farmer.style.top = `${ground?.top ?? rect.top}px`;
+    farmer.style.setProperty("--farmer-awake-left", `${wakeLeft}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${ground?.top ?? rect.top}px`);
     farmer.style.transform = "none";
     setFarmerFacing(1);
   }
@@ -3988,6 +3998,10 @@ function startFarmerDrag(event) {
   clearFarmerBubble();
   farmer.style.left = `${rect.left}px`;
   farmer.style.top = `${rect.top}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", `${rect.left}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${rect.top}px`);
+  }
   farmer.style.transform = "none";
   setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
   farmer.classList.remove("npc-walking", "npc-talking", "npc-farming");
@@ -4022,6 +4036,10 @@ function moveFarmerDrag(event) {
   const height = farmer.offsetHeight || 56;
   farmer.style.left = `${Math.max(0, Math.min(window.innerWidth - width, event.clientX - drag.offsetX))}px`;
   farmer.style.top = `${Math.max(0, Math.min(window.innerHeight - height, event.clientY - drag.offsetY))}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", farmer.style.left);
+    farmer.style.setProperty("--farmer-awake-top", farmer.style.top);
+  }
   if (farmerBubbleEl) {
     const left = Number.parseFloat(farmer.style.left) || 0;
     const top = Number.parseFloat(farmer.style.top) || 0;
@@ -4040,8 +4058,14 @@ async function endFarmerDrag(event) {
   farmer.releasePointerCapture?.(event.pointerId);
   document.body?.classList.remove("farmer-dragging"); // before the early return below
   if (!drag.moved) {
-    restartFarmerMotion();
-    if (isNightWIB()) scheduleFarmerNightSleep();
+    // A night tap wakes him in place. Restarting the wander loop here makes
+    // the just-woken fixed-position sprite run through daytime placement and
+    // briefly snap toward the page centre before the sleep timer restores it.
+    if (isNightWIB()) {
+      scheduleFarmerNightSleep();
+    } else {
+      restartFarmerMotion();
+    }
     return;
   }
   suppressFarmerClick = true;
@@ -4062,6 +4086,10 @@ async function endFarmerDrag(event) {
   farmer.classList.remove("npc-landing");
   farmer.style.left = `${landingLeft}px`;
   farmer.style.top = `${ground.top}px`;
+  if (farmer.classList.contains("npc-night-awake")) {
+    farmer.style.setProperty("--farmer-awake-left", `${landingLeft}px`);
+    farmer.style.setProperty("--farmer-awake-top", `${ground.top}px`);
+  }
   farmer.style.transform = "scaleX(1)";
   setFarmerFacing(1);
   restartFarmerMotion();
@@ -4283,7 +4311,17 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
     const response = await fetch("/api/farmer-chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question, locale: appLocale, demo: window.__pmSupabaseConfigured !== true }),
+      // While the sandbox owns the screen it owns Grandpa's answer too: send
+      // the values the tiles are showing, or he replies about the real row and
+      // contradicts the garden the class is looking at. Only ever sent while
+      // PMCheat is active — normal play posts nothing here and the route falls
+      // straight back to the sensors.
+      body: JSON.stringify({
+        question,
+        locale: appLocale,
+        demo: window.__pmSupabaseConfigured !== true,
+        cheatVitals: window.PMCheat?.isActive() ? window.PMCheat.getState()?.vitals : undefined,
+      }),
       signal: farmerChatController.signal,
     });
     const result = response.ok ? await response.json() : null;
@@ -4532,14 +4570,13 @@ function evolutionTheme(stage) {
   return EVO_THEMES[stage] ?? EVO_THEMES.Sprout;
 }
 
-/** Evolution-ceremony speech-bubble line — quoted like every other spoken
- *  line in this file (mood templates, sleep bubble, dialogue fetch), and
- *  cancels a stale petting-bubble restore so it can never stomp mid-scene. */
+/** Evolution-ceremony speech-bubble line. Cancels a stale petting-bubble
+ *  restore so it can never stomp mid-scene. */
 function speechBubble(text) {
   if (!text) return;
   cancelPetBubble();
   const bubble = $(".speech-bubble");
-  if (bubble) bubble.textContent = `"${text}"`;
+  if (bubble) bubble.textContent = text;
 }
 
 /** Localized {stage} name for the ceremony dialog, from strings.js's
@@ -5291,7 +5328,7 @@ function renderPlant(plant) {
         if (petRestoreTimer !== null || petSavedBubble !== null) return;
         const el = $(".speech-bubble");
         const fresh = chooseFreshDialogue(data.candidates ?? [data.message]);
-        if (el && fresh) el.textContent = `"${fresh}"`;
+        if (el && fresh) el.textContent = fresh;
       })
       .catch(() => {});
   }
@@ -6646,8 +6683,8 @@ function renderOfflineHome() {
 // instantly. Deactivating (cheat.js banner "Exit") reloads back to normal.
 
 const CHEAT_LABELS = {
-  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
-  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
+  id: { panelTitle: "KONTROL DEMO", collapse: "Sembunyikan kontrol", expand: "Tampilkan kontrol", drag: "Seret untuk memindahkan panel", statusTitle: "STATUS JAMKACHU", vitalsTitle: "GARDEN VITALS", actionsTitle: "RAWAT TANAMAN", heldTitle: "Tekan & tahan", oneShotTitle: "Sekali tekan", held: "Ditahan sampai kamu menekan lawannya.", slow: "beberapa hari", slowNote: "Suhu & cahaya seketika, kelembapan hitungan menit — pH tanah butuh berhari-hari.", byValue: "atur lewat angka", level: "Level", xp: "XP", xpMin: "XP minimum untuk level ini", xpMax: "XP maksimum untuk level ini", days: "Hari", seeds: "Benih", temp: "Suhu (°C)", hum: "Kelembapan (%)", light: "Cahaya (%)", ph: "pH Tanah", hint: "Rawat tanamannya → Jamkachu langsung bereaksi. Data asli tidak berubah." },
+  en: { panelTitle: "DEMO CONTROLS", collapse: "Hide controls", expand: "Show controls", drag: "Drag to move this panel", statusTitle: "JAMKACHU STATUS", vitalsTitle: "GARDEN VITALS", actionsTitle: "CARE ACTIONS", heldTitle: "Press & hold", oneShotTitle: "One-time actions", held: "Held until you press its opposite.", slow: "days later", slowNote: "Temperature & light move at once, humidity within minutes — soil pH takes days.", byValue: "edit by value", level: "Level", xp: "XP", xpMin: "Lowest XP for this level", xpMax: "Highest XP for this level", days: "Days", seeds: "Seeds", temp: "Temp (°C)", hum: "Humidity (%)", light: "Light (%)", ph: "Soil pH", hint: "Care for the plant → Jamkachu reacts instantly. Real data stays untouched." },
 };
 
 /** Physically possible range per sensor — mirror of SENSOR_LIMITS in
@@ -6877,7 +6914,7 @@ function positionCheatPanel() {
   // Hand placement wins over the automatic dock.
   if (cheatPanelMoved) return;
   const rect = stage.getBoundingClientRect();
-  const width = panel.offsetWidth || 232;
+  const width = panel.offsetWidth || 268;
   // Room for the panel plus the plant it must not sit on top of.
   if (rect.width < width + 250) {
     panel.style.removeProperty("left");
@@ -6906,7 +6943,7 @@ function buildCheatPanel() {
     // Collapse control: the panel is docked over the sky beside the mascot, but
     // a presenter on a short screen still needs a way to clear it off the
     // stage mid-demo without leaving the sandbox.
-    `<header class="pm-cheat-head"><strong>🎛️ ${L.panelTitle}</strong>` +
+    `<header class="pm-cheat-head" title="${L.drag}"><strong>🎛️ ${L.panelTitle}<small>${L.drag}</small></strong>` +
     `<button type="button" data-cheat-collapse aria-expanded="true" aria-label="${L.collapse}" title="${L.collapse}">−</button></header>` +
     `<div class="pm-cheat-body">` +
     `<div class="pm-cheat-group"><h3>🎛️ ${L.statusTitle}</h3>` +
@@ -6929,8 +6966,8 @@ function buildCheatPanel() {
     // "the plant is thirsty": this game's whole point is that dry AIR is not
     // dry soil, and a watering can next to that lesson would undo it.
     `<div class="pm-cheat-group"><h3><img class="pm-cheat-heading-icon" src="/icons/watering-can.png" alt="" width="14" height="14"> ${L.actionsTitle}</h3>` +
-    `<div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div>` +
-    `<div class="pm-cheat-actions">${cheatActionButtons("delta")}</div>` +
+    `<div class="pm-cheat-action-set"><h4>${L.heldTitle}</h4><div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div></div>` +
+    `<div class="pm-cheat-action-set"><h4>${L.oneShotTitle}</h4><div class="pm-cheat-actions">${cheatActionButtons("delta")}</div></div>` +
     `<p class="pm-cheat-hint">${L.slowNote}</p>` +
     `</div>` +
     `<p class="pm-cheat-hint">${L.hint}</p>` +
@@ -7384,6 +7421,33 @@ async function main() {
       .subscribe();
   } catch {
     // Chips stay unlabeled — never block the page over a nice-to-have.
+  }
+
+  // Live sensor readings (milestone21). Its own channel for the same reason
+  // as the two below: until that migration runs, sensor_readings is not in the
+  // supabase_realtime publication and the join errors — isolating it means the
+  // page falls back to the 15s poll instead of losing plants/bond/quests too.
+  //
+  // The poll stays exactly as it was. It is the safety net: a dropped socket,
+  // a project without the migration, or a reading that arrives while the tab
+  // is hidden all still land within 15s. This only removes the wait when the
+  // socket is healthy.
+  try {
+    supabase
+      .channel(`farm-sensors-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sensor_readings", filter: `plant_id=eq.${PLANT_ID}` },
+        (payload) => {
+          // The sandbox owns the tiles while it is on; a real reading arriving
+          // underneath must not overwrite the numbers being demonstrated.
+          if (window.PMCheat?.isActive()) return;
+          renderSensors(payload.new);
+        },
+      )
+      .subscribe();
+  } catch {
+    // No live push — the 15s poll already covers this.
   }
 
   // Live Guardian fan-out is isolated because milestone19 is optional. A

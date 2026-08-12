@@ -17,9 +17,16 @@ describe("Weekly report Jamkachu note", () => {
     // The mini-mascot is the drawn p4 sprite, not CSS box art.
     expect(page).toMatch(/<img\s[^>]*className="pm-report-jamkachu"/);
     expect(page).toContain("spriteAssetPath");
-    // Tone mirrors the next-goal logic: rough (hot) week → plain face,
-    // otherwise happy.
-    expect(page).toContain('report.overheatingEvents > 0 ? "plain" : "happy"');
+    // Tone mirrors the next-goal logic: a week with overheating gets the
+    // overheat face, otherwise happy — both read the same
+    // report.overheatingEvents, so picture and advice cannot disagree.
+    //
+    // This asked for "plain" and had been failing ever since the page stopped
+    // varying the face at all. "plain" was never satisfiable either:
+    // spriteAssetPath types phase 4's mood as "happy" | "overheat", so writing
+    // it would not have compiled. The page varies again, with the mood that
+    // exists.
+    expect(page).toContain('report.overheatingEvents > 0 ? "overheat" : "happy"');
     // Pixel art must never be smoothed, and the old box-shadow body is gone.
     expect(css).toMatch(/\.pm-report-jamkachu\s*\{[^}]*image-rendering:\s*pixelated/);
     expect(css).not.toContain(".pm-report-jamkachu::after");

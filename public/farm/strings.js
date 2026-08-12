@@ -48,7 +48,7 @@
       },
 
       // Speech-bubble templates for each mood — rendered via innerHTML (the
-      // <br> is layout; live.js's moodBubble() adds the surrounding quotes).
+      // <br> is layout; live.js's moodBubble() renders it as-is).
       // live.js keeps a COPY-dictionary twin as the last-resort fallback.
       moodBubbles: {
         Happy: "I'm feeling so healthy!<br>Thanks for the care.",
@@ -575,8 +575,7 @@
       },
 
       // Templat gelembung bicara per suasana — dirender lewat innerHTML
-      // (<br> bagian dari tata letak; tanda kutipnya ditambahkan oleh
-      // moodBubble() di live.js).
+      // (<br> bagian dari tata letak; moodBubble() di live.js merender apa adanya).
       moodBubbles: {
         Happy: "Aku merasa sehat banget!<br>Terima kasih sudah merawatku.",
         Overheating: "Aku kepanasan...<br>bantu sejukkan aku, ya!",
