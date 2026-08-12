@@ -2640,7 +2640,10 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
         /* Clearance over the floor. It is 140px tall here (105px on short
            laptops, where the clamp lands lower too). */
         margin: 0 0 clamp(44px, 8vh, 92px);
-        padding:68px 5px 0 0;
+        /* 72px top = the absolutely-positioned .hud-top's reach (top:4 + its
+           56px min-height) plus a 12px gap. Derived from the pair's height
+           below — keep them in step or this rail slides under the clock. */
+        padding:72px 5px 0 0;
         gap:10px;
         overflow-y:auto;
         scrollbar-width:thin;
@@ -2735,12 +2738,21 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
            (same approach as .hatch-skip). */
         right: 44px;
         z-index: 20;
+        /* Both cards end on the same line. Their widths still follow their
+           content — the clock is a time, the widget is a sentence — but the
+           frames match. */
+        align-items: stretch;
     }
-    .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }
-    .jember-clock-icon { font-size: 20px; }
+    /* The number this pair is worth: top(4) + 56 + a 12px breathing gap = 72,
+       which is exactly .home-stack's padding-top above. The two move together —
+       this row is position:absolute, so the rail underneath cannot see it and
+       slides under these cards whenever the padding falls behind. */
+    .jember-clock,
+    .hud-top .weather-widget { min-height: 56px; padding: 9px 12px; border-width: 2px; }
+    .jember-clock { min-width: 116px; gap: 7px; }
     .jember-clock-copy small { font-size: 6px; }
     .jember-clock-copy strong { font-size: 14px; }
-    .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
+    .weather-widget { gap: 8px; }
     .weather-icon { font-size: 22px; }
     .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }
     .weather-text .temp { font-size: 11px; }
@@ -2765,7 +2777,12 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
     .mascot-wrapper { width: min(250px, 32vh); }
     .speech-bubble { min-height: 0; max-height: none; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
-    .home-stack { margin-bottom:70px; padding-top:48px; gap:8px; }
+    /* Short screens keep the pair, and the rail's clearance for it, on a
+       tighter budget than the tall-desktop rule: top(4) + 46 + a 12px gap = 62.
+       Same arithmetic, smaller numbers — the two still move together. */
+    .jember-clock,
+    .hud-top .weather-widget { min-height:46px; padding:6px 10px; }
+    .home-stack { margin-bottom:70px; padding-top:62px; gap:8px; }
     .user-gamification { padding: 8px 11px; }
     .care-focus { gap:8px; padding:10px 12px 12px 15px; }
     .care-focus-heading { grid-template-columns:36px minmax(0,1fr); gap:8px; }

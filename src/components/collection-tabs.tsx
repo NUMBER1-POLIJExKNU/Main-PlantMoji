@@ -500,8 +500,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
   // Copy lives inline per locale (same mechanism as the rest of this file).
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", wisdomSource: "Kearifan tani turun-temurun.", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", newBadge: "BARU", moodComplete: "◆ KOLEKSI LENGKAP ◆", moodCompleteLine: "Semua suasana sudah ditemukan! Hadiah kejutan sedang disiapkan." }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", wisdomSource: "Traditional farming wisdom.", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", newBadge: "NEW", moodComplete: "◆ COLLECTION COMPLETE ◆", moodCompleteLine: "Every mood has been discovered! A surprise reward is on its way." };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", wisdomSource: "Kearifan tani turun-temurun.", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK SENTUH DI KEBUN SAYA", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", previewFx: "Lihat efeknya", fxWhere: "Aktifkan, lalu sentuh KEPALA Jamkachu di Kebun Saya — kilau inilah yang muncul. Beri jeda sebentar antar sentuhan; menyentuh pot atau batang memberi reaksi lain.", replayHelp: "Memutar ulang adegan bab ini di sini — tidak ada yang berubah di kebunmu.", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", newBadge: "BARU", moodComplete: "◆ KOLEKSI LENGKAP ◆", moodCompleteLine: "Semua suasana sudah ditemukan! Hadiah kejutan sedang disiapkan." }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", wisdomSource: "Traditional farming wisdom.", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT ON MY GARDEN", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", previewFx: "See the effect", fxWhere: "Turn it on, then tap Jamkachu's HEAD on My Garden — these are the sparkles you get. Leave a moment between taps; tapping the pot or the stem gives a different reaction.", replayHelp: "Replays this chapter's scene right here — nothing in your garden changes.", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", newBadge: "NEW", moodComplete: "◆ COLLECTION COMPLETE ◆", moodCompleteLine: "Every mood has been discovered! A surprise reward is on its way." };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered || liveDiscoveredMoods.has(mood.mood)).length;
   const unlockedBadges = badges.filter(
@@ -852,10 +852,23 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                     <p className="mt-1 text-sm font-bold">{selectedEffect.name[locale]}</p>
                     <p className="text-[11px]" style={{ color: INK_MUTED }}>{selectedEffect.particles.join(" · ")}</p>
                   </div>
-                  <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
-                    {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
-                  </button>
+                  <div className="flex flex-col gap-1.5">
+                    <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
+                      {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
+                    </button>
+                    {/* Seeing the effect used to mean activating it, walking to
+                        My Garden, and landing a tap the pet cooldown and the
+                        pot/stem router did not swallow — which reads as "some
+                        badges are broken". This plays the same particles right
+                        here, the way the shop previews an item. */}
+                    <button type="button" disabled={!selectedBadgeUnlocked} onClick={() => playReward({ kind: "badges", emoji: selectedBadge.emoji, title: selectedEffect.name[locale], line: copy.fxWhere, particles: selectedEffect.particles })} className="pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45">
+                      ▶ {copy.previewFx}
+                    </button>
+                  </div>
                 </div>
+              )}
+              {selectedEffect && selectedBadgeUnlocked && (
+                <p className="mx-auto mt-2 max-w-sm text-left text-[11px] leading-4" style={{ color: INK_MUTED }}>{copy.fxWhere}</p>
               )}
             </article>
           )}
@@ -885,9 +898,15 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             <div className="pm-story-selected">
               <StoryChapterCard chapter={{ chapter: selectedChapter.chapter, title: selectedChapter.title, description: selectedChapter.description }} unlocked={selectedChapter.unlocked} scene={selectedChapter.scene} locale={locale} />
               {selectedChapter.unlocked && selectedChapter.scene && (
-                <button type="button" className="pm-btn pm-btn-primary pm-story-replay w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: selectedChapter.chapter >= 5 ? "🎆" : "🌱", title: selectedChapter.title, line: selectedChapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? selectedChapter.description, particles: ["✨", "📖", "💚"] })}>
-                  🎬 {copy.replay}
-                </button>
+                <>
+                  <button type="button" className="pm-btn pm-btn-primary pm-story-replay w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: selectedChapter.chapter >= 5 ? "🎆" : "🌱", title: selectedChapter.title, line: selectedChapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? selectedChapter.description, particles: ["✨", "📖", "💚"] })}>
+                    🎬 {copy.replay}
+                  </button>
+                  {/* The button's label alone read as though it might start
+                      something elsewhere in the game. It only replays this
+                      chapter's scene in the panel above. */}
+                  <p className="mt-2 text-[11px] leading-4" style={{ color: INK_MUTED }}>{copy.replayHelp}</p>
+                </>
               )}
             </div>
           )}

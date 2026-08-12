@@ -131,11 +131,18 @@ describe("shared PlantMoji application shell", () => {
     expect(collectionTabs).toMatch(/setTab\(entry\.id\);[\s\S]*?setPreview\(null\);/);
   });
 
-  it("uses one stateful badge action with clear activate and turn-off colors", () => {
+  it("pairs the stateful badge action with a preview that does not change state", () => {
     const collectionTabs = source("src/components/collection-tabs.tsx");
+    // Activate/turn-off stays one button with its two colours.
     expect(collectionTabs).toContain('selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"');
-    expect(collectionTabs).not.toContain('kind: "badges"');
     expect(reactCss).toContain(".pm-btn-danger");
+    // Preview sits beside it. It used to be deliberately absent, on the theory
+    // that one button is clearer; in practice seeing an effect meant walking to
+    // My Garden and landing a tap that the pet cooldown and the pot/stem router
+    // did not swallow, which read as "some badges are broken". The preview
+    // plays the particles in place and touches no state.
+    expect(collectionTabs).toContain('kind: "badges"');
+    expect(collectionTabs).toContain("{copy.previewFx}");
   });
 
   it("presents story chapters as a selectable game journey", () => {

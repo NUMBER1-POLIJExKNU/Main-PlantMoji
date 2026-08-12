@@ -22,6 +22,7 @@ import {
   setDevHeroQuest,
   setDevMood,
   setDevProgress,
+  setDevQuizProgress,
   setDevShopItem,
   type DevQuestStage,
 } from "@/game/dev/dev-mode";
@@ -149,6 +150,14 @@ export async function devSetChapter(_previous: DevActionState, formData: FormDat
   return run(formData, async (supabase) => {
     const chapter = await setDevChapter(supabase, PLANT_ID, Number(formData.get("chapter") ?? 0));
     return `story unlocked through chapter ${chapter}`;
+  });
+}
+
+/** Today's quiz — put the 0/3 chip anywhere in its run without answering. */
+export async function devSetQuiz(_previous: DevActionState, formData: FormData): Promise<DevActionState> {
+  return run(formData, async (supabase) => {
+    const result = await setDevQuizProgress(supabase, PLANT_ID, Number(formData.get("solved") ?? 0));
+    return `today's quiz ${result.solved}/${result.total} solved (${result.quizDate})`;
   });
 }
 

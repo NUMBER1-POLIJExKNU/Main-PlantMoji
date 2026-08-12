@@ -20,6 +20,7 @@ import {
   devSetMood,
   devSetProgress,
   devSetQuest,
+  devSetQuiz,
   devSetShopItem,
   type DevActionState,
 } from "@/app/settings/dev-actions";
@@ -152,6 +153,7 @@ export default function DevModePanel({
   const [moodState, moodAction] = useActionState(devSetMood, INITIAL);
   const [badgeState, badgeAction] = useActionState(devSetBadge, INITIAL);
   const [chapterState, chapterAction] = useActionState(devSetChapter, INITIAL);
+  const [quizState, quizAction] = useActionState(devSetQuiz, INITIAL);
   const [shopState, shopAction] = useActionState(devSetShopItem, INITIAL);
 
   const shopByCategory = ["pot", "decor", "accessory"].map((category) => ({
@@ -278,6 +280,24 @@ export default function DevModePanel({
         <button type="submit" disabled={!code} className={`${BTN} border-zinc-700`}>Apply</button>
       </form>
       <Result state={chapterState} />
+
+      {/* ── Today's quiz ──────────────────────────────────────────── */}
+      <h3 className="pm-heading mt-5 text-[10px]">MY GARDEN · TODAY&apos;S QUIZ</h3>
+      <p className="font-mono text-[10px] text-zinc-500">
+        marks the first N of today&apos;s three questions answered, on the WIB date · xp_awarded stays 0
+        (the real RPC owns quiz XP — set XP above if you want it moved)
+      </p>
+      <form action={quizAction} className="mt-2 flex items-end gap-2">
+        <input type="hidden" name="devCode" value={code} />
+        <input type="hidden" name="locale" value={locale} />
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase">solved today</span>
+          <input type="number" name="solved" min={0} max={3} defaultValue={0} className={FIELD} />
+        </label>
+        <span className="pb-1 font-mono text-[10px] text-zinc-500">/ 3 (0 resets the chip)</span>
+        <button type="submit" disabled={!code} className={`${BTN} border-zinc-700`}>Apply</button>
+      </form>
+      <Result state={quizState} />
 
       {/* ── Shop ──────────────────────────────────────────────────── */}
       <h3 className="pm-heading mt-5 text-[10px]">SHOP · OWNED ITEMS</h3>
