@@ -20,6 +20,7 @@ import { getServerSupabase } from "@/lib/supabase/server";
 import { STREAK_TIMEZONE } from "@/types/game";
 import { toJamkachuMemory, type MemoryEventRow } from "@/lib/jamkachu-memory";
 import { addGrowthRecordFromForm } from "../settings/actions";
+import DeleteGrowthPhotoButton from "@/components/delete-growth-photo-button";
 import "./diary.css";
 
 // Always reflect the latest saved values.
@@ -276,6 +277,9 @@ export default async function DiaryPage() {
                         loading="lazy"
                         className="mt-1 w-full max-w-[240px] rounded-lg border-2 border-[#DCEAD5]"
                       />
+                    )}
+                    {(snapshotUrl || record.photo_url) && (
+                      <DeleteGrowthPhotoButton recordId={record.id} plantId={plant.id} locale={locale} />
                     )}
                     {record.ai_comment && (
                       <span className="italic text-[#57684F]">“{record.ai_comment}”</span>
