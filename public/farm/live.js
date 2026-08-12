@@ -4276,7 +4276,17 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
     const response = await fetch("/api/farmer-chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question, locale: appLocale, demo: window.__pmSupabaseConfigured !== true }),
+      // While the sandbox owns the screen it owns Grandpa's answer too: send
+      // the values the tiles are showing, or he replies about the real row and
+      // contradicts the garden the class is looking at. Only ever sent while
+      // PMCheat is active — normal play posts nothing here and the route falls
+      // straight back to the sensors.
+      body: JSON.stringify({
+        question,
+        locale: appLocale,
+        demo: window.__pmSupabaseConfigured !== true,
+        cheatVitals: window.PMCheat?.isActive() ? window.PMCheat.getState()?.vitals : undefined,
+      }),
       signal: farmerChatController.signal,
     });
     const result = response.ok ? await response.json() : null;
