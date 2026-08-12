@@ -920,11 +920,11 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
 .reno-brand {
   display: flex;
   align-items: center;
-  /* gap:0 pairs with the wordmark's auto inline margins below. Flexbox splits
-     the leftover width evenly on both sides of the wordmark, which centres it
-     between the pot's right edge and the sidebar's right padding edge; a gap
-     would be added to the left side only and pull it off that centre. */
-  gap: 0;
+  /* The pot and the wordmark keep their original 16px apart, and the PAIR is
+     centred in the sidebar. Centring the wordmark on its own (auto margins
+     against gap:0) pulled it away from the pot and broke the lockup. */
+  justify-content: center;
+  gap: 16px;
   padding-bottom: 14px;
   border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
   color: var(--color-forest);
@@ -946,10 +946,6 @@ html[data-theme="night"] .pm-home-quest p { color: var(--color-text); }
 .reno-wordmark {
   width: 96px;
   height: auto;
-  /* Auto margins absorb the row's free space equally on both sides, putting
-     the wordmark at the midpoint between the pot and the sidebar's right
-     padding edge instead of leaving it butted against the pot. */
-  margin-inline: auto;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
 }
@@ -1463,11 +1459,7 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   }
 
   .reno-wordmark {
-    width: 82px;
-    /* The phone header is a 70px bar, not a 240px column: the brand shares its
-       grid cell with the locale switch, so centring the wordmark in the
-       leftover width would drift it away from the pot. Keep them paired. */
-    margin-inline: 0;
+    width: 82px;
   }
 
   .reno-nav-links {

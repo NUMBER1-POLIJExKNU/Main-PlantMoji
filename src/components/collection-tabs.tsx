@@ -234,7 +234,19 @@ const BADGE_WHEEL_BRANCHES = [
   { id: "mastery", color: "#C89BFF", angle: 45, keys: ["PH_GUARDIAN", "MOOD_SCHOLAR", "CARE_VETERAN"] },
   { id: "consistency", color: "#71D18B", angle: 135, keys: ["CHRONICLER", "STREAK_7", "STREAK_30"] },
 ] as const;
-const BADGE_RING_RADII = [18, 31.5, 45] as const;
+/** Ring distances from the hub, as a % of the wheel's width.
+ *
+ *  The outer ring was 45, which put a node's centre 45% out and its own half
+ *  width (~6.9% of the wheel) on top of that — 51.9%, past the 50% edge of a
+ *  circle that clips (overflow-hidden + rounded-full). Measured at a 464px
+ *  wheel the outer gems overhung by 8.6px and were sliced flat.
+ *
+ *  41 is the largest outer ring that still fits once the node's own width and
+ *  the 3px border are counted, at every size the wheel takes: measured margins
+ *  of 9.7px at 464px, 4.5px at 300px, 0.9px at 260px (the node width clamps to
+ *  44px below ~320px, so the tightest case is the narrowest wheel). The inner
+ *  two are scaled by the same 41/45 so the spacing between rings stays even. */
+const BADGE_RING_RADII = [16.5, 28.75, 41] as const;
 
 function badgeWheelMeta(key: string) {
   for (const branch of BADGE_WHEEL_BRANCHES) {
@@ -594,10 +606,21 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         .pm-gem-locked { box-shadow: inset 0 0 0 6px rgba(36,52,33,.08), 0 4px 0 #879481; }
         .pm-wheel-node { position: absolute; width: clamp(44px, 13.75cqw, 66px); transform: translate(-50%, -50%); z-index: 3; }
         .pm-wheel-node .pm-gem-socket { width: 100%; }
+        /* The gem glyph has to scale with its socket, not with the viewport.
+           text-3xl/sm:text-4xl is a fixed 30/36px, and an emoji paints wider
+           than its font-size — measured 49px inside a socket whose inner space
+           is nodeWidth-10, i.e. 34px once the node clamps to 44px. The glyph
+           was being sliced by the socket's own overflow-hidden on any narrow
+           wheel. cqw ties it to the same container the node width uses. */
+        .pm-wheel-node .pm-gem-socket > span { font-size: clamp(22px, 8.6cqw, 40px); }
         .pm-wheel-center { position: absolute; left: 50%; top: 50%; z-index: 4; width: clamp(64px, 20.4cqw, 98px); aspect-ratio: 1; transform: translate(-50%, -50%); }
         .pm-wheel-label { position: absolute; z-index: 2; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .05em; color: #57684F; }
         .pm-badge-effect-icon { display: flex; align-items: center; justify-content: center; gap: 1px; }
-        .pm-badge-effect-icon i { display: block; max-width: 21px; font-style: normal; font-size: 18px; line-height: 1; }
+        /* Two glyphs inside a 48px circle whose inner space is 44px. At 18px
+           they measured 47px together and the pair was clipped by the circle's
+           overflow-hidden — emoji paint wider than their font-size, so the
+           nominal 2x18+1 never told the truth. 15px/18px wide leaves 37px. */
+        .pm-badge-effect-icon i { display: block; max-width: 18px; font-style: normal; font-size: 15px; line-height: 1; }
         @media (max-width: 480px) {
           .pm-badge-effect-row { grid-template-columns: 48px minmax(0,1fr); }
           .pm-badge-effect-row > button { grid-column: 1 / -1; width: 100%; }
