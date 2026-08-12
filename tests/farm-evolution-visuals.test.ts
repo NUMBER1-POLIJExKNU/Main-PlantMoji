@@ -215,4 +215,37 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(live).toContain("STAGE_ORDER[1]");
   });
 
+  // 5167133 deleted public/farm/demo.js — presentation mode — and with it the
+  // only caller of PMFx.evolve (hotkey E). The ceremony stayed fully built and
+  // became unreachable: the one surviving trigger is a real rank increase,
+  // which localStorage's EVO_SEEN_KEY then fires once per cycle+stage. The
+  // demo-controls panel is where demo beats live now.
+  it("the demo-controls panel can replay the ceremony", () => {
+    expect(live).toContain("data-cheat-evolve");
+    expect(live).toMatch(/\[data-cheat-evolve\]"\)\?\.addEventListener\("click", \(\) => \{\s*window\.PMFx\?\.evolve\(\);/);
+    expect(css).toContain("#pm-cheat-panel .pm-cheat-evolve");
+  });
+
+  it("keeps the ceremony button out of trial mode", () => {
+    // Trial mode is the student onboarding game, and its Lv.7 gate is timed to
+    // land on the sprite band change so the unlock and the growth read as one
+    // peak (implementation.md §4.1). A button that replays evolutions on demand
+    // would spend that peak before the gate reaches it. buildCheatPanel hands
+    // trial mode off to buildTrialPanel BEFORE any of this markup exists, so the
+    // exclusion is structural — assert that order, not a second condition.
+    const build = live.slice(live.indexOf("function buildCheatPanel"));
+    const trialHandoff = build.indexOf("buildTrialPanel(");
+    const evolveMarkup = build.indexOf("data-cheat-evolve");
+    expect(trialHandoff).toBeGreaterThan(-1);
+    expect(evolveMarkup).toBeGreaterThan(-1);
+    expect(trialHandoff).toBeLessThan(evolveMarkup);
+    expect(build.slice(0, trialHandoff)).toContain("if (isTrialMode())");
+  });
+
+  it("labels the ceremony button in both locales", () => {
+    for (const key of ["evolveTitle", "evolveBtn", "evolveHint"]) {
+      expect(live.split(`${key}:`).length - 1).toBe(2); // id + en
+    }
+  });
+
 });
