@@ -3949,11 +3949,20 @@ function wakeFarmerAtNight() {
   farmerNightSleepTimer = null;
   const wasSleeping = !farmer.classList.contains("npc-night-awake");
   const rect = farmer.getBoundingClientRect();
+  const ground = farmerGround();
   document.body?.classList.add("farmer-night-awake");
   farmer.classList.add("npc-night-awake");
   if (wasSleeping) {
-    farmer.style.left = `${rect.left}px`;
-    farmer.style.top = `${rect.top}px`;
+    // `rect` belongs to the rotated, scaled sleeping sprite. Reusing its top
+    // after removing that transform stands the upright farmer at mattress
+    // height, where he appears to float. Keep his horizontal bed position,
+    // but put his feet on the measured grass floor when he wakes.
+    const uprightWidth = farmer.offsetWidth || 48;
+    const wakeLeft = ground
+      ? Math.max(ground.left, Math.min(ground.right, rect.left + rect.width / 2 - uprightWidth / 2))
+      : rect.left;
+    farmer.style.left = `${wakeLeft}px`;
+    farmer.style.top = `${ground?.top ?? rect.top}px`;
     farmer.style.transform = "none";
     setFarmerFacing(1);
   }
