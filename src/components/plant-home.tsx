@@ -14,8 +14,7 @@ import Mascot from "@/components/mascot";
 import HomeEnvironmentGlance from "@/components/home-environment-glance";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 import type { AppLocale } from "@/lib/i18n";
-import IntelligenceConsole, { TypewriterText } from "@/components/intelligence-console";
-import { useSearchParams } from "next/navigation";
+import { TypewriterText } from "@/components/intelligence-console";
 import FarmerNpc from "@/components/farmer-npc";
 import WhatNow from "@/components/what-now";
 
@@ -80,8 +79,6 @@ export default function PlantHome({
   initialSnapshot: SensorSnapshot | null;
   locale: AppLocale;
 }) {
-  const searchParams = useSearchParams();
-  const presentationMode = searchParams.has("presentation");
   const [plant, setPlant] = useState(initialPlant);
   const [bond, setBond] = useState(initialBond);
   const [quest, setQuest] = useState(initialQuest);
@@ -235,10 +232,6 @@ export default function PlantHome({
     plant.current_state === initialPlant.current_state && initialMoodMessage
       ? initialMoodMessage
       : getMoodMessage(personality, plant.current_state);
-  const changedAt =
-    mounted && plant.state_changed_at && Date.parse(plant.state_changed_at) > 0
-      ? new Date(plant.state_changed_at).toLocaleTimeString()
-      : null;
   const jemberTime = nowMs === null ? "--:--" : new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date(nowMs));
   const jemberHour = nowMs === null ? 12 : Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date(nowMs)));
 
@@ -302,14 +295,10 @@ export default function PlantHome({
 
           <HomeQuestCard quest={questCardProps(quest, nowMs)} locale={locale} />
           <WhatNow locale={locale} mood={plant.current_state} questStatus={quest?.status} />
-          {presentationMode && quest?.status === "VERIFYING" && <div className="w-full"><IntelligenceConsole title="CARE VERIFICATION CORE" running lines={[
-            { label: "SENSOR EVIDENCE", value: "OBSERVING", tone: "warn" },
-            { label: "QUEST RULE", value: "DETERMINISTIC", tone: "ok" },
-            { label: "STABILITY WINDOW", value: "IN PROGRESS" },
-            { label: "XP TRANSACTION", value: "LOCKED UNTIL VERIFIED", tone: "warn" },
-          ]} /></div>}
-
-          {presentationMode && changedAt && <span className="pm-grass-text text-xs">state changed {changedAt}</span>}
+          {/* The presenter-only verification console and "state changed"
+              timestamp lived here. Both were engineering vocabulary the farm
+              home's text diet bans from player UI, so they left with the
+              presentation mode rather than becoming always-on. */}
         </div>
       </div>
     </main>

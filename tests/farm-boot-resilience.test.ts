@@ -189,7 +189,6 @@ describe("index.html: classic scripts fetch in parallel via defer, order preserv
     "/farm/companion-ladder.js",
     "/farm/companion-skins.js",
     "/farm/sfx.js",
-    "/farm/demo.js",
     "/farm/quiz.js",
     "/farm/vendor/supabase.js",
   ];
@@ -198,7 +197,7 @@ describe("index.html: classic scripts fetch in parallel via defer, order preserv
     expect(html).toContain(`<script defer src="${src}"></script>`);
   });
 
-  it("keeps all 9 in their original relative document order, still before the live.js module", () => {
+  it("keeps all 8 in their original relative document order, still before the live.js module", () => {
     let lastIndex = -1;
     for (const src of DEFERRED_SRCS) {
       const at = html.indexOf(`<script defer src="${src}"></script>`);

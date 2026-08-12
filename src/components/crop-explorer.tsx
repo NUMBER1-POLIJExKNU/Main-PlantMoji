@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import IntelligenceConsole, { TypewriterText, type IntelligenceLine } from "@/components/intelligence-console";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import type { EnvironmentAnalysis } from "@/lib/environment-analyzer";
@@ -47,8 +46,6 @@ function formatExplanation(text: string) {
 
 export default function CropExplorer({ locale, initialSnapshot, initialCrops, initialResults, initialDemoPreset = null }: { locale: AppLocale; initialSnapshot: SensorSnapshot | null; initialCrops: ExplorerCrop[]; initialResults: EnvironmentAnalysis[]; initialDemoPreset?: EnvironmentDemoPreset | null }) {
   const c = COPY[locale];
-  const searchParams = useSearchParams();
-  const presentationMode = searchParams.has("presentation") || searchParams.has("demo");
   const [data, setData] = useState<ScanPayload | null>(initialSnapshot && initialCrops.length ? { ok: true, source: initialDemoPreset ? "demo" : "sensor", snapshot: initialSnapshot, crops: initialCrops, results: initialResults } : null);
   const [demoMode, setDemoMode] = useState(initialDemoPreset !== null);
   const [selectedKey, setSelectedKey] = useState(initialResults[0]?.cropKey ?? "");
@@ -128,8 +125,12 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
       {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
       <img {...npcStillImgProps("penjelajah", "68px")} alt={npcNameLabel(locale, "penjelajah")} width={68} height={68} />
     </div><div><p className="pm-crop-step">{c.step1}</p><h2 id="crop-explorer-title" className="pm-heading">{c.title}</h2><p>{c.intro}</p></div><button type="button" className="pm-btn pm-btn-primary pm-crop-scan-button" onClick={scan} disabled={scanning}>{scanning ? c.scanning : data ? c.scanAgain : c.scan}</button></div>
-    {presentationMode && <label className="pm-crop-demo-toggle"><input type="checkbox" checked={demoMode} onChange={(event) => { setDemoMode(event.target.checked); setData(null); setError(false); setExplanation(""); }} /> <span>{c.demoMode}</span></label>}
-    {presentationMode && (scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
+    {/* Both rows used to be gated behind the presenter's ?presentation flag.
+        They are honest, player-useful information — the fallback for a
+        disconnected sensor, and which layer decided what — so with the
+        presentation mode gone they simply always render. */}
+    <label className="pm-crop-demo-toggle"><input type="checkbox" checked={demoMode} onChange={(event) => { setDemoMode(event.target.checked); setData(null); setError(false); setExplanation(""); }} /> <span>{c.demoMode}</span></label>
+    {(scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
     {error && <p role="alert" className="mt-4 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] p-3 text-sm">{c.noData}</p>}
     {data && !scanning && <div className="pm-crop-results"><div className="pm-crop-snapshot-head"><strong>✅ {c.ready}</strong>{data.source === "demo" && <b>{c.demoBadge}</b>}</div><div className="pm-crop-snapshot">{Object.entries(PARAMS).map(([key, p]) => { const value = key === "airHumidity" ? data.snapshot.humidity : data.snapshot[key as "temperature" | "light" | "soilPh"]; return <span key={key}><i>{p[0]}</i><small>{locale === "id" ? p[1] : p[2]}</small><strong>{valueWithUnit(key as keyof typeof PARAMS, value ?? null)}</strong></span>; })}</div>
       <div className="pm-crop-section-head"><p className="pm-crop-step">{c.step2}</p><h3>{c.matches}</h3></div><div className="pm-crop-rank-grid">{data.results.map((item, index) => <button type="button" key={item.cropKey} onClick={() => chooseCrop(item.cropKey)} aria-pressed={selected?.cropKey === item.cropKey} className={selected?.cropKey === item.cropKey ? "is-selected" : ""}><span className="pm-crop-rank">#{index + 1}</span><strong>{item.cropName}</strong><span className="pm-crop-score"><b>{item.matchedConditions}/{item.evaluatedConditions}</b> {c.measured}</span><span className="pm-crop-label">{item.label === "excellent" ? c.excellent : item.label === "good" ? c.good : item.label === "partial" ? c.partial : item.label === "challenging" ? c.challenging : c.notEnough}</span>{item.largestMismatch && <small>{c.mainMismatch}: {locale === "id" ? PARAMS[item.largestMismatch.parameter][1] : PARAMS[item.largestMismatch.parameter][2]} {item.largestMismatch.direction === "high" ? "↑" : "↓"}</small>}{selected?.cropKey === item.cropKey && <i className="pm-crop-selected">✓ {c.selected}</i>}</button>)}</div>

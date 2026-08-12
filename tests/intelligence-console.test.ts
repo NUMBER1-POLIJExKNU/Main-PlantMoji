@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-describe("broadcast intelligence presentation", () => {
+// Named for the removed broadcast overlay; what remains is the intelligence
+// console and the honesty rules about which layer produced which answer.
+describe("intelligence console honesty", () => {
   it("uses one reusable console and accessible skippable typewriter", () => {
     const component = read("src/components/intelligence-console.tsx");
     expect(component).toContain("prefers-reduced-motion: reduce");
@@ -27,14 +29,6 @@ describe("broadcast intelligence presentation", () => {
     expect(camera).not.toContain('REWARD CONTROL');
   });
 
-  it("provides honest boot, ending, and fullscreen staging", () => {
-    const overlay = read("src/components/broadcast-overlay.tsx");
-    const demo = read("public/farm/demo.js");
-    expect(overlay).toContain("SAFE AI FALLBACK");
-    expect(overlay).toContain("SENSE · UNDERSTAND · ACT");
-    expect(demo).toContain("toggleFullscreen");
-    expect(demo).toContain('case "x"');
-  });
 
   it("keeps the ops-console vocabulary OFF the player-facing farm home", () => {
     // Farm-wave text diet: the CARE VERIFICATION CORE console was removed —

@@ -160,8 +160,10 @@
 
             <!-- Weather stays as ambient chrome, top-right -->
             <div class="hud-top">
+                <!-- No sun/moon glyph here: it sat one card away from the
+                     weather widget's own icon and read as a second, disagreeing
+                     forecast. The time is the whole point of this card. -->
                 <div class="jember-clock panel-glass" role="timer" aria-live="off">
-                    <span id="jember-clock-icon" class="jember-clock-icon" aria-hidden="true">☀️</span>
                     <span class="jember-clock-copy">
                         <small data-i18n="clock.label">WAKTU JEMBER · WIB</small>
                         <strong id="jember-clock-time">--:--</strong>
@@ -555,14 +557,14 @@
          live.js main()'s sandbox branch is unreachable on the main demo
          screen. Classic script (not a module) so it runs before live.js. -->
     <!-- defer (not blocking, boot-resilience fix): lets the browser fetch
-         all 9 classic scripts below in parallel instead of one at a time
+         all 8 classic scripts below in parallel instead of one at a time
          (fetch → execute → fetch → execute…), while still guaranteeing they
          run in this SAME document order, before live.js. Deferred classic
          scripts and the live.js module (type=module without async is
          deferred by default) share one execution queue ordered by document
          position, so seen.js/strings.js still finish before live.js's
-         main() needs them — verified: none of these nine do document.write
-         or need to run mid-parse; sfx.js/demo.js/cheat.js each only wire a
+         main() needs them — verified: none of these eight do document.write
+         or need to run mid-parse; sfx.js/cheat.js each only wire a
          DOMContentLoaded listener, which still fires after every deferred
          script has run. -->
     <script defer src="/farm/cheat.js"></script>
@@ -580,7 +582,6 @@
          as the other classic scripts here). -->
     <script defer src="/farm/jamkachu-sprite.js"></script>
     <script defer src="/farm/sfx.js"></script>
-    <script defer src="/farm/demo.js"></script>
     <script defer src="/farm/quiz.js"></script>
     <!-- Vendored @supabase/supabase-js UMD build (matches package.json's
          pinned version) — loads window.supabase.createClient synchronously

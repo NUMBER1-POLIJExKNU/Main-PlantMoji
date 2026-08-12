@@ -10,13 +10,9 @@
 // the same way a user would write a new line in a paper growth journal.
 
 import { revalidatePath } from "next/cache";
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
-import { applyDemoMaxState } from "@/game/demo/demo-max";
-import { resetDemoProgress } from "@/game/demo/demo-reset";
-import { advanceDemoCompanion, awardDemoLevelUp, prepareNextLevelDemo } from "@/game/demo/presenter";
+import { randomUUID } from "node:crypto";
 import { getLatestSensorSnapshot } from "@/lib/crop-profile-data";
 import { parseGrowthInput } from "@/lib/growth";
-import { companionStageLabel, normalizeLocale, type AppLocale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { generatePhotoComment } from "@/lib/photo-comment";
 import { normalizeGrowthStage } from "@/lib/queries";
@@ -28,82 +24,7 @@ import {
   isoWeekString,
 } from "@/game/progression/bonus-xp";
 import { awardXp } from "@/game/progression/xp-engine";
-import { COMPANION_STAGES, normalizePersonality } from "@/types/game";
-
-export interface DemoActionState {
-  status: "idle" | "success" | "error";
-  message: string;
-}
-
-function matchesDemoCode(submitted: string, configured: string): boolean {
-  const submittedHash = createHash("sha256").update(submitted).digest();
-  const configuredHash = createHash("sha256").update(configured).digest();
-  return timingSafeEqual(submittedHash, configuredHash);
-}
-
-function demoLocale(formData: FormData): AppLocale {
-  return normalizeLocale(formData.get("locale"));
-}
-
-/** Team-internal presenter gate: explicit project policy keeps rehearsals
- * zero-friction unless DEMO_CHEAT_CODE overrides the default. */
-function configuredDemoCode(): string {
-  return process.env.DEMO_CHEAT_CODE?.trim() || "admin";
-}
-
-function validateDemoCode(formData: FormData, locale: AppLocale): string | DemoActionState {
-  const configuredCode = configuredDemoCode();
-  const rawCode = formData.get("demoCode");
-  const submittedCode = typeof rawCode === "string" ? rawCode.trim() : "";
-  if (!submittedCode || !matchesDemoCode(submittedCode, configuredCode)) {
-    return {
-      status: "error",
-      message: locale === "id" ? "Kode demo tidak cocok." : "That demo code is not correct.",
-    };
-  }
-  return submittedCode;
-}
-
-async function runPresenterAction(formData: FormData, operation: "prepare" | "level" | "evolve"): Promise<DemoActionState> {
-  const locale = demoLocale(formData);
-  const validation = validateDemoCode(formData, locale);
-  if (typeof validation !== "string") return validation;
-  const supabase = getServerSupabase();
-  if (!supabase) return { status: "error", message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured." };
-  try {
-    if (operation === "prepare") {
-      const result = await prepareNextLevelDemo(supabase, "plant-01");
-      revalidateDemoRoutes();
-      return { status: "success", message: locale === "id" ? `Siap: Lv.${result.level}, ${result.totalXp} XP. Tinggal +1 XP!` : `Ready: Lv.${result.level}, ${result.totalXp} XP. Just +1 XP to go!` };
-    }
-    if (operation === "level") {
-      const result = await awardDemoLevelUp(supabase, "plant-01", `presenter:${randomUUID()}`);
-      revalidateDemoRoutes();
-      return { status: "success", message: locale === "id" ? `Sekarang Lv.${result.bondLevel} · ${result.totalXp} XP.` : `Now Lv.${result.bondLevel} · ${result.totalXp} XP.` };
-    }
-    const result = await advanceDemoCompanion(supabase, "plant-01");
-    revalidateDemoRoutes();
-    // Top of the 10-stage ladder, localized — never a hardcoded stage name.
-    const topStage = companionStageLabel(locale, COMPANION_STAGES[COMPANION_STAGES.length - 1]);
-    return { status: "success", message: result.evolved ? (locale === "id" ? `${companionStageLabel(locale, result.fromStage)} berevolusi menjadi ${companionStageLabel(locale, result.stage)}!` : `${companionStageLabel(locale, result.fromStage)} evolved into ${companionStageLabel(locale, result.stage)}!`) : (locale === "id" ? `Jamkachu sudah mencapai ${topStage}.` : `Jamkachu is already at ${topStage}.`) };
-  } catch (cause) {
-    console.error(`demo presenter ${operation} failed:`, cause);
-    return { status: "error", message: locale === "id" ? "Aksi demo gagal. Periksa migrasi Supabase." : "Demo action failed. Check the Supabase migrations." };
-  }
-}
-
-export async function prepareDemoLevelUp(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "prepare"); }
-export async function grantDemoXp(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "level"); }
-export async function evolveDemoCompanion(_previousState: DemoActionState, formData: FormData) { return runPresenterAction(formData, "evolve"); }
-
-function revalidateDemoRoutes() {
-  revalidatePath("/");
-  revalidatePath("/settings");
-  revalidatePath("/quests");
-  revalidatePath("/collection");
-  revalidatePath("/reports");
-  revalidatePath("/plants");
-}
+import { normalizePersonality } from "@/types/game";
 
 /**
  * Validates and persists the plant's editable settings (name, personality,
@@ -334,87 +255,4 @@ function isMissingAiCommentColumn(error: { code?: string; message: string }): bo
     isMissingColumnError(error) ||
     /ai_comment/i.test(error.message)
   );
-}
-
-/**
- * Presentation-only max unlock. The code is configured server-side and is
- * never shipped to the browser bundle. It changes game/collection progress,
- * but never sensor truth, crop thresholds, or hardware control.
- */
-export async function activateDemoMaxMode(
-  _previousState: DemoActionState,
-  formData: FormData,
-): Promise<DemoActionState> {
-  const locale = demoLocale(formData);
-  const validation = validateDemoCode(formData, locale);
-  if (typeof validation !== "string") return validation;
-
-  const supabase = getServerSupabase();
-  if (!supabase) {
-    return {
-      status: "error",
-      message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured.",
-    };
-  }
-
-  try {
-    const result = await applyDemoMaxState(supabase, "plant-01");
-    revalidateDemoRoutes();
-
-    return {
-      status: "success",
-      message:
-        locale === "id"
-          ? `Mode maksimal aktif! Lv.${result.level} · ${result.moods} suasana · ${result.badges} lencana · ${result.chapters} cerita terbuka.`
-          : `Max mode on! Lv.${result.level} · ${result.moods} moods · ${result.badges} badges · ${result.chapters} stories unlocked.`,
-    };
-  } catch (cause) {
-    console.error("activateDemoMaxMode failed:", cause);
-    return {
-      status: "error",
-      message:
-        locale === "id"
-          ? "Gagal membuka semuanya. Periksa migrasi Supabase lalu coba lagi."
-          : "Max unlock failed. Check the Supabase migrations, then try again.",
-    };
-  }
-}
-
-/** Restores the presentation storyline to its beginning with the same code. */
-export async function resetDemoMode(
-  _previousState: DemoActionState,
-  formData: FormData,
-): Promise<DemoActionState> {
-  const locale = demoLocale(formData);
-  const validation = validateDemoCode(formData, locale);
-  if (typeof validation !== "string") return validation;
-
-  const supabase = getServerSupabase();
-  if (!supabase) {
-    return {
-      status: "error",
-      message: locale === "id" ? "Supabase belum dikonfigurasi." : "Supabase is not configured.",
-    };
-  }
-
-  try {
-    await resetDemoProgress(supabase, "plant-01");
-    revalidateDemoRoutes();
-    return {
-      status: "success",
-      message:
-        locale === "id"
-          ? "Demo kembali ke awal: Lv.1, 0 XP, tanpa lencana atau riwayat misi."
-          : "Demo reset to the beginning: Lv.1, 0 XP, with no badges or quest history.",
-    };
-  } catch (cause) {
-    console.error("resetDemoMode failed:", cause);
-    return {
-      status: "error",
-      message:
-        locale === "id"
-          ? "Gagal mengatur ulang demo. Periksa migrasi Supabase lalu coba lagi."
-          : "Demo reset failed. Check the Supabase migrations, then try again.",
-    };
-  }
 }

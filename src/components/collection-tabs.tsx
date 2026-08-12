@@ -610,14 +610,23 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 setPreview(null);
                 window.PMSfx?.play("tick");
               }}
-              className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"
+              // justify-center + the uneven pt-4/pb-2: the pixel label's line
+              // box is 25.6px tall for one 9px line, so ~7px of invisible
+              // leading sits under the glyphs while the icon had only 8px
+              // above it — the visible block landed 3.6px high and the icon
+              // read as stuck to the top edge. The extra top padding balances
+              // that leading instead of squeezing the label, so the text keeps
+              // exactly its current spacing. justify-center then holds the
+              // centering when a row stretches (a label wrapping on narrow
+              // screens used to top-align its three neighbours).
+              className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 pt-4 pb-2 text-[8px] transition-all sm:text-[9px]"
               style={
                 active
                   ? { background: "var(--color-grass)", color: "#ffffff", boxShadow: "0 3px 0 var(--color-forest)" }
                   : { color: "var(--color-text)" }
               }
             >
-              <span className="text-base leading-none" role="img" aria-hidden="true">
+              <span className="text-xl leading-none" role="img" aria-hidden="true">
                 {entry.emoji}
               </span>
               {copy[entry.id]}

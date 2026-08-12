@@ -73,9 +73,4 @@ describe("CAMERA_COPY (Live Guardian)", () => {
     expect(guardian).toContain("pm-cam-result");
   });
 
-  it("raises camera-facing status type in presentation mode", () => {
-    expect(guardian).toContain('presentationMode ? " is-presentation"');
-    expect(cameraCss).toContain(".pm-cam.is-presentation .pm-cam-chip{font-size:16px}");
-    expect(cameraCss).toContain(".pm-cam.is-presentation .pm-cam-result strong{font-size:20px}");
-  });
 });

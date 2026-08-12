@@ -5478,14 +5478,12 @@ function wibNow() {
 function renderJemberClock() {
   const now = wibNow();
   const time = $("#jember-clock-time");
-  const icon = $("#jember-clock-icon");
   if (!time) return;
   if (!now) {
     time.textContent = "--:--";
     return;
   }
   time.textContent = `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`;
-  if (icon) icon.textContent = now.hour >= 18 || now.hour < 6 ? "🌙" : "☀️";
 }
 
 renderJemberClock();

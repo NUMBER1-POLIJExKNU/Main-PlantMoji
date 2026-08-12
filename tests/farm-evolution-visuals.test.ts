@@ -14,7 +14,6 @@ import { COMPANION_STAGES } from "@/types/game";
 
 const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
-const demo = readFileSync(resolve(process.cwd(), "public/farm/demo.js"), "utf8");
 const spriteJs = readFileSync(resolve(process.cwd(), "public/farm/jamkachu-sprite.js"), "utf8");
 
 const FORM_KEYS = ["cool", "air", "light", "soil", "steady", "balanced"] as const;
@@ -216,11 +215,4 @@ describe("evolution ceremony trigger + sequencer", () => {
     expect(live).toContain("STAGE_ORDER[1]");
   });
 
-  it("demo.js keeps the E hotkey + QA row for the ceremony", () => {
-    expect(demo).toContain('case "e":');
-    expect(demo).toContain('case "E":');
-    expect(demo).toContain('fireFx("evolve")');
-    expect(demo).toContain('typeof window.PMFx?.evolve === "function"');
-    expect(demo).toMatch(/\["E", "evolution ceremony[^"]*"\]/);
-  });
 });
