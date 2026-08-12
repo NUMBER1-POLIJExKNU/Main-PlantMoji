@@ -21,6 +21,7 @@ import {
   streakMilestoneRewardKey,
 } from "@/game/progression/bonus-xp";
 import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
+import { dailyQuiz, wibDate } from "@/game/quiz/daily-quiz";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { PLANT_MOODS, type PlantMood } from "@/types/events";
 import { BADGE_KEYS, MAX_BOND_LEVEL, levelForXp, type BadgeKey, type QuestKey } from "@/types/game";
@@ -226,6 +227,57 @@ export async function setDevChapter(
     )).error,
   );
   return clamped;
+}
+
+// ── Today's quiz: how many of the three are already answered ────────────
+
+/** Today's quiz is three questions on the WIB date, keyed per round. This
+ *  marks the first `solved` of them complete and clears the rest, so the
+ *  chip on My Garden can be put at any point of its 0/3 → 3/3 run without
+ *  answering through the modal each time.
+ *
+ *  xp_awarded stays 0 on every row it writes. The real flow awards XP through
+ *  the answer_daily_quiz RPC, and fabricating it here would put the quiz's
+ *  ledger out of step with bond_state — set XP directly in the field above if
+ *  that is what you want. */
+export async function setDevQuizProgress(
+  supabase: SupabaseClient,
+  plantId: string,
+  solved: number,
+  now: Date = new Date(),
+): Promise<{ solved: number; total: number; quizDate: string }> {
+  const quizDate = wibDate(now);
+  // Locale only affects the displayed wording; the keys are the same either way.
+  const questions = dailyQuiz(plantId, "en", `${quizDate}:round:0`);
+  const clamped = Math.max(0, Math.min(questions.length, Math.round(solved)));
+
+  fail(
+    "quiz clear",
+    (await supabase
+      .from("daily_quiz_attempts")
+      .delete()
+      .eq("plant_id", plantId)
+      .eq("quiz_date", quizDate)
+      .eq("round_no", 0)).error,
+  );
+
+  if (clamped > 0) {
+    fail(
+      "quiz write",
+      (await supabase.from("daily_quiz_attempts").insert(
+        questions.slice(0, clamped).map((question) => ({
+          plant_id: plantId,
+          quiz_date: quizDate,
+          round_no: 0,
+          question_key: question.key,
+          attempts: 1,
+          completed_at: nowIso(now),
+          xp_awarded: 0,
+        })),
+      )).error,
+    );
+  }
+  return { solved: clamped, total: questions.length, quizDate };
 }
 
 // ── Quests: which one is the hero, and how far along ────────────────────

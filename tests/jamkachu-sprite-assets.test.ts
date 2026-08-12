@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import vm from "node:vm";
 import { describe, expect, it } from "vitest";
@@ -67,8 +67,8 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
         }
       }
     }
-    // 4 phases × 6 moods × (1+1+2+3 tiers summed per phase) × 3 scales.
-    expect(checked).toBe((6 + 6 + 12 + 18) * 3);
+    // 4 phases × 2 selectable faces × (1+1+2+3 tiers) × 3 scales.
+    expect(checked).toBe((2 + 2 + 4 + 6) * 3);
   });
 
   it("the driver serves the 4x pack (image-rendering: pixelated does the rest)", () => {
@@ -78,12 +78,15 @@ describe("sprite asset matrix exists on disk (no 404 can ever render)", () => {
   });
 });
 
-describe("full designer pack ships (every delivered file reachable — plan contract)", () => {
-  // 105 plant PNGs (matrix above) + 9 jamkachu GIFs + 24 NPC PNGs
-  // + 7 NPC GIFs = the 145 files the designer delivered, every one asserted
-  // on disk. (The 21 "unwell" frames above are ours, derived from their art
-  // — see scripts/build-unwell-face.mjs — and are covered by the matrix.)
+describe("curated designer pack ships without the retired gloomy face", () => {
   const packFile = (rel: string) => resolve(process.cwd(), "public/farm/assets", rel);
+
+  it("physically removes the downturned care-face exports", () => {
+    for (const scale of SCALES) {
+      const files = readdirSync(packFile(`jamkachu/${scale}`));
+      expect(files.some((file) => /-(?:unwell|thirsty)(?:-|\.)/.test(file))).toBe(false);
+    }
+  });
 
   it("ships both growth strips and the moods strip across all three tiers", () => {
     const gifs = ["growth-happy", "growth-plain", "moods-p4"].flatMap((base) =>
@@ -155,12 +158,12 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     expect(tables.MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "sleepy",
-      DryAir: "unwell",
-      HumidAir: "unwell",
-      Sleepy: "sleepy",
-      SoilAcidic: "unwell",
-      SoilAlkaline: "unwell",
+      TooCold: "happy",
+      DryAir: "happy",
+      HumidAir: "happy",
+      Sleepy: "happy",
+      SoilAcidic: "happy",
+      SoilAlkaline: "happy",
     });
     // Moods that share a drawn face stay distinguishable via the chip
     // (aria-hidden; #char-mood text remains the accessible signal).
@@ -177,8 +180,9 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
     for (const mood of Object.keys(tables.MOOD_STATUS_CHIP)) {
       expect(bodyCounts[tables.MOOD_SPRITE[mood]], `${mood} chips but has its own face`).toBeGreaterThan(1);
     }
-    // Night sleep forces the sleepy body (sleepShown → sleeping: true).
-    expect(spriteJs).toMatch(/if \(state\.sleeping\) return "sleepy";/);
+    // Night sleep uses the smiling frame instead of the startled O-mouth.
+    expect(spriteJs).toMatch(/if \(state\.sleeping\) return "happy";/);
+    expect(spriteJs).toContain('chipEl.textContent = "💤"');
   });
 
   it("bond→tier thresholds sit at the band starts and clamp by phase", () => {
@@ -217,10 +221,15 @@ describe("decided mapping tables (plan 2026-08-11 — do not redesign)", () => {
 describe("driver wiring (index.html + live.js hooks)", () => {
   const html = readFileSync(resolve(process.cwd(), "public/farm/index.html"), "utf8");
   const live = readFileSync(resolve(process.cwd(), "public/farm/live.js"), "utf8");
+  const css = readFileSync(resolve(process.cwd(), "public/farm/style.css"), "utf8");
 
   it("index.html carries the sprite img + chip and loads the driver before live.js", () => {
     expect(html).toContain('<img id="jamkachu-sprite" alt=""');
-    expect(html).toContain('<span id="mood-status-chip" aria-hidden="true">');
+    expect(html).toContain('id="mood-thought-bubble"');
+    expect(html).toContain('<span id="mood-status-chip"></span>');
+    expect(css).toContain(".mood-thought-bubble::before");
+    expect(css).toContain(".mood-thought-bubble::after");
+    expect(spriteJs).toContain('chipBubbleEl.hidden = !chipKey');
     const driverIdx = html.indexOf('<script defer src="/farm/jamkachu-sprite.js">');
     const liveIdx = html.indexOf('<script type="module" src="/farm/live.js">');
     expect(driverIdx).toBeGreaterThan(-1);

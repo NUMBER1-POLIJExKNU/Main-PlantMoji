@@ -7,7 +7,7 @@ const live = readFileSync("public/farm/live.js", "utf8");
 
 describe("My Garden adventure HUD", () => {
   it("keeps every realtime/game anchor while adding a readable hierarchy", () => {
-    for (const id of ["current-quest", "cq-name", "cq-progress", "care-action", "env-temp", "env-hum", "env-light", "env-ph", "hp-inline"]) {
+    for (const id of ["current-quest", "cq-name", "cq-progress", "env-temp", "env-hum", "env-light", "env-ph", "hp-inline"]) {
       expect(html).toContain(`id="${id}"`);
     }
     for (const key of ["hud.status", "hud.mission", "hud.bonus"]) {
@@ -22,19 +22,14 @@ describe("My Garden adventure HUD", () => {
     expect(css).toContain("body.night #current-quest");
   });
 
-  it("puts one care decision before progression and bonus content", () => {
+  it("removes the RIGHT NOW card while preserving quest, sensors, and bonus order", () => {
     for (const id of ["care-focus", "care-focus-title", "care-focus-summary", "care-proof-note"]) {
-      expect(html).toContain(`id="${id}"`);
+      expect(html).not.toContain(`id="${id}"`);
     }
-    expect(html.indexOf('id="care-focus"')).toBeLessThan(html.indexOf('id="current-quest"'));
+    expect(html).not.toContain('id="care-action"');
     expect(html.indexOf('id="current-quest"')).toBeLessThan(html.indexOf('id="env-strip"'));
     expect(html.indexOf('id="env-strip"')).toBeLessThan(html.indexOf('id="daily-quiz-open"'));
-    // The bond/XP panel left this stack for the headroom above Jamkachu, so
-    // the decision-first order above is now care → quest → sensors → bonus.
-    // Its own placement is pinned in the status-panel test below.
     expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.home-stack \{ display:contents; \}/);
-    expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.care-focus \{ order:1;/);
-    expect(css).toContain("width:calc(100vw - 28px)");
     expect(css).toMatch(/@media \(max-width: 800px\)[\s\S]*?\.mascot-stage \{ order:2; \}/);
   });
 
@@ -59,17 +54,8 @@ describe("My Garden adventure HUD", () => {
     expect(css).toContain(".mascot-container > .user-gamification .xp-bar-wrap { width: 150px; }");
   });
 
-  it("explains the physical-care loop with four honest UI states", () => {
-    for (const state of ["waiting", "healthy", "action", "verifying"]) {
-      expect(live).toContain(`renderCareFocus("${state}")`);
-      expect(css).toContain(`.care-focus[data-care-state="${state}"]`);
-    }
-    for (const step of ["sense", "act", "verify"]) {
-      expect(html).toContain(`data-care-step="${step}"`);
-    }
-    expect(html).toContain('aria-live="polite"');
-    expect(live).toContain('"focus.proof"');
-    expect(live).toContain('"focus.waiting.action"');
-    expect(live).toContain('careFocusState === "waiting"');
+  it("keeps the dormant care controller safe when its card is absent", () => {
+    expect(live).toContain('const focus = $("#care-focus")');
+    expect(live).toContain("if (!focus) return;");
   });
 });

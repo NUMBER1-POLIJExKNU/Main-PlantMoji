@@ -20,10 +20,13 @@ import {
   devSetMood,
   devSetProgress,
   devSetQuest,
+  devSetQuiz,
   devSetShopItem,
   type DevActionState,
 } from "@/app/settings/dev-actions";
 import { DEV_CODE_STORAGE_KEY } from "@/components/dev-mode-toggle";
+import { xpForLevel } from "@/game/progression/level-bands";
+import { levelForXp } from "@/types/game";
 import "@/lib/pm-cheat"; // window.PMCheat global typing
 import type { AppLocale } from "@/lib/i18n";
 
@@ -111,6 +114,14 @@ export default function DevModePanel({
 }) {
   const router = useRouter();
   const [code, setCode] = useState("");
+  // Level and XP are controlled so typing a level can carry XP with it. Setting
+  // a level alone used to leave total_xp behind, and the two disagreeing is not
+  // a state the game can reach on its own — the bond bar would show a level the
+  // XP does not back. Typing XP directly is still free-form: the exact XP
+  // inside a level matters for testing the bar, so it must stay editable after
+  // the level snaps it to that level's entry value.
+  const [level, setLevel] = useState(snapshot.level);
+  const [totalXp, setTotalXp] = useState(snapshot.totalXp);
   // Carried over from the door on the Settings page so it is not typed twice.
   // Every action still sends it back for a server-side check — arriving here
   // with an empty box (by typing the URL) buys nothing.
@@ -142,6 +153,7 @@ export default function DevModePanel({
   const [moodState, moodAction] = useActionState(devSetMood, INITIAL);
   const [badgeState, badgeAction] = useActionState(devSetBadge, INITIAL);
   const [chapterState, chapterAction] = useActionState(devSetChapter, INITIAL);
+  const [quizState, quizAction] = useActionState(devSetQuiz, INITIAL);
   const [shopState, shopAction] = useActionState(devSetShopItem, INITIAL);
 
   const shopByCategory = ["pot", "decor", "accessory"].map((category) => ({
@@ -174,7 +186,33 @@ export default function DevModePanel({
       <form action={progressAction} className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <input type="hidden" name="devCode" value={code} />
         <input type="hidden" name="locale" value={locale} />
-        {([["level", snapshot.level], ["totalXp", snapshot.totalXp], ["streak", snapshot.streak], ["seeds", snapshot.seeds]] as const).map(([name, value]) => (
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase">level</span>
+          <input
+            type="number"
+            name="level"
+            value={level}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              setLevel(Number.isNaN(next) ? 0 : next);
+              // Entry XP for that level. Blank/NaN is left alone so clearing the
+              // box to retype does not wipe the XP field on the way through.
+              if (!Number.isNaN(next) && event.target.value !== "") setTotalXp(xpForLevel(next));
+            }}
+            className={FIELD}
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase">totalXp</span>
+          <input
+            type="number"
+            name="totalXp"
+            value={totalXp}
+            onChange={(event) => setTotalXp(Number.isNaN(Number(event.target.value)) ? 0 : Number(event.target.value))}
+            className={FIELD}
+          />
+        </label>
+        {([["streak", snapshot.streak], ["seeds", snapshot.seeds]] as const).map(([name, value]) => (
           <label key={name} className="flex flex-col gap-1">
             <span className="text-[10px] font-bold uppercase">{name}</span>
             <input type="number" name={name} defaultValue={value} className={FIELD} />
@@ -183,7 +221,8 @@ export default function DevModePanel({
         <button type="submit" disabled={!code} className={`${BTN} col-span-2 border-zinc-700 sm:col-span-4`}>Save</button>
       </form>
       <p className="mt-1 font-mono text-[10px] text-zinc-500">
-        level implied by XP: {snapshot.levelForXp} (stored level is independent — set both if you want them to agree)
+        level implied by XP: {levelForXp(totalXp)} · stored snapshot: Lv.{snapshot.level} / {snapshot.totalXp} XP.
+        Typing a level fills XP with that level&apos;s entry value ({xpForLevel(level)}); XP stays editable after.
       </p>
       <Result state={progressState} />
 
@@ -241,6 +280,24 @@ export default function DevModePanel({
         <button type="submit" disabled={!code} className={`${BTN} border-zinc-700`}>Apply</button>
       </form>
       <Result state={chapterState} />
+
+      {/* ── Today's quiz ──────────────────────────────────────────── */}
+      <h3 className="pm-heading mt-5 text-[10px]">MY GARDEN · TODAY&apos;S QUIZ</h3>
+      <p className="font-mono text-[10px] text-zinc-500">
+        marks the first N of today&apos;s three questions answered, on the WIB date · xp_awarded stays 0
+        (the real RPC owns quiz XP — set XP above if you want it moved)
+      </p>
+      <form action={quizAction} className="mt-2 flex items-end gap-2">
+        <input type="hidden" name="devCode" value={code} />
+        <input type="hidden" name="locale" value={locale} />
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase">solved today</span>
+          <input type="number" name="solved" min={0} max={3} defaultValue={0} className={FIELD} />
+        </label>
+        <span className="pb-1 font-mono text-[10px] text-zinc-500">/ 3 (0 resets the chip)</span>
+        <button type="submit" disabled={!code} className={`${BTN} border-zinc-700`}>Apply</button>
+      </form>
+      <Result state={quizState} />
 
       {/* ── Shop ──────────────────────────────────────────────────── */}
       <h3 className="pm-heading mt-5 text-[10px]">SHOP · OWNED ITEMS</h3>

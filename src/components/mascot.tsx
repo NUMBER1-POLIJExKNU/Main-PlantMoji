@@ -24,7 +24,7 @@ export default function Mascot({
   bondLevel?: number;
   sleeping?: boolean;
 }) {
-  const chip = sleeping ? undefined : MOOD_STATUS_CHIP[mood];
+  const chip = sleeping ? "💤" : MOOD_STATUS_CHIP[mood];
   return (
     <div
       className={`pm-mascot${stage ? ` pm-mascot-stage pm-stage-${stage.toLowerCase()}` : ""}`}

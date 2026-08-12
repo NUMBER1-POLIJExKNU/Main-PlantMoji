@@ -9,6 +9,8 @@ import type { AppLocale } from "@/lib/i18n";
 
 export interface HomeQuestInfo {
   emoji: string;
+  /** Designer icon; `emoji` is the fallback where none is drawn. */
+  art?: string | null;
   title: string;
   /** Human-facing status, e.g. "Active" or "Verifying". */
   statusLabel: string;
@@ -49,7 +51,8 @@ export default function HomeQuestCard({ quest, locale }: HomeQuestCardProps) {
 
       <div className="mt-2 flex items-center gap-3">
         <span className="text-3xl" role="img" aria-hidden="true">
-          {quest.emoji}
+          {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+          {quest.art ? <img src={quest.art} alt="" className="pm-param-icon" draggable={false} /> : quest.emoji}
         </span>
         <div className="min-w-0">
           <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">{quest.title}</p>

@@ -131,11 +131,18 @@ describe("shared PlantMoji application shell", () => {
     expect(collectionTabs).toMatch(/setTab\(entry\.id\);[\s\S]*?setPreview\(null\);/);
   });
 
-  it("uses one stateful badge action with clear activate and turn-off colors", () => {
+  it("pairs the stateful badge action with a preview that does not change state", () => {
     const collectionTabs = source("src/components/collection-tabs.tsx");
+    // Activate/turn-off stays one button with its two colours.
     expect(collectionTabs).toContain('selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"');
-    expect(collectionTabs).not.toContain('kind: "badges"');
     expect(reactCss).toContain(".pm-btn-danger");
+    // Preview sits beside it. It used to be deliberately absent, on the theory
+    // that one button is clearer; in practice seeing an effect meant walking to
+    // My Garden and landing a tap that the pet cooldown and the pot/stem router
+    // did not swallow, which read as "some badges are broken". The preview
+    // plays the particles in place and touches no state.
+    expect(collectionTabs).toContain('kind: "badges"');
+    expect(collectionTabs).toContain("{copy.previewFx}");
   });
 
   it("presents story chapters as a selectable game journey", () => {
@@ -170,15 +177,15 @@ describe("shared PlantMoji application shell", () => {
     expect(collectionTabs).toContain('moodFlipping.has(mood.mood) ? " pm-badge-flip" : ""');
   });
 
-  it("keeps presenter controls behind the explicit demo settings route", () => {
+  it("keeps developer mode behind the explicit dev settings route", () => {
     const settings = source("src/app/settings/page.tsx");
-    const controls = source("src/components/demo-control-center.tsx");
-    const actions = source("src/app/settings/actions.ts");
-    expect(settings).toContain('params.demo === "1"');
-    // Team-internal project: the demo gate is deliberately zero-friction —
-    // "admin" works everywhere unless DEMO_CHEAT_CODE overrides it.
-    expect(actions).toContain('process.env.DEMO_CHEAT_CODE?.trim() || "admin"');
-    // Developer mode is the other door: same zero-friction stance, its own
+    // The presentation door was removed outright — no entry button, no
+    // ?demo=1 panel, no presenter server actions — so Settings must not grow
+    // one back by accident.
+    expect(settings).not.toContain("params.demo");
+    expect(settings).not.toContain("DemoControlCenter");
+    expect(source("src/app/settings/actions.ts")).not.toContain("DEMO_CHEAT_CODE");
+    // Developer mode is the remaining door: zero-friction stance, its own
     // password. The password is a speed bump — what actually holds is that
     // every action re-checks the code on the server, so reaching the panel by
     // typing the URL gets you nothing.
@@ -208,9 +215,5 @@ describe("shared PlantMoji application shell", () => {
     expect(devPanel).toContain("function leave()");
     expect(devPanel).toContain("sessionStorage.removeItem(DEV_CODE_STORAGE_KEY)");
     expect(devPanel).toContain('router.push("/settings")');
-    expect(controls).toContain("prepareDemoLevelUp");
-    expect(controls).toContain("grantDemoXp");
-    expect(controls).toContain("evolveDemoCompanion");
-    expect(controls).toContain('/plants?demo=hot');
   });
 });

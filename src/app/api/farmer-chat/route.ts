@@ -6,6 +6,7 @@ import { deterministicFarmerReply, farmerFacts, validFarmerReply } from "@/lib/f
 import { normalizeLocale } from "@/lib/i18n";
 import { fetchPlant } from "@/lib/plants";
 import { getServerSupabase } from "@/lib/supabase/server";
+import type { SensorSnapshot } from "@/lib/crop-profiles";
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 12;
@@ -27,6 +28,28 @@ function allowed(request: Request) {
   return window.count <= MAX_REQUESTS;
 }
 
+/** A cheat-panel reading, or null if the field is absent or not a real number.
+ *  Clamped to each sensor's physical range so a hand-edited request cannot
+ *  push the crop evaluator somewhere its thresholds were never written for. */
+function sandboxNumber(value: unknown, min: number, max: number): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.min(max, Math.max(min, value));
+}
+
+/** The four values the classroom sandbox can edit, shaped as a SensorSnapshot.
+ *  Null unless at least one of them arrived — an absent object means "answer
+ *  from the real sensors", which stays the default. */
+function readSandboxVitals(raw: unknown): SensorSnapshot | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const v = raw as Record<string, unknown>;
+  const temperature = sandboxNumber(v.temperature, -20, 60);
+  const humidity = sandboxNumber(v.humidity, 0, 100);
+  const light = sandboxNumber(v.light, 0, 100);
+  const soilPh = sandboxNumber(v.soilPh, 0, 14);
+  if (temperature === null && humidity === null && light === null && soilPh === null) return null;
+  return { temperature, humidity, light, soilPh, recordedAt: null };
+}
+
 export async function POST(request: Request) {
   if (!allowed(request)) return Response.json({ ok: false, error: "rate_limited" }, { status: 429 });
   let body: unknown;
@@ -41,7 +64,17 @@ export async function POST(request: Request) {
   const plant = plantResult?.status === "ok" ? plantResult.plant : null;
   const profile = getCropProfile(plant?.crop_profile_key);
   const supabase = getServerSupabase();
-  const snapshot = demo ? ENVIRONMENT_DEMO_SNAPSHOT : supabase ? await getLatestSensorSnapshot(supabase, "plant-01") : null;
+  // Classroom sandbox: the cheat panel shows values that exist only in the
+  // browser, so a reply built from the REAL row contradicted the screen it was
+  // answering about — the tiles read 38°C while Grandpa said the temperature
+  // was fine. When the sandbox owns the screen it owns this answer too.
+  //
+  // Trusting numbers from the client is safe HERE and nowhere else: this route
+  // writes nothing. It reads them, phrases one sentence, and returns it — no
+  // XP, no quest, no row. Anything that persists still comes from the sensors.
+  const sandboxSnapshot = readSandboxVitals(input.cheatVitals);
+  const snapshot = sandboxSnapshot
+    ?? (demo ? ENVIRONMENT_DEMO_SNAPSHOT : supabase ? await getLatestSensorSnapshot(supabase, "plant-01") : null);
   const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, timeZone: profile.timezone }).format(new Date()));
   const lightingHours = hour >= profile.light.lightingHours.start && hour < profile.light.lightingHours.end;
   const context = {
@@ -55,5 +88,5 @@ export async function POST(request: Request) {
   const fallback = deterministicFarmerReply(question, context);
   const aiReply = await generateFarmerAiReply({ question, verifiedFacts: facts, fallbackAnswer: fallback, locale });
   const reply = aiReply && validFarmerReply(aiReply, facts, locale) ? aiReply : fallback;
-  return Response.json({ ok: true, reply, source: reply === aiReply ? "ai" : "fallback", dataSource: demo ? "demo" : snapshot ? "sensor" : "unavailable" });
+  return Response.json({ ok: true, reply, source: reply === aiReply ? "ai" : "fallback", dataSource: sandboxSnapshot ? "sandbox" : demo ? "demo" : snapshot ? "sensor" : "unavailable" });
 }

@@ -63,7 +63,7 @@ describe("designer icon set", () => {
     // Both surfaces call the exact same renderer; next/image still serves the
     // optimized asset inside that renderer.
     expect(shell).toContain('<DestinationIcon destination={item.key} className="reno-nav-art" size={18} />');
-    expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: null');
+    expect(destinations).toContain('key: "collection", href: "/collection", icon: "💎", art: "/icons/collection.png"');
     // And the board that destination opens onto draws that same entry, instead
     // of an emoji of its own choosing.
     expect(pageHeader).toContain('<DestinationIcon destination={entry.key} className="pm-page-header-art" size={34} />');

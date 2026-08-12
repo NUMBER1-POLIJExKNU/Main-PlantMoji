@@ -286,12 +286,12 @@ const HP_BY_MOOD = {
 // targetMin only on 'maintain' quests — drives the "23/30 min" progress in the
 // home quest slot (renderQuestSlot); recovery quests show a verifying state.
 const QUEST_META = {
-  KEEP_ME_HAPPY: { emoji: "🌱", targetMin: 30 },
-  STAY_COMFY: { emoji: "🛋️", targetMin: 120 },
-  COOL_ME_DOWN: { emoji: "❄️" }, WARM_ME_UP: { emoji: "🧣" },
-  GIVE_ME_MORE_LIGHT: { emoji: "☀️" }, HUMIDIFY_MY_AIR: { emoji: "💦" },
-  DEHUMIDIFY_MY_AIR: { emoji: "🌬️" }, BALANCE_SOIL_ACIDIC: { emoji: "🧪" },
-  BALANCE_SOIL_ALKALINE: { emoji: "🧪" },
+  KEEP_ME_HAPPY: { emoji: "🌱", art: "/icons/quests/keep-me-happy.png", targetMin: 30 },
+  STAY_COMFY: { emoji: "🛋️", art: "/icons/quests/stay-comfy.png", targetMin: 120 },
+  COOL_ME_DOWN: { emoji: "❄️", art: "/icons/quests/cool-me-down.png" }, WARM_ME_UP: { emoji: "🧣", art: "/icons/quests/warm-me-up.png" },
+  GIVE_ME_MORE_LIGHT: { emoji: "☀️", art: "/icons/quests/give-me-more-light.png" }, HUMIDIFY_MY_AIR: { emoji: "💦", art: "/icons/quests/humidify-my-air.png" },
+  DEHUMIDIFY_MY_AIR: { emoji: "🌬️", art: "/icons/quests/dehumidify-my-air.png" }, BALANCE_SOIL_ACIDIC: { emoji: "🧪", art: "/icons/quests/balance-soil-acidic.png" },
+  BALANCE_SOIL_ALKALINE: { emoji: "🧪", art: "/icons/quests/balance-soil-alkaline.png" },
 };
 
 // Mood word + emoji shown under the character name (#char-mood). Words come
@@ -449,14 +449,17 @@ function setMascotMood(state) {
     svg.classList.add(MOOD_FACE[state] ?? "face-happy");
   }
   window.PMSprite?.set({ mood: MOODS[state] ? state : "Happy" });
+  // Mood word goes through the active locale dictionary first; unknown
+  // states fall back to the English word (PM_STRINGS, then local table).
+  const moodWord = COPY[appLocale][`mood.${state}`] ?? PM().moods?.[state] ?? MOOD_WORDS[state] ?? String(state ?? "");
+  const moodEmoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
   const moodEl = $("#char-mood");
-  if (moodEl) {
-    // Mood word goes through the active locale dictionary first; unknown
-    // states fall back to the English word (PM_STRINGS, then local table).
-    const word = COPY[appLocale][`mood.${state}`] ?? PM().moods?.[state] ?? MOOD_WORDS[state] ?? String(state ?? "");
-    const emoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
-    moodEl.textContent = `${word} ${emoji}`;
-  }
+  if (moodEl) moodEl.textContent = `${moodWord} ${moodEmoji}`;
+  // The word inside the thought bubble, under the badge that pictures the same
+  // mood. No emoji here: the badge directly above it already is the picture.
+  // (jamkachu-sprite.js owns the bubble's own hidden state and the badge art.)
+  const moodWordEl = $("#mood-word");
+  if (moodWordEl) moodWordEl.textContent = moodWord;
   applyMoodPulse(state);
   // Contextual care button + night sleep (spec §6.1/§6.2): every mood
   // render re-derives the one safe action and the sleep presentation —
@@ -1840,9 +1843,8 @@ function takeReasonLabel(amount) {
 /** T3 gold "BONUS ×2" stamp: scale-slam + gold confetti + rising arpeggio
  *  + a firm buzz. Pure reveal of a server-granted bonus (spec D2) — the XP
  *  itself was already awarded and is presented by the gold orb cascade.
- *  Read "LUCKY! x2" on a cue named `jackpot` until now: the same slot-machine
- *  framing the evolution banner carried. Only the words and the cue name
- *  changed — the stamp, the confetti and the sound are untouched. */
+ *  The stamp uses plain bonus language; its confetti and sound stay focused
+ *  on the earned reward. */
 function fxLuckyStampNow(done) {
   const layer = ensureFxLayer();
   if (!layer) {
@@ -3393,6 +3395,7 @@ function applyNightUi() {
     document.body?.classList.remove("farmer-night-awake");
     $("#npc-farmer")?.classList.remove("npc-night-awake");
   }
+  if (night) $("#npc-farmer")?.classList.remove("npc-farming");
   const celestial = $(".env-sun");
   if (celestial && now) {
     const hour = now.hour + now.minute / 60;
@@ -3647,6 +3650,7 @@ const FARMER_FIRST_MAX_MS = 15_000;
 const FARMER_AUTO_MIN_MS = 35_000;
 const FARMER_AUTO_MAX_MS = 70_000;
 const FARMER_ACTIVITY_QUIET_MS = 20_000;
+const FARMER_FARMING_MS = 3_600;
 // English fallbacks — PM_STRINGS.farmer carries the localized sets. Both
 // soil moods share the "Soil" family, exactly like the care button.
 const FARMER_FALLBACK = {
@@ -3786,24 +3790,17 @@ function farmerGround() {
 
   // Vertically he must stand ON the grass, so `top` stays measured from it.
   //
-  // Horizontally the grass is NOT a safe lane. From 801px up the game world is
-  // a two-column grid and the grass strip runs under BOTH columns, while the
-  // status cards (.home-stack) sit on top of it. .mascot-stage carries
-  // z-index 5 and .home-stack z-index 10, so the stage becomes its own
-  // stacking context and the farmer's own z-index 15 cannot lift him out of
-  // it — walking right simply made him vanish behind the cards.
-  //
-  // Clamping the lane to the character column keeps him on screen for the
-  // whole lap. Below 801px the stage spans the game world anyway, so this
-  // intersection is a no-op there apart from respecting its padding.
-  const stage = $(".mascot-stage")?.getBoundingClientRect();
-  const laneLeft = Math.max(rect.left, stage ? stage.left : rect.left);
-  const laneRight = Math.min(rect.right, stage ? stage.right : rect.right);
-
-  const left = Math.round(laneLeft + 12);
+  // Horizontally the whole grass strip is his: the status rail (.home-stack)
+  // used to sit ON the grass, and since .mascot-stage is its own stacking
+  // context the farmer's z-index could not lift him over those cards — walking
+  // right made him vanish behind them, so the lane was clamped to the
+  // character column. The rail now ends well above the floor (it carries its
+  // own clamp(44px,8vh,92px) bottom margin), leaving the grass clear across
+  // the full width, so the clamp is gone and he laps the whole garden.
+  const left = Math.round(rect.left + 12);
   return {
     left,
-    right: Math.round(Math.max(left, laneRight - width - 12)),
+    right: Math.round(Math.max(left, rect.right - width - 12)),
     top: Math.round(rect.top - height + 8),
   };
 }
@@ -3835,6 +3832,20 @@ async function farmerWalkTo(x, facing, epoch, duration = 10_000) {
   farmer.classList.remove("npc-walking");
   if (ok) { farmer.style.left = `${x}px`; farmer.style.transform = `scaleX(${facing})`; }
   return ok;
+}
+
+/** A quiet, daytime-only tending beat between walks. The hoe and soil puffs
+ * are CSS art so Tani keeps the same transparent designer sprite; this loop
+ * is decorative and never changes sensor values, inventory, XP, or rewards. */
+async function farmerFarmPlot(epoch) {
+  const farmer = $("#npc-farmer");
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!farmer || reduced || isNightWIB() || document.body?.classList.contains("night")
+    || farmerDrag || epoch !== farmerMotionEpoch) return epoch === farmerMotionEpoch;
+  farmer.classList.add("npc-farming");
+  const completed = await farmerDelay(FARMER_FARMING_MS, epoch);
+  farmer.classList.remove("npc-farming");
+  return completed;
 }
 
 async function farmerFallAndClimb(ground, epoch) {
@@ -3899,7 +3910,9 @@ async function runFarmerMotion() {
     if (!ground) return;
     farmer.style.top = `${ground.top}px`;
     if (!(await farmerWalkTo(ground.right, 1, epoch, 12_000))) return;
-    if (!(await farmerDelay(1800, epoch))) return;
+    if (!(await farmerDelay(700, epoch))) return;
+    if (!(await farmerFarmPlot(epoch))) return;
+    if (!(await farmerDelay(900, epoch))) return;
     if (!(await farmerWalkTo(ground.left, -1, epoch, 14_000))) return;
     if (!(await farmerDelay(600, epoch))) return;
     await farmerFallAndClimb(ground, epoch);
@@ -3911,6 +3924,7 @@ function restartFarmerMotion() {
   farmerMotionEpoch += 1;
   try { farmerMotionAnimation?.cancel(); } catch {}
   farmerMotionAnimation = null;
+  $("#npc-farmer")?.classList.remove("npc-farming");
   $("#npc-farmer-vine")?.classList.remove("is-visible");
   window.setTimeout(() => void runFarmerMotion(), 80);
 }
@@ -3969,7 +3983,7 @@ function startFarmerDrag(event) {
   farmer.style.top = `${rect.top}px`;
   farmer.style.transform = "none";
   setFarmerFacing(1); // carried upright — the grab/landing transforms have no scaleX
-  farmer.classList.remove("npc-walking", "npc-talking");
+  farmer.classList.remove("npc-walking", "npc-talking", "npc-farming");
   // moveFarmerDrag's preventDefault only starts after the 6px slop, so without
   // this the first few pixels of every grab swept a text selection across the
   // name/mood lines behind him and left them highlighted blue.
@@ -4262,7 +4276,17 @@ $("#farmer-chat-form")?.addEventListener("submit", async (event) => {
     const response = await fetch("/api/farmer-chat", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question, locale: appLocale, demo: window.__pmSupabaseConfigured !== true }),
+      // While the sandbox owns the screen it owns Grandpa's answer too: send
+      // the values the tiles are showing, or he replies about the real row and
+      // contradicts the garden the class is looking at. Only ever sent while
+      // PMCheat is active — normal play posts nothing here and the route falls
+      // straight back to the sensors.
+      body: JSON.stringify({
+        question,
+        locale: appLocale,
+        demo: window.__pmSupabaseConfigured !== true,
+        cheatVitals: window.PMCheat?.isActive() ? window.PMCheat.getState()?.vitals : undefined,
+      }),
       signal: farmerChatController.signal,
     });
     const result = response.ok ? await response.json() : null;
@@ -4492,6 +4516,25 @@ const EVO_FALLBACK = {
   finalForm: "FINAL FORM",
 };
 
+/** Every destination rung owns a palette, particle silhouette, and flight
+ * path. The spectacle can stay maximal without replaying the same show nine
+ * times; labels remain ordinary growth language throughout. */
+const EVO_THEMES = Object.freeze({
+  Sprout:   { key: "sprout",   motion: "rise",       a: "#74ef72", b: "#fff27a", c: "#2a9d55", burst: 34 },
+  Seedling: { key: "seedling", motion: "droplets",   a: "#7ee9ff", b: "#dffcff", c: "#36a9e8", burst: 36 },
+  Bud:      { key: "bud",      motion: "spiral",     a: "#db8cff", b: "#fff0a4", c: "#8958d4", burst: 38 },
+  Bloom:    { key: "bloom",    motion: "petals",     a: "#ff7eb6", b: "#fff1d2", c: "#ff4f73", burst: 42 },
+  Fruit:    { key: "fruit",    motion: "cascade",    a: "#ffb13b", b: "#fff18c", c: "#e9543f", burst: 44 },
+  Guardian: { key: "guardian", motion: "shield",     a: "#66e0c2", b: "#eafff8", c: "#237b6d", burst: 46 },
+  Elder:    { key: "elder",    motion: "runes",      a: "#c69cff", b: "#f6e9ff", c: "#6551b8", burst: 48 },
+  Radiant:  { key: "radiant",  motion: "solar",      a: "#fff36a", b: "#ffffff", c: "#ff922e", burst: 52 },
+  Legend:   { key: "legend",   motion: "aurora",     a: "#75f7ff", b: "#fff4a8", c: "#ff69d4", burst: 56 },
+});
+
+function evolutionTheme(stage) {
+  return EVO_THEMES[stage] ?? EVO_THEMES.Sprout;
+}
+
 /** Evolution-ceremony speech-bubble line. Cancels a stale petting-bubble
  *  restore so it can never stomp mid-scene. */
 function speechBubble(text) {
@@ -4512,27 +4555,37 @@ let evoTintEl = null;
 /** Lazily create (or reuse) the fixed radial stage-tint backdrop — a
  *  persistent singleton toggled via its `.on` class, same lazy-singleton
  *  pattern as ensureFxLayer(). */
-function ensureEvoTint() {
+function ensureEvoTint(theme) {
   if (!document.body) return null;
-  if (evoTintEl && evoTintEl.isConnected) return evoTintEl;
-  evoTintEl = document.createElement("div");
-  evoTintEl.className = "evo-tint";
-  evoTintEl.setAttribute("aria-hidden", "true");
-  document.body.appendChild(evoTintEl);
+  if (!evoTintEl || !evoTintEl.isConnected) {
+    evoTintEl = document.createElement("div");
+    evoTintEl.className = "evo-tint";
+    evoTintEl.setAttribute("aria-hidden", "true");
+    document.body.appendChild(evoTintEl);
+  }
+  evoTintEl.style.setProperty("--evo-a", theme.a);
+  evoTintEl.style.setProperty("--evo-b", theme.b);
+  evoTintEl.style.setProperty("--evo-c", theme.c);
   return evoTintEl;
 }
 
 /** Full-screen ceremony HUD. Visual labels stay aria-hidden while a single
  *  polite status node announces only the final result. */
-function createEvolutionHud(oldLabel, newLabel, grand) {
+function createEvolutionHud(oldStage, newStage, grand, theme) {
   if (!document.body) return null;
   const hud = document.createElement("div");
-  hud.className = `evo-ceremony-hud${grand ? " is-grand" : ""}`;
+  hud.className = `evo-ceremony-hud evo-theme-${theme.key}${grand ? " is-grand" : ""}`;
+  hud.style.setProperty("--evo-a", theme.a);
+  hud.style.setProperty("--evo-b", theme.b);
+  hud.style.setProperty("--evo-c", theme.c);
   const kicker = appLocale === "id" ? "LEVEL NAIK" : "LEVEL UP";
   const evolving = appLocale === "id" ? "EVOLUSI DIMULAI" : "EVOLUTION START";
   hud.innerHTML =
+    `<div class="evo-theme-rays" aria-hidden="true">${Array.from({ length: 12 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>` +
+    `<div class="evo-theme-orbit" aria-hidden="true">${Array.from({ length: 8 }, (_, i) => `<i style="--i:${i}"></i>`).join("")}</div>` +
+    `<div class="evo-theme-emblem" aria-hidden="true"></div>` +
     `<div class="evo-ceremony-kicker" aria-hidden="true">${kicker}</div>` +
-    `<div class="evo-ceremony-reel" aria-hidden="true"><span>${oldLabel}</span><b>◆</b><span>${newLabel}</span></div>` +
+    `<div class="evo-ceremony-reel" aria-hidden="true"><span>${localizedStage(oldStage)}</span><b>◆</b><span>${localizedStage(newStage)}</span></div>` +
     `<div class="evo-ceremony-charge" aria-hidden="true">${evolving}</div>` +
     `<div class="evo-ceremony-result" aria-hidden="true"></div>` +
     `<div class="sr-only evo-ceremony-status" role="status" aria-live="polite"></div>`;
@@ -4542,7 +4595,7 @@ function createEvolutionHud(oldLabel, newLabel, grand) {
 
 /** Energy pixels converge on Jamkachu during the riser. They share the
  *  global particle budget and animate only transform/opacity. */
-function spawnEvoChargeOrbs(n) {
+function spawnEvoChargeOrbs(n, theme) {
   if (prefersReducedMotion()) return;
   const layer = ensureFxLayer();
   if (!layer) return;
@@ -4560,6 +4613,8 @@ function spawnEvoChargeOrbs(n) {
     const sy = cy + Math.sin(angle) * distance;
     orb.style.left = `${sx}px`;
     orb.style.top = `${sy}px`;
+    orb.style.setProperty("--evo-a", theme.a);
+    orb.style.setProperty("--evo-b", theme.b);
     layer.appendChild(orb);
     liveParticles++;
     const delay = i * 38;
@@ -4577,16 +4632,107 @@ function spawnEvoChargeOrbs(n) {
   }
 }
 
-function spawnEvoShockwaves(grand) {
+function spawnEvoShockwaves(grand, theme) {
   if (prefersReducedMotion() || !document.body) return;
   const count = grand ? 3 : 2;
   for (let i = 0; i < count; i++) {
     const ring = document.createElement("div");
-    ring.className = "evo-shockwave";
+    ring.className = `evo-shockwave evo-theme-${theme.key}`;
+    ring.style.setProperty("--evo-a", theme.a);
+    ring.style.setProperty("--evo-b", theme.b);
     ring.style.animationDelay = `${i * 110}ms`;
     ring.setAttribute("aria-hidden", "true");
     document.body.appendChild(ring);
     removeLater(ring, 1050 + i * 110);
+  }
+}
+
+/** Nine distinct payoff choreographies. Each path is intentionally legible:
+ * leaves rise, dew arcs down, buds spiral, petals flutter, fruit cascades,
+ * shields lock outward, runes zig-zag, sunlight fires radially, and the final
+ * aurora sweeps upward. No gameplay state is written. */
+function evoBurstPath(motion, angle, distance) {
+  const x = Math.cos(angle) * distance;
+  const y = Math.sin(angle) * distance;
+  const tangentX = -Math.sin(angle) * distance;
+  const tangentY = Math.cos(angle) * distance;
+  const path = {
+    rise: [
+      { transform: "translate(0,20px) rotate(0deg) scale(.25)", opacity: 0 },
+      { transform: `translate(${x * .2}px,${-distance * .55}px) rotate(100deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x * .55}px,${-distance * 1.18}px) rotate(220deg) scale(.65)`, opacity: 0 },
+    ],
+    droplets: [
+      { transform: "translate(0,-10px) scale(.35)", opacity: 0 },
+      { transform: `translate(${x * .48}px,${-distance * .62}px) scale(1.15)`, opacity: 1 },
+      { transform: `translate(${x}px,${Math.abs(y) * .72 + 70}px) scale(.55)`, opacity: 0 },
+    ],
+    spiral: [
+      { transform: "translate(0,0) rotate(0deg) scale(.2)", opacity: 0 },
+      { transform: `translate(${tangentX * .38}px,${tangentY * .38}px) rotate(190deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x}px,${y}px) rotate(520deg) scale(.55)`, opacity: 0 },
+    ],
+    petals: [
+      { transform: "translate(0,-8px) rotate(-25deg) scale(.2)", opacity: 0 },
+      { transform: `translate(${x * .5 + tangentX * .18}px,${y * .42 - 28}px) rotate(55deg) scale(1.15)`, opacity: 1 },
+      { transform: `translate(${x + tangentX * .25}px,${y + 65}px) rotate(175deg) scale(.7)`, opacity: 0 },
+    ],
+    cascade: [
+      { transform: "translate(0,-80px) rotate(0deg) scale(.3)", opacity: 0 },
+      { transform: `translate(${x * .55}px,${-distance * .48}px) rotate(140deg) scale(1.2)`, opacity: 1 },
+      { transform: `translate(${x}px,${Math.abs(y) + 105}px) rotate(310deg) scale(.8)`, opacity: 0 },
+    ],
+    shield: [
+      { transform: "translate(0,0) scale(.1)", opacity: 0 },
+      { transform: `translate(${x * .52}px,${y * .52}px) scale(1.4)`, opacity: 1 },
+      { transform: `translate(${x * .82}px,${y * .82}px) scale(.9)`, opacity: 0 },
+    ],
+    runes: [
+      { transform: "translate(0,0) rotate(0deg) scale(.25)", opacity: 0 },
+      { transform: `translate(${x * .32 + tangentX * .28}px,${y * .32 + tangentY * .28}px) rotate(90deg) scale(1)`, opacity: 1 },
+      { transform: `translate(${x - tangentX * .22}px,${y - tangentY * .22}px) rotate(180deg) scale(.7)`, opacity: 0 },
+    ],
+    solar: [
+      { transform: "translate(0,0) scale(.1)", opacity: 0 },
+      { transform: `translate(${x * .38}px,${y * .38}px) scale(1.5)`, opacity: 1 },
+      { transform: `translate(${x * 1.45}px,${y * 1.45}px) scale(.35)`, opacity: 0 },
+    ],
+    aurora: [
+      { transform: `translate(${tangentX * .18}px,60px) rotate(-20deg) scale(.2)`, opacity: 0 },
+      { transform: `translate(${x * .35 - tangentX * .34}px,${-distance * .48}px) rotate(30deg) scale(1.35)`, opacity: 1 },
+      { transform: `translate(${x * .72 + tangentX * .28}px,${-distance * 1.15}px) rotate(110deg) scale(.6)`, opacity: 0 },
+    ],
+  };
+  return path[motion] ?? path.rise;
+}
+
+function spawnEvoThemeBurst(theme) {
+  if (prefersReducedMotion() || window.matchMedia?.("(max-width: 800px)").matches) return;
+  const layer = ensureFxLayer();
+  if (!layer) return;
+  const rect = mascotRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height * .38;
+  const total = Math.max(0, Math.min(theme.burst, MAX_PARTICLES - liveParticles));
+  for (let i = 0; i < total; i++) {
+    const particle = document.createElement("i");
+    particle.className = `fx-evo-theme fx-evo-${theme.key}`;
+    particle.setAttribute("aria-hidden", "true");
+    particle.style.left = `${cx}px`;
+    particle.style.top = `${cy}px`;
+    particle.style.setProperty("--evo-a", theme.a);
+    particle.style.setProperty("--evo-b", theme.b);
+    particle.style.setProperty("--evo-c", theme.c);
+    layer.appendChild(particle);
+    liveParticles++;
+    const angle = Math.PI * 2 * i / Math.max(1, total) + (i % 3) * .08;
+    const distance = 105 + (i % 7) * 20 + Math.random() * 35;
+    const delay = (i % 6) * 22;
+    const duration = 850 + (i % 5) * 105;
+    animateSafe(particle, evoBurstPath(theme.motion, angle, distance), {
+      duration, delay, easing: "cubic-bezier(.16,.74,.28,1)", fill: "forwards",
+    });
+    removeLater(particle, delay + duration + 100, true);
   }
 }
 
@@ -4632,7 +4778,7 @@ function dismissOrTimeout(ms) {
  *  mascot, two spawned per ~33ms tick, WAAPI outward drift + fade
  *  (0.5-1.5s), a per-particle hue-rotate for the palette-cycling shimmer.
  *  Shares this file's global MAX_PARTICLES budget with every other FX. */
-function spawnEvoStars(n) {
+function spawnEvoStars(n, theme) {
   if (prefersReducedMotion()) return;
   const layer = ensureFxLayer();
   if (!layer) return;
@@ -4645,14 +4791,16 @@ function spawnEvoStars(n) {
     for (let k = 0; k < 2 && spawned < total; k++, spawned++) {
       const i = spawned;
       const star = document.createElement("div");
-      star.className = "fx-star";
+      star.className = `fx-star evo-star-${theme.key}`;
       star.setAttribute("aria-hidden", "true");
       const size = 8 + Math.floor(Math.random() * 6);
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
       star.style.left = `${cx}px`;
       star.style.top = `${cy}px`;
-      star.style.filter = `hue-rotate(${(i * 40) % 360}deg)`;
+      star.style.setProperty("--evo-a", theme.a);
+      star.style.setProperty("--evo-b", theme.b);
+      star.style.filter = `hue-rotate(${(i * 17) % 80 - 40}deg)`;
       layer.appendChild(star);
       liveParticles++;
       const angle = Math.random() * Math.PI * 2;
@@ -4689,16 +4837,13 @@ window.__pmEvoFF = () => evoFastForward?.();
  *  Reduced motion: a single 900ms crossfade, no strobe/flash/shake.
  *  Presentation only — real stage classes re-assert on the next
  *  renderCompanion(), same self-healing contract as PMFx.levelUp(). */
-async function runEvolutionSequence(oldStage, newStage, options = {}) {
+async function runEvolutionSequence(oldStage, newStage) {
   const svg = $(".mascot-svg");
   const wrap = $(".mascot-wrapper");
   if (!svg || !wrap) return;
   const reduce = prefersReducedMotion();
-  const oldBondLevel = typeof options.oldBondLevel === "number" ? options.oldBondLevel : null;
-  const newBondLevel = typeof options.newBondLevel === "number" ? options.newBondLevel : null;
-  const oldLabel = options.oldLabel ?? localizedStage(oldStage);
-  const newLabel = options.newLabel ?? localizedStage(newStage);
-  const grand = typeof options.grand === "boolean" ? options.grand : newStage === STAGE_ORDER.at(-1);
+  const grand = newStage === STAGE_ORDER.at(-1);
+  const theme = evolutionTheme(newStage);
   let ff = false; // fast-forward flag: a tap jumps the remaining strobe steps
   const ffTap = () => { ff = true; };
   evoFastForward = ffTap;
@@ -4710,20 +4855,20 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
   // the strobe would freeze into a static shape. .evo-sil-alt marks the
   // new-stage beats so style.css can stretch the silhouette upward, keeping
   // two visibly distinct shapes alternating on every transition pair.
-  const strobeSamePhase = oldBondLevel !== null && newBondLevel !== null
-    ? window.PMSprite?.visualStageForLevel?.(oldBondLevel) === window.PMSprite?.visualStageForLevel?.(newBondLevel)
-    : typeof window.PMSprite?.stagePhase === "function" &&
-      window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage);
-  const setLook = (stage, bondLevel) => {
+  const strobeSamePhase =
+    typeof window.PMSprite?.stagePhase === "function" &&
+    window.PMSprite?.stagePhase(oldStage) === window.PMSprite?.stagePhase(newStage);
+  const setStage = (stage) => {
     for (const cls of [...svg.classList]) if (cls.startsWith("companion-")) svg.classList.remove(cls);
     svg.classList.add(`companion-${stage}`);
     svg.classList.toggle("evo-sil-alt", strobeSamePhase && stage === newStage && svg.classList.contains("evo-sil"));
-    // Bond evolution passes the old/new bond level because bond level owns
-    // the 15 visible forms. Companion evolution falls back to stage-only.
-    window.PMSprite?.set(bondLevel === null ? { stage } : { stage, bondLevel });
+    // Designer sprite: each strobe step swaps the drawn phase frame too
+    // (stage→phase table in jamkachu-sprite.js), so the silhouette
+    // alternation stays visible on the img.
+    window.PMSprite?.set({ stage });
   };
-  const tint = ensureEvoTint();
-  const hud = createEvolutionHud(oldLabel, newLabel, grand);
+  const tint = ensureEvoTint(theme);
+  const hud = createEvolutionHud(oldStage, newStage, grand, theme);
   let riser = null;
   try {
     document.body?.classList.add("evolution-active");
@@ -4732,7 +4877,7 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
     // Anticipation must show the PRE-evolution form — renderCompanion already
     // applied the new stage class before enqueuing, which would spoil the
     // reveal (and turn the reduced-motion crossfade into a dim-and-undim).
-    setLook(oldStage, oldBondLevel);
+    setStage(oldStage);
     // ── ACT 1: anticipate (~1.3-1.8s) — dialog + tint + pulse
     speechBubble(PM().evo?.noticing?.(currentPlantName()) ?? EVO_FALLBACK.noticing(currentPlantName()));
     tint?.classList.add("on");
@@ -4742,27 +4887,26 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
       await sleep(900);
       svg.classList.add("evo-xfade");
       await sleep(450);
-      setLook(newStage, newBondLevel);
+      setStage(newStage);
       await sleep(450);
       svg.classList.remove("evo-xfade");
     } else {
       wrap.classList.add("evo-pulse");
       riser = window.PMSfx?.evoRiser(6) ?? null;
-      spawnEvoChargeOrbs(grand ? 32 : 22);
+      spawnEvoChargeOrbs(grand ? 32 : 22, theme);
       await sleep(1300);
       // ── ACT 2: suspense — accelerating silhouette strobe (mascot-local)
       svg.classList.add("evo-sil");
       for (let i = 0; i < EVO_WAITS.length && !ff; i++) {
         await sleep(EVO_WAITS[i]);
         for (let k = 0; k <= i && !ff; k++) {
-          if (k % 2 === 0) setLook(newStage, newBondLevel);
-          else setLook(oldStage, oldBondLevel);
+          setStage(k % 2 === 0 ? newStage : oldStage);
           await sleep(EVO_SWAP_MS);
         }
       }
       riser?.stop();
       riser = null;
-      setLook(newStage, newBondLevel);
+      setStage(newStage);
       wrap.classList.remove("evo-pulse");
       // Silence beat: eye and ear stop together right before the sting.
       hud?.classList.add("is-hold");
@@ -4779,12 +4923,13 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
       window.PMSfx?.evoFanfare();
       window.PMSfx?.evoImpact?.({ grand });
       window.PMSfx?.buzz(grand ? [45, 30, 90] : [35, 25, 65]);
-      spawnEvoShockwaves(grand);
-      spawnEvoStars(grand ? 52 : 36);
+      spawnEvoShockwaves(grand, theme);
+      spawnEvoThemeBurst(theme);
+      spawnEvoStars(grand ? 52 : 36, theme);
     }
     // Announcement precedence: full evo line → strings.js companionEvolved
     // (still localized, stage-only) → hard-coded English EVO_FALLBACK.
-    const evoStageName = newLabel;
+    const evoStageName = localizedStage(newStage);
     const evolvedLine =
       PM().evo?.evolved?.(currentPlantName(), evoStageName) ??
       PM().companionEvolved?.(evoStageName) ??
@@ -4794,13 +4939,10 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
     if (hud) {
       const result = hud.querySelector(".evo-ceremony-result");
       const status = hud.querySelector(".evo-ceremony-status");
-      const stageLabel = newLabel;
-      // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of a
-      // growth arc a student spent days on. It used to be announced as "GRAND
-      // JACKPOT": slot-machine wording for the one thing here that is entirely
-      // earned, and the only line in this localized ceremony hard-coded to
-      // English. The staging below it — flash, hitstop, shake, shockwaves — is
-      // what carries the weight, and none of it changed.
+      const stageLabel = localizedStage(newStage);
+      // `grand` is reaching the LAST stage (STAGE_ORDER.at(-1)) — the end of
+      // a growth arc a student spent days on. The staging carries the weight;
+      // the label simply names the earned final form.
       const finalFormLabel = PM().evo?.finalForm ?? EVO_FALLBACK.finalForm;
       if (result) result.textContent = grand ? `${finalFormLabel} · ${stageLabel}` : stageLabel;
       if (status) status.textContent = evolvedLine;
@@ -4819,9 +4961,7 @@ async function runEvolutionSequence(oldStage, newStage, options = {}) {
     document.body?.classList.remove("evolution-active");
     wrap.classList.remove("evo-arena", "evo-pulse", "evo-shake-lg");
     svg.classList.remove("evo-sil", "evo-sil-alt", "evo-reveal-bounce", "evo-xfade");
-    // Re-assert authoritative presentation immediately; a 15s poll should not
-    // be required to recover from the old/new strobe frames.
-    window.PMSprite?.set({ stage: currentCompanionStage, bondLevel: lastBondLevel });
+    // real companion_state re-asserts stage classes on the next data render
   }
 }
 
@@ -4834,27 +4974,6 @@ function fxEvolveNow(oldStage, newStage) {
  *  trigger, and PMFx.evolve() below). */
 function fxEvolve(oldStage, newStage) {
   fxEnqueue(5, (done) => { fxEvolveNow(oldStage, newStage).then(done, done); }, EVO_SEQUENCE_QUEUE_MS);
-}
-
-/** Bond growth owns the visible Jamkachu body. Crossing one of the 15
- *  two-level appearance bands therefore runs the full evolution ceremony;
- *  ordinary in-band levels keep the smaller level-up card. */
-function fxBondEvolve(oldLevel, newLevel) {
-  const oldVisual = window.PMSprite?.visualStageForLevel?.(oldLevel) ?? Math.ceil(Math.max(1, oldLevel) / 2);
-  const newVisual = window.PMSprite?.visualStageForLevel?.(newLevel) ?? Math.ceil(Math.max(1, newLevel) / 2);
-  const label = (visual) => appLocale === "id" ? `PERTUMBUHAN ${visual}/15` : `GROWTH ${visual}/15`;
-  const options = {
-    oldBondLevel: oldLevel,
-    newBondLevel: newLevel,
-    oldLabel: label(oldVisual),
-    newLabel: label(newVisual),
-    grand: newVisual === 15,
-  };
-  fxEnqueue(
-    5,
-    (done) => { runEvolutionSequence(currentCompanionStage, currentCompanionStage, options).then(done, done); },
-    EVO_SEQUENCE_QUEUE_MS,
-  );
 }
 
 // ── End evolution ceremony ───────────────────────────────────────────────
@@ -5096,7 +5215,19 @@ function renderQuestSlot(rows) {
     return;
   }
   const meta = QUEST_META[quest.quest_key];
-  nameEl.textContent = meta ? `${meta.emoji} ${questTitle(quest.quest_key)}` : prettifyKey(quest.quest_key);
+  // Drawn icon where the designer has one, the emoji it replaced otherwise.
+  // The title stays textContent — it is data — and the icon is a real element,
+  // so nothing here builds markup out of a quest key.
+  nameEl.textContent = "";
+  if (meta?.art) {
+    const icon = document.createElement("img");
+    icon.className = "pm-inline-art";
+    icon.src = meta.art;
+    icon.alt = "";
+    nameEl.append(icon, ` ${questTitle(quest.quest_key)}`);
+  } else {
+    nameEl.textContent = meta ? `${meta.emoji} ${questTitle(quest.quest_key)}` : prettifyKey(quest.quest_key);
+  }
   if (quest.status === "VERIFYING") {
     // Static structure via innerHTML, dynamic copy via textContent (safe).
     progressEl.innerHTML =
@@ -5284,12 +5415,7 @@ function renderBond(bond, plantName) {
     }, XP_CHIP_GRACE_MS);
   }
   if (leveledUp) {
-    const previousVisual = window.PMSprite?.visualStageForLevel?.(prevLevel) ?? Math.ceil(Math.max(1, prevLevel) / 2);
-    const nextVisual = window.PMSprite?.visualStageForLevel?.(level) ?? Math.ceil(Math.max(1, level) / 2);
-    // The body changes every two bond levels. Crossing that boundary is an
-    // evolution (full silhouette ceremony), not a routine level-up card.
-    if (nextVisual > previousVisual) fxBondEvolve(prevLevel, level);
-    else fxLevelUp(level);
+    fxLevelUp(level);
     // Level decorations (spec §6.4): when the new level unlocks one, extend
     // the level-up celebration with a short T3 reveal (highest new unlock
     // on a multi-level jump — the decorations themselves are all applied).
@@ -5369,14 +5495,12 @@ function wibNow() {
 function renderJemberClock() {
   const now = wibNow();
   const time = $("#jember-clock-time");
-  const icon = $("#jember-clock-icon");
   if (!time) return;
   if (!now) {
     time.textContent = "--:--";
     return;
   }
   time.textContent = `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`;
-  if (icon) icon.textContent = now.hour >= 18 || now.hour < 6 ? "🌙" : "☀️";
 }
 
 renderJemberClock();
@@ -5966,14 +6090,26 @@ function renderSensors(reading) {
   renderQuestSlot(lastQuestRows);
 }
 
-function weatherIcon(description) {
+/** Forecast → the designer's drawing plus the emoji it replaced, kept as the
+ *  fallback. Branch order matters and is unchanged: BMKG says "Cerah Berawan"
+ *  for partly cloudy, so the cloud test has to run before the sunny one or
+ *  every partly-cloudy hour would claim clear skies.
+ *
+ *  The sun-behind-cloud drawing serves both "berawan" and the catch-all — the
+ *  set has no separate overcast piece, and 🌤️, the emoji the catch-all used,
+ *  pictured exactly that. */
+function weatherArt(description) {
   const normalized = String(description ?? "").toLowerCase();
-  if (normalized.includes("petir") || normalized.includes("thunder")) return "⛈️";
-  if (normalized.includes("hujan") || normalized.includes("rain")) return "🌧️";
-  if (normalized.includes("kabut") || normalized.includes("mist") || normalized.includes("fog")) return "🌫️";
-  if (normalized.includes("berawan") || normalized.includes("cloud")) return "☁️";
-  if (normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear")) return "☀️";
-  return "🌤️";
+  if (normalized.includes("petir") || normalized.includes("thunder")) return { src: "/icons/weather-thunder.png", emoji: "⛈️" };
+  if (normalized.includes("hujan") || normalized.includes("rain")) return { src: "/icons/weather-rain.png", emoji: "🌧️" };
+  if (normalized.includes("kabut") || normalized.includes("mist") || normalized.includes("fog")) return { src: "/icons/weather-fog.png", emoji: "🌫️" };
+  if (normalized.includes("berawan") || normalized.includes("cloud")) return { src: "/icons/weather-cloud.png", emoji: "☁️" };
+  if (normalized.includes("cerah") || normalized.includes("sunny") || normalized.includes("clear")) return { src: "/icons/weather-sunny.png", emoji: "☀️" };
+  return { src: "/icons/weather-cloud.png", emoji: "🌤️" };
+}
+
+function weatherIcon(description) {
+  return weatherArt(description).emoji;
 }
 
 /** Weather widget, text-diet edition: icon + temperature + one short
@@ -5998,7 +6134,13 @@ function renderWeather(context) {
     : null;
   setText(".weather-text .desc", humidityNote ? `${description} · ${humidityNote}` : description);
   const icon = $(".weather-icon");
-  if (icon) icon.textContent = weatherIcon(description);
+  if (icon) {
+    // The src comes from weatherArt's fixed table — `description` only picks
+    // the branch and never reaches innerHTML. alt="" because the forecast text
+    // beside it already names the weather.
+    const art = weatherArt(description);
+    icon.innerHTML = `<img class="pm-inline-art" src="${art.src}" alt="">`;
+  }
   widget?.classList.toggle("weather-stale", Boolean(context.stale));
 }
 
@@ -6421,7 +6563,6 @@ function runFirstDayTour() {
   const grandpa = T.grandpa ?? {};
   pmCoach(TOUR_SEEN_ID, [
     { target: "#env-strip", emoji: "👀", text: sensesText },
-    { target: "#care-action", emoji: "💛", text: T.care?.line ?? F.care.line },
     { target: "#daily-quiz-open", emoji: "🧠", text: T.quiz?.line ?? F.quiz.line },
     { target: "#current-quest", emoji: "🔥", text: T.quest?.line ?? F.quest.line },
     // Final card (kid-guide Task 5): Grandpa waves — the handoff to the
@@ -6650,26 +6791,93 @@ function repaintCheatActions(panel) {
  * On a stage too narrow to hold the panel without covering the plant, this
  * leaves the stylesheet's left dock alone.
  */
-function clampCheatPanel(panel) {
-  const margin = 6;
-  const maxLeft = Math.max(margin, window.innerWidth - panel.offsetWidth - margin);
-  const maxTop = Math.max(margin, window.innerHeight - panel.offsetHeight - margin);
-  const left = Math.min(maxLeft, Math.max(margin, Number.parseFloat(panel.style.left) || margin));
-  const top = Math.min(maxTop, Math.max(margin, Number.parseFloat(panel.style.top) || margin));
-  panel.style.left = `${Math.round(left)}px`;
-  panel.style.top = `${Math.round(top)}px`;
-  panel.style.right = "auto";
+const CHEAT_PANEL_POS_KEY = "plantmoji_cheat_panel_pos_v1";
+/** Set once the presenter has dragged the panel (or a saved drag was
+ *  restored). From then on the auto-dock below stops moving it — a window you
+ *  placed by hand that jumps back on the next resize is not a window. */
+let cheatPanelMoved = false;
+
+/** Writes an absolute viewport position, clamped so no part of the panel can
+ *  end up off-screen and out of reach. The stylesheet docks it with
+ *  bottom+left, so `bottom` is released here: leaving it set would make the
+ *  panel grow upward from wherever it was dropped instead of downward. */
+function placeCheatPanel(panel, left, top) {
+  const maxLeft = Math.max(0, window.innerWidth - panel.offsetWidth);
+  const maxTop = Math.max(0, window.innerHeight - panel.offsetHeight);
+  panel.style.left = `${Math.round(Math.min(Math.max(0, left), maxLeft))}px`;
+  panel.style.top = `${Math.round(Math.min(Math.max(0, top), maxTop))}px`;
   panel.style.bottom = "auto";
+}
+
+/** Drag the panel by its header. Pointer events (not mouse) so pen and touch
+ *  work the same way, with capture on the handle so a fast drag that outruns
+ *  the cursor does not drop the panel mid-move. */
+function makeCheatPanelDraggable(panel) {
+  const handle = panel.querySelector(".pm-cheat-head");
+  if (!handle) return;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHEAT_PANEL_POS_KEY) || "null");
+    if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+      cheatPanelMoved = true;
+      placeCheatPanel(panel, saved.left, saved.top);
+    }
+  } catch { /* unreadable storage just means the default dock */ }
+
+  let startX = 0, startY = 0, originLeft = 0, originTop = 0, dragging = false;
+
+  handle.addEventListener("pointerdown", (event) => {
+    // The collapse button lives inside the handle and is not a drag surface.
+    if (event.target.closest("button")) return;
+    if (event.button !== 0 && event.pointerType === "mouse") return;
+    const rect = panel.getBoundingClientRect();
+    originLeft = rect.left;
+    originTop = rect.top;
+    startX = event.clientX;
+    startY = event.clientY;
+    dragging = true;
+    // Pin the box to where it currently sits before the first move, so the
+    // switch from bottom-anchored to top-anchored is invisible.
+    placeCheatPanel(panel, originLeft, originTop);
+    panel.classList.add("is-dragging");
+    try { handle.setPointerCapture(event.pointerId); } catch {}
+    event.preventDefault();
+  });
+
+  handle.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    placeCheatPanel(panel, originLeft + (event.clientX - startX), originTop + (event.clientY - startY));
+  });
+
+  const endDrag = (event) => {
+    if (!dragging) return;
+    dragging = false;
+    cheatPanelMoved = true;
+    panel.classList.remove("is-dragging");
+    try { handle.releasePointerCapture(event.pointerId); } catch {}
+    const rect = panel.getBoundingClientRect();
+    try {
+      localStorage.setItem(CHEAT_PANEL_POS_KEY, JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+    } catch { /* the position is a convenience, not state worth failing over */ }
+  };
+  handle.addEventListener("pointerup", endDrag);
+  handle.addEventListener("pointercancel", endDrag);
+
+  // A window narrowed after the drag could leave the panel outside the
+  // viewport; re-clamping keeps its header reachable.
+  window.addEventListener("resize", () => {
+    if (!cheatPanelMoved) return;
+    const rect = panel.getBoundingClientRect();
+    placeCheatPanel(panel, rect.left, rect.top);
+  });
 }
 
 function positionCheatPanel() {
   const panel = document.getElementById("pm-cheat-panel");
   const stage = $(".mascot-stage");
   if (!panel || !stage) return;
-  if (panel.dataset.dragged === "true") {
-    clampCheatPanel(panel);
-    return;
-  }
+  // Hand placement wins over the automatic dock.
+  if (cheatPanelMoved) return;
   const rect = stage.getBoundingClientRect();
   const width = panel.offsetWidth || 268;
   // Room for the panel plus the plant it must not sit on top of.
@@ -6742,37 +6950,6 @@ function buildCheatPanel() {
     `</div>`;
   document.body.appendChild(panel);
 
-  // The header is a pointer-based drag handle. Controls inside the header
-  // (especially collapse) remain ordinary buttons and never start a drag.
-  const dragHandle = panel.querySelector(".pm-cheat-head");
-  let dragState = null;
-  dragHandle?.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest("button")) return;
-    const rect = panel.getBoundingClientRect();
-    panel.dataset.dragged = "true";
-    panel.classList.add("is-dragging");
-    panel.style.left = `${rect.left}px`;
-    panel.style.top = `${rect.top}px`;
-    panel.style.bottom = "auto";
-    dragState = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
-    dragHandle.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  });
-  dragHandle?.addEventListener("pointermove", (event) => {
-    if (!dragState) return;
-    panel.style.left = `${event.clientX - dragState.offsetX}px`;
-    panel.style.top = `${event.clientY - dragState.offsetY}px`;
-    clampCheatPanel(panel);
-  });
-  const stopDragging = (event) => {
-    if (!dragState) return;
-    dragState = null;
-    panel.classList.remove("is-dragging");
-    dragHandle.releasePointerCapture?.(event.pointerId);
-  };
-  dragHandle?.addEventListener("pointerup", stopDragging);
-  dragHandle?.addEventListener("pointercancel", stopDragging);
-
   // Care actions: the store owns the physics, this only forwards the press and
   // repaints the held state (its own change event brings the new values back).
   panel.querySelectorAll("[data-cheat-action]").forEach((btn) => {
@@ -6792,6 +6969,8 @@ function buildCheatPanel() {
     const L2 = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
     byValueBtn.textContent = `${open ? "▾" : "▸"} ${L2.byValue}`;
   });
+
+  makeCheatPanelDraggable(panel);
 
   const collapseBtn = panel.querySelector("[data-cheat-collapse]");
   collapseBtn?.addEventListener("click", () => {
@@ -7207,6 +7386,33 @@ async function main() {
       .subscribe();
   } catch {
     // Chips stay unlabeled — never block the page over a nice-to-have.
+  }
+
+  // Live sensor readings (milestone21). Its own channel for the same reason
+  // as the two below: until that migration runs, sensor_readings is not in the
+  // supabase_realtime publication and the join errors — isolating it means the
+  // page falls back to the 15s poll instead of losing plants/bond/quests too.
+  //
+  // The poll stays exactly as it was. It is the safety net: a dropped socket,
+  // a project without the migration, or a reading that arrives while the tab
+  // is hidden all still land within 15s. This only removes the wait when the
+  // socket is healthy.
+  try {
+    supabase
+      .channel(`farm-sensors-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sensor_readings", filter: `plant_id=eq.${PLANT_ID}` },
+        (payload) => {
+          // The sandbox owns the tiles while it is on; a real reading arriving
+          // underneath must not overwrite the numbers being demonstrated.
+          if (window.PMCheat?.isActive()) return;
+          renderSensors(payload.new);
+        },
+      )
+      .subscribe();
+  } catch {
+    // No live push — the 15s poll already covers this.
   }
 
   // Live Guardian fan-out is isolated because milestone19 is optional. A

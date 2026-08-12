@@ -9,7 +9,6 @@ import { NAV_DESTINATIONS, NAV_TOOLS } from "@/lib/nav-destinations";
 import type { AppTheme, FarmSkin } from "@/lib/appearance";
 import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
-import BroadcastOverlay from "@/components/broadcast-overlay";
 import LiveActivityBar from "@/components/live-activity-bar";
 import NetworkStatus from "@/components/network-status";
 import DestinationIcon from "@/components/destination-icon";
@@ -155,7 +154,6 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
         </div>
       </div>
       <AppGuide locale={locale} />
-      <BroadcastOverlay locale={locale} />
     </div>
   );
 }

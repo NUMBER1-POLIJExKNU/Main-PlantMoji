@@ -4,7 +4,6 @@
 import Link from "next/link";
 import Notice from "@/components/notice";
 import PageHeader from "@/components/page-header";
-import DemoControlCenter from "@/components/demo-control-center";
 import CheatModeToggle from "@/components/cheat-mode-toggle";
 import DevModePanel from "@/components/dev-mode-panel";
 import DevModeToggle from "@/components/dev-mode-toggle";
@@ -14,10 +13,8 @@ import { SHOP_CATALOG } from "@/game/economy/shop-catalog";
 import { QUEST_COPY_ID } from "@/lib/i18n";
 import type { QuestKey } from "@/types/game";
 import HowToPlayMap from "@/components/how-to-play-map";
-import { BADGE_KEYS } from "@/types/game";
-import { CHAPTER_DEFINITIONS } from "@/game/story/story-definitions";
 import { getBondState } from "@/game/progression/xp-engine";
-import { getPlant, getUnlockedBadges, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
+import { getPlant, GROWTH_STAGES, normalizeGrowthStage } from "@/lib/queries";
 import { getRequestLocale } from "@/lib/i18n-server";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { growthStageLabel, type AppLocale } from "@/lib/i18n";
@@ -61,12 +58,9 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  // Presentation tooling stays out of the normal student UX (spec §2.3):
-  // the Demo Control Center only renders on /settings?demo=1.
+  // Developer mode is a separate door (/settings?dev=1) behind its own code,
+  // because these controls write arbitrary values into real rows.
   const params = await searchParams;
-  const showDemo = params.demo === "1";
-  // Developer mode is a separate door (/settings?dev=1) behind its own code:
-  // the presenter tools only unlock or reset, these write arbitrary values.
   const showDev = params.dev === "1";
   const locale = await getRequestLocale();
   const supabase = getServerSupabase();
@@ -130,35 +124,19 @@ export default async function SettingsPage({
   // Seed data uses lowercase stages ("growing") — map to the canonical label.
   const currentStage = normalizeGrowthStage(plant.growth_stage) ?? "New Plant";
 
-  let demoProgress = {
-    level: 1,
-    totalXp: 0,
-    streak: 0,
-    badges: 0,
-    totalBadges: BADGE_KEYS.length,
-    chapter: 1,
-    totalChapters: CHAPTER_DEFINITIONS.length,
-    companionStage: "Seed",
-  };
-  if (showDemo) {
-    try {
-      const [bond, badges, companion] = await Promise.all([
-        getBondState(supabase, plant.id),
-        getUnlockedBadges(supabase, plant.id),
-        supabase.from("companion_state").select("stage").eq("plant_id", plant.id).maybeSingle(),
-      ]);
-      demoProgress = {
-        ...demoProgress,
-        level: bond?.bond_level ?? 1,
-        totalXp: bond?.total_xp ?? 0,
-        streak: bond?.current_streak ?? 0,
-        chapter: bond?.current_chapter ?? 1,
-        badges: badges.length,
-        companionStage: typeof companion.data?.stage === "string" ? companion.data.stage : "Seed",
-      };
-    } catch (cause) {
-      console.error("SettingsPage demo progress failed:", cause);
-    }
+  // The cheat sandbox clones current real progress as its starting point, so
+  // this reads the live bond row. It used to hang off the presentation panel's
+  // gate, which left the sandbox always starting at Lv.1 in normal use.
+  let cheatSeed = { level: 1, totalXp: 0, days: 0 };
+  try {
+    const bond = await getBondState(supabase, plant.id);
+    cheatSeed = {
+      level: bond?.bond_level ?? 1,
+      totalXp: bond?.total_xp ?? 0,
+      days: bond?.current_streak ?? 0,
+    };
+  } catch (cause) {
+    console.error("SettingsPage cheat seed failed:", cause);
   }
 
   // Farm column: cards cap at 640px like the farm home stack (.pm-card);
@@ -255,46 +233,6 @@ export default async function SettingsPage({
       </Link>
       <HowToPlayMap locale={locale} />
 
-      {!showDemo && (
-        <Link
-          href="/settings?demo=1"
-          className="mt-5 flex min-h-14 w-full items-center justify-center gap-3 rounded-[14px] border-[3px] border-[#E8C46B] bg-[#FFF7DF] px-5 py-4 text-center shadow-[0_4px_0_rgba(36,52,33,0.15)] transition-transform hover:-translate-y-0.5"
-        >
-          <span className="text-2xl" aria-hidden="true">🎬</span>
-          <span>
-            <strong className="pm-heading block text-[10px] text-[#7A5B12]">
-              {locale === "id" ? "BUKA MODE PRESENTASI" : "OPEN PRESENTATION MODE"}
-            </strong>
-            <small className="mt-1 block text-[11px] text-[#7A5B12]">
-              {locale === "id" ? "Kontrol demo untuk pengambilan gambar" : "Camera-ready demo controls"}
-            </small>
-          </span>
-        </Link>
-      )}
-
-      {/* Presenter tooling keeps its amber tint but wears the same pixel
-          frame as every farm card (3px border + chunky shadow ledge). */}
-      {showDemo && (
-      <section className="mt-5 rounded-[16px] border-[3px] border-[#E8C46B] bg-[#FFF7DF] p-5 shadow-[0_4px_0_rgba(36,52,33,0.15)]">
-        <div className="mb-4 flex items-start gap-3">
-          <span className="text-3xl leading-none" role="img" aria-hidden="true">
-            🎬
-          </span>
-          <div>
-            <h2 className="pm-heading text-xs">
-              {locale === "id" ? "Pusat Kontrol Demo" : "Demo Control Center"}
-            </h2>
-            <p className="mt-1 text-[11px] leading-4 text-[#7A5B12]">
-              {locale === "id"
-                ? "Untuk presentasi: periksa status, kembali ke awal, atau buka Lv.10 beserta semua koleksi. Data sensor, catatan pertumbuhan, dan aturan keselamatan tidak berubah."
-                : "For presentations: check status, reset to the beginning, or unlock Lv.10 and every collection item. Sensor data, growth records, and safety rules do not change."}
-            </p>
-          </div>
-        </div>
-        <DemoControlCenter locale={locale} progress={demoProgress} />
-      </section>
-      )}
-
       {/* Developer mode (/settings?dev=1) — writes real data, so it lives
           behind DEV_MODE_CODE rather than the presenter's zero-friction gate. */}
       {showDev && (
@@ -311,10 +249,7 @@ export default async function SettingsPage({
 
       {/* Classroom-demo cheat sandbox entry — always at the very bottom.
           Client-only (window.PMCheat); never writes Supabase or hardware. */}
-      <CheatModeToggle
-        locale={locale}
-        seed={{ level: demoProgress.level, totalXp: demoProgress.totalXp, days: demoProgress.streak }}
-      />
+      <CheatModeToggle locale={locale} seed={cheatSeed} />
 
       {/* Developer mode's door, straight under the cheat sandbox's — the two
           are opposites (that one discards, this one keeps) so they belong

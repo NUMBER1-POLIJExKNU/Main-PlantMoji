@@ -53,12 +53,34 @@ body {
 }
 
 /* Background Decorations */
+/* Designer scene backdrop (images/background). One painting per half of the
+   day, swapped by the SAME body.night class the old sky gradient used — live.js
+   already toggles it at 18:00–06:00 WIB, so the backdrop, Jamkachu's sleep
+   state and the day/night world can never disagree about the hour.
+
+   The paintings already contain a sun/moon, clouds and stars, so the CSS layers
+   that drew those are hidden rather than stacked on top of a picture of the
+   same thing. cover + bottom keeps the horizon on the floor of the viewport at
+   any aspect ratio: the art is 1176x896, so a wide window crops sky rather
+   than lifting the grass out of frame. */
 .env-background {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     z-index: -1;
     pointer-events: none;
+    background-image: url("/farm/assets/bg/day.png");
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
 }
+body.night .env-background { background-image: url("/farm/assets/bg/night.png"); }
+/* Painted into the art now. */
+.env-background .env-sky,
+.env-background .env-sun,
+.env-background .env-clouds,
+.env-background .env-night,
+.env-background .env-particles { display: none; }
 
 .env-sun {
     position: absolute;
@@ -141,6 +163,9 @@ body {
 .brand {
     display: flex;
     align-items: center;
+    /* The pot and the wordmark keep their original 16px apart, and the PAIR
+       is centred in the sidebar. Mirrors .reno-brand in globals.css. */
+    justify-content: center;
     gap: 16px;
     padding-bottom: 14px;
     border-bottom: 2px dashed rgba(43, 58, 39, 0.2);
@@ -158,6 +183,8 @@ body {
 /* The heading is the designer's wordmark now. It keeps the <h1> (and the page
    its heading) — the words live in the image's alt. line-height:0 stops the
    inline box adding a descender gap under the art. */
+/* The h1 is the flex child here (the img is nested inside it), so the auto
+   margins that do the centring belong on the heading, not on .brand-wordmark. */
 .brand h1 { line-height: 0; }
 .brand-wordmark {
     width: 96px; height: auto;
@@ -165,13 +192,44 @@ body {
     filter: drop-shadow(0 3px 5px rgba(0,0,0,0.1));
 }
 
+/* Designer icons standing in for inline emoji (today's mission, quiz chip,
+   outfits button, sunny forecast). Sized in em so each lands at exactly the
+   size the emoji it replaced rendered at — including the responsive font-size
+   steps those containers already have — instead of needing its own set of
+   breakpoints. Mirrors .pm-param-icon in src/app/globals.css. */
+.pm-inline-art {
+    display: inline-block;
+    width: 1em; height: 1em;
+    vertical-align: -.14em;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+/* Mirrors .reno-nav-links in src/app/globals.css: on short screens this list
+   is cut off, and a hidden bar left players unaware the nav continued, so the
+   track is drawn permanently (`scroll`, not `auto`). The phone dock below
+   re-hides its own horizontal bar. */
 .nav-links {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    overflow-y: auto;
+    padding-right: 6px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
 }
-.nav-links::-webkit-scrollbar { display: none; }
+.nav-links::-webkit-scrollbar { width: 10px; }
+.nav-links::-webkit-scrollbar-track { border-radius: 999px; background: rgba(43, 58, 39, .09); }
+.nav-links::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--color-primary);
+    background-clip: content-box;
+}
+.nav-links::-webkit-scrollbar-thumb:hover { background: var(--color-forest); background-clip: content-box; }
+@supports not selector(::-webkit-scrollbar) {
+    .nav-links { scrollbar-width: thin; scrollbar-color: var(--color-primary) rgba(43, 58, 39, .09); }
+}
 
 /* Appearance controls in the sidebar (live.js fills the options). Mirrors the
    React routes' AppearanceControls, which this static shell never runs. */
@@ -246,6 +304,10 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
     color: var(--color-text);
     font-family: var(--font-heading);
     font-size: 10px;
+    /* The long labels ("Eksplor Tanaman", "Diari Tumbuh") wrap to two lines,
+       and the inherited body line-height left the rows nearly touching.
+       Mirrors .reno-nav-item in src/app/globals.css. */
+    line-height: 1.75;
     padding: 9px 12px;
     border-radius: 12px;
     display: flex;
@@ -269,8 +331,9 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
 }
 .nav-item .icon { font-size: 18px; font-style: normal; }
 
-/* Preserve the heart's real green so it matches the Quests page header; the
-   white pixel halo supplies contrast against the active green pill. */
+/* Quests is a mid-green heart on a mid-green active pill. A white pixel halo
+   preserves the artwork's real colour while separating it from the active
+   background, so the rail and page header still show the same icon. */
 .nav-item.active[href="/quests"] .icon img {
     filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
 }
@@ -316,12 +379,11 @@ html[data-farm-skin]:not([data-farm-skin="jember-farm"]) {
 
 .jember-clock {
     min-width: 148px;
+    padding: 11px 14px;
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 11px 14px;
 }
-.jember-clock-icon { font-size: 25px; line-height: 1; }
 .jember-clock-copy { display: grid; gap: 4px; }
 .jember-clock-copy small {
     color: var(--color-forest);
@@ -437,8 +499,11 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .badge.streak { cursor: pointer; user-select: none; }
 .badge.streak:active { transform: translateY(1px); }
 .hud-section-label { color:var(--color-forest); font:7px/1.4 var(--font-heading); letter-spacing:.04em; }
-.current-quest-line { display:block; }
-.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:6px/1 var(--font-heading); }
+/* The quest name is the card's headline, so it carries the same weight as a
+   Garden Vitals reading (.env-hud-copy strong) — it was previously set in the
+   11px pixel face and disappeared under its own MISI HARI INI label. */
+.current-quest-line { display:block; margin-top:6px; font:26px/1.25 var(--font-body); font-weight:700; }
+.quiz-bonus-label { padding:4px 6px; border:2px solid #d7a929; border-radius:7px; color:#6f5513; background:#fff7c7; font:7px/1 var(--font-heading); }
 
 .weather-widget {
     display: flex;
@@ -573,7 +638,11 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    rail switches to 4×1 at ≥801px inside that breakpoint's own block below,
    since the rail is a separate narrow column, not this same grid width. */
 .env-hud-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-.env-hud-card { --hud-accent:var(--color-grass); --pulse-color:transparent; position:relative; min-width:0; min-height:132px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 10px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; transition:opacity .3s ease, filter .3s ease; }
+/* min-height trimmed and the gauge's top margin opened up (see .env-gauge):
+   the tile used to reach its 132px floor with the reading and bar bunched at
+   the top, leaving a dead strip under the status line. The same content now
+   spreads across a slightly shorter tile instead. */
+.env-hud-card { --hud-accent:var(--color-grass); --pulse-color:transparent; position:relative; min-width:0; min-height:124px; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:start; gap:7px; overflow:hidden; border:3px solid var(--color-outline); border-radius:11px; padding:9px 8px 8px; color:var(--color-text); background:var(--color-surface); box-shadow:0 4px 0 var(--color-outline); text-align:left; cursor:pointer; transition:opacity .3s ease, filter .3s ease; }
 /* Designer condition badge (assets/moods), pinned to the tile corner only
    while a reading sits outside its comfort band — it names the DIRECTION
    (too hot / too cold, too wet / too dry) so the fix is readable without
@@ -597,7 +666,7 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
    in the tile's own accent, a marker pinned at the real reading's position.
    No band (profile unavailable) → neutral grey cells, marker still shows the
    real value's position on a plain 0–100 scale. */
-.env-gauge { position:relative; display:flex; gap:2px; margin:7px 0 5px; height:9px; }
+.env-gauge { position:relative; display:flex; gap:2px; margin:14px 0 6px; height:9px; }
 .env-gauge-seg { flex:1 1 0; min-width:0; height:100%; border:1px solid var(--color-outline); border-radius:2px; background:#dcead5; }
 .env-gauge-seg.in-band { border-color:var(--hud-accent); background:color-mix(in srgb,var(--hud-accent) 55%,white); }
 .env-gauge.no-band .env-gauge-seg { border-color:#b9c2b5; background:#e8ece6; }
@@ -798,6 +867,32 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     border-radius: 30px 30px 0 0;
     z-index: 0;
     box-shadow: inset 0 10px 20px rgba(255,255,255,0.2);
+    isolation: isolate;
+    overflow: hidden;
+}
+/* The turf reaches beneath the navigation instead of ending at its edge,
+   then softens through a narrow shore into Jember-blue water. Both layers
+   are scenery only and can never intercept navigation or farm controls. */
+.grass-floor::before,
+.grass-floor::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.grass-floor::before {
+    height: 34px;
+    background: linear-gradient(180deg,#d8bd72 0 24%,#f0d58a 25% 52%,color-mix(in srgb,var(--color-water) 35%,#f0d58a) 53% 100%);
+}
+.grass-floor::after {
+    height: 25px;
+    background:
+        radial-gradient(18px 6px at 9px 0,rgba(255,255,255,.72) 0 3px,transparent 4px) 0 2px/36px 12px repeat-x,
+        linear-gradient(180deg,color-mix(in srgb,var(--color-water) 76%,#fff),var(--color-water));
+    box-shadow: inset 0 4px rgba(255,255,255,.2);
 }
 
 .mascot-container {
@@ -842,15 +937,22 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
     letter-spacing: 2px;
 }
+/* The mood moved out from under the name to under the speech bubble, where
+   the face that means it already is. Kept in the DOM (live.js still fills it,
+   and screen readers get the identity line intact) but off the picture, so
+   the same word is not printed twice in two places. */
 #char-mood {
-    font-family: var(--font-heading);
-    font-size: 12px;
-    margin-top: 8px;
-    color: var(--color-text);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
+
 .quiz-chip {
-    width: 100%; min-height: 58px; border: 3px solid var(--color-yellow); cursor: pointer;
-    display: flex; align-items: center; gap: 12px; padding: 9px 14px; color: var(--color-text);
+    width: 100%; min-height: 66px; border: 3px solid var(--color-yellow); cursor: pointer;
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px; color: var(--color-text);
     text-align: left; transition: transform .08s ease, filter .12s ease;
 }
 .quiz-chip:hover { filter: brightness(1.04); transform: translateY(-1px); }
@@ -858,9 +960,12 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
 .quiz-chip:focus-visible { outline: 4px solid var(--color-water); outline-offset: 2px; }
 .quiz-chip > span:first-child { font-size: 27px; }
 .quiz-chip-copy { display: flex; flex: 1; flex-direction: column; gap: 4px; }
-.quiz-chip-copy strong { font: 9px/1.3 var(--font-heading); color: var(--color-forest); }
-.quiz-chip-copy small { font-size: 13px; }
-.quiz-chip-xp { border: 2px solid #D7A929; border-radius: 14px; background: #FFF7C7; padding: 5px 8px; font: 8px/1 var(--font-heading); white-space: nowrap; }
+/* The quiz chip's own copy was the smallest type on the home stack; every
+   line steps up one notch so the card reads at the same distance as the
+   mission and vitals cards above it. */
+.quiz-chip-copy strong { font: 11px/1.35 var(--font-heading); color: var(--color-forest); }
+.quiz-chip-copy small { font-size: 16px; }
+.quiz-chip-xp { border: 2px solid #D7A929; border-radius: 14px; background: #FFF7C7; padding: 6px 9px; font: 10px/1 var(--font-heading); white-space: nowrap; }
 .quiz-chip.quiz-complete { border-color: var(--color-grass); background: #E8F6E0; }
 
 .quiz-modal[hidden] { display: none; }
@@ -991,6 +1096,10 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
     cursor: pointer;
 }
 .wardrobe-open:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--color-outline); }
+/* This button's label is the 8px pixel face, so a 1em icon comes out at 8px —
+   smaller than the 👕 it replaced, because emoji glyphs overflow their em box.
+   2em restores the size the emoji actually occupied. */
+.wardrobe-open .pm-inline-art { width: 2em; height: 2em; vertical-align: -.35em; }
 .wardrobe-card { max-height: min(560px, 84dvh); overflow-y: auto; }
 /* Wardrobe mascot (kiki design integration): moods-p4 GIF (or its static
    reduced-motion twin) for the CURRENT accessory tier — live.js's
@@ -1057,7 +1166,9 @@ body.quiz-success-flash::after { content:""; position:fixed; inset:0; z-index:35
    overlay ladder) so the tint genuinely renders BEHIND the mascot/grass/NPC
    scene instead of covering it. */
 .evo-tint { position: fixed; inset: 0; pointer-events: none; z-index: 1300;
-  background: radial-gradient(circle at 50% 42%, color-mix(in srgb,var(--companion-accent,#FFDE6A) 70%,#fff) 0%,rgba(36,52,33,.86) 36%,rgba(8,18,30,.98) 76%);
+  background:
+    radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--evo-b,#FFDE6A) 72%,#fff) 0 7%,color-mix(in srgb,var(--evo-a,#FFDE6A) 55%,transparent) 20%,rgba(27,32,43,.9) 48%,rgba(6,12,24,.99) 78%),
+    linear-gradient(135deg,color-mix(in srgb,var(--evo-c,#243421) 42%,#07111f),#07111f);
   opacity:0; transition: opacity .4s ease; }
 .evo-tint.on { opacity: 1; }
 
@@ -1090,13 +1201,40 @@ body.evolution-active .fx-layer { z-index:1390; }
   box-shadow:none;
 }
 .mascot-wrapper.evo-arena > .mascot-svg::before,
-.mascot-wrapper.evo-arena #mood-status-chip { display:none; }
+.mascot-wrapper.evo-arena #mood-thought-bubble { display:none; }
 .mascot-wrapper.evo-arena.evo-pulse { animation:none; }
 .mascot-wrapper.evo-arena.evo-pulse > .mascot-svg { animation:evoPulse .55s ease-in-out infinite; }
 .mascot-wrapper.evo-arena.evo-shake-lg { animation:none; }
 .mascot-wrapper.evo-arena.evo-shake-lg > .mascot-svg { animation:evoShakeLg .32s steps(8,end) 1; }
 
 .evo-ceremony-hud { position:fixed; inset:0; z-index:1400; overflow:hidden; pointer-events:none; font-family:var(--font-heading); text-align:center; }
+.evo-ceremony-hud::after { content:""; position:absolute; inset:0; z-index:1; background:radial-gradient(circle at 50% 44%,transparent 0 24%,rgba(3,8,20,.18) 54%,rgba(3,8,20,.74) 100%); }
+.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge,.evo-ceremony-result,.evo-ceremony-status { z-index:5; }
+.evo-theme-rays { position:absolute; z-index:0; inset:50%; }
+.evo-theme-rays i { position:absolute; left:-3px; top:-62vmax; display:block; width:6px; height:124vmax; transform:rotate(calc(var(--i) * 30deg)); transform-origin:50% 50%; background:linear-gradient(transparent 5%,var(--evo-a) 27%,rgba(255,255,255,.82) 50%,var(--evo-c) 73%,transparent 95%); opacity:.2; }
+.evo-theme-orbit { position:absolute; z-index:2; left:50%; top:44%; width:min(68vmin,590px); aspect-ratio:1; border:2px solid color-mix(in srgb,var(--evo-a) 62%,transparent); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 30px color-mix(in srgb,var(--evo-a) 48%,transparent),inset 0 0 30px color-mix(in srgb,var(--evo-c) 35%,transparent); }
+.evo-theme-orbit i { position:absolute; left:50%; top:50%; width:12px; height:12px; border:2px solid #fff; background:var(--evo-b); box-shadow:0 0 15px var(--evo-a); transform:rotate(calc(var(--i) * 45deg)) translateY(calc(min(34vmin,295px) * -1)) rotate(calc(var(--i) * -45deg)); }
+.evo-theme-emblem { position:absolute; z-index:1; left:50%; top:44%; width:min(43vmin,370px); aspect-ratio:1; transform:translate(-50%,-50%) rotate(45deg); border:5px double color-mix(in srgb,var(--evo-b) 88%,#fff); background:radial-gradient(circle,color-mix(in srgb,var(--evo-a) 38%,transparent),transparent 68%); box-shadow:0 0 28px var(--evo-a),inset 0 0 28px color-mix(in srgb,var(--evo-c) 55%,transparent); opacity:.7; }
+
+/* Stage signatures: the composition changes as well as the palette. */
+.evo-theme-sprout .evo-theme-emblem { border-radius:100% 0 100% 0; transform:translate(-50%,-50%) rotate(-28deg) scale(.8); }
+.evo-theme-seedling .evo-theme-orbit { border-style:dotted; transform:translate(-50%,-50%) scaleX(.72); }
+.evo-theme-seedling .evo-theme-emblem { border-radius:55% 45% 62% 38%; transform:translate(-50%,-50%) rotate(45deg) scale(.78); }
+.evo-theme-bud .evo-theme-rays { transform:rotate(15deg) scale(.82); }
+.evo-theme-bud .evo-theme-emblem { clip-path:polygon(50% 0,70% 30%,100% 50%,70% 70%,50% 100%,30% 70%,0 50%,30% 30%); }
+.evo-theme-bloom .evo-theme-orbit { border-width:7px; border-style:double; }
+.evo-theme-bloom .evo-theme-emblem { border-radius:50%; clip-path:polygon(50% 0,63% 30%,93% 7%,70% 37%,100% 50%,70% 63%,93% 93%,63% 70%,50% 100%,37% 70%,7% 93%,30% 63%,0 50%,30% 37%,7% 7%,37% 30%); }
+.evo-theme-fruit .evo-theme-rays { transform:scaleX(1.35); }
+.evo-theme-fruit .evo-theme-emblem { border-radius:50%; transform:translate(-50%,-50%) scale(.76); border-width:10px; }
+.evo-theme-guardian .evo-theme-emblem { clip-path:polygon(50% 0,92% 15%,84% 72%,50% 100%,16% 72%,8% 15%); transform:translate(-50%,-50%); }
+.evo-theme-guardian .evo-theme-orbit { border-radius:18%; transform:translate(-50%,-50%) rotate(45deg); }
+.evo-theme-elder .evo-theme-rays { transform:rotate(-22.5deg); }
+.evo-theme-elder .evo-theme-emblem { clip-path:polygon(50% 0,61% 35%,100% 50%,61% 65%,50% 100%,39% 65%,0 50%,39% 35%); transform:translate(-50%,-50%) rotate(22.5deg); }
+.evo-theme-radiant .evo-theme-rays i { width:12px; opacity:.34; }
+.evo-theme-radiant .evo-theme-emblem { clip-path:polygon(50% 0,59% 35%,85% 15%,65% 41%,100% 50%,65% 59%,85% 85%,59% 65%,50% 100%,41% 65%,15% 85%,35% 59%,0 50%,35% 41%,15% 15%,41% 35%); border:0; }
+.evo-theme-legend .evo-theme-rays i:nth-child(3n+1) { background:linear-gradient(transparent,var(--evo-a),transparent); transform:rotate(calc(var(--i) * 30deg + 12deg)); }
+.evo-theme-legend .evo-theme-orbit { width:min(78vmin,680px); border-width:5px; border-style:double; }
+.evo-theme-legend .evo-theme-emblem { border-radius:50%; clip-path:polygon(50% 0,62% 28%,88% 12%,72% 38%,100% 50%,72% 62%,88% 88%,62% 72%,50% 100%,38% 72%,12% 88%,28% 62%,0 50%,28% 38%,12% 12%,38% 28%); }
 .evo-ceremony-kicker { position:absolute; top:8vh; left:50%; transform:translateX(-50%); color:#fff3a8; font-size:clamp(16px,2.6vw,30px); letter-spacing:.18em; text-shadow:0 4px 0 #0a3d62; }
 .evo-ceremony-reel { position:absolute; top:15vh; left:50%; display:flex; align-items:center; gap:clamp(10px,2vw,28px); transform:translateX(-50%); color:#dfffb1; font-size:clamp(11px,1.5vw,17px); opacity:.8; }
 .evo-ceremony-reel b { color:#ffde6a; }
@@ -1106,10 +1244,24 @@ body.evolution-active .fx-layer { z-index:1390; }
 .evo-ceremony-hud.is-revealed :is(.evo-ceremony-kicker,.evo-ceremony-reel,.evo-ceremony-charge) { opacity:0; }
 .evo-ceremony-hud.is-revealed .evo-ceremony-result { opacity:1; transform:translate(-50%,0) scale(1); }
 .evo-ceremony-hud.is-grand .evo-ceremony-result { color:#fff29a; text-shadow:0 5px 0 #a15a16,0 0 22px #ffd62f,0 12px 30px #000; }
-.fx-evo-charge { position:fixed; width:10px; height:10px; background:#fff6a4; box-shadow:0 0 12px #ffde6a; image-rendering:pixelated; will-change:transform,opacity; }
-.evo-shockwave { position:fixed; left:50%; top:44%; z-index:1395; width:80px; height:80px; border:10px solid #fff4a2; border-radius:50%; transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; animation:evoShockwave .9s steps(12,end) forwards; }
+.fx-evo-charge { position:fixed; width:10px; height:10px; background:var(--evo-b,#fff6a4); box-shadow:0 0 12px var(--evo-a,#ffde6a); image-rendering:pixelated; will-change:transform,opacity; }
+.evo-shockwave { position:fixed; left:50%; top:44%; z-index:1395; width:80px; height:80px; border:10px solid var(--evo-b,#fff4a2); border-radius:50%; box-shadow:0 0 22px var(--evo-a,#ffde6a); transform:translate(-50%,-50%) scale(.2); opacity:0; pointer-events:none; animation:evoShockwave .9s steps(12,end) forwards; }
+.fx-evo-theme { position:fixed; z-index:1396; width:13px; height:13px; background:var(--evo-a); box-shadow:0 0 9px var(--evo-b); image-rendering:pixelated; pointer-events:none; will-change:transform,opacity; }
+.fx-evo-sprout { width:10px; height:17px; border-radius:100% 0 100% 0; transform-origin:50% 100%; }
+.fx-evo-seedling { width:11px; height:16px; border-radius:55% 55% 65% 65%; clip-path:polygon(50% 0,100% 58%,70% 100%,30% 100%,0 58%); }
+.fx-evo-bud { transform:rotate(45deg); border:2px solid var(--evo-b); background:var(--evo-c); }
+.fx-evo-bloom { width:17px; height:11px; border-radius:100% 0 100% 0; }
+.fx-evo-fruit { width:15px; height:15px; border-radius:50%; border:2px solid var(--evo-b); background:var(--evo-c); }
+.fx-evo-guardian { width:15px; height:18px; clip-path:polygon(50% 0,100% 18%,88% 76%,50% 100%,12% 76%,0 18%); background:linear-gradient(135deg,var(--evo-b),var(--evo-c)); }
+.fx-evo-elder { border:3px double var(--evo-b); background:transparent; transform:rotate(45deg); }
+.fx-evo-radiant { width:18px; height:18px; clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%); background:var(--evo-b); }
+.fx-evo-legend { width:9px; height:24px; border-radius:50%; background:linear-gradient(var(--evo-a),var(--evo-b),var(--evo-c)); }
+.fx-star[class*="evo-star-"] { background:var(--evo-b,#FFDE6A); box-shadow:0 0 10px var(--evo-a,#FFDE6A); }
 @keyframes evoShockwave { 12%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(11);border-width:2px} }
 @media (prefers-reduced-motion:no-preference) {
+  .evo-theme-rays { animation:evoThemeRayTurn 8s linear infinite; }
+  .evo-theme-orbit { animation:evoThemeOrbit 3.2s linear infinite; }
+  .evo-theme-emblem { animation:evoThemeEmblem 1.15s steps(8,end) infinite alternate; }
   .evo-ceremony-hud.is-charging .evo-ceremony-kicker { animation:evoTitleThrob .55s steps(4,end) infinite; }
   .evo-ceremony-hud.is-charging .evo-ceremony-reel b { animation:evoReelSpin .36s steps(4,end) infinite; }
   .evo-ceremony-hud.is-revealed .evo-ceremony-result { animation:evoResultSlam .65s cubic-bezier(.2,1.6,.35,1) 1; }
@@ -1142,7 +1294,7 @@ body.evolution-active .fx-layer { z-index:1390; }
   .evo-flash, .evo-tint { display: none; }
   .evo-pulse, .evo-shake-sm, .evo-shake-lg { animation: none; }
   .mascot-svg.evo-xfade { transition: opacity .9s ease-in-out; opacity: .3; }
-  .evo-shockwave,.fx-evo-charge { display:none; }
+  .evo-shockwave,.fx-evo-charge,.fx-evo-theme,.evo-theme-rays,.evo-theme-orbit,.evo-theme-emblem { display:none; }
   .evo-ceremony-hud * { animation:none !important; transition:none !important; }
 }
 
@@ -1170,6 +1322,9 @@ body.evolution-active .fx-layer { z-index:1390; }
     color: #243421;
     overflow-wrap: anywhere;
 }
+@keyframes evoThemeRayTurn { to { transform:rotate(360deg); } }
+@keyframes evoThemeOrbit { to { rotate:360deg; } }
+@keyframes evoThemeEmblem { to { filter:brightness(1.65); opacity:1; } }
 .speech-bubble::after { content: none; }
 .animated-bounce { animation: none; }
 @media (prefers-reduced-motion: no-preference) {
@@ -1180,9 +1335,23 @@ body.evolution-active .fx-layer { z-index:1390; }
     to { transform: translateY(-8px); } 
 }
 
+/* Sprite size lives in a custom property, not in `width` directly, because the
+   pull-up below has to be a fraction of the SAME length. Percentage margins
+   resolve against the containing block's width, which is not this box — so the
+   size has to be nameable. Every breakpoint that resizes the mascot sets
+   --pm-sprite-size instead of width. */
 .mascot-wrapper {
     position: relative;
-    width: 300px;
+    --pm-sprite-size: 300px;
+    width: var(--pm-sprite-size);
+    /* Each frame is drawn inside the same square box, but a seed occupies only
+       the bottom third of it while a grown plant fills it. That empty band sat
+       between the speech bubble and the plant — measured 140px at the seed
+       stage — and read as the bubble belonging to nothing. jamkachu-sprite.js
+       measures the current frame's transparent top and writes the fraction
+       here, so Jamkachu and the captions under it come up by exactly the empty
+       space and stay correct as the plant grows into its frame. */
+    margin-top: calc(-1 * var(--pm-sprite-void-top, 0) * var(--pm-sprite-size));
     filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
     cursor: pointer;
     touch-action: manipulation;
@@ -1226,45 +1395,19 @@ body.evolution-active .fx-layer { z-index:1390; }
    same 300×350 coordinate space. Crop-variant silhouettes retired with
    the inline SVG (crop identity lives in skins/pot + text; the crop-*
    classes still land here as a harmless state channel). */
-.mascot-svg { --jamkachu-growth-scale: 1; position: relative; width: 100%; aspect-ratio: 300 / 350; overflow: visible; }
+.mascot-svg { position: relative; width: 100%; aspect-ratio: 300 / 350; overflow: visible; }
 #jamkachu-sprite {
     position: absolute;
-    z-index: 1;
-    left: 50%;
+    left: 0;
     bottom: 0;
-    width: calc(var(--jamkachu-growth-scale) * 100%);
+    width: 100%;
     height: auto;
     max-width: 100%;
-    translate: -50% 0;
     image-rendering: pixelated;
     transform-origin: 50% 100%; /* whole-body breath bob grows from the pot base */
     -webkit-user-drag: none;
     user-select: none;
 }
-/* The final four two-level forms grow into a genuinely abundant strawberry
-   plant. This canopy sits BEHIND the existing mood sprite, so facial state,
-   ribbons and a purchased pot remain truthful and readable. */
-#lush-strawberry-canopy {
-    position: absolute;
-    z-index: 0;
-    left: 50%;
-    bottom: 32px;
-    width: 118%;
-    height: auto;
-    max-width: none;
-    opacity: 0;
-    scale: .68;
-    translate: -50% 0;
-    transform-origin: 50% 100%;
-    image-rendering: pixelated;
-    pointer-events: none;
-    -webkit-user-drag: none;
-    user-select: none;
-}
-.mascot-svg.visual-stage-12 #lush-strawberry-canopy { opacity: .24; scale: .72; }
-.mascot-svg.visual-stage-13 #lush-strawberry-canopy { opacity: .46; scale: .82; }
-.mascot-svg.visual-stage-14 #lush-strawberry-canopy { opacity: .72; scale: .92; }
-.mascot-svg.visual-stage-15 #lush-strawberry-canopy { opacity: 1; scale: 1; }
 /* A catalog pot replaces the baked-in pot rather than tinting it. The plant
    occupies rows 0–39 of the 64px source and stays intact; rows 40–63 contain
    the default pot and are clipped away only while a valid shop pot is worn. */
@@ -1274,7 +1417,7 @@ body.evolution-active .fx-layer { z-index:1390; }
     --shop-pot-height: 135px;
     --shop-pot-crop-top: 0%;
     position: absolute;
-    z-index: 2;
+    z-index: 1;
     left: 50%;
     bottom: 6px;
     width: var(--shop-pot-width);
@@ -1302,7 +1445,6 @@ body.evolution-active .fx-layer { z-index:1390; }
     height: 100%;
     overflow: visible;
     pointer-events: none; /* taps keep landing on the wrapper pipeline */
-    z-index: 3;
 }
 /* Head-anchored overlay art (shop hats/glasses + Lv.7 ribbon keepsake)
    tracks the drawn head per growth phase. jamkachu-sprite.js stamps
@@ -1320,25 +1462,62 @@ body.evolution-active .fx-layer { z-index:1390; }
 .mascot-svg.sprite-phase-3 .acc-anchor-eyes { transform: translate(150px, 128px) scale(0.81) translate(-150px, 0px); }
 .mascot-svg.sprite-phase-2 .acc-anchor-eyes { transform: translate(150px, 159px) scale(0.62) translate(-150px, 0px); }
 .mascot-svg.sprite-phase-1 .acc-anchor-eyes { transform: translate(150px, 188px) scale(0.4) translate(-150px, 0px); }
-/* Plain-mood status chip (🥶/💦/🧪): floats by the sprite head; PMSprite
-   writes the glyph, :empty keeps it out of the layout otherwise. Static —
-   the float drift below is reduced-motion gated. */
-#mood-status-chip {
+/* Condition thought cloud: a separate, wordless bubble for the designer
+   mood badge (or 💤). Dialogue keeps its own speech bubble above. */
+.mood-thought-bubble {
     position: absolute;
-    top: 13%;
-    right: 4%;
+    top: 5%;
+    right: -3%;
+    z-index: 3;
+    display: grid;
+    /* Two rows now — the badge, and the mood in words under it — so the cloud
+       grows to its content instead of holding a fixed 62x56. min-width keeps
+       it round-ish for a short word ("Happy"); longer ones wrap inside
+       max-width rather than stretching the cloud into an oval. */
+    min-width: 62px;
+    max-width: 96px;
+    min-height: 56px;
+    gap: 2px;
+    padding: 7px 8px 9px;
+    justify-items: center;
+    align-content: center;
+    border: 3px solid var(--color-border);
+    border-radius: 48% 52% 46% 54%;
+    background: var(--color-surface);
+    box-shadow: 0 5px 0 rgba(36,52,33,.2), inset 0 0 0 3px rgba(255,255,255,.55);
+    pointer-events: none;
+}
+.mood-word {
+    font: 7px/1.35 var(--font-heading);
+    color: var(--color-forest);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+.mood-word:empty { display: none; }
+.mood-thought-bubble[hidden] { display: none; }
+.mood-thought-bubble::before,
+.mood-thought-bubble::after {
+    content: "";
+    position: absolute;
+    border: 3px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--color-surface);
+}
+.mood-thought-bubble::before { left: 9px; bottom: -13px; width: 13px; height: 13px; }
+.mood-thought-bubble::after { left: 0; bottom: -23px; width: 7px; height: 7px; }
+#mood-status-chip {
+    position: relative;
+    z-index: 1;
     font-size: 28px;
     line-height: 1;
-    pointer-events: none;
     filter: drop-shadow(2px 3px 0 rgba(36, 52, 33, 0.24));
-    z-index: 2;
 }
 #mood-status-chip:empty { display: none; }
 /* Designer mood badge (assets/moods): 128px art shown at 40px so the pixel
    grid stays crisp; the emoji fallback keeps the font-size above. */
 #mood-status-chip img { display: block; width: 40px; height: 40px; image-rendering: pixelated; }
 @media (prefers-reduced-motion: no-preference) {
-    #mood-status-chip { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
+    .mood-thought-bubble { animation: pm-chip-float 2.6s ease-in-out infinite alternate; }
 }
 @keyframes pm-chip-float {
     from { transform: translateY(0); }
@@ -1576,7 +1755,7 @@ body.room-warm {
 .mascot-svg.hatch-pre #jamkachu-sprite { clip-path: inset(62.5% 0 0 0); animation: none; }
 .mascot-svg.has-shop-pot.hatch-pre #jamkachu-sprite { visibility: hidden; }
 .mascot-svg.hatch-pre .mascot-overlay,
-.mascot-svg.hatch-pre #mood-status-chip { visibility: hidden; }
+.mascot-svg.hatch-pre #mood-thought-bubble { visibility: hidden; }
 .mascot-container.hatch-hidden .speech-bubble,
 .mascot-container.hatch-hidden .char-id { visibility: hidden; }
 
@@ -1650,7 +1829,8 @@ body.room-warm {
    (skewX ±3deg, staggered via negative delays so they never sync up). */
 .grass-decor {
     position: absolute;
-    inset: 0;
+    inset: 0 0 25px;
+    z-index: 1;
     pointer-events: none;
     transform-origin: 50% 100%;
 }
@@ -1952,8 +2132,10 @@ body.night.farmer-night-awake .npc-farmer .npc-ai-tag { display:none; }
     right: clamp(22px, 5vw, 78px);
     bottom: 56px;
     display: none;
-    width: 142px;
-    height: 62px;
+    /* 118x58 stays visibly larger than Tani's 48x56 sprite without
+       swallowing the corner of the farm like the old 142px bed. */
+    width: 118px;
+    height: 58px;
     border: 4px solid var(--color-outline);
     border-radius: 5px 5px 2px 2px;
     background: #8f563b;
@@ -1964,8 +2146,8 @@ body.night.farmer-night-awake .npc-farmer .npc-ai-tag { display:none; }
 }
 body.night .npc-farmer-bed { display: block; }
 body.night.farmer-night-awake .npc-farmer-bed { display:none; }
-.npc-bed-pillow { position:absolute; left:8px; top:7px; width:47px; height:27px; border:3px solid var(--color-outline); border-radius:8px; background:#f7edc8; }
-.npc-bed-blanket { position:absolute; right:7px; bottom:8px; width:78px; height:39px; border:3px solid var(--color-outline); background:repeating-linear-gradient(90deg,#4f8764 0 14px,#6da479 14px 28px); box-shadow:inset 0 7px rgba(255,255,255,.12); }
+.npc-bed-pillow { position:absolute; left:7px; top:7px; width:38px; height:23px; border:3px solid var(--color-outline); border-radius:8px; background:#f7edc8; }
+.npc-bed-blanket { position:absolute; right:6px; bottom:7px; width:64px; height:35px; border:3px solid var(--color-outline); background:repeating-linear-gradient(90deg,#4f8764 0 12px,#6da479 12px 24px); box-shadow:inset 0 7px rgba(255,255,255,.12); }
 .npc-sleep-zzz { position:absolute; right:5px; bottom:calc(100% + 8px); display:flex; align-items:flex-end; gap:4px; color:#f8e68e; font:14px/1 var(--font-heading); text-shadow:2px 2px 0 #253349; }
 .npc-sleep-zzz i { display:block; font-style:normal; }
 .npc-sleep-zzz i:nth-child(1) { font-size:18px; }
@@ -2022,6 +2204,79 @@ body.farmer-dragging {
     pointer-events: none;
     -webkit-user-drag: none;
 }
+
+/* Desktop-only shoreline extension. Phone composition keeps the original
+   grass floor, decoration insets, and stacking behavior byte-for-byte. */
+@media (max-width: 800px) {
+    .grass-floor { overflow: visible; isolation: auto; }
+    .grass-floor::before,
+    .grass-floor::after { display: none; }
+    .grass-decor { inset: 0; z-index: auto; }
+    .shop-decor-layer { inset: 0; }
+    /* The new ceremony language is desktop-only; retain the existing phone
+       flash/tint silhouette and particle treatment exactly. */
+    .evo-ceremony-hud::after,
+    .evo-theme-rays,
+    .evo-theme-orbit,
+    .evo-theme-emblem,
+    .fx-evo-theme { display: none; }
+    .evo-tint { background: radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--companion-accent,#FFDE6A) 70%,#fff) 0%,rgba(36,52,33,.86) 36%,rgba(8,18,30,.98) 76%); }
+    .fx-evo-charge { background:#fff6a4; box-shadow:0 0 12px #ffde6a; }
+}
+
+/* Daytime tending loop. The tiny hoe and tilled-soil flecks are separate
+   decorative layers around the unchanged Tani PNG. Motion is opt-in below,
+   pauses with his chat, and the night state can never display it. */
+.npc-farm-tool,
+.npc-farm-soil {
+    position: absolute;
+    display: none;
+    pointer-events: none;
+}
+.npc-farm-tool {
+    right: -12px;
+    bottom: 4px;
+    width: 5px;
+    height: 38px;
+    border: 2px solid #513424;
+    border-radius: 3px;
+    background: #a56b38;
+    box-shadow: inset 1px 0 #d79a57;
+    transform-origin: 50% 88%;
+}
+.npc-farm-tool::after {
+    content: "";
+    position: absolute;
+    left: -9px;
+    top: -4px;
+    width: 20px;
+    height: 7px;
+    border: 2px solid #3d4a42;
+    border-radius: 2px 5px 2px 2px;
+    background: #849286;
+}
+.npc-farm-soil {
+    right: -23px;
+    bottom: -5px;
+    width: 34px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 18% 40%,#c48645 0 2px,transparent 3px),radial-gradient(circle at 48% 70%,#8e542f 0 3px,transparent 4px),radial-gradient(circle at 80% 35%,#bd7840 0 2px,transparent 3px);
+    transform-origin: 50% 100%;
+}
+body:not(.night) .npc-farmer.npc-farming .npc-farm-tool,
+body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
+@media (prefers-reduced-motion: no-preference) {
+    body:not(.night) .npc-farmer.npc-farming .npc-farmer-art { animation:pm-farmer-tend-body .72s steps(4,end) infinite; }
+    body:not(.night) .npc-farmer.npc-farming .npc-farm-tool { animation:pm-farmer-hoe .72s cubic-bezier(.6,0,.35,1) infinite; }
+    body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { animation:pm-farmer-soil .72s steps(4,end) infinite; }
+    .npc-farmer.npc-talking .npc-farmer-art,
+    .npc-farmer.npc-talking .npc-farm-tool,
+    .npc-farmer.npc-talking .npc-farm-soil { animation-play-state: paused; }
+}
+@keyframes pm-farmer-tend-body { 0%,100% { transform:rotate(0deg) translateY(0); } 45%,65% { transform:rotate(5deg) translateY(2px); } }
+@keyframes pm-farmer-hoe { 0%,100% { transform:rotate(-42deg); } 48%,68% { transform:rotate(34deg) translateY(2px); } }
+@keyframes pm-farmer-soil { 0%,35% { opacity:0; transform:scale(.45) translateY(2px); } 55% { opacity:1; transform:scale(1.15) translateY(-2px); } 100% { opacity:0; transform:scale(1.35) translateY(-5px); } }
 
 .npc-farmer-vine {
     position: fixed;
@@ -2123,7 +2378,7 @@ body.farmer-dragging {
 
 /* Responsive adjustments */
 @media (max-width: 1100px) {
-    .mascot-wrapper { width: 260px; }
+    .mascot-wrapper { --pm-sprite-size: 260px; }
 }
 @media (max-width: 800px) {
     body { min-width: 0; height: auto; overflow-x: hidden; overflow-y: auto; }
@@ -2164,9 +2419,11 @@ body.farmer-dragging {
        display:none tool pocket made /reports and /settings COMPLETELY
        unreachable on phones. The dock is now ONE horizontally scrollable
        flex row carrying all TEN destinations (7 play + 3 tools), with
-       per-item min widths, scroll snapping and momentum scrolling; the
-       global .nav-links::-webkit-scrollbar rule already hides the bar.
+       per-item min widths, scroll snapping and momentum scrolling; its
+       horizontal bar is hidden here, because the always-on track the desktop
+       sidebar now draws would eat this dock's compact height.
        Same chrome, same compact height, same safe-area handling. */
+    .nav-links::-webkit-scrollbar { display: none; }
     .nav-links {
         position: fixed;
         right: 8px;
@@ -2302,7 +2559,7 @@ body.farmer-dragging {
     /* Keep the character expressive but let the one care decision enter the
        first phone viewport instead of sitting below a presentation-scale
        mascot and several progression rows. */
-    .mascot-wrapper { width:min(210px,60vw); }
+    .mascot-wrapper { --pm-sprite-size: min(210px,60vw); }
     .speech-bubble {
         min-inline-size:160px;
         max-inline-size:calc(100vw - 36px);
@@ -2402,7 +2659,7 @@ body.farmer-dragging {
     }
 
     .mascot-container { max-height: 100%; }
-    .mascot-wrapper { width: min(300px, 34vh); }
+    .mascot-wrapper { --pm-sprite-size: min(300px, 34vh); }
     .speech-bubble {
         width: fit-content;
         min-width: 180px;
@@ -2439,7 +2696,10 @@ body.farmer-dragging {
         /* Clearance over the floor. It is 140px tall here (105px on short
            laptops, where the clamp lands lower too). */
         margin: 0 0 clamp(44px, 8vh, 92px);
-        padding:68px 5px 0 0;
+        /* 72px top = the absolutely-positioned .hud-top's reach (top:4 + its
+           56px min-height) plus a 12px gap. Derived from the pair's height
+           below — keep them in step or this rail slides under the clock. */
+        padding:72px 5px 0 0;
         gap:10px;
         overflow-y:auto;
         scrollbar-width:thin;
@@ -2494,7 +2754,7 @@ body.farmer-dragging {
     .user-gamification .badge { min-width:0; justify-content:center; border:2px solid var(--color-border); border-radius:9px; padding:7px 5px; color:var(--color-text); background:var(--color-bg); box-shadow:none; white-space:nowrap; }
     .quiz-chip { min-height:48px; padding:7px 11px; border-style:dashed; box-shadow:0 3px 0 rgba(36,52,33,.14); }
     .quiz-chip > span:first-child { font-size:22px; }
-    .quiz-chip-copy strong { font-size:7px; }.quiz-chip-copy small { font-size:11px; }
+    .quiz-chip-copy strong { font-size:9px; }.quiz-chip-copy small { font-size:14px; }
     .avatar-img { width: 48px; height: 48px; }
 
     #current-quest {
@@ -2504,20 +2764,24 @@ body.farmer-dragging {
         place-items:stretch;
         padding:12px 15px 17px;
         border-color:var(--color-forest);
-        border-bottom-right-radius:5px;
-        border-bottom-left-radius:5px;
+        /* Full --ui-radius on all four corners. The squared-off bottom pair
+           existed so the verifying console could sit flush underneath, but
+           that console was removed from the farm home (its markup is gone from
+           index.html), leaving the card mismatched: 20px on top, 5px below. */
         background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 12%,var(--color-surface)),var(--color-surface));
         text-align:left;
     }
-    #current-quest .current-quest-line { font:11px/1.65 var(--font-body); font-weight:800; }
+    /* Matches the .env-hud-copy strong size at this breakpoint (21px), the
+       same pairing the desktop rule makes at 26px. */
+    #current-quest .current-quest-line { font:21px/1.3 var(--font-body); font-weight:800; }
     #env-strip { padding:12px; font-size:14px; white-space:normal; border-color:var(--color-border); }
     .env-hud-title { margin-bottom:10px; }
     /* The rail is narrow: a 2×2 board gives values, state and ideal range room. */
     .env-hud-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .env-hud-card { min-height:108px; grid-template-columns:30px minmax(0,1fr); padding:8px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
+    .env-hud-card { min-height:104px; grid-template-columns:30px minmax(0,1fr); padding:8px; border-width:2px; box-shadow:0 3px 0 var(--color-outline); }
     .env-hud-card > i { width:28px; height:28px; font-size:16px; }
     .env-hud-copy strong { font-size:21px; margin-top:2px; }
-    .env-gauge { margin:5px 0 4px; height:7px; }.env-gauge-marker { height:13px; }
+    .env-gauge { margin:11px 0 4px; height:7px; }.env-gauge-marker { height:13px; }
     .env-range { font-size:8px; }.env-hud-copy em { font-size:9px; }
 
     .hud-top {
@@ -2530,12 +2794,21 @@ body.farmer-dragging {
            (same approach as .hatch-skip). */
         right: 44px;
         z-index: 20;
+        /* Both cards end on the same line. Their widths still follow their
+           content — the clock is a time, the widget is a sentence — but the
+           frames match. */
+        align-items: stretch;
     }
-    .jember-clock { min-width: 116px; gap: 7px; padding: 9px 10px; border-width: 2px; }
-    .jember-clock-icon { font-size: 20px; }
+    /* The number this pair is worth: top(4) + 56 + a 12px breathing gap = 72,
+       which is exactly .home-stack's padding-top above. The two move together —
+       this row is position:absolute, so the rail underneath cannot see it and
+       slides under these cards whenever the padding falls behind. */
+    .jember-clock,
+    .hud-top .weather-widget { min-height: 56px; padding: 9px 12px; border-width: 2px; }
+    .jember-clock { min-width: 116px; gap: 7px; }
     .jember-clock-copy small { font-size: 6px; }
     .jember-clock-copy strong { font-size: 14px; }
-    .weather-widget { gap: 8px; padding: 9px 12px; border-width: 2px; }
+    .weather-widget { gap: 8px; }
     .weather-icon { font-size: 22px; }
     .weather-text { min-width: 0; flex-direction: row; align-items: center; gap: 7px; }
     .weather-text .temp { font-size: 11px; }
@@ -2545,7 +2818,7 @@ body.farmer-dragging {
     .weather-text .indoor-reading { display: none; }
 
     .panel-glass:hover { transform: none; }
-    .grass-floor { left: 272px; width: calc(100% - 272px); height: 105px; }
+    .grass-floor { left: 0; width: 100%; height: 105px; }
 }
 
 /* Short classroom laptops get the same information hierarchy with a smaller
@@ -2557,10 +2830,15 @@ body.farmer-dragging {
     /* The sidebar gap, brand padding and nav-item padding this breakpoint used
        to tighten are now the defaults — the same numbers, applied everywhere. */
     .sidebar { padding-top: 14px; padding-bottom: 14px; }
-    .mascot-wrapper { width: min(250px, 32vh); }
+    .mascot-wrapper { --pm-sprite-size: min(250px, 32vh); }
     .speech-bubble { min-height: 0; max-height: none; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
-    .home-stack { margin-bottom:70px; padding-top:48px; gap:8px; }
+    /* Short screens keep the pair, and the rail's clearance for it, on a
+       tighter budget than the tall-desktop rule: top(4) + 46 + a 12px gap = 62.
+       Same arithmetic, smaller numbers — the two still move together. */
+    .jember-clock,
+    .hud-top .weather-widget { min-height:46px; padding:6px 10px; }
+    .home-stack { margin-bottom:70px; padding-top:62px; gap:8px; }
     .user-gamification { padding: 8px 11px; }
     .care-focus { gap:8px; padding:10px 12px 12px 15px; }
     .care-focus-heading { grid-template-columns:36px minmax(0,1fr); gap:8px; }
@@ -2580,7 +2858,10 @@ body.farmer-dragging {
     .env-hud-card { min-height:76px; grid-template-columns:27px minmax(0,1fr); gap:5px; padding:6px; box-shadow:0 3px 0 var(--color-outline); }
     .env-hud-card > i { width:26px; height:26px; font-size:15px; }
     .env-hud-copy strong { margin-top:1px; font-size:18px; }
-    .env-gauge { height:6px; margin:3px 0; }
+    /* 13px top: measured: the tile's 76px floor left ~6px dead under the
+       status line, so the slack moves into the reading↔bar gap instead. */
+    .env-gauge { height:6px; margin:13px 0 3px; }
+    #current-quest .current-quest-line { font-size:18px; }
     .env-gauge-marker { height:11px; }
     .env-range { font-size:7px; }
     .env-hud-copy em { font-size:8px; }
@@ -2622,7 +2903,7 @@ body.night .quiz-bonus-label { color:#ffe69d; background:#44391f; border-color:#
 .mascot-svg.shop-acc_taeguk_ribbon .shop-g-acc_taeguk_ribbon { display: block; }
 .mascot-svg.shop-acc_indonesia_sash .shop-g-acc_indonesia_sash { display: block; }
 
-.shop-decor-layer { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.shop-decor-layer { position: absolute; inset: 0 0 25px; pointer-events: none; z-index: 1; }
 .shop-decor-layer .shop-decor { display: none; }
 .shop-decor-layer.own-decor_scarecrow .shop-decor-scarecrow { display: block; }
 .shop-decor-layer.own-decor_fence .shop-decor-fence { display: block; }
@@ -2704,6 +2985,10 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   font: 500 12px/1.3 var(--font-body, system-ui, sans-serif);
   color: #3a2600;
 }
+/* The header is the drag handle. touch-action:none so a drag on a touch
+   screen moves the panel instead of scrolling the page underneath it, and
+   user-select:none so dragging never paints a text selection across the
+   title. The collapse button opts back out of both. */
 #pm-cheat-panel .pm-cheat-head {
   display: flex;
   align-items: center;
@@ -2713,21 +2998,17 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   letter-spacing: .04em;
   color: #8A2B5B;
   cursor: grab;
-  user-select: none;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-#pm-cheat-panel .pm-cheat-head:active,
+#pm-cheat-panel .pm-cheat-head button { cursor: pointer; touch-action: auto; }
+#pm-cheat-panel .pm-cheat-head strong { display:flex; align-items:baseline; gap:7px; }
+#pm-cheat-panel .pm-cheat-head small { color:#A46B80; font:600 9px/1.2 var(--font-body,system-ui,sans-serif); letter-spacing:0; }
+#pm-cheat-panel.is-dragging { cursor: grabbing; box-shadow: 0 12px 28px rgba(0, 0, 0, .34); }
 #pm-cheat-panel.is-dragging .pm-cheat-head { cursor: grabbing; }
-#pm-cheat-panel .pm-cheat-head strong {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-}
-#pm-cheat-panel .pm-cheat-head small {
-  color: #A46B80;
-  font: 600 9px/1.2 var(--font-body, system-ui, sans-serif);
-  letter-spacing: 0;
-}
+/* While dragging, the body must not eat the pointer or scroll under it. */
+#pm-cheat-panel.is-dragging .pm-cheat-body { pointer-events: none; }
 #pm-cheat-panel .pm-cheat-head button {
   width: 24px;
   height: 24px;
@@ -2767,15 +3048,9 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
-#pm-cheat-panel .pm-cheat-action-set { display: grid; gap: 4px; }
-#pm-cheat-panel .pm-cheat-action-set + .pm-cheat-action-set { margin-top: 7px; }
-#pm-cheat-panel h4 {
-  margin: 0;
-  color: #A46B80;
-  font: 700 9px/1.2 var(--font-body, system-ui, sans-serif);
-  letter-spacing: .05em;
-  text-transform: uppercase;
-}
+#pm-cheat-panel .pm-cheat-action-set { display:grid; gap:4px; }
+#pm-cheat-panel .pm-cheat-action-set + .pm-cheat-action-set { margin-top:7px; }
+#pm-cheat-panel h4 { margin:0; color:#A46B80; font:700 9px/1.2 var(--font-body,system-ui,sans-serif); letter-spacing:.05em; text-transform:uppercase; }
 #pm-cheat-panel .pm-cheat-action {
   display: flex;
   align-items: center;
@@ -2897,7 +3172,5 @@ body.night .shop-decor-lantern { filter: drop-shadow(0 0 12px rgba(255,184,77,.7
    stage. */
 @media (max-width: 900px) {
   #pm-cheat-panel { left: 6px; right: 6px; bottom: 6px; width: auto; max-height: 52vh; }
-  #pm-cheat-panel .pm-cheat-head small { display: none; }
-  #pm-cheat-panel .pm-cheat-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #pm-cheat-panel.is-collapsed { width: auto; }
 }

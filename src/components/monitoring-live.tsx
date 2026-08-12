@@ -74,8 +74,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
-  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note, liveNote }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string }) {
@@ -272,6 +272,14 @@ export default function MonitoringLive({
     return out;
   }, [history, hasLux]);
   const mode: LightMode = hasLux ? "lux" : "percent";
+  // The newest reading of any age, for telling "never arrived" apart from
+  // "arrived, but older than this chart's window".
+  const lastReadingAt = useMemo(() => {
+    const raw = latest?.recorded_at;
+    if (!raw) return null;
+    const t = Date.parse(raw);
+    return Number.isFinite(t) ? formatTime(t) : null;
+  }, [latest]);
   const ranges = useMemo(
     () => (cropProfile ? comfortRangesFromProfile(cropProfile) : null),
     [cropProfile],
@@ -335,8 +343,15 @@ export default function MonitoringLive({
           // range, so no band is passed and LightChart draws unchanged.
           <LightChart points={points} mode={mode} band={mode === "percent" ? ranges?.light : undefined} />
         ) : (
-          <div className="flex h-[260px] items-center justify-center text-sm text-[#57684F]">
-            {c.waiting}
+          // Two different empty states, because they have different answers.
+          // The gauges above read `latest`, which has no age limit and will
+          // happily show a reading from days ago; this chart only asks for the
+          // last hour. A device that has stopped pushing therefore leaves live
+          // numbers on top of a blank box, and "waiting for sensor readings"
+          // there is simply wrong — the readings arrived, they are just old.
+          <div className="flex h-[260px] flex-col items-center justify-center gap-1.5 px-4 text-center text-sm text-[#57684F]">
+            <p>{lastReadingAt ? c.noRecent : c.waiting}</p>
+            {lastReadingAt && <p className="text-xs opacity-75">{c.lastSeen} {lastReadingAt}</p>}
           </div>
         )}
       </section>

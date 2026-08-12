@@ -18,7 +18,7 @@ export type SpritePhase = 1 | 2 | 3 | 4;
 export const SPRITE_PHASES = [1, 2, 3, 4] as const;
 
 /** The 5 expressions the designer drew per phase. */
-export const SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"] as const;
+export const SPRITE_MOODS = ["happy", "overheat"] as const;
 export type SpriteMood = (typeof SPRITE_MOODS)[number];
 
 /** Automatic bond-level accessory rewards ("" = bare). */
@@ -55,12 +55,12 @@ export const PHASE_SLUG: Record<SpritePhase, string> = {
 export const MOOD_SPRITE: Record<PlantMood, SpriteMood> = {
   Happy: "happy",
   Overheating: "overheat",
-  TooCold: "sleepy",
-  DryAir: "unwell",
-  HumidAir: "unwell",
-  Sleepy: "sleepy",
-  SoilAcidic: "unwell",
-  SoilAlkaline: "unwell",
+  TooCold: "happy",
+  DryAir: "happy",
+  HumidAir: "happy",
+  Sleepy: "happy",
+  SoilAcidic: "happy",
+  SoilAlkaline: "happy",
 };
 
 /** Chip floated near the sprite head for the moods that SHARE a drawn body
@@ -103,8 +103,8 @@ export function stagePhase(stage?: CompanionStage): SpritePhase {
 
 /** Picks the drawn expression; night sleep overrides the live mood. */
 export function spriteMood(mood: PlantMood, sleeping = false): SpriteMood {
-  if (sleeping) return "sleepy";
-  return MOOD_SPRITE[mood] ?? "plain";
+  if (sleeping) return "happy";
+  return MOOD_SPRITE[mood] ?? "happy";
 }
 
 /** Accessory earned by bond level, clamped to what the phase can wear. */

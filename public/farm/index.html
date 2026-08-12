@@ -108,15 +108,14 @@
                 <!-- Designer icon sprites (images/icons, served as 64px
                      derivatives in public/icons — same rationale as
                      logo-small.png). They stay inside the existing <i class="icon">
-                     so every nav rule keeps applying; Koleksi has no designer
-                     sprite yet and keeps its emoji. alt="" because the label
+                     so every nav rule keeps applying. alt="" because the label
                      next to each icon already names the destination. -->
                 <a href="/" class="nav-item active"><i class="icon"><img src="/icons/my-garden.png" alt="" width="18" height="18"></i> <span data-i18n="nav.home">Kebunku</span></a>
                 <a href="/quests" class="nav-item"><i class="icon"><img src="/icons/quests.png" alt="" width="18" height="18"></i> <span data-i18n="nav.quests">Misi</span></a>
                 <a href="/plants" class="nav-item"><i class="icon"><img src="/icons/crop-explorer.png" alt="" width="18" height="18"></i> <span data-i18n="nav.plants">Eksplor Tanaman</span></a>
                 <a href="/camera" class="nav-item"><i class="icon"><img src="/icons/camera-ai.png" alt="" width="18" height="18"></i> <span data-i18n="nav.camera">Kamera AI</span></a>
                 <a href="/diary" class="nav-item"><i class="icon"><img src="/icons/growth-diary.png" alt="" width="18" height="18"></i> <span data-i18n="nav.memories">Diari Tumbuh</span></a>
-                <a href="/collection" class="nav-item"><i class="icon">💎</i> <span data-i18n="nav.collection">Koleksi</span></a>
+                <a href="/collection" class="nav-item"><i class="icon"><img src="/icons/collection.png" alt="" width="18" height="18"></i> <span data-i18n="nav.collection">Koleksi</span></a>
                 <a href="/shop" class="nav-item"><i class="icon"><img src="/icons/shop.png" alt="" width="18" height="18"></i> <span data-i18n="nav.shop">Toko</span></a>
                 <div class="nav-tool-pocket" aria-label="Alat penjaga">
                     <span class="nav-section-title" data-i18n="nav.tools">ALAT</span>
@@ -160,8 +159,10 @@
 
             <!-- Weather stays as ambient chrome, top-right -->
             <div class="hud-top">
+                <!-- No sun/moon glyph here: it sat one card away from the
+                     weather widget's own icon and read as a second, disagreeing
+                     forecast. The time is the whole point of this card. -->
                 <div class="jember-clock panel-glass" role="timer" aria-live="off">
-                    <span id="jember-clock-icon" class="jember-clock-icon" aria-hidden="true">☀️</span>
                     <span class="jember-clock-copy">
                         <small data-i18n="clock.label">WAKTU JEMBER · WIB</small>
                         <strong id="jember-clock-time">--:--</strong>
@@ -172,7 +173,10 @@
                      indoor duplicate line moved out — /monitoring keeps the
                      full detail; the SUHU/UDARA tiles below carry indoor. -->
                 <div class="weather-widget panel-glass">
-                    <div class="weather-icon">🌤️</div>
+                    <!-- Placeholder before the forecast lands: the same
+                         sun-behind-cloud live.js uses for its catch-all, so
+                         there is no emoji flash on the way to the real icon. -->
+                    <div class="weather-icon"><img class="pm-inline-art" src="/icons/weather-cloud.png" alt=""></div>
                     <div class="weather-text">
                         <span class="temp">--°C</span>
                         <span class="desc" data-i18n="weather.loading">Memuat prakiraan...</span>
@@ -238,7 +242,7 @@
                      button's scaleX(-1), which the img simply inherits.
                      A plain button so taps/keyboard reach live.js — tapping
                      grants NOTHING, he only shares mood-grounded guidance. -->
-                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with Farmer Tani"><picture class="npc-farmer-art"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcset="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
+                <button id="npc-farmer" class="npc-farmer" type="button" aria-label="Talk with Farmer Tani"><picture class="npc-farmer-art"><img class="npc-farmer-img" src="/farm/assets/npc/2x/npc-06-mbah-tani.png" srcset="/farm/assets/npc/1x/npc-06-mbah-tani.png 32w, /farm/assets/npc/2x/npc-06-mbah-tani.png 64w, /farm/assets/npc/4x/npc-06-mbah-tani.png 128w, /farm/assets/npc/8x/npc-06-mbah-tani.png 256w" sizes="64px" alt="" draggable="false"></picture><span class="npc-farm-soil" aria-hidden="true"></span><span class="npc-farm-tool" aria-hidden="true"></span><span class="npc-ai-tag" data-i18n="npc.ai">AI CHAT</span></button>
                 <div class="npc-farmer-bed" aria-hidden="true">
                     <span class="npc-bed-pillow"></span>
                     <span class="npc-bed-blanket"></span>
@@ -293,21 +297,21 @@
                         <div class="mascot-svg">
                             <!-- Decorative: #char-name/#char-mood below carry the
                                  accessible identity, so the img stays alt="". -->
-                            <!-- Lv.23–30 progressively reveals this extra canopy;
-                                 it stays behind the mood-bearing body and above
-                                 neither the face nor an equipped shop pot. -->
-                            <img id="lush-strawberry-canopy" src="/farm/assets/jamkachu/lush-strawberry-canopy.png" alt="" aria-hidden="true" draggable="false">
                             <img id="jamkachu-sprite" alt="" draggable="false">
                             <!-- Equipped shop pots are real designs, not palette
                                  swaps. CSS clips the baked-in pot off the mascot
                                  sprite and seats this catalog art in its place. -->
                             <img id="shop-pot-sprite" alt="" aria-hidden="true" draggable="false" hidden>
-                            <!-- Plain-mood status chip: 🥶/💦/🧪 float near the head
-                                 for the four moods that share the sprite's calm
-                                 "plain" body (aria-hidden; the #char-mood text is
-                                 the accessible signal — all 8 moods stay
-                                 distinguishable). PMSprite writes it. -->
-                            <span id="mood-status-chip" aria-hidden="true"></span>
+                            <!-- Separate thought cloud: PMSprite puts only the
+                                 current condition badge (or sleep Zs) inside.
+                                 The main speech bubble above remains dialogue. -->
+                            <span id="mood-thought-bubble" class="mood-thought-bubble" aria-hidden="true" hidden>
+                                <span id="mood-status-chip"></span>
+                                <!-- The mood in words, directly under the badge
+                                     that pictures it. The badge alone asked the
+                                     player to decode a small drawing. -->
+                                <span id="mood-word" class="mood-word"></span>
+                            </span>
                             <!-- THIN overlay: ONLY the shop accessory groups and the
                                  pot-anchored level keepsakes survive from the old
                                  inline SVG, repositioned onto the sprite. The square
@@ -435,47 +439,20 @@
                              "wardrobe" group) and fills the #wardrobe-panel
                              dialog below from window.PM_SKINS + bond level.
                              Display-only — a skin is state, never a reward. -->
-                        <button id="wardrobe-open" class="wardrobe-open" type="button" aria-haspopup="dialog"><span aria-hidden="true">👕</span> <span id="wardrobe-open-label">Kostum</span></button>
+                        <button id="wardrobe-open" class="wardrobe-open" type="button" aria-haspopup="dialog"><span aria-hidden="true"><img class="pm-inline-art" src="/icons/wardrobe.png" alt="" width="16" height="16"></span> <span id="wardrobe-open-label">Kostum</span></button>
                     </div>
                 </div>
             </div>
 
-            <!-- 3+) Decision-first stack below the character. The first card
-                 answers what is happening, what to do, and how the real
-                 sensors will prove it before progression or bonus content. -->
+            <!-- Main activity stack below the character. -->
             <div class="home-stack">
-
-                <section id="care-focus" class="care-focus panel-glass" data-care-state="waiting" aria-labelledby="care-focus-title">
-                    <div class="care-focus-heading">
-                        <span id="care-focus-icon" class="care-focus-icon" aria-hidden="true">📡</span>
-                        <div>
-                            <span class="care-focus-kicker" data-i18n="focus.now">SEKARANG</span>
-                            <h2 id="care-focus-title">Hubungkan sensor</h2>
-                            <p id="care-focus-summary" aria-live="polite">Nilai akan muncul otomatis saat perangkat tersambung.</p>
-                        </div>
-                    </div>
-                    <ol class="care-steps" aria-label="Alur perawatan">
-                        <li data-care-step="sense" data-step-state="current"><b>1</b><span><strong data-i18n="focus.step.sense">LIHAT</strong><small data-i18n="focus.step.senseHint">Baca kondisinya</small></span></li>
-                        <li data-care-step="act" data-step-state="todo"><b>2</b><span><strong data-i18n="focus.step.act">LAKUKAN</strong><small data-i18n="focus.step.actHint">Ubah satu hal</small></span></li>
-                        <li data-care-step="verify" data-step-state="todo"><b>3</b><span><strong data-i18n="focus.step.verify">CEK</strong><small data-i18n="focus.step.verifyHint">Sensor membuktikan</small></span></li>
-                    </ol>
-                    <!-- Contextual guidance only: the click grants nothing.
-                         Physical care must change a real reading before the
-                         quest engine can verify it and award a reward. -->
-                    <div class="actions-panel">
-                        <button id="care-action" class="pixel-btn" type="button">
-                            <span class="care-action-label">Elus aku — atau tulis buku harianku 📖</span>
-                        </button>
-                    </div>
-                    <p id="care-proof-note" class="care-proof-note" data-i18n="focus.proof">Tombol ini hanya memberi petunjuk. Sensor asli yang memeriksa perawatanmu.</p>
-                </section>
 
                 <!-- Current Quest (fed by the existing quests query). The whole
                      panel is a REAL link to /quests (kid-guide Task 1): one big
                      honest tap target (≥44px, style.css) instead of a dead
                      card. Inner ids/classes are unchanged so live.js's
                      renderQuestSlot keeps writing into the same anchors. -->
-                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line">🔥 <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
+                <a id="current-quest" class="panel-glass" href="/quests"><span class="hud-section-label" data-i18n="hud.mission">MISI HARI INI</span><span class="current-quest-line"><img class="pm-inline-art" src="/icons/streak.png" alt="" width="20" height="20"> <span id="cq-name" data-i18n="quest.none">Misi muncul saat sensorku merasakan perubahan</span> <span id="cq-progress"></span></span></a>
 
                 <!-- Environment evidence follows the decision card: students
                      can inspect the values without having to interpret them
@@ -493,7 +470,7 @@
 
 
                 <button id="daily-quiz-open" class="quiz-chip panel-glass" type="button">
-                    <span aria-hidden="true">🧠</span>
+                    <span aria-hidden="true"><img class="pm-inline-art" src="/icons/quiz.png" alt="" width="27" height="27"></span>
                     <span class="quiz-bonus-label" data-i18n="hud.bonus">BONUS</span>
                     <span class="quiz-chip-copy"><strong data-i18n="hud.quiz">QUIZ HARI INI</strong><small id="daily-quiz-progress">Memuat…</small></span>
                     <span class="quiz-chip-xp">+9 XP</span>
@@ -586,14 +563,14 @@
          live.js main()'s sandbox branch is unreachable on the main demo
          screen. Classic script (not a module) so it runs before live.js. -->
     <!-- defer (not blocking, boot-resilience fix): lets the browser fetch
-         all 9 classic scripts below in parallel instead of one at a time
+         all 8 classic scripts below in parallel instead of one at a time
          (fetch → execute → fetch → execute…), while still guaranteeing they
          run in this SAME document order, before live.js. Deferred classic
          scripts and the live.js module (type=module without async is
          deferred by default) share one execution queue ordered by document
          position, so seen.js/strings.js still finish before live.js's
-         main() needs them — verified: none of these nine do document.write
-         or need to run mid-parse; sfx.js/demo.js/cheat.js each only wire a
+         main() needs them — verified: none of these eight do document.write
+         or need to run mid-parse; sfx.js/cheat.js each only wire a
          DOMContentLoaded listener, which still fires after every deferred
          script has run. -->
     <script defer src="/farm/cheat.js"></script>
@@ -611,7 +588,6 @@
          as the other classic scripts here). -->
     <script defer src="/farm/jamkachu-sprite.js"></script>
     <script defer src="/farm/sfx.js"></script>
-    <script defer src="/farm/demo.js"></script>
     <script defer src="/farm/quiz.js"></script>
     <!-- Vendored @supabase/supabase-js UMD build (matches package.json's
          pinned version) — loads window.supabase.createClient synchronously

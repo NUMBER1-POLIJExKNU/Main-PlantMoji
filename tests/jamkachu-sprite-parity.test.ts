@@ -68,12 +68,12 @@ describe("React sprite mapping pins the decided design tables", () => {
     expect(MOOD_SPRITE).toEqual({
       Happy: "happy",
       Overheating: "overheat",
-      TooCold: "sleepy",
-      DryAir: "unwell",
-      HumidAir: "unwell",
-      Sleepy: "sleepy",
-      SoilAcidic: "unwell",
-      SoilAlkaline: "unwell",
+      TooCold: "happy",
+      DryAir: "happy",
+      HumidAir: "happy",
+      Sleepy: "happy",
+      SoilAcidic: "happy",
+      SoilAlkaline: "happy",
     });
   });
 
@@ -101,15 +101,15 @@ describe("React sprite mapping pins the decided design tables", () => {
     const bodyCounts = new Map<string, number>();
     for (const mood of PLANT_MOODS) bodyCounts.set(MOOD_SPRITE[mood], (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) + 1);
     for (const mood of PLANT_MOODS) {
-      if ((bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
+      if (mood !== "Happy" && (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
         expect(MOOD_STATUS_CHIP[mood], `${mood} shares a face but has no chip`).toBeTruthy();
       }
     }
   });
 
-  it("night sleep overrides any live mood with the sleepy sprite", () => {
+  it("night sleep keeps the peaceful happy sprite", () => {
     for (const mood of PLANT_MOODS) {
-      expect(spriteMood(mood, true)).toBe("sleepy");
+      expect(spriteMood(mood, true)).toBe("happy");
     }
   });
 
@@ -143,7 +143,7 @@ describe("React sprite mapping pins the decided design tables", () => {
     // Bond level picks the look now — `stage` is passed by some callers and
     // deliberately ignored, so these cases vary the level, not the stage.
     expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 5 })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p2-sprout-unwell.png",
+      "/farm/assets/jamkachu/4x/plant-p2-sprout-happy.png",
     );
     expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 29 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
@@ -151,14 +151,14 @@ describe("React sprite mapping pins the decided design tables", () => {
     // Lv.15 is band 8 (p3 + bow); TooCold draws the sleepy body — the pack's
     // "plain" file is the faceless decorative body and never renders a mood.
     expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 15, scale: "2x" })).toBe(
-      "/farm/assets/jamkachu/2x/plant-p3-flower-sleepy-bow.png",
+      "/farm/assets/jamkachu/2x/plant-p3-flower-happy-bow.png",
     );
     expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 1 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p1-seed-overheat.png",
     );
     // No bondLevel at all reads as Lv.0 → clamped to the first band.
     expect(spriteSrc({ mood: "Happy", sleeping: true })).toBe(
-      "/farm/assets/jamkachu/4x/plant-p1-seed-sleepy.png",
+      "/farm/assets/jamkachu/4x/plant-p1-seed-happy.png",
     );
   });
 

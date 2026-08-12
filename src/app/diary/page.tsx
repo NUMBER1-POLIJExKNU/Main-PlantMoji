@@ -1,7 +1,6 @@
 // Growth Diary screen (handoff §14, §35) — the manual growth-records log,
-// promoted out of Settings into its own page. There is no dedicated "Diary"
-// item in the shared seven-destination nav (src/components/reno-app-shell.tsx);
-// this page is reached via the link-card on /settings instead. Sensors
+// promoted out of Settings into its own page and shared navigation destination.
+// Sensors
 // cannot infer real growth in the MVP: this page is the human-written
 // source of truth for growth stage.
 //

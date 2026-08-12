@@ -55,26 +55,35 @@ describe("Farmer Tani living-world UI", () => {
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
   });
 
+  it("keeps the bed compact but still larger than Farmer Tani", () => {
+    const farmerRule = css.match(/\.npc-farmer \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const bedRule = css.match(/\.npc-farmer-bed \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    const size = (rule: string, property: string) =>
+      Number(rule.match(new RegExp(`${property}:\\s*(\\d+)px`))?.[1]);
+    expect(size(bedRule, "width")).toBeGreaterThan(size(farmerRule, "width"));
+    expect(size(bedRule, "height")).toBeGreaterThan(size(farmerRule, "height"));
+    expect(size(bedRule, "width")).toBe(118);
+    expect(size(bedRule, "width")).toBeLessThan(142);
+  });
+
   it("measures the real grass boundary instead of wandering by viewport width", () => {
     expect(live).toContain('const grass = $(".grass-floor")');
     expect(live).toContain("grass.getBoundingClientRect()");
     expect(live).not.toContain("pm-npc-wander");
   });
 
-  it("keeps the walk lane inside the character column, clear of the status cards", () => {
-    // The grass runs under both desktop grid columns, but .mascot-stage
-    // (z-index 5) is its own stacking context and .home-stack sits at 10 —
-    // the farmer's z-index 15 cannot lift him above the cards, so the lane
-    // itself has to stop where the character column does.
-    expect(live).toContain('const stage = $(".mascot-stage")?.getBoundingClientRect()');
-    expect(live).toContain("Math.max(rect.left, stage ? stage.left : rect.left)");
-    expect(live).toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
-    // Footing still comes from the grass, only the horizontal span is clamped.
+  it("walks the whole grass strip, which the status rail no longer sits on", () => {
+    // The lane used to stop at .mascot-stage's right edge: the rail
+    // (.home-stack, z-index 10) sat ON the grass, and since .mascot-stage is
+    // its own stacking context the farmer's z-index 15 could not lift him over
+    // those cards — he vanished behind them. The rail now ends above the floor
+    // (its own clamp(44px,8vh,92px) bottom margin), so the grass is clear edge
+    // to edge and the lane is the grass itself.
+    expect(live).toContain("const left = Math.round(rect.left + 12);");
+    expect(live).toContain("Math.max(left, rect.right - width - 12)");
+    expect(live).not.toContain("Math.min(rect.right, stage ? stage.right : rect.right)");
+    // Footing still comes from the grass.
     expect(live).toContain("top: Math.round(rect.top - height + 8)");
-    // A column narrower than the sprite must not produce right < left.
-    expect(live).toContain("Math.max(left, laneRight - width - 12)");
-    // Lane depends on the stage now, so its resize has to restart the wander.
-    expect(live).toContain('for (const el of [$(".grass-floor"), $(".mascot-stage")])');
 
     // The weather/clock row must not sit under the fixed 44px mute button.
     expect(css).toMatch(/\.hud-top \{[\s\S]*?right:\s*44px/);
@@ -85,6 +94,22 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain('vine.classList.add("is-visible")');
     expect(live).toContain('matchMedia?.("(prefers-reduced-motion: reduce)")');
     expect(css).toContain(".npc-farmer-vine");
+  });
+
+  it("stops to farm during the day without changing game data", () => {
+    expect(html).toContain('class="npc-farm-tool" aria-hidden="true"');
+    expect(html).toContain('class="npc-farm-soil" aria-hidden="true"');
+    expect(live).toContain("async function farmerFarmPlot(epoch)");
+    expect(live).toContain("FARMER_FARMING_MS = 3_600");
+    expect(live).toContain('document.body?.classList.contains("night")');
+    expect(live).toContain("if (!(await farmerFarmPlot(epoch))) return;");
+    expect(live).toMatch(/if \(night\) \$\("#npc-farmer"\)\?\.classList\.remove\("npc-farming"\)/);
+    expect(live).toMatch(/restartFarmerMotion\(\)[\s\S]{0,220}?classList\.remove\("npc-farming"\)/);
+    expect(live).toMatch(/startFarmerDrag[\s\S]*?classList\.remove\("npc-walking", "npc-talking", "npc-farming"\)/);
+    expect(css).toContain("body:not(.night) .npc-farmer.npc-farming .npc-farm-tool");
+    expect(css).toContain("@keyframes pm-farmer-hoe");
+    expect(css).toContain("@keyframes pm-farmer-soil");
+    expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\)[\s\S]*?pm-farmer-tend-body/);
   });
 
   it("provides an accessible localized chat dialog with server-side answers", () => {

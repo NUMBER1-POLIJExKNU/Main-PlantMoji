@@ -16,7 +16,6 @@
 // are ephemeral by design (a missed giggle is not data loss).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { addGrowthRecord } from "@/app/settings/actions";
 import CameraSparkles from "@/components/camera-sparkles";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
@@ -83,8 +82,6 @@ export default function CameraGuardian({
   initialSnapshot?: SensorSnapshot | null;
 }) {
   const copy = CAMERA_COPY[locale];
-  const searchParams = useSearchParams();
-  const presentationMode = searchParams.has("presentation") || searchParams.has("demo");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -444,7 +441,7 @@ export default function CameraGuardian({
   );
 
   return (
-    <section className={`pm-cam${presentationMode ? " is-presentation" : ""}`}>
+    <section className="pm-cam">
       {status === "denied" || status === "nocamera" ? (
         <div className="pm-panel pm-cam-blocked">
           <h2>{status === "denied" ? copy.deniedTitle : copy.noCameraTitle}</h2>
@@ -501,9 +498,12 @@ export default function CameraGuardian({
         </div>
       )}
 
-      {presentationMode && <ProcessRail steps={visionSteps} label="Camera AI status" />}
-      {presentationMode && !guardianReady && <p className="pm-cam-note">{copy.guardianOfflineNote}</p>}
-      {presentationMode && scanDisabled && <p className="pm-cam-note">{copy.motionOnlyLabel}</p>}
+      {/* The rail and these two notes were presenter-only. They report what
+          the local model is actually doing and why a scan is unavailable, so
+          with the presentation mode gone they always render. */}
+      <ProcessRail steps={visionSteps} label="Camera AI status" />
+      {!guardianReady && <p className="pm-cam-note">{copy.guardianOfflineNote}</p>}
+      {scanDisabled && <p className="pm-cam-note">{copy.motionOnlyLabel}</p>}
       <details className="pm-cam-privacy" role="note"><summary>🔒 {copy.privacyTitle}</summary><div><p>{copy.privacyLine1} {copy.privacyLine2}</p></div></details>
       {scanNote && (
         <p className="pm-cam-note" role="status">

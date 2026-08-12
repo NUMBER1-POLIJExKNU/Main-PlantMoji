@@ -86,15 +86,27 @@ export interface CollectionTabsProps {
   spritePhase: SpritePhase;
 }
 
+// `art` is the designer's drawing; `emoji` stays as the fallback for the two
+// tabs that have no drawing yet (Badges, Wisdom) — same contract as
+// lib/nav-destinations.
 const TABS = [
-  { id: "moods", emoji: "🎭" },
-  { id: "badges", emoji: "🏅" },
-  { id: "story", emoji: "📜" },
-  { id: "wisdom", emoji: "🌾" },
+  { id: "moods", emoji: "🎭", art: "/icons/collection-moods.png" },
+  { id: "badges", emoji: "🏅", art: null },
+  { id: "story", emoji: "📜", art: "/icons/collection-story.png" },
+  { id: "wisdom", emoji: "🌾", art: null },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 type RewardPreview = { kind: TabId; emoji: string; title: string; line: string; particles: string[] };
+
+/** A designer icon standing in for an inline emoji. Sized in em so it lands at
+ *  exactly the size the emoji it replaced was drawn at, inheriting whatever
+ *  font-size the surrounding span already set — no second set of sizes to keep
+ *  in sync. Decorative: the copy beside it carries the meaning. */
+function InlineIcon({ src }: { src: string }) {
+  // eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels
+  return <img src={src} alt="" className="pm-inline-icon" draggable={false} />;
+}
 
 // Designer mood badge icon pack (public/farm/assets/moods/) — the dex CELL's
 // art. Each PlantMood maps to its own drawn icon file so the grid never
@@ -222,7 +234,19 @@ const BADGE_WHEEL_BRANCHES = [
   { id: "mastery", color: "#C89BFF", angle: 45, keys: ["PH_GUARDIAN", "MOOD_SCHOLAR", "CARE_VETERAN"] },
   { id: "consistency", color: "#71D18B", angle: 135, keys: ["CHRONICLER", "STREAK_7", "STREAK_30"] },
 ] as const;
-const BADGE_RING_RADII = [18, 31.5, 45] as const;
+/** Ring distances from the hub, as a % of the wheel's width.
+ *
+ *  The outer ring was 45, which put a node's centre 45% out and its own half
+ *  width (~6.9% of the wheel) on top of that — 51.9%, past the 50% edge of a
+ *  circle that clips (overflow-hidden + rounded-full). Measured at a 464px
+ *  wheel the outer gems overhung by 8.6px and were sliced flat.
+ *
+ *  41 is the largest outer ring that still fits once the node's own width and
+ *  the 3px border are counted, at every size the wheel takes: measured margins
+ *  of 9.7px at 464px, 4.5px at 300px, 0.9px at 260px (the node width clamps to
+ *  44px below ~320px, so the tightest case is the narrowest wheel). The inner
+ *  two are scaled by the same 41/45 so the spacing between rings stays even. */
+const BADGE_RING_RADII = [16.5, 28.75, 41] as const;
 
 function badgeWheelMeta(key: string) {
   for (const branch of BADGE_WHEEL_BRANCHES) {
@@ -371,18 +395,21 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
   const flipTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const previewRef = useRef<HTMLElement | null>(null);
 
-  // The reward pop renders once, directly under the tab bar — but the buttons
-  // that fire it sit at the BOTTOM of their section (Story's "Play scene" is
-  // below the chapter map AND the chapter card). Landing off-screen above, the
-  // click read as a dead button. Bring the pop to the reader rather than
-  // moving it, so all three trigger sites keep sharing one slot.
-  // Instant, not smooth: a smooth scrollIntoView silently no-ops inside
-  // .reno-route-content. Measured on the deployed page — with "smooth" the pop
-  // stayed put at top -381, with the default it landed at +276. Arriving at
-  // once is also what a reduced-motion reader wants, so there is no branch.
+  // One slot shared by all three trigger sites, and it now sits BELOW the tab
+  // panels rather than under the tab bar. Every button that fires it — Moods'
+  // "Try it now", the badge preview, Story's "Play scene" — is at the bottom
+  // of its section, so a pop that appears underneath lets the reader carry on
+  // downward instead of being thrown back up the page to find it.
+  //
+  // block:"nearest" for the same reason: it scrolls only when the pop is not
+  // already on screen, so the common case (it opened just below the button
+  // that was clicked) does not move the page at all. Instant, not smooth — a
+  // smooth scrollIntoView silently no-ops inside .reno-route-content, measured
+  // on the deployed page, and arriving at once is what a reduced-motion reader
+  // wants anyway, so there is no branch.
   useEffect(() => {
     if (!preview || previewPulse === 0) return;
-    previewRef.current?.scrollIntoView({ block: "center" });
+    previewRef.current?.scrollIntoView({ block: "nearest" });
   }, [preview, previewPulse]);
 
   useEffect(() => {
@@ -488,8 +515,8 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
 
   // Copy lives inline per locale (same mechanism as the rest of this file).
   const copy = locale === "id"
-    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", wisdomSource: "Kearifan tani turun-temurun.", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK KETUK", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", newBadge: "BARU", moodComplete: "◆ KOLEKSI LENGKAP ◆", moodCompleteLine: "Semua suasana sudah ditemukan! Hadiah kejutan sedang disiapkan." }
-    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", wisdomSource: "Traditional farming wisdom.", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", newBadge: "NEW", moodComplete: "◆ COLLECTION COMPLETE ◆", moodCompleteLine: "Every mood has been discovered! A surprise reward is on its way." };
+    ? { moods: "Suasana", badges: "Lencana", story: "Cerita", wisdom: "Pengetahuan", discovered: "suasana ditemukan", learned: "Yang sudah dipelajari", unlockedBadges: "lencana terbuka", unlocked: "Terbuka", locked: "Terkunci", unlockedOn: "Diperoleh", chapters: "bab terbuka", wisdomIntro: "Pengetahuan tradisional yang dihubungkan dengan pengukuran", wisdomSource: "Kearifan tani turun-temurun.", oneMore: "Tinggal 1 lagi!", wheelCenter: "PERTUMBUHAN", branchBond: "IKATAN", branchEnvironment: "LINGKUNGAN", branchMastery: "KEAHLIAN", branchConsistency: "KONSISTEN", reward: "EFEK SENTUH DI KEBUN SAYA", equip: "Aktifkan", equipped: "Sedang aktif", remove: "Matikan", tryIt: "Coba sekarang", replay: "Putar adegan", previewFx: "Lihat efeknya", fxWhere: "Aktifkan, lalu sentuh KEPALA Jamkachu di Kebun Saya — kilau inilah yang muncul. Beri jeda sebentar antar sentuhan; menyentuh pot atau batang memberi reaksi lain.", replayHelp: "Memutar ulang adegan bab ini di sini — tidak ada yang berubah di kebunmu.", challenge: "Coba tebak", correct: "Benar! Kamu membaca lingkungan dengan tepat.", wrong: "Belum tepat—lihat jawabannya dan coba lagi.", newBadge: "BARU", moodComplete: "◆ KOLEKSI LENGKAP ◆", moodCompleteLine: "Semua suasana sudah ditemukan! Hadiah kejutan sedang disiapkan." }
+    : { moods: "Moods", badges: "Badges", story: "Story", wisdom: "Wisdom", discovered: "moods discovered", learned: "What we've learned", unlockedBadges: "badges unlocked", unlocked: "Unlocked", locked: "Locked", unlockedOn: "Collected", chapters: "chapters unlocked", wisdomIntro: "Traditional knowledge, translated into measurements", wisdomSource: "Traditional farming wisdom.", oneMore: "1 more to go!", wheelCenter: "GROWTH", branchBond: "BOND", branchEnvironment: "ENVIRONMENT", branchMastery: "MASTERY", branchConsistency: "CONSISTENCY", reward: "TAP EFFECT ON MY GARDEN", equip: "Activate", equipped: "Active", remove: "Turn off", tryIt: "Try it now", replay: "Play scene", previewFx: "See the effect", fxWhere: "Turn it on, then tap Jamkachu's HEAD on My Garden — these are the sparkles you get. Leave a moment between taps; tapping the pot or the stem gives a different reaction.", replayHelp: "Replays this chapter's scene right here — nothing in your garden changes.", challenge: "Try a prediction", correct: "Correct! You read the environment well.", wrong: "Not yet—check the answer and try again.", newBadge: "NEW", moodComplete: "◆ COLLECTION COMPLETE ◆", moodCompleteLine: "Every mood has been discovered! A surprise reward is on its way." };
 
   const discoveredMoods = moods.filter((mood) => mood.discovered || liveDiscoveredMoods.has(mood.mood)).length;
   const unlockedBadges = badges.filter(
@@ -558,6 +585,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
            plain :active transform, so it stays on for everyone. */
         .pm-tab-btn { transition: transform 0.08s ease-out; }
         .pm-tab-btn:active { transform: translateY(2px); }
+        /* Matches the 20px emoji box the drawn tabs replace, so swapping art in
+           does not disturb the tab's vertical centring. */
+        .pm-tab-art { display: block; width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; }
+        .pm-inline-icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; object-fit: contain; image-rendering: pixelated; }
         /* One-screen badges tab: wheel + detail side by side on wide
            viewports, wheel diameter clamped to viewport height. Nodes and
            the hub size in cqw (container width), so the whole radial design
@@ -578,10 +609,21 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         .pm-gem-locked { box-shadow: inset 0 0 0 6px rgba(36,52,33,.08), 0 4px 0 #879481; }
         .pm-wheel-node { position: absolute; width: clamp(44px, 13.75cqw, 66px); transform: translate(-50%, -50%); z-index: 3; }
         .pm-wheel-node .pm-gem-socket { width: 100%; }
+        /* The gem glyph has to scale with its socket, not with the viewport.
+           text-3xl/sm:text-4xl is a fixed 30/36px, and an emoji paints wider
+           than its font-size — measured 49px inside a socket whose inner space
+           is nodeWidth-10, i.e. 34px once the node clamps to 44px. The glyph
+           was being sliced by the socket's own overflow-hidden on any narrow
+           wheel. cqw ties it to the same container the node width uses. */
+        .pm-wheel-node .pm-gem-socket > span { font-size: clamp(22px, 8.6cqw, 40px); }
         .pm-wheel-center { position: absolute; left: 50%; top: 50%; z-index: 4; width: clamp(64px, 20.4cqw, 98px); aspect-ratio: 1; transform: translate(-50%, -50%); }
         .pm-wheel-label { position: absolute; z-index: 2; font: 7px/1.4 var(--pm-font-pixel); letter-spacing: .05em; color: #57684F; }
         .pm-badge-effect-icon { display: flex; align-items: center; justify-content: center; gap: 1px; }
-        .pm-badge-effect-icon i { display: block; max-width: 21px; font-style: normal; font-size: 18px; line-height: 1; }
+        /* Two glyphs inside a 48px circle whose inner space is 44px. At 18px
+           they measured 47px together and the pair was clipped by the circle's
+           overflow-hidden — emoji paint wider than their font-size, so the
+           nominal 2x18+1 never told the truth. 15px/18px wide leaves 37px. */
+        .pm-badge-effect-icon i { display: block; max-width: 18px; font-style: normal; font-size: 15px; line-height: 1; }
         @media (max-width: 480px) {
           .pm-badge-effect-row { grid-template-columns: 48px minmax(0,1fr); }
           .pm-badge-effect-row > button { grid-column: 1 / -1; width: 100%; }
@@ -610,15 +652,25 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 setPreview(null);
                 window.PMSfx?.play("tick");
               }}
-              className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center gap-1 rounded-xl px-1 py-2 text-[8px] transition-all sm:text-[9px]"
+              // justify-center + the uneven pt-4/pb-2: the pixel label's line
+              // box is 25.6px tall for one 9px line, so ~7px of invisible
+              // leading sits under the glyphs while the icon had only 8px
+              // above it — the visible block landed 3.6px high and the icon
+              // read as stuck to the top edge. The extra top padding balances
+              // that leading instead of squeezing the label, so the text keeps
+              // exactly its current spacing. justify-center then holds the
+              // centering when a row stretches (a label wrapping on narrow
+              // screens used to top-align its three neighbours).
+              className="pm-heading pm-tab-btn flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl px-1 pt-4 pb-2 text-[8px] transition-all sm:text-[9px]"
               style={
                 active
                   ? { background: "var(--color-grass)", color: "#ffffff", boxShadow: "0 3px 0 var(--color-forest)" }
                   : { color: "var(--color-text)" }
               }
             >
-              <span className="text-base leading-none" role="img" aria-hidden="true">
-                {entry.emoji}
+              <span className="text-xl leading-none" role="img" aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element -- same-origin pixel art; the optimizer would resample the crisp pixels */}
+                {entry.art ? <img src={entry.art} alt="" width={20} height={20} className="pm-tab-art" draggable={false} /> : entry.emoji}
               </span>
               {copy[entry.id]}
             </button>
@@ -626,31 +678,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
         })}
       </div>
 
-      {preview && (
-        <section ref={previewRef} key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
-          <div className="relative mx-auto mt-2 grid size-24 place-items-center overflow-hidden rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
-            <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
-            {Array.from({ length: 9 }, (_, index) => (
-              <span key={`${previewPulse}-${index}`} className="pm-reward-particle pointer-events-none absolute text-xl" style={{ "--reward-x": `${((index % 5) - 2) * 20}px`, animationDelay: `${index * 45}ms` } as CSSProperties} aria-hidden="true">
-                {preview.particles[index % preview.particles.length]}
-              </span>
-            ))}
-          </div>
-          <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
-          <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
-          <div className="mx-auto mt-3 max-w-[260px] rounded-xl border-2 border-dashed border-[#9bb88c] bg-[#f7fbe9] px-3 py-2 text-left text-[11px] font-bold text-[#397a2b]">
-            <div className="flex items-center justify-between"><span>✨ {locale === "id" ? "KOMBO SEMANGAT" : "CARE COMBO"}</span><b>{Math.min(3, previewPulse)} / 3</b></div>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#dce8d3]"><span className="block h-full rounded-full bg-[#f4c95d] transition-all" style={{ width: `${Math.min(100, previewPulse * 33.333)}%` }} /></div>
-          </div>
-          <button type="button" className="pm-btn pm-btn-secondary mt-3" onClick={() => setPreview(null)}>{locale === "id" ? "KEMBALI KE KOLEKSI" : "BACK TO COLLECTION"}</button>
-        </section>
-      )}
 
       {tab === "moods" && (
         <section id="collection-panel-moods" role="tabpanel" className="mt-5">
           <ProgressCounter value={discoveredMoods} total={moods.length} label={copy.discovered} />
           {discoveredMoods === moods.length - 1 && <OneMorePill label={copy.oneMore} />}
-          <div className="pm-mood-dex-head"><span aria-hidden="true">🎮</span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div></div>
+          <div className="pm-mood-dex-head"><span aria-hidden="true"><InlineIcon src="/icons/mood-dex.png" /></span><div><p>{locale === "id" ? "MOOD DEX JAMKACHU" : "JAMKACHU MOOD DEX"}</p><h3>{locale === "id" ? "Temukan semua ekspresi dari lingkungan nyata" : "Discover every expression through the real environment"}</h3></div></div>
           {/* Grid + detail split at >=800px (.pm-badge-layout — same shared
               class the Badges tab already established two-column with). */}
           <div className="pm-badge-layout">
@@ -734,12 +767,12 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                         rule) — above the plant-science why/action cards,
                         whose copy stays exactly as written. */}
                     {sensorHint && (
-                      <p className="pm-mood-sensor-hint"><span aria-hidden="true">📡</span> {sensorHint[locale]}</p>
+                      <p className="pm-mood-sensor-hint"><span aria-hidden="true"><InlineIcon src="/icons/sensor.png" /></span> {sensorHint[locale]}</p>
                     )}
                     {selectedMood.whyCard ? (
                       <>
-                        <div className="pm-mood-lesson"><span>💡</span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div>
-                        <div className="pm-mood-action"><span>🎯</span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div>
+                        <div className="pm-mood-lesson"><span><InlineIcon src="/icons/lesson.png" /></span><div><small>{locale === "id" ? "KENAPA BEGITU?" : "WHY THIS MOOD?"}</small><h4>{selectedMood.whyCard.title}</h4><p>{selectedMood.whyCard.why}</p></div></div>
+                        <div className="pm-mood-action"><span><InlineIcon src="/icons/action.png" /></span><div><small>{locale === "id" ? "AKSI AMAN" : "SAFE NEXT MOVE"}</small><p>{selectedMood.whyCard.action}</p></div></div>
                       </>
                     ) : (
                       <p>{locale === "id" ? "Pelajaran sensor akan muncul setelah tersedia." : "Its sensor lesson will appear when available."}</p>
@@ -818,18 +851,37 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               <h3 className="mt-2 text-base font-bold">{selectedBadge.name}</h3>
               <p className="mt-1 text-xs leading-5" style={{ color: INK_MUTED }}>{selectedBadge.description}</p>
               {selectedBadge.unlockedLabel && <p className="mt-2 text-[11px] font-semibold" style={{ color: "#A97B12" }}>{copy.unlockedOn} {selectedBadge.unlockedLabel}</p>}
+              {/* Two columns, with the buttons on their own row underneath.
+                  It was [52px, 1fr, auto], and `auto` let the widest button set
+                  that column — which in this narrow rail starved the 1fr text
+                  down to a couple of characters and stacked "TAP EFFECT ON MY
+                  GARDEN" into vertical fragments. Adding the preview button is
+                  what pushed it over the edge. */}
               {selectedEffect && (
-                <div className="pm-badge-effect-row mx-auto mt-4 grid max-w-sm grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
+                <div className="pm-badge-effect-row mx-auto mt-4 grid max-w-sm grid-cols-[52px_minmax(0,1fr)] items-center gap-x-3 gap-y-2.5 rounded-xl border-2 border-[#D8C98B] bg-[#FFF9DC] p-3 text-left">
                   <span className="pm-badge-effect-icon grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#C99B32] bg-white text-xl" aria-hidden="true">{selectedEffect.particles.slice(0,2).map((particle, index) => <i className="not-italic" key={`${particle}-${index}`}>{particle}</i>)}</span>
                   <div className="min-w-0 flex-1">
                     <p className="pm-heading text-[8px] text-[#A97B12]">{copy.reward}</p>
                     <p className="mt-1 text-sm font-bold">{selectedEffect.name[locale]}</p>
                     <p className="text-[11px]" style={{ color: INK_MUTED }}>{selectedEffect.particles.join(" · ")}</p>
                   </div>
-                  <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
-                    {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
-                  </button>
+                  <div className="col-span-2 grid grid-cols-2 gap-2">
+                    <button type="button" disabled={!selectedBadgeUnlocked} onClick={toggleBadgeEffect} className={`pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45 ${selectedEffectActive ? "pm-btn-danger" : "pm-btn-primary"}`} aria-pressed={selectedEffectActive}>
+                      {selectedEffectActive ? copy.remove : selectedBadgeUnlocked ? copy.equip : `🔒 ${copy.locked}`}
+                    </button>
+                    {/* Seeing the effect used to mean activating it, walking to
+                        My Garden, and landing a tap the pet cooldown and the
+                        pot/stem router did not swallow — which reads as "some
+                        badges are broken". This plays the same particles right
+                        here, the way the shop previews an item. */}
+                    <button type="button" disabled={!selectedBadgeUnlocked} onClick={() => playReward({ kind: "badges", emoji: selectedBadge.emoji, title: selectedEffect.name[locale], line: copy.fxWhere, particles: selectedEffect.particles })} className="pm-btn cursor-pointer px-3 py-2 text-[10px] disabled:cursor-not-allowed disabled:opacity-45">
+                      ▶ {copy.previewFx}
+                    </button>
+                  </div>
                 </div>
+              )}
+              {selectedEffect && selectedBadgeUnlocked && (
+                <p className="mx-auto mt-2 max-w-sm text-left text-[11px] leading-4" style={{ color: INK_MUTED }}>{copy.fxWhere}</p>
               )}
             </article>
           )}
@@ -859,9 +911,15 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
             <div className="pm-story-selected">
               <StoryChapterCard chapter={{ chapter: selectedChapter.chapter, title: selectedChapter.title, description: selectedChapter.description }} unlocked={selectedChapter.unlocked} scene={selectedChapter.scene} locale={locale} />
               {selectedChapter.unlocked && selectedChapter.scene && (
-                <button type="button" className="pm-btn pm-btn-primary pm-story-replay w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: selectedChapter.chapter >= 5 ? "🎆" : "🌱", title: selectedChapter.title, line: selectedChapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? selectedChapter.description, particles: ["✨", "📖", "💚"] })}>
-                  🎬 {copy.replay}
-                </button>
+                <>
+                  <button type="button" className="pm-btn pm-btn-primary pm-story-replay w-full cursor-pointer text-[9px]" onClick={() => playReward({ kind: "story", emoji: selectedChapter.chapter >= 5 ? "🎆" : "🌱", title: selectedChapter.title, line: selectedChapter.scene?.lines.find((line) => line.speaker === "plant")?.text ?? selectedChapter.description, particles: ["✨", "📖", "💚"] })}>
+                    🎬 {copy.replay}
+                  </button>
+                  {/* The button's label alone read as though it might start
+                      something elsewhere in the game. It only replays this
+                      chapter's scene in the panel above. */}
+                  <p className="mt-2 text-[11px] leading-4" style={{ color: INK_MUTED }}>{copy.replayHelp}</p>
+                </>
               )}
             </div>
           )}
@@ -871,7 +929,7 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
       {tab === "wisdom" && (
         <section id="collection-panel-wisdom" role="tabpanel" className="mt-5">
           <div className="pm-wisdom-hero" role="status">
-            <span className="pm-wisdom-hero-icon" aria-hidden="true">🎮</span>
+            <span className="pm-wisdom-hero-icon" aria-hidden="true"><InlineIcon src="/icons/mood-dex.png" /></span>
             <div><b>{locale === "id" ? "PILIH MISI TANAMAN" : "PICK A PLANT MISSION"}</b><p>{locale === "id" ? "Baca petunjuk singkat → pilih jawaban → dapatkan umpan balik." : "Read the clue → pick an answer → get instant feedback."}</p></div>
           </div>
           <ProgressCounter value={wisdomMastered.size} total={wisdom.length} label={copy.learned} />
@@ -889,10 +947,10 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
                 </div>
                 <p className="pm-wisdom-saying">“{entry.saying}”</p>
                 <button type="button" className="pm-btn pm-btn-primary mt-3 w-full min-h-11 cursor-pointer text-[9px]" onClick={() => { setWisdomTrial(entry.id); setWisdomAnswer(null); window.PMSfx?.play("tick"); }}>
-                  🎯 {copy.challenge}
+                  <InlineIcon src="/icons/action.png" /> {copy.challenge}
                 </button>
                 <details className="pm-wisdom-details">
-                  <summary>💡 {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary>
+                  <summary><InlineIcon src="/icons/lesson.png" /> {locale === "id" ? "Lihat penjelasan" : "See the why"}</summary>
                   <p>{entry.translation}</p>
                   <div className="pm-wisdom-clue"><span aria-hidden="true">🧩</span><p>{entry.example}</p></div>
                   <small>{copy.wisdomSource}</small>
@@ -919,6 +977,26 @@ export default function CollectionTabs({ locale, moods, badges, chapters, wisdom
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {preview && (
+        <section ref={previewRef} key={previewPulse} className="pm-panel pm-reward-pop relative mt-4 overflow-hidden text-center" aria-live="polite" style={{ borderColor: "var(--color-yellow)", background: "linear-gradient(180deg,#FFFDF1,#F4FAF1)" }}>
+          <div className="relative mx-auto mt-2 grid size-24 place-items-center overflow-hidden rounded-full border-[3px] border-[#397A2B] bg-[#E8F6E0] shadow-[0_5px_0_#2B3A27]">
+            <span className="text-5xl" aria-hidden="true">{preview.emoji}</span>
+            {Array.from({ length: 9 }, (_, index) => (
+              <span key={`${previewPulse}-${index}`} className="pm-reward-particle pointer-events-none absolute text-xl" style={{ "--reward-x": `${((index % 5) - 2) * 20}px`, animationDelay: `${index * 45}ms` } as CSSProperties} aria-hidden="true">
+                {preview.particles[index % preview.particles.length]}
+              </span>
+            ))}
+          </div>
+          <h3 className="mt-3 text-base font-bold">{preview.title}</h3>
+          <p className="mt-1 text-sm leading-5" style={{ color: INK_MUTED }}>{preview.line}</p>
+          <div className="mx-auto mt-3 max-w-[260px] rounded-xl border-2 border-dashed border-[#9bb88c] bg-[#f7fbe9] px-3 py-2 text-left text-[11px] font-bold text-[#397a2b]">
+            <div className="flex items-center justify-between"><span>✨ {locale === "id" ? "KOMBO SEMANGAT" : "CARE COMBO"}</span><b>{Math.min(3, previewPulse)} / 3</b></div>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#dce8d3]"><span className="block h-full rounded-full bg-[#f4c95d] transition-all" style={{ width: `${Math.min(100, previewPulse * 33.333)}%` }} /></div>
+          </div>
+          <button type="button" className="pm-btn pm-btn-secondary mt-3" onClick={() => setPreview(null)}>{locale === "id" ? "KEMBALI KE KOLEKSI" : "BACK TO COLLECTION"}</button>
         </section>
       )}
     </div>

@@ -7,8 +7,8 @@
 // lib/nav-destinations.ts, and cannot disagree again.
 
 import type { ReactNode } from "react";
-import { navDestination } from "@/lib/nav-destinations";
 import DestinationIcon from "@/components/destination-icon";
+import { navDestination } from "@/lib/nav-destinations";
 
 export default function PageHeader({
   destination,
@@ -28,8 +28,8 @@ export default function PageHeader({
   meta?: ReactNode;
 }) {
   const entry = destination ? navDestination(destination) : null;
-  // A named destination always owns its icon. `icon` is only for standalone
-  // headers, so it can never override the picture the user just clicked.
+  // Collection is the one destination the designer hasn't drawn. It falls back
+  // to the same emoji the rail falls back to, not to a second, different one.
   const fallback = entry?.icon ?? icon ?? "";
 
   return (

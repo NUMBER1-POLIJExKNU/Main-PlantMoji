@@ -398,8 +398,7 @@ Live screens:
              XP orb cascade, reason chips, causal echo, Lucky ×2 stamp,
              chapter gate — with 8-bit WebAudio SFX (on by default,
              one-tap mute). Real backend-verified transitions only; reduced-motion
-             safe. Append ?demo=1 for presenter hotkeys + a QA self-test
-             overlay (presentation-only replays, zero data writes).
+             safe.
 
 /quests      Active & past quests, live quest celebrations, verifying
              shimmer, "Today's Event" banner (daily events)
@@ -411,8 +410,8 @@ Live screens:
 /plants      Jember Crop Explorer — real snapshot scan, deterministic crop
              comparison, condition detail, grounded AI/fallback explanation
 /diary       Care Memories (automatic) + Growth Notes (manual real growth)
-/settings    Plant name, personality and operator/demo tools;
-             the Demo Control Center renders only on /settings?demo=1
+/settings    Plant name, personality, growth stage, and the classroom
+             cheat sandbox / developer mode doors
 ```
 
 Every React page shares the farm page's pixel design system (`pm-*` utility
@@ -470,11 +469,6 @@ SUPABASE_SECRET_KEY=YOUR_SECRET_KEY
 # without auth (local prototype mode).
 DEVICE_API_TOKEN=
 
-# Optional — the Demo Control Center on /settings?demo=1. Defaults to "admin"
-# when unset (team-internal project). The same code can reset the story or
-# unlock the full Lv.10 demo.
-DEMO_CHEAT_CODE=
-
 # Optional — BMKG village code. Defaults to Tegalgede, Sumbersari, Jember.
 BMKG_ADM4_CODE=35.09.21.1005
 
@@ -486,14 +480,10 @@ GEMINI_API_KEY=
 
 > ⚠️ Never commit `.env.local` or a Supabase secret key.
 
-For a presentation, open **`/settings?demo=1`** (the Demo Control Center is
-hidden from the normal student UX) and enter the code — `admin` unless
-`DEMO_CHEAT_CODE` overrides it. **Unlock everything** creates a replay-safe
-Lv.10 showcase with every mood, badge, story chapter, and quest type.
-**Reset to start** restores Lv.1 / 0 XP and clears game progress for another
-rehearsal. Neither action changes sensor readings, growth records, crop
-thresholds, or hardware control. The full filming/go-live checklist lives in
-`docs/RUNBOOK-filming-and-golive.md` (EN / ID / KO).
+The presentation/demo mode was removed. For classroom demonstrations use the
+classroom cheat sandbox at the bottom of **`/settings`** — a browser-only
+sandbox that never writes Supabase or hardware — or developer mode at
+**`/settings?dev=1`** when the real rows do need to change.
 
 The home weather card calls `GET /api/local-context`, which proxies and caches
 the official BMKG forecast for the configured `BMKG_ADM4_CODE`. BMKG is
@@ -527,6 +517,7 @@ supabase/milestone18-growth-snapshots.sql      private growth-snapshots Storage 
 supabase/milestone19-photo-diary.sql           legacy photo-diary columns (superseded by Live Guardian)
 supabase/milestone19-camera-guardian.sql       Live Guardian camera_events + realtime (stores no images)
 supabase/milestone20-companion-skins.sql       cosmetic crop-skin key on companion_state (display-only)
+supabase/milestone21-sensor-realtime.sql        pushes sensor_readings live (drops the 15s poll wait)
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every
@@ -610,8 +601,7 @@ plantmoji/
 ├── public/farm/          Pixel-farm home page (character-first)
 │   ├── live.js           Live data binding + celebration queue + FX
 │   ├── sfx.js            8-bit WebAudio SFX engine (shared with React pages)
-│   ├── strings.js        Two-locale UI string table (ID default / EN)
-│   └── demo.js           Presenter hotkeys + QA self-test overlay (?demo=1)
+│   └── strings.js        Two-locale UI string table (ID default / EN)
 │
 ├── src/
 │   ├── app/
@@ -620,7 +610,7 @@ plantmoji/
 │   │       ├── sensor-readings/  raw sensor ingest (idempotent readingId)
 │   │       ├── device-events/    Node-RED → game engine (idempotent)
 │   │       ├── sensor-history/   monitoring dashboard feed
-│   │       ├── game-tick/ mood-message/ public-config/ demo-reset/ daily-quiz/
+│   │       ├── game-tick/ mood-message/ public-config/ daily-quiz/
 │   │       ├── environment-scan/ environment-explanation/ crop-profile/
 │   │       └── local-context/   cached BMKG outdoor forecast
 │   │
@@ -684,7 +674,6 @@ plantmoji/
 - [x] Dopamine reward layer, ethically (celebration queue, 8-bit SFX, reward pod, orb cascade, reason chips, Lucky ×2, chapter gate — real verified transitions only)
 - [x] Bilingual UI — Bahasa Indonesia default + English switch
 - [x] Unified pixel-farm design across every React page (shared sidebar + pm-* utilities)
-- [x] Presenter tooling (?demo=1 hotkeys + QA overlay, /settings?demo=1 Demo Control Center)
 - [x] Sensor monitoring dashboard (/monitoring, "Plant Status")
 - [x] Daily events + Jember-localized story, seasons, and wisdom
 - [x] Deterministic Jember Environment Analyzer + Scan This Place + Crop Match
@@ -732,11 +721,10 @@ This demonstrates the full loop:
 
 > **real-world sensing → care → verification → game progression**
 
-For filming and go-live, follow `docs/RUNBOOK-filming-and-golive.md`
-(EN / ID / KO): environment variables, migration verification, the
-pre-filming QA checklist, and the three demo beats — including the
-honest-demo rule that `?demo=1` hotkey replays are presentation-only
-and never shown as live sensor events.
+For go-live, follow `docs/RUNBOOK-filming-and-golive.md` (EN / ID / KO):
+environment variables, migration verification, and the QA checklist. Its
+presenter-hotkey sections describe the removed presentation mode and no
+longer apply.
 
 ---
 

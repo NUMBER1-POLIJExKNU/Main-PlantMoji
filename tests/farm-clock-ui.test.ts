@@ -12,10 +12,13 @@ describe("farm home Jember clock", () => {
     expect(styles).toContain(".jember-clock");
   });
 
-  it("uses WIB for both the time and day/night icon", () => {
+  it("uses WIB for the displayed time", () => {
     expect(script).toContain('timeZone: "Asia/Jakarta"');
     expect(script).toContain("function renderJemberClock()");
-    expect(script).toContain('now.hour >= 18 || now.hour < 6 ? "🌙" : "☀️"');
+    // The card shows the time only. Its sun/moon glyph was removed: it sat
+    // beside the weather widget's own icon and read as a second forecast.
+    expect(html).not.toContain('id="jember-clock-icon"');
+    expect(script).not.toContain("jember-clock-icon");
     expect(script).toContain("window.setInterval(renderJemberClock, 30_000)");
     expect(script).toContain('document.addEventListener("visibilitychange"');
     expect(script).toContain("Date.now() + 7 * 60 * 60_000");

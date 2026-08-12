@@ -65,12 +65,11 @@ describe("NPC cast placements", () => {
     expect(read("src/app/monitoring/page.tsx")).toContain('npc="botanis"');
   });
 
-  it("makes Moji-Bot the AI-advisory avatar on camera and the demo panel mascot", () => {
+  it("makes Moji-Bot the AI-advisory avatar on camera", () => {
     const guardian = read("src/components/camera-guardian.tsx");
     expect(guardian).toContain("/farm/assets/npc/2x/npc-05-moji-bot.png");
     expect(guardian).toContain('npcNameLabel(locale, "moji-bot")');
     expect(assetExists("farm/assets/npc/2x/npc-05-moji-bot.png")).toBe(true);
-    expect(read("src/components/demo-control-center.tsx")).toContain('npc="moji-bot"');
   });
 
   it("hosts Penjelajah inside the crop explorer scan radar", () => {

@@ -20,6 +20,8 @@ export interface QuestDefinition {
   title: string;
   description: string;
   emoji: string;
+  /** Designer icon;  stays as the fallback where none is drawn. */
+  art?: string;
   xpReward: number;
   kind: QuestKind;
   /** Mood that starts this quest when the plant enters it. */
@@ -69,6 +71,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     title: "Keep Me Happy",
     description: "Keep me feeling great for 30 minutes straight.",
     emoji: "🌱",
+    art: "/icons/quests/keep-me-happy.png",
     xpReward: 20,
     kind: "maintain",
     triggerMood: "Happy",
@@ -79,6 +82,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     title: "Stay Comfy",
     description: "Keep me in my comfort zone for two hours straight.",
     emoji: "🛋️",
+    art: "/icons/quests/stay-comfy.png",
     xpReward: 40,
     kind: "maintain",
     triggerMood: "Happy",
@@ -90,6 +94,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "I'm overheating! Cool my air down and keep it stable for 5 minutes.",
     emoji: "❄️",
+    art: "/icons/quests/cool-me-down.png",
     xpReward: 30,
     kind: "recovery",
     triggerMood: "Overheating",
@@ -102,6 +107,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "Brr — I'm too cold! Warm my air gently and keep it stable for 5 minutes. Move me somewhere warmer or away from cold drafts.",
     emoji: "🧣",
+    art: "/icons/quests/warm-me-up.png",
     xpReward: 30,
     kind: "recovery",
     triggerMood: "TooCold",
@@ -114,6 +120,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "It's too dark and I'm getting sleepy. Bring back the light and keep it steady for 5 minutes.",
     emoji: "☀️",
+    art: "/icons/quests/give-me-more-light.png",
     xpReward: 20,
     kind: "recovery",
     triggerMood: "Sleepy",
@@ -127,6 +134,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "The AIR around my leaves is too dry — my soil is fine, so please don't water it. Mist the air gently or move me away from heaters and drafts, then keep it steady for 5 minutes.",
     emoji: "💦",
+    art: "/icons/quests/humidify-my-air.png",
     xpReward: 20,
     kind: "recovery",
     triggerMood: "DryAir",
@@ -141,6 +149,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "The AIR around my leaves is too humid — my soil is fine, so please don't change its water. Improve airflow, open a window, or move me away from steam and misting, then keep it steady for 5 minutes.",
     emoji: "🌬️",
+    art: "/icons/quests/dehumidify-my-air.png",
     xpReward: 20,
     kind: "recovery",
     triggerMood: "HumidAir",
@@ -155,6 +164,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "My soil feels too sour. Sprinkle a little wood ash or mix in some fresh potting soil, then keep me steady for 5 minutes.",
     emoji: "🧪",
+    art: "/icons/quests/balance-soil-acidic.png",
     xpReward: 25,
     kind: "recovery",
     triggerMood: "SoilAcidic",
@@ -167,6 +177,7 @@ export const QUEST_DEFINITIONS: Record<QuestKey, QuestDefinition> = {
     description:
       "My soil feels too chalky. Rinse it gently with plain water or mix in some leaf mould, then keep me steady for 5 minutes.",
     emoji: "🧪",
+    art: "/icons/quests/balance-soil-alkaline.png",
     xpReward: 25,
     kind: "recovery",
     triggerMood: "SoilAlkaline",

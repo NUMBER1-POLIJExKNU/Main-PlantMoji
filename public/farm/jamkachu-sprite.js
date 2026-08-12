@@ -43,7 +43,7 @@
   // sleepy lids (scripts/build-unwell-face.mjs). The thirsty face's big dark
   // ovals read as sullen at mascot size, and four moods had to wear it.
   // Replace these files if the designer draws a proper one.
-  var SPRITE_MOODS = ["happy", "plain", "thirsty", "sleepy", "overheat", "unwell"];
+  var SPRITE_MOODS = ["happy", "overheat"];
 
   /** Mood→sprite. Four moods share the calm "plain" body and stay
    *  distinguishable via the status chip below plus the #char-mood text
@@ -58,12 +58,12 @@
   var MOOD_SPRITE = {
     Happy: "happy",
     Overheating: "overheat",
-    TooCold: "sleepy", // cold plants hunker down; the 🥶 badge names it
-    DryAir: "unwell",
-    HumidAir: "unwell",
-    Sleepy: "sleepy",
-    SoilAcidic: "unwell",
-    SoilAlkaline: "unwell",
+    TooCold: "happy",
+    DryAir: "happy",
+    HumidAir: "happy",
+    Sleepy: "happy",
+    SoilAcidic: "happy",
+    SoilAlkaline: "happy",
   };
 
   /** Emoji chip floated near the sprite head for the plain-mapped moods
@@ -234,8 +234,8 @@
   /** Night sleep (sleepShown) forces the sleepy body; unknown moods render
    *  the calm plain body rather than a wrong celebration. */
   function spriteMoodFor() {
-    if (state.sleeping) return "sleepy";
-    return MOOD_SPRITE[state.mood] || "plain";
+    if (state.sleeping) return "happy";
+    return MOOD_SPRITE[state.mood] || "happy";
   }
 
   /** Accessory earned by bond level, clamped to what the phase can wear. */
@@ -421,12 +421,17 @@
       }
     }
     var chipEl = document.getElementById("mood-status-chip");
+    var chipBubbleEl = document.getElementById("mood-thought-bubble");
     if (chipEl) {
       var chipArt = state.sleeping ? "" : MOOD_CHIP_ART[state.mood] || "";
-      if (chipEl.dataset.pmChip !== chipArt) {
-        chipEl.dataset.pmChip = chipArt;
+      var chipKey = state.sleeping ? "sleeping" : chipArt;
+      if (chipEl.dataset.pmChip !== chipKey) {
+        chipEl.dataset.pmChip = chipKey;
+        if (chipBubbleEl) chipBubbleEl.hidden = !chipKey;
         chipEl.textContent = "";
-        if (chipArt) {
+        if (state.sleeping) {
+          chipEl.textContent = "💤";
+        } else if (chipArt) {
           var chipImg = document.createElement("img");
           chipImg.src = MOOD_BADGE_BASE + chipArt + ".png";
           chipImg.alt = "";
