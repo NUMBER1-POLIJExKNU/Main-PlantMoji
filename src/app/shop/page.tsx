@@ -59,9 +59,15 @@ export default async function ShopPage() {
   // whole catalog is unlocked to browse. Set client-side by cheat.js; the
   // grid additionally short-circuits real buy/equip writes while active, so
   // nothing here reaches Supabase.
-  const cheat = (await cookies()).get("pm_cheat")?.value === "1";
+  // Trial mode is the opposite lever: the student starts owning nothing and
+  // with nothing to spend, and ShopGrid then drives the balance from the
+  // sandbox's earned Seeds so buying actually costs. Both cookies are
+  // client-set and gate the view only; cheat.js never sets both.
+  const jar = await cookies();
+  const cheat = jar.get("pm_cheat")?.value === "1";
+  const trial = jar.get("pm_trial")?.value === "1";
   const bondRow = bondRes.data as { seeds?: number; bond_level?: number } | null;
-  const seeds = cheat ? 999999 : Number(bondRow?.seeds ?? 0);
+  const seeds = cheat ? 999999 : trial ? 0 : Number(bondRow?.seeds ?? 0);
   const mascotBondLevel = Number(bondRow?.bond_level ?? 0);
   // Try-on preview stage (Phase 1): the same current-Jamkachu state the rest
   // of the app reads (plants.current_state / companion_state.stage) — an
@@ -85,7 +91,9 @@ export default async function ShopPage() {
   }));
   const purchases: ShopPurchaseRow[] = cheat
     ? SHOP_CATALOG.map((item) => ({ item_key: item.key, category: item.category, equipped: false }))
-    : ((purchasesRes.data ?? []) as ShopPurchaseRow[]);
+    : trial
+      ? [] // a trial run owns nothing until it buys something with earned Seeds
+      : ((purchasesRes.data ?? []) as ShopPurchaseRow[]);
 
   return (
     <main className="pm-shop w-full">

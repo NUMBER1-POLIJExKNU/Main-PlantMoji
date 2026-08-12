@@ -92,10 +92,14 @@ describe("the sandbox never shows demo and real numbers at once", () => {
     // whatever locale that fetch had used.
     const start = live.indexOf("function applyCheatFarm()");
     expect(start).toBeGreaterThanOrEqual(0);
-    const body = live.slice(start, start + 1400);
+    const body = live.slice(start, start + 1800);
     expect(body).toContain("const mood = cheatMoodFor(s.vitals, cropProfile)");
     expect(body).toContain("bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy)");
     expect(body).toContain("!sleepShown");
+    // Trial mode's notices are the third claim on the bubble, alongside the
+    // night-sleep line: a "Today is Day 3!" must outlast the repaints the
+    // sensor drift fires several times a second.
+    expect(body).toContain("Date.now() >= trialNoticeUntil");
   });
 });
 

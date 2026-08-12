@@ -574,6 +574,11 @@
          DOMContentLoaded listener, which still fires after every deferred
          script has run. -->
     <script defer src="/farm/cheat.js"></script>
+    <!-- Trial mode's rules engine (window.PMTrial). MUST come after cheat.js:
+         it subscribes to window.PMCheat as it parses, and the shared defer
+         queue runs these in document order. Like cheat.js it is client-only —
+         every write it makes goes through PMCheat into localStorage. -->
+    <script defer src="/farm/trial.js"></script>
     <script defer src="/farm/strings.js"></script>
     <!-- Unified one-time seen-store (window.PMSeen, pm_seen_v3): migrates the
          legacy hatch/tour/guide flags on its first read. Classic script so it

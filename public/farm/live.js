@@ -6765,8 +6765,14 @@ function applyCheatFarm() {
   // "I'm feeling so healthy!", in whichever locale that stale fetch used.
   // moodBubble reads the local strings table, so it also follows appLocale.
   // Same sleepShown guard as renderOfflineHome: a night visit owns the bubble.
+  // trialNoticeUntil is the third claim on it: a trial notice ("Today is Day
+  // 3!") must survive the repaints the drift tick fires several times a
+  // second, or the one line the whole day-counter feature exists to show
+  // would be gone before it could be read.
   const bubble = $(".speech-bubble");
-  if (bubble && !sleepShown) bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy);
+  if (bubble && !sleepShown && Date.now() >= trialNoticeUntil) {
+    bubble.innerHTML = moodBubble(MOODS[mood] ?? MOODS.Happy);
+  }
   // A held toggle moves the readings four times a second; the panel has to
   // follow, or the buttons and the numbers behind them go stale mid-demo.
   repaintCheatActions(null);
@@ -6920,6 +6926,31 @@ function positionCheatPanel() {
     panel.style.removeProperty("left");
     return;
   }
+  // Trial mode parks in the empty strip LEFT of the mascot column instead of
+  // the presenter's right dock. Cheat mode's dock puts the panel over the
+  // speech bubble and over Jamkachu, which a presenter simply drags away from;
+  // a student will not, and in trial mode the bubble is where the whole game
+  // is narrated. The mascot column is full top to bottom, so the strip beside
+  // it is the only placement that covers neither. Falls back to the right dock
+  // when the window is too narrow for the strip to exist.
+  if (isTrialMode()) {
+    const column = $(".mascot-container");
+    // The strip runs from the SIDEBAR's edge, not the stage's: the stage is
+    // inset from it, and the stylesheet's own default dock (left: 268px)
+    // already parks in that margin. Both edges are measured rather than
+    // assumed — the sidebar and the character column both resize with the
+    // window — and the panel is centred in what is left, so neither gap ends
+    // up a hairline.
+    const sidebar = $(".sidebar");
+    if (column && sidebar) {
+      const stripLeft = Math.round(sidebar.getBoundingClientRect().right);
+      const stripRight = Math.round(column.getBoundingClientRect().left);
+      if (stripRight - stripLeft >= width + 24) {
+        panel.style.left = `${Math.round(stripLeft + (stripRight - stripLeft - width) / 2)}px`;
+        return;
+      }
+    }
+  }
   panel.style.left = `${Math.round(rect.right - width - 12)}px`;
 }
 
@@ -6928,6 +6959,13 @@ function buildCheatPanel() {
   const s = window.PMCheat && window.PMCheat.getState();
   if (!s) return;
   const L = CHEAT_LABELS[appLocale] || CHEAT_LABELS.en;
+  // Trial mode gets the care buttons and nothing else: the status fields and
+  // the by-value sensor boxes ARE cheat mode, and handing them to a student
+  // before the gate would delete the game the gate exists to teach.
+  if (isTrialMode()) {
+    buildTrialPanel(s, L);
+    return;
+  }
   const panel = document.createElement("section");
   panel.id = "pm-cheat-panel";
   panel.setAttribute("aria-label", "Cheat controls");
@@ -7102,6 +7140,70 @@ function buildCheatPanel() {
   });
 }
 
+/**
+ * The trial-mode care panel: the same buttons the presenter sandbox uses,
+ * rendered from cheat.js's single ACTIONS list, with every number-editing
+ * control removed.
+ *
+ * Same id and same chrome as the cheat panel on purpose — the docking, drag,
+ * collapse and repaint code all key off `#pm-cheat-panel`, and a student who
+ * later unlocks cheat mode should find the controls where they already were.
+ */
+function buildTrialPanel(s, L) {
+  const T = TRIAL_LABELS[appLocale] || TRIAL_LABELS.en;
+  const panel = document.createElement("section");
+  panel.id = "pm-cheat-panel";
+  panel.dataset.mode = "trial";
+  panel.setAttribute("aria-label", T.panelTitle);
+  panel.innerHTML =
+    `<header class="pm-cheat-head"><strong>🎮 ${T.panelTitle}</strong>` +
+    `<button type="button" data-cheat-collapse aria-expanded="true" aria-label="${L.collapse}" title="${L.collapse}">−</button></header>` +
+    `<div class="pm-cheat-body">` +
+    `<div class="pm-cheat-group"><h3><img class="pm-cheat-heading-icon" src="/icons/watering-can.png" alt="" width="14" height="14"> ${L.actionsTitle}</h3>` +
+    `<div class="pm-cheat-actions">${cheatActionButtons("toggle")}</div>` +
+    `<div class="pm-cheat-actions">${cheatActionButtons("delta")}</div>` +
+    // The cheat panel's slowNote paragraph is dropped here: the "⏳ days later"
+    // badge is on the buttons it describes, and in trial mode pressing one
+    // visibly skips three days, which teaches it harder than a sentence. Every
+    // line removed is height, and height is what pushes this panel up into the
+    // speech bubble the whole game is narrated in.
+    `</div>` +
+    `<p class="pm-cheat-hint">${T.hint}</p>` +
+    `</div>`;
+  document.body.appendChild(panel);
+
+  panel.querySelectorAll("[data-cheat-action]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      window.PMCheat?.press(btn.getAttribute("data-cheat-action"));
+      repaintCheatActions(panel);
+    });
+  });
+
+  makeCheatPanelDraggable(panel);
+
+  const collapseBtn = panel.querySelector("[data-cheat-collapse]");
+  collapseBtn?.addEventListener("click", () => {
+    const collapsed = panel.classList.toggle("is-collapsed");
+    collapseBtn.textContent = collapsed ? "+" : "−";
+    collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    const label = collapsed ? L.expand : L.collapse;
+    collapseBtn.setAttribute("aria-label", label);
+    collapseBtn.setAttribute("title", label);
+    positionCheatPanel();
+  });
+}
+
+const TRIAL_LABELS = {
+  id: {
+    panelTitle: "RAWAT JAMKACHU",
+    hint: "Tekan tombol perawatan → Jamkachu bereaksi. Ini kebun latihan; data asli tidak berubah.",
+  },
+  en: {
+    panelTitle: "CARE FOR JAMKACHU",
+    hint: "Press a care button → Jamkachu reacts. This is a practice garden; real data stays untouched.",
+  },
+};
+
 function initCheatFarm() {
   buildCheatPanel();
   positionCheatPanel();
@@ -7113,6 +7215,154 @@ function initCheatFarm() {
   setTimeout(applyCheatFarm, 400);
   setTimeout(applyCheatFarm, 1600);
   if (window.PMCheat) window.PMCheat.onChange(applyCheatFarm);
+  if (isTrialMode()) initTrialFarm();
+}
+
+// ── Trial mode presentation (public/farm/trial.js drives the rules) ──────
+// The engine never touches the DOM; it announces what happened and this half
+// decides how Jamkachu says it. Everything below is display only.
+
+/** Until this timestamp, the speech bubble belongs to a trial notice and the
+ *  ordinary mood line must not overwrite it (see applyCheatFarm). */
+let trialNoticeUntil = 0;
+
+function isTrialMode() {
+  return !!(window.PMCheat && window.PMCheat.isActive() && window.PMCheat.getMode?.() === "trial");
+}
+
+/** Timer that returns the bubble and the mood cloud after a notice has had
+ *  its moment, plus the line the notice interrupted. */
+let trialCloudTimer = null;
+let trialBubbleBefore = null;
+
+/** Put one line in Jamkachu's bubble and hold it there for `holdMs`.
+ *
+ *  The mood thought-cloud is parked for the duration. It floats over the
+ *  bubble's right end, and these lines are the longest the bubble ever shows —
+ *  "3 days passed… Today is Day 6!" ran straight underneath it and lost its
+ *  own ending. Hiding the cloud costs nothing: the notice says what happened,
+ *  Jamkachu's face still carries the mood, and the cloud is back in a few
+ *  seconds. */
+function trialSay(text, holdMs, tone) {
+  const bubble = $(".speech-bubble");
+  if (!bubble) return;
+  const hold = Math.max(0, Number(holdMs) || 0);
+  // Remember what the bubble said, but only on the FIRST notice of a run of
+  // them — otherwise notice #2 would "restore" notice #1 and the line would
+  // stick forever.
+  if (trialCloudTimer === null) trialBubbleBefore = bubble.innerHTML;
+  trialNoticeUntil = Date.now() + hold;
+  bubble.innerHTML = `<span class="pm-trial-line${tone ? ` is-${tone}` : ""}">${text}</span>`;
+  document.body.setAttribute("data-trial-notice", "on");
+  if (trialCloudTimer) clearTimeout(trialCloudTimer);
+  trialCloudTimer = setTimeout(() => {
+    document.body.removeAttribute("data-trial-notice");
+    trialCloudTimer = null;
+    // Put the interrupted line back explicitly rather than leaning on
+    // applyCheatFarm: at night sleepShown owns the bubble and that repaint
+    // skips it entirely, which left the notice on screen for good — clipped by
+    // the mood cloud the moment it came back.
+    if (trialBubbleBefore != null) bubble.innerHTML = trialBubbleBefore;
+    trialBubbleBefore = null;
+    applyCheatFarm();
+  }, hold);
+}
+
+/** Name the buttons that would fix the current hazard. The engine sends action
+ *  ids; the labels come from cheat.js's single ACTIONS list so the hint can
+ *  never name a button that is not on screen. */
+function trialHintText(lead, actionIds) {
+  const all = window.PMCheat?.ACTIONS ?? [];
+  // One button, not a menu. The bubble is narrow, a stuck student needs a
+  // single thing to do, and the second-best answer is still on the panel for
+  // them to find on their own.
+  const action = (actionIds ?? []).map((id) => all.find((a) => a.id === id)).find(Boolean);
+  if (!action) return lead;
+  return `${lead} ${action.emoji} ${appLocale === "id" ? action.id_label : action.en_label}`;
+}
+
+function initTrialFarm() {
+  window.addEventListener("pmtrial:hazard", (e) => {
+    const d = e.detail ?? {};
+    trialSay(d.text ?? "", d.holdMs, "hazard");
+    // The readings just jumped; repaint immediately rather than waiting for
+    // the next change event so the face and the numbers move together.
+    applyCheatFarm();
+    window.PMSfx?.play("error"); // the one "something is wrong" cue in the kit
+  });
+
+  window.addEventListener("pmtrial:hint", (e) => {
+    const d = e.detail ?? {};
+    trialSay(trialHintText(d.lead ?? "", d.actions), d.holdMs, "hint");
+  });
+
+  window.addEventListener("pmtrial:resolved", (e) => {
+    const d = e.detail ?? {};
+    trialSay(d.text ?? "", d.holdMs, "good");
+    window.PMSfx?.play("bonus");
+  });
+
+  window.addEventListener("pmtrial:day", (e) => {
+    const d = e.detail ?? {};
+    // The day line is the loudest thing the bubble ever says: without it the
+    // calendar is a digit in a corner and no one notices time passing at all.
+    trialSay(d.text ?? "", d.holdMs, "day");
+    flashDayChange();
+    window.PMSfx?.play("whoosh");
+  });
+
+  window.addEventListener("pmtrial:gate", (e) => {
+    const d = e.detail ?? {};
+    showTrialGate(d.text ?? "");
+    window.PMSfx?.play("chapter"); // the kit's biggest moment, for its biggest moment
+  });
+}
+
+/** A quick wash of light across the whole farm when the in-game day turns, so
+ *  the change is felt and not only read. Skipped under reduced motion, where
+ *  the bubble line alone carries the news. */
+function flashDayChange() {
+  if (!document.body) return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
+  const flash = document.createElement("div");
+  flash.className = "pm-trial-dayflash";
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 1200);
+}
+
+/**
+ * The gate card: the peak of the whole trial run.
+ *
+ * Two ways out, because both are legitimate: keep playing, or take the cheat
+ * wheel. (See TRIAL_GATE_LEVEL for why Lv.6, and for the sprite-band redraw
+ * that has since decoupled the gate from a growth change.)
+ */
+function showTrialGate(text) {
+  if (document.getElementById("pm-trial-gate")) return;
+  const id = appLocale === "id";
+  const card = document.createElement("div");
+  card.id = "pm-trial-gate";
+  card.setAttribute("role", "dialog");
+  card.setAttribute("aria-live", "polite");
+  card.innerHTML =
+    `<div class="pm-trial-gate-card">` +
+    `<strong>${text}</strong>` +
+    `<p>${id
+      ? "Kamu sudah paham cara merawat Jamkachu. Sekarang semua kendali terbuka."
+      : "You know how to care for Jamkachu now. Every control is open to you."}</p>` +
+    `<div class="pm-trial-gate-actions">` +
+    `<button type="button" data-trial-gate="stay">${id ? "🌱 Lanjut merawat" : "🌱 Keep growing"}</button>` +
+    `<button type="button" data-trial-gate="cheat">${id ? "🎛️ Buka Mode Curang" : "🎛️ Open Cheat Mode"}</button>` +
+    `</div></div>`;
+  document.body.appendChild(card);
+  card.querySelector('[data-trial-gate="stay"]')?.addEventListener("click", () => card.remove());
+  card.querySelector('[data-trial-gate="cheat"]')?.addEventListener("click", () => {
+    window.PMTrial?.switchToCheat();
+    // Full reload, same reasoning as the settings toggle: main() reads the
+    // mode once at bootstrap, so a client-side repaint would leave the panel
+    // still wearing its trial face.
+    try { window.location.reload(); } catch {}
+  });
 }
 
 // Boot-resilience timeouts (flaky school networks stall instead of cleanly

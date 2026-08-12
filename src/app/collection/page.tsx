@@ -49,7 +49,14 @@ export default async function CollectionPage() {
   // Cheat sandbox (feature 5): reveal every mood / badge / chapter for a demo.
   // Set client-side by public/farm/cheat.js; gates a fuller view only, never a
   // write. Real discovery state in Supabase is untouched.
-  const cheat = (await cookies()).get("pm_cheat")?.value === "1";
+  //
+  // Trial mode is the mirror image: it HIDES what the real plant has already
+  // discovered, because a student's run starts from nothing and inheriting the
+  // demo account's full collection would leave them nothing to find. Both
+  // cookies gate the view only; neither ever writes. cheat.js never sets both.
+  const jar = await cookies();
+  const cheat = jar.get("pm_cheat")?.value === "1";
+  const trial = jar.get("pm_trial")?.value === "1";
   const unlockDateFormat = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
     month: "short",
     day: "numeric",
@@ -97,9 +104,13 @@ export default async function CollectionPage() {
       supabase.from("plants").select("name, personality").eq("id", PLANT_ID).maybeSingle(),
       supabase.from("companion_state").select("stage").eq("plant_id", PLANT_ID).maybeSingle(),
     ]);
-    seenMoods = moods;
-    badgeRows = badges;
-    currentChapter = bond?.current_chapter ?? 1;
+    // A trial run owns nothing yet. Blanking the three discovery sources here,
+    // rather than at each use below, means every downstream calculation
+    // (counters, progress rings, "next to unlock" hints) agrees on an empty
+    // collection without needing to know trial mode exists.
+    seenMoods = trial ? [] : moods;
+    badgeRows = trial ? [] : badges;
+    currentChapter = trial ? 0 : bond?.current_chapter ?? 1;
     if (plantRes.data?.name) plantName = plantRes.data.name as string;
     personality = normalizePersonality(plantRes.data?.personality);
     const companionStageRaw = (companionRes.data as { stage?: string } | null)?.stage;

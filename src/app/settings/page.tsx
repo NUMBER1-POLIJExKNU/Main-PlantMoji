@@ -7,6 +7,7 @@ import PageHeader from "@/components/page-header";
 import CheatModeToggle from "@/components/cheat-mode-toggle";
 import DevModePanel from "@/components/dev-mode-panel";
 import DevModeToggle from "@/components/dev-mode-toggle";
+import TrialModeToggle from "@/components/trial-mode-toggle";
 import { readDevSnapshot } from "@/game/dev/dev-mode";
 import { QUEST_DEFINITIONS } from "@/game/quests/quest-definitions";
 import { SHOP_CATALOG } from "@/game/economy/shop-catalog";
@@ -246,6 +247,12 @@ export default async function SettingsPage({
           shopItems={SHOP_CATALOG.map((item) => ({ key: item.key, category: item.category, name: item.name[locale] }))}
         />
       )}
+
+      {/* Trial mode sits ABOVE the cheat sandbox because that is the order the
+          two are meant to be met in: a student plays the intro game first and
+          the cheat controls open out of it at Lv.6. Same containment as the
+          sandbox below — client-only, never Supabase and never hardware. */}
+      <TrialModeToggle locale={locale} />
 
       {/* Classroom-demo cheat sandbox entry — always at the very bottom.
           Client-only (window.PMCheat); never writes Supabase or hardware. */}

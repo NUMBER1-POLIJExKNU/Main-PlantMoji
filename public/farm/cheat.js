@@ -1,4 +1,4 @@
-// PlantMoji · Cheat Mode (classroom-demo sandbox).
+// PlantMoji · Cheat Mode (classroom-demo sandbox) + Trial Mode store.
 //
 // A CLIENT-ONLY sandbox for live demos: it lets a presenter freely change the
 // plant's status, sensor values, quests, shop and collection so a classroom
@@ -6,6 +6,14 @@
 // Supabase data. Every value here lives in localStorage only; nothing in this
 // file ever writes to Supabase, the game API, or Node-RED. Deactivating wipes
 // the sandbox and the app returns to the untouched normal mode.
+//
+// The same store carries TWO modes, because they need identical containment
+// and identical sensor physics:
+//   "cheat" — the presenter sandbox described above. Full manual control.
+//   "trial" — the student onboarding game (public/farm/trial.js drives it).
+//             Starts empty, pays XP/Seeds for care actions, and opens cheat
+//             mode at Lv.7. This file owns the STATE and the physics; every
+//             game rule lives in trial.js.
 //
 // Plain synchronous script (NOT a module) so it can load with a bare
 // <script src="/farm/cheat.js"> BEFORE live.js and on every React route via
@@ -19,6 +27,7 @@
   var KEY = "plantmoji_cheat_v1";
   var LOCALE_KEY = "plantmoji_locale";
   var CHANGE_EVENT = "pmcheat:change";
+  var PRESS_EVENT = "pmcheat:press";
 
   // ── Locale (mirrors live.js initialLocale / strings.js) ─────────────────
   function detectLocale() {
@@ -39,6 +48,36 @@
   var BANNER_COPY = {
     id: { tag: "MODE CURANG", note: "Mode demo — data & sensor asli tidak berubah", exit: "Keluar" },
     en: { tag: "CHEAT MODE", note: "Demo sandbox — real data & sensors untouched", exit: "Exit" },
+  };
+
+  // Mirrors src/game/dev/trial-constants.ts (TRIAL_GATE_LEVEL / TRIAL_GATE_XP).
+  // Pinned by tests/trial-mode.test.ts; the banner and trial.js read these.
+  //
+  // Declared BEFORE the copy table below, which bakes the level into a string
+  // at definition time: `var` hoists the declaration but not the assignment,
+  // so with these underneath, the banner read "Lv.undefined reached".
+  var TRIAL_GATE_LEVEL = 7;
+  var TRIAL_XP_PER_LEVEL = 15;
+  var TRIAL_GATE_XP = (TRIAL_GATE_LEVEL - 1) * TRIAL_XP_PER_LEVEL;
+
+  // Trial mode says something different on purpose: a student is being told
+  // this is a practice garden that keeps no record, and is shown how far the
+  // cheat-mode gate still is. The progress line is repainted on every change.
+  var TRIAL_BANNER_COPY = {
+    id: {
+      tag: "MODE COBA",
+      note: "Kebun latihan — tidak masuk catatan asli",
+      exit: "Keluar",
+      toGate: function (xp) { return "Lv." + TRIAL_GATE_LEVEL + " tinggal " + xp + " XP"; },
+      unlocked: "Lv." + TRIAL_GATE_LEVEL + " tercapai — Mode Curang terbuka!",
+    },
+    en: {
+      tag: "TRIAL MODE",
+      note: "Practice garden — nothing is saved to the real record",
+      exit: "Exit",
+      toGate: function (xp) { return "Lv." + TRIAL_GATE_LEVEL + " in " + xp + " XP"; },
+      unlocked: "Lv." + TRIAL_GATE_LEVEL + " reached — Cheat Mode is open!",
+    },
   };
 
   // ── Persistence ─────────────────────────────────────────────────────────
@@ -63,12 +102,22 @@
   // locked content they were asked to send, so mirror the active flag into a
   // cookie those pages read. Still client-set and demo-only — the cookie
   // gates a fuller *view*, never a database write.
-  function setCookie(on) {
-    try {
-      document.cookie = on
-        ? "pm_cheat=1;path=/;max-age=86400;samesite=lax"
-        : "pm_cheat=;path=/;max-age=0;samesite=lax";
-    } catch {}
+  //
+  // The two cookies pull in OPPOSITE directions and are never both set:
+  //   pm_cheat — show MORE than this plant owns (reveal locked content).
+  //   pm_trial — show LESS: hide what the real plant owns, because a trial
+  //              starts from nothing and a student must not inherit the demo
+  //              account's badges and shop items.
+  function setCookie(mode) {
+    var write = function (name, on) {
+      try {
+        document.cookie = on
+          ? name + "=1;path=/;max-age=86400;samesite=lax"
+          : name + "=;path=/;max-age=0;samesite=lax";
+      } catch {}
+    };
+    write("pm_cheat", mode === "cheat");
+    write("pm_trial", mode === "trial");
   }
 
   function emit() {
@@ -77,15 +126,31 @@
     } catch {}
   }
 
+  /** Report a care-action press (see press() for what the detail carries).
+   *  Separate from CHANGE_EVENT because a press is a discrete act a game can
+   *  score, while changes fire four times a second from the drift tick. */
+  function emitPress(detail) {
+    try {
+      window.dispatchEvent(new CustomEvent(PRESS_EVENT, { detail: detail }));
+    } catch {}
+  }
+
   // ── Default sandbox seed ────────────────────────────────────────────────
   // Cloned from the caller's snapshot of real state where available, else
   // these presentation-friendly defaults. Never persisted to any backend.
-  function defaultState(seed) {
+  function defaultState(seed, mode) {
     seed = seed || {};
     var status = seed.status || {};
     var vitals = seed.vitals || {};
     return {
       active: true,
+      // "cheat" (presenter sandbox) or "trial" (student onboarding game).
+      // Anything unrecognised reads as cheat, which is the pre-trial behaviour.
+      mode: mode === "trial" ? "trial" : "cheat",
+      // Trial game state (counters, hazard schedule). Owned entirely by
+      // trial.js; null in cheat mode. Kept inside this blob so one
+      // localStorage key still holds the whole sandbox and survives navigation.
+      trial: null,
       startedAt: Date.now(),
       status: {
         level: numOr(status.level, 1),
@@ -314,20 +379,29 @@
       return read() !== null;
     },
 
-    /** Enter the sandbox, cloning `seed` (real-state snapshot) as the start. */
-    activate: function (seed) {
-      write(defaultState(seed));
-      setCookie(true);
+    /**
+     * Enter the sandbox in `mode` ("cheat" by default).
+     *
+     * Cheat mode clones `seed` (a snapshot of real progress) so a demo starts
+     * from where the plant actually is. Trial mode passes no seed at all: the
+     * student must begin at Lv.1 owning nothing, which is what makes the first
+     * level-up mean something.
+     */
+    activate: function (seed, mode) {
+      var next = defaultState(seed, mode);
+      write(next);
+      setCookie(next.mode);
       mountBanner();
       emit();
       syncTicker();
     },
 
-    /** Leave the sandbox — wipes all cheat values; app returns to normal. */
+    /** Leave the sandbox — wipes all sandbox values (both modes); app returns
+     *  to normal. */
     deactivate: function () {
       stopTicking();
       try { window.localStorage.removeItem(KEY); } catch {}
-      setCookie(false);
+      setCookie(null);
       unmountBanner();
       emit();
     },
@@ -398,6 +472,9 @@
       if (!state) return;
       var action = ACTIONS.find(function (a) { return a.id === id; });
       if (!action) return;
+      // Snapshot before the press so a listener can judge whether the press
+      // actually helped the plant — trial.js scores exactly that (§4.2).
+      var before = { temperature: state.vitals.temperature, humidity: state.vitals.humidity, light: state.vitals.light, soilPh: state.vitals.soilPh };
       if (action.kind === "toggle") {
         state.actions = defaultActions(state.actions);
         // Pressing the held action again releases it; the readings then stay
@@ -408,8 +485,77 @@
         Object.keys(patch).forEach(function (axis) { state.vitals[axis] = fit(axis, patch[axis]); });
       }
       write(state);
+      // A toggle changes nothing yet — it aims the tick at a target — so the
+      // press report carries BOTH what the readings are now and where they are
+      // now headed. Without the targets a listener could not tell "move it to
+      // the shade" (helpful) from "put it in the sun" (not) at press time.
+      emitPress({
+        id: id,
+        kind: action.kind,
+        slow: !!action.slow,
+        before: before,
+        after: { temperature: state.vitals.temperature, humidity: state.vitals.humidity, light: state.vitals.light, soilPh: state.vitals.soilPh },
+        targets: activeTargets(state.actions),
+      });
       emit();
       syncTicker();
+    },
+
+    /** Release every held toggle and stop the drift. Trial mode fires a hazard
+     *  by force, and a toggle left holding from the previous rescue would let
+     *  the simulation undo that hazard with no new action from the student. */
+    releaseToggles: function () {
+      var state = read();
+      if (!state) return;
+      state.actions = defaultActions(null);
+      write(state);
+      emit();
+      syncTicker();
+    },
+
+    /** Which mode the sandbox is in: "cheat" | "trial". Null when inactive. */
+    getMode: function () {
+      var state = read();
+      return state ? (state.mode === "trial" ? "trial" : "cheat") : null;
+    },
+
+    /**
+     * Promote a trial run to full cheat mode, keeping everything the student
+     * earned (level, XP, Seeds, days, sensor readings).
+     *
+     * Deliberately NOT gated on the level. A classroom demo goes wrong in a
+     * hundred ways — the projector dies, the period runs short, a student gets
+     * stuck — and the presenter must always be able to take the wheel. The Lv.7
+     * gate is a celebration, not a lock (implementation.md §3).
+     */
+    switchToCheat: function () {
+      var state = read();
+      if (!state) return;
+      state.mode = "cheat";
+      state.trial = null;
+      write(state);
+      setCookie("cheat");
+      unmountBanner();
+      mountBanner();
+      emit();
+    },
+
+    /** The crop thresholds the physics is expressed against. Trial mode reads
+     *  these to derive moods and to score whether a press helped, so both files
+     *  answer to the same profile without duplicating setBands' plumbing. */
+    getBands: function () {
+      return {
+        temp: { recMin: bands.temp.recMin, recMax: bands.temp.recMax, overheatEnter: bands.temp.overheatEnter, coldEnter: bands.temp.coldEnter },
+        humidity: { recMin: bands.humidity.recMin, recMax: bands.humidity.recMax, dryEnter: bands.humidity.dryEnter, humidEnter: bands.humidity.humidEnter },
+        ph: { recMin: bands.ph.recMin, recMax: bands.ph.recMax },
+        light: { min: bands.light.min },
+      };
+    },
+
+    /** Clamp a value to what real hardware could report, using the same
+     *  rounding the tick uses. Trial hazards write sensors directly. */
+    fitVital: function (key, value) {
+      return fit(key, value);
     },
 
     /** Subscribe to sandbox changes (this tab + other tabs via storage). */
@@ -426,17 +572,42 @@
   // ── Persistent banner (injected on every page while active) ─────────────
   var BANNER_ID = "pm-cheat-banner";
 
+  /** Repaint the trial banner's progress line from the current XP. Called on
+   *  every sandbox change, so the gate distance is always on screen — a
+   *  two-minute goal only motivates while it is visible. */
+  function updateBannerProgress() {
+    var bar = document.getElementById(BANNER_ID);
+    if (!bar) return;
+    var out = bar.querySelector(".pm-cheat-progress");
+    if (!out) return;
+    var copy = TRIAL_BANNER_COPY[detectLocale()] || TRIAL_BANNER_COPY.en;
+    var xp = numOr(PMCheat.get("status.totalXp", 0), 0);
+    var remaining = Math.max(0, TRIAL_GATE_XP - xp);
+    out.textContent = remaining > 0 ? copy.toGate(remaining) : copy.unlocked;
+    out.classList.toggle("is-unlocked", remaining === 0);
+    var fill = bar.querySelector(".pm-cheat-progress-fill");
+    if (fill) fill.style.width = Math.round(Math.min(1, xp / TRIAL_GATE_XP) * 100) + "%";
+  }
+
   function mountBanner() {
     if (typeof document === "undefined") return;
     if (document.getElementById(BANNER_ID)) return;
     if (!PMCheat.isActive()) return;
-    var copy = BANNER_COPY[detectLocale()] || BANNER_COPY.en;
+    var trial = PMCheat.getMode() === "trial";
+    var copy = trial
+      ? TRIAL_BANNER_COPY[detectLocale()] || TRIAL_BANNER_COPY.en
+      : BANNER_COPY[detectLocale()] || BANNER_COPY.en;
     var bar = document.createElement("div");
     bar.id = BANNER_ID;
     bar.setAttribute("role", "status");
+    bar.setAttribute("data-mode", trial ? "trial" : "cheat");
     bar.innerHTML =
-      '<span class="pm-cheat-tag">🎛️ ' + copy.tag + "</span>" +
+      '<span class="pm-cheat-tag">' + (trial ? "🎮 " : "🎛️ ") + copy.tag + "</span>" +
       '<span class="pm-cheat-note">' + copy.note + "</span>" +
+      (trial
+        ? '<span class="pm-cheat-progress-track"><span class="pm-cheat-progress-fill"></span></span>' +
+          '<span class="pm-cheat-progress"></span>'
+        : "") +
       '<button type="button" class="pm-cheat-exit">' + copy.exit + " ✕</button>";
     var style = bar.style;
     style.position = "fixed";
@@ -449,15 +620,19 @@
     style.gap = "12px";
     style.padding = "6px 14px";
     style.font = "600 12px/1.2 var(--font-heading, ui-monospace, monospace)";
-    style.color = "#3a2600";
-    style.background = "linear-gradient(90deg,#FFD86B,#FF9C4B)";
-    style.borderBottom = "3px solid #C2618A";
+    // Trial mode wears the garden's green so a student never mistakes the
+    // practice run for the presenter's amber cheat bar.
+    style.color = trial ? "#123a1c" : "#3a2600";
+    style.background = trial
+      ? "linear-gradient(90deg,#A8E063,#56AB2F)"
+      : "linear-gradient(90deg,#FFD86B,#FF9C4B)";
+    style.borderBottom = trial ? "3px solid #2F7A1E" : "3px solid #C2618A";
     style.boxShadow = "0 3px 10px rgba(0,0,0,.25)";
     style.letterSpacing = ".04em";
     var exit = bar.querySelector(".pm-cheat-exit");
     if (exit) {
       exit.style.cssText =
-        "margin-left:auto;cursor:pointer;border:2px solid #3a2600;border-radius:8px;background:#fff;color:#3a2600;font:inherit;padding:3px 10px;";
+        "margin-left:auto;cursor:pointer;border:2px solid currentColor;border-radius:8px;background:#fff;color:inherit;font:inherit;padding:3px 10px;";
       exit.addEventListener("click", function () {
         PMCheat.deactivate();
         try { window.location.reload(); } catch {}
@@ -465,15 +640,32 @@
     }
     var note = bar.querySelector(".pm-cheat-note");
     if (note) note.style.cssText = "opacity:.85;font-weight:500;";
+    var track = bar.querySelector(".pm-cheat-progress-track");
+    if (track) {
+      track.style.cssText =
+        "flex:0 1 140px;height:10px;border:2px solid #123a1c;border-radius:6px;background:rgba(255,255,255,.55);overflow:hidden;";
+      var fill = bar.querySelector(".pm-cheat-progress-fill");
+      if (fill) fill.style.cssText = "display:block;height:100%;width:0%;background:#123a1c;transition:width .3s ease;";
+    }
+    var progress = bar.querySelector(".pm-cheat-progress");
+    if (progress) progress.style.cssText = "font-weight:700;white-space:nowrap;";
     document.body.appendChild(bar);
-    document.body.setAttribute("data-cheat", "on");
+    // NO marker attribute on <body>. This script runs beforeInteractive on
+    // every React route, so writing one landed before React hydrated and React
+    // reported a mismatch on every navigation while a sandbox was on ("some
+    // attributes of the server rendered HTML didn't match… This won't be
+    // patched up") — the failure mode that has already cost this project a
+    // dead page once. Deferring it with a timeout still lost the race. Nothing
+    // in the app ever read the attribute, so the fix is simply not to set it;
+    // the banner element above is the visible marker, and it is appended
+    // outside React's root where hydration does not look.
+    if (trial) updateBannerProgress();
   }
 
   function unmountBanner() {
     if (typeof document === "undefined") return;
     var bar = document.getElementById(BANNER_ID);
     if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
-    document.body.removeAttribute("data-cheat");
   }
 
   // Mount on load if a sandbox is already active (survives page navigation).
@@ -483,6 +675,11 @@
     // A toggle held before navigating keeps running on the next page.
     syncTicker();
   }
+
+  // The trial banner's progress line follows the XP the game engine writes.
+  // Registered unconditionally (it no-ops without a trial banner in the DOM)
+  // so a mid-session switch into trial mode is picked up without re-wiring.
+  window.addEventListener(CHANGE_EVENT, updateBannerProgress);
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", boot);

@@ -46,19 +46,26 @@ describe("the cheat sandbox cannot touch real data", () => {
     }
   });
 
-  it("persists only to localStorage and the demo cookie", () => {
+  it("persists only to localStorage and the demo cookies", () => {
     const store = readFileSync("public/farm/cheat.js", "utf8");
     expect(store).toContain('var KEY = "plantmoji_cheat_v1";');
-    // The one cookie exists so server-rendered pages can reveal locked content
-    // for the demo. It gates a fuller VIEW; it is never read as a write token.
-    expect(store).toContain('"pm_cheat=1;path=/;max-age=86400;samesite=lax"');
+    // The cookies exist so server-rendered pages can change what they SEND:
+    // pm_cheat reveals locked content for a demo, pm_trial hides the real
+    // plant's belongings from a trial run. Both gate a VIEW; neither is ever
+    // read as a write token. One setCookie writes both, so the literals are
+    // built from a name — assert the shape, not a pasted string.
+    expect(store).toContain('name + "=1;path=/;max-age=86400;samesite=lax"');
+    expect(store).toContain('write("pm_cheat", mode === "cheat");');
+    expect(store).toContain('write("pm_trial", mode === "trial");');
     expect(store).toContain("window.localStorage.setItem(KEY, JSON.stringify(state));");
   });
 
   it("wipes itself on exit, leaving nothing for normal mode to inherit", () => {
     const store = readFileSync("public/farm/cheat.js", "utf8");
     expect(store).toContain("window.localStorage.removeItem(KEY);");
-    expect(store).toContain('"pm_cheat=;path=/;max-age=0;samesite=lax"');
+    // deactivate() passes no mode, so both cookies take the cleared branch.
+    expect(store).toContain('name + "=;path=/;max-age=0;samesite=lax"');
+    expect(store).toContain("setCookie(null);");
   });
 
   it("keeps the farm shell off every Supabase path while the sandbox is on", () => {
