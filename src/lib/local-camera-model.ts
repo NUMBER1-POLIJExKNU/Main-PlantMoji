@@ -3,9 +3,17 @@ import * as tf from "@tensorflow/tfjs";
 export const CAMERA_MODEL_URL = "/camera-ai-model/model.json";
 export const CAMERA_METADATA_URL = "/camera-ai-model/metadata.json";
 export const CAMERA_MODEL_LABELS = ["Safe Environment", "Foreign Environment"] as const;
+export type CameraModelLabel = (typeof CAMERA_MODEL_LABELS)[number];
+
+/** What the shipped sidecar says today, and what we fall back to when it is
+ * unreachable or says something we do not recognise. */
+const DEFAULT_METADATA: { imageSize: number; labels: string[] } = {
+  imageSize: 224,
+  labels: [...CAMERA_MODEL_LABELS],
+};
 
 let modelPromise: Promise<tf.LayersModel> | null = null;
-let metadataPromise: Promise<{ imageSize?: number; labels?: string[] }> | null = null;
+let metadataPromise: Promise<typeof DEFAULT_METADATA> | null = null;
 
 export function loadCameraModel() {
   modelPromise ??= tf.loadLayersModel(CAMERA_MODEL_URL);
@@ -13,40 +21,61 @@ export function loadCameraModel() {
 }
 
 export function loadCameraModelMetadata() {
-  metadataPromise ??= fetch(CAMERA_METADATA_URL).then(async (response) => {
-    if (!response.ok) return { imageSize: 224, labels: [...CAMERA_MODEL_LABELS] };
-    const metadata = await response.json();
-    return {
-      imageSize: typeof metadata.imageSize === "number" ? metadata.imageSize : 224,
-      labels: Array.isArray(metadata.labels) && metadata.labels.length > 0 ? metadata.labels : [...CAMERA_MODEL_LABELS],
-    };
-  }).catch(() => ({ imageSize: 224, labels: [...CAMERA_MODEL_LABELS] }));
+  // Only a successful read is memoized. Caching the fallback would pin the
+  // defaults for the rest of the session after a single offline blip — silent
+  // and sticky the moment the sidecar stops agreeing with the constants.
+  metadataPromise ??= fetch(CAMERA_METADATA_URL)
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`camera metadata ${response.status}`);
+      const metadata = await response.json();
+      const size: unknown = metadata?.imageSize;
+      const labels: unknown = metadata?.labels;
+      return {
+        // A zero, negative or fractional size would make resizeBilinear throw
+        // on every tick and wedge the classifier in its failed state.
+        imageSize: typeof size === "number" && Number.isInteger(size) && size > 0 ? size : DEFAULT_METADATA.imageSize,
+        labels: Array.isArray(labels) && labels.length > 0 ? (labels as string[]) : DEFAULT_METADATA.labels,
+      };
+    })
+    .catch(() => {
+      metadataPromise = null;
+      return DEFAULT_METADATA;
+    });
   return metadataPromise;
+}
+
+function finite(value: number | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 /** Local-only Teachable Machine inference. This classification is advisory
  * presentation and must never feed sensors, quests, XP, or hardware. */
 export async function classifyCameraFrame(source: HTMLVideoElement | HTMLCanvasElement) {
   const [model, metadata] = await Promise.all([loadCameraModel(), loadCameraModelMetadata()]);
-  const imageSize = Number.isFinite(metadata.imageSize ?? NaN) ? (metadata.imageSize as number) : 224;
-  const labels = Array.isArray(metadata.labels) && metadata.labels.length > 0 ? metadata.labels : [...CAMERA_MODEL_LABELS];
 
-  const probabilities = tf.tidy(() => {
+  const raw = tf.tidy(() => {
     const pixels = tf.browser.fromPixels(source);
-    const resized = tf.image.resizeBilinear(pixels, [imageSize, imageSize]);
+    const resized = tf.image.resizeBilinear(pixels, [metadata.imageSize, metadata.imageSize]);
     const normalized = resized.toFloat().div(127.5).sub(1).expandDims(0);
     const prediction = model.predict(normalized) as tf.Tensor;
     return Array.from(prediction.dataSync());
   }) as number[];
 
-  const safeRaw = Number(probabilities[0] ?? 0);
-  const foreignRaw = Number(probabilities[1] ?? 0);
-  const safeProbability = Number.isFinite(safeRaw) ? safeRaw : 0;
-  const foreignProbability = Number.isFinite(foreignRaw) ? foreignRaw : 0;
-  const bestIndex = foreignProbability > safeProbability ? 1 : 0;
+  // The sidecar's label array is index-aligned with the output vector, so the
+  // class ORDER is read from it rather than assumed — a re-train that creates
+  // the classes the other way round would otherwise invert every reading. Class
+  // NAMES we do not recognise fall back to the canonical order instead of being
+  // cast into the union, where every downstream string comparison would miss
+  // and a foreign detection would paint itself green.
+  const safeIndex = metadata.labels.indexOf(CAMERA_MODEL_LABELS[0]);
+  const foreignIndex = metadata.labels.indexOf(CAMERA_MODEL_LABELS[1]);
+  const known = safeIndex >= 0 && foreignIndex >= 0;
+  const safe = finite(raw[known ? safeIndex : 0]);
+  const foreign = finite(raw[known ? foreignIndex : 1]);
+
   return {
-    label: (labels[bestIndex] ?? CAMERA_MODEL_LABELS[bestIndex]) as typeof CAMERA_MODEL_LABELS[number],
-    confidence: bestIndex === 1 ? foreignProbability : safeProbability,
-    probabilities: [safeProbability, foreignProbability] as [number, number],
+    label: foreign > safe ? CAMERA_MODEL_LABELS[1] : CAMERA_MODEL_LABELS[0],
+    confidence: Math.max(safe, foreign),
+    probabilities: { safe, foreign },
   };
 }
