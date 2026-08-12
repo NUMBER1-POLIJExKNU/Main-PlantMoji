@@ -4033,8 +4033,14 @@ async function endFarmerDrag(event) {
   farmer.releasePointerCapture?.(event.pointerId);
   document.body?.classList.remove("farmer-dragging"); // before the early return below
   if (!drag.moved) {
-    restartFarmerMotion();
-    if (isNightWIB()) scheduleFarmerNightSleep();
+    // A night tap wakes him in place. Restarting the wander loop here makes
+    // the just-woken fixed-position sprite run through daytime placement and
+    // briefly snap toward the page centre before the sleep timer restores it.
+    if (isNightWIB()) {
+      scheduleFarmerNightSleep();
+    } else {
+      restartFarmerMotion();
+    }
     return;
   }
   suppressFarmerClick = true;

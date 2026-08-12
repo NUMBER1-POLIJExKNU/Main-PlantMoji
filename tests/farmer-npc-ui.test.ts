@@ -173,6 +173,7 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("Math.min(ground.right, currentLeft)");
     expect(live).toContain('!farmer.classList.contains("npc-ready")');
     expect(live).toContain("Math.min(ground.right, startLeft)");
+    expect(live).toMatch(/if \(!drag\.moved\) \{[\s\S]*?if \(isNightWIB\(\)\) \{[\s\S]*?scheduleFarmerNightSleep\(\);[\s\S]*?\} else \{[\s\S]*?restartFarmerMotion\(\);/);
     expect(css).toMatch(/\.npc-farmer\.npc-grabbed[\s\S]*?cursor:\s*grabbing/);
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
   });
