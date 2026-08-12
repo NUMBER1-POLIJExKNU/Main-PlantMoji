@@ -2,7 +2,7 @@
 //
 // Trial mode is the onboarding half of the classroom sandbox: a student who
 // has never seen the app starts empty (Lv.1, nothing owned) and plays care
-// actions until Lv.6, at which point full cheat mode opens. The whole run is
+// actions until Lv.7, at which point full cheat mode opens. The whole run is
 // budgeted at under two minutes of standing on My Garden.
 //
 // The engine itself is a plain browser script (public/farm/trial.js) so it can
@@ -19,22 +19,24 @@ import { MAX_BOND_LEVEL, XP_PER_LEVEL } from "@/types/game";
 /**
  * Reaching this level opens cheat mode.
  *
- * Chosen for the time budget: 75 XP lands at roughly 80–105 seconds of play,
- * inside the two minutes a first-time student gives us, with room for a slow
- * one to still get there.
+ * Lv.7 (90 XP) for two reasons that finally agree with each other.
  *
- * It was ALSO chosen to coincide with the flower opening — under the old
- * seven-band ladder Lv.6 was a sprite change, so the unlock and the growth
- * played as one peak. LEVEL_BANDS has since been redrawn into fifteen bands
- * that step every ODD level (1, 3, 5, 7…), which moved the flower out to Lv.15
- * and left Lv.6 in the middle of a band, changing nothing on screen. The gate
- * still works; it just no longer rhymes with the art. Moving it to Lv.5 (60 XP,
- * the seed → sprout phase change, ~65–90s) would restore that, and is the open
- * question in implementation.md §12.
+ * It is a band boundary on the current fifteen-band ladder — LEVEL_BANDS steps
+ * every ODD level, and Lv.7 opens "Bright Sprout" — so the unlock celebration
+ * and a growth change land as one peak rather than two near-misses. (An
+ * earlier Lv.6 was picked for the same reason under the old seven-band ladder,
+ * where Lv.6 was the flower; the redraw moved the flower to Lv.15 and left
+ * Lv.6 mid-band, changing nothing on screen.)
+ *
+ * And it fits the budget: play-testing found the climb faster and more fun
+ * than the paper estimate, so 90 XP still lands inside the two minutes a
+ * first-time student gives us — roughly 95–125s — while buying one more hazard
+ * to solve on the way. Anyone slower is covered by the escape hatch, which
+ * opens cheat mode at any level (see PMCheat.switchToCheat).
  */
-export const TRIAL_GATE_LEVEL = 6;
+export const TRIAL_GATE_LEVEL = 7;
 
-/** Total XP the gate needs — derived, never hand-typed (75 at 15 XP/level). */
+/** Total XP the gate needs — derived, never hand-typed (90 at 15 XP/level). */
 export const TRIAL_GATE_XP = (TRIAL_GATE_LEVEL - 1) * XP_PER_LEVEL;
 
 /** Levels are derived from XP in trial mode, never stored independently. */

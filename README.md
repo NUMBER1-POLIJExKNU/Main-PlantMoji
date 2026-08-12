@@ -493,9 +493,10 @@ The presentation/demo mode was removed. Three doors sit at the bottom of
 **Trial Mode** is a two-minute onboarding game. Care actions pay XP (more when
 the press actually helps), a Happy Jamkachu earns +1 XP every 3s, three actions
 turn an in-game day (soil work skips three at once, as it would in a real pot),
-and hazard events force a mood the student has to solve. At **Bond Lv.6**
-(75 XP, about 80–105 seconds of play) Cheat Mode unlocks. The gate is a
-celebration, **not a lock**: the Cheat
+and hazard events force a mood the student has to solve. At **Bond Lv.7**
+(90 XP, about 95–125 seconds of play) Cheat Mode unlocks — a band boundary on
+the sprite ladder, so the unlock and a visible growth change land together.
+The gate is a celebration, **not a lock**: the Cheat
 Mode button works at any time and carries the trial's progress over, because a
 school demo goes wrong in a hundred ways. Rules live in
 `public/farm/trial.js`, numbers in `src/game/dev/trial-constants.ts`.

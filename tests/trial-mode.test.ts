@@ -13,6 +13,7 @@ import {
   trialLevelForXp,
 } from "@/game/dev/trial-constants";
 import { XP_PER_LEVEL, levelForXp } from "@/types/game";
+import { LEVEL_BANDS, bandForLevel } from "@/game/progression/level-bands";
 
 // Trial mode is two browser scripts (public/farm/cheat.js's store and
 // public/farm/trial.js's rules) plus a branch in live.js, so it is exercised
@@ -304,7 +305,7 @@ describe("a trial run starts from nothing", () => {
 describe("the Lv.6 gate", () => {
   it("derives its XP from the real level curve", () => {
     expect(TRIAL_GATE_XP).toBe((TRIAL_GATE_LEVEL - 1) * XP_PER_LEVEL);
-    expect(TRIAL_GATE_XP).toBe(75);
+    expect(TRIAL_GATE_XP).toBe(90);
     // Trial mode does not invent its own curve — the level a trial XP total is
     // worth must be the level the real game would give it.
     for (const xp of [0, 14, 15, 44, 74, 75, 200]) {
@@ -312,6 +313,20 @@ describe("the Lv.6 gate", () => {
     }
     expect(trialLevelForXp(TRIAL_GATE_XP)).toBe(TRIAL_GATE_LEVEL);
     expect(trialLevelForXp(TRIAL_GATE_XP - 1)).toBe(TRIAL_GATE_LEVEL - 1);
+  });
+
+  it("lands on a sprite band boundary, so the unlock coincides with a growth change", () => {
+    // The gate is meant to be the peak of the run: the cheat-mode celebration
+    // and Jamkachu visibly growing, together. That only holds while the gate
+    // level starts a band — and it silently stopped holding once already, when
+    // LEVEL_BANDS was redrawn from seven bands to fifteen and left the old
+    // Lv.6 gate mid-band with nothing to show for it.
+    const starts = LEVEL_BANDS.map((band) => band.from);
+    expect(starts, `Lv.${TRIAL_GATE_LEVEL} must open a band`).toContain(TRIAL_GATE_LEVEL);
+    expect(bandForLevel(TRIAL_GATE_LEVEL).from).toBe(TRIAL_GATE_LEVEL);
+    // ...and the level below it must be a different look, or "it changed" is
+    // not something a student could actually see.
+    expect(bandForLevel(TRIAL_GATE_LEVEL - 1).band).toBeLessThan(bandForLevel(TRIAL_GATE_LEVEL).band);
   });
 
   it("is mirrored identically into both browser scripts", () => {

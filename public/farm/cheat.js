@@ -12,7 +12,7 @@
 //   "cheat" — the presenter sandbox described above. Full manual control.
 //   "trial" — the student onboarding game (public/farm/trial.js drives it).
 //             Starts empty, pays XP/Seeds for care actions, and opens cheat
-//             mode at Lv.6. This file owns the STATE and the physics; every
+//             mode at Lv.7. This file owns the STATE and the physics; every
 //             game rule lives in trial.js.
 //
 // Plain synchronous script (NOT a module) so it can load with a bare
@@ -56,7 +56,7 @@
   // Declared BEFORE the copy table below, which bakes the level into a string
   // at definition time: `var` hoists the declaration but not the assignment,
   // so with these underneath, the banner read "Lv.undefined reached".
-  var TRIAL_GATE_LEVEL = 6;
+  var TRIAL_GATE_LEVEL = 7;
   var TRIAL_XP_PER_LEVEL = 15;
   var TRIAL_GATE_XP = (TRIAL_GATE_LEVEL - 1) * TRIAL_XP_PER_LEVEL;
 
@@ -525,7 +525,7 @@
      *
      * Deliberately NOT gated on the level. A classroom demo goes wrong in a
      * hundred ways — the projector dies, the period runs short, a student gets
-     * stuck — and the presenter must always be able to take the wheel. The Lv.6
+     * stuck — and the presenter must always be able to take the wheel. The Lv.7
      * gate is a celebration, not a lock (implementation.md §3).
      */
     switchToCheat: function () {

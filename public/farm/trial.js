@@ -6,7 +6,7 @@
 // sensors and real hours. Cheat mode cannot either — handed every power at
 // once, there is nothing to learn and nothing to want. Trial mode is the
 // bridge. The student starts owning nothing, cares for Jamkachu with the same
-// physical actions the sandbox already models, and at Lv.6 — the level where
+// physical actions the sandbox already models, and at Lv.7 — the level where
 // the flower opens — full cheat mode unlocks. Enjoying it means playing on;
 // not enjoying it means skipping ahead with every cheat unlocked. Either way
 // they have held the loop once.
@@ -33,7 +33,7 @@
   // the TS module, so tests/trial-mode.test.ts pins the two together — the
   // same arrangement SENSOR_LIMITS already has with cheat.js.
 
-  var GATE_LEVEL = 6;
+  var GATE_LEVEL = 7;
   var XP_PER_LEVEL = 15;
   var MAX_LEVEL = 30;
   var GATE_XP = (GATE_LEVEL - 1) * XP_PER_LEVEL;
