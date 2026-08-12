@@ -20,6 +20,8 @@ import { addGrowthRecord } from "@/app/settings/actions";
 import CameraSparkles from "@/components/camera-sparkles";
 import ProcessRail, { type ProcessStep } from "@/components/process-rail";
 import { CAMERA_COPY } from "@/app/camera/copy";
+// Type-only: erased at compile time, so tfjs stays behind the dynamic import.
+import type { CameraModelLabel } from "@/lib/local-camera-model";
 import {
   MOTION_CONFIG,
   createMotionDetector,
@@ -55,6 +57,9 @@ const SNAPSHOT_WIDTH = 640;
 const MAX_SNAPSHOT_BYTES = 200 * 1024;
 const MOTION_CHIP_MS = 2_500;
 const FEED_LIMIT = 12;
+// Below this the two-class softmax is not saying anything worth showing, so the
+// panel reports "analyzing" rather than committing to either label.
+const CONFIDENCE_FLOOR = 0.7;
 
 interface WakeLockSentinel {
   release: () => Promise<void>;
@@ -99,7 +104,12 @@ export default function CameraGuardian({
   const [feed, setFeed] = useState<GuardianFeedItem[]>(initialEvents);
   const [tickle, setTickle] = useState(0); // increments to replay the reaction
   const [localModelState, setLocalModelState] = useState<LocalModelState>("loading");
-  const [localClassification, setLocalClassification] = useState<"Safe Environment" | "Foreign Environment" | null>(null);
+  // Two scalars rather than one object: a steady scene resolves to the same
+  // label every tick, and React bails out of the re-render only when the next
+  // state is Object.is-equal. A fresh object literal every 2.5s would re-render
+  // the whole feed on top of the frame-diff loop for nothing.
+  const [localLabel, setLocalLabel] = useState<CameraModelLabel | null>(null);
+  const [localConfidence, setLocalConfidence] = useState(0);
   const [scanNote, setScanNote] = useState<string | null>(null); // transient non-pest line
   const [diarySave, setDiarySave] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -386,14 +396,23 @@ export default function CameraGuardian({
       try {
         const { classifyCameraFrame } = await import("@/lib/local-camera-model");
         const result = await classifyCameraFrame(video);
-        if (!cancelled) { setLocalClassification(result.label); setLocalModelState("ready"); }
+        if (!cancelled) {
+          setLocalLabel(result.label);
+          setLocalConfidence(result.confidence);
+          setLocalModelState("ready");
+        }
       } catch {
         if (!cancelled) setLocalModelState("failed");
-      } finally { running = false; }
+      } finally {
+        running = false;
+      }
     };
     const id = window.setInterval(() => void classify(), 2_500);
     void classify();
-    return () => { cancelled = true; window.clearInterval(id); };
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, []);
 
   // Periodic pest check (spec: motion-triggered + periodic 10 min).
@@ -405,6 +424,22 @@ export default function CameraGuardian({
     return () => window.clearInterval(id);
   }, []);
 
+  // ONE display state feeds the panel, the mascot, the rail and Jamkachu's
+  // line. Deriving each of them from the raw label separately let an uncertain
+  // frame paint a full-strength red alert while the headline underneath still
+  // read "Analyzing…", and let a failed load keep the previous frame's alert
+  // colour and 😮 under the words "model failed to load".
+  const resultView: "loading" | "failed" | "uncertain" | "safe" | "foreign" =
+    localModelState === "loading"
+      ? "loading"
+      : localModelState === "failed"
+        ? "failed"
+        : localLabel === null || localConfidence < CONFIDENCE_FLOOR
+          ? "uncertain"
+          : localLabel === "Foreign Environment"
+            ? "foreign"
+            : "safe";
+  const isForeign = resultView === "foreign";
   const statusLabel: Record<GuardianStatus, string> = {
     starting: copy.statusStarting,
     watching: copy.statusWatching,
@@ -418,8 +453,8 @@ export default function CameraGuardian({
   const visionSteps = useMemo<ProcessStep[]>(() => [
     { key: "camera", label: "CAMERA", summary: status === "watching" || status === "motion" || status === "checking" ? "READY" : status.toUpperCase(), state: status === "denied" || status === "nocamera" ? "error" : status === "starting" ? "running" : "complete" },
     { key: "model", label: "LOCAL MODEL", summary: localModelState === "ready" ? "READY" : localModelState.toUpperCase(), state: localModelState === "ready" ? "complete" : localModelState === "failed" ? "fallback" : "running" },
-    { key: "result", label: "RESULT", summary: localClassification ?? "WAITING", state: localClassification ? "complete" : "waiting" },
-  ], [localClassification, localModelState, status]);
+    { key: "result", label: "RESULT", summary: resultView === "failed" ? "ERROR" : resultView === "uncertain" ? "ANALYZING" : resultView === "loading" ? "WAITING" : localLabel ?? "WAITING", state: resultView === "failed" ? "error" : resultView === "loading" ? "waiting" : resultView === "uncertain" ? "running" : "complete" },
+  ], [localLabel, localModelState, resultView, status]);
 
   // The real plant in the video is Jamkachu on this screen. Keep its voice
   // in the same short, friendly speech-bubble language as the farm view;
@@ -433,11 +468,15 @@ export default function CameraGuardian({
           ? (locale === "id" ? "Aku tidur dulu ya. Tanaman juga perlu istirahat 🌙" : "I’m resting now. Plants need sleep too 🌙")
           : status === "hidden"
             ? (locale === "id" ? "Aku menunggumu kembali ke layar ini." : "I’m waiting for you to come back.")
-            : localClassification === "Foreign Environment"
-              ? (locale === "id" ? "Hmm… ada sesuatu yang belum kukenal di sini." : "Hmm… I see something I don’t recognize here.")
-              : localModelState === "loading"
-                ? (locale === "id" ? "Sebentar, aku sedang membuka mataku…" : "One moment, I’m opening my eyes…")
-                : (locale === "id" ? "Aku di sini! Temani aku menjaga tanaman ini 🌱" : "I’m here! Let’s take care of this plant together 🌱")
+            : resultView === "loading"
+              ? (locale === "id" ? "Sebentar, aku sedang membuka mataku…" : "One moment, I’m opening my eyes…")
+              : resultView === "failed"
+                ? (locale === "id" ? "Aku masih mengawasi gerakan saja — model gagal dimuat." : "I’m watching motion only — the model failed to load.")
+                : resultView === "foreign"
+                  ? (locale === "id" ? "Hmm… ada sesuatu yang belum kukenal di sini." : "Hmm… I see something I don’t recognize here.")
+                  : resultView === "safe"
+                    ? (locale === "id" ? "Lingkungan terlihat aman." : "The environment looks safe.")
+                    : (locale === "id" ? "Aku di sini! Temani aku menjaga tanaman ini 🌱" : "I’m here! Let’s take care of this plant together 🌱")
   );
 
   return (
@@ -453,7 +492,7 @@ export default function CameraGuardian({
           <video ref={videoRef} className="pm-cam-video" muted playsInline aria-label={copy.title} />
           <div
             key={cameraBubble}
-            className={`pm-cam-speech${localClassification === "Foreign Environment" ? " is-alert" : ""}${tickle > 0 ? " is-tickled" : ""}`}
+            className={`pm-cam-speech${isForeign ? " is-alert" : ""}${tickle > 0 ? " is-tickled" : ""}`}
             role="status"
             aria-live="polite"
           >
@@ -464,13 +503,37 @@ export default function CameraGuardian({
               now a compact color-coded state dot (no repeated text) — the
               full label survives for assistive tech via aria-label. */}
           <div className={`pm-cam-chip is-${status}`} role="status" aria-live="polite" aria-label={statusLabel[status]} />
-          <div className={`pm-cam-result is-${localClassification === "Foreign Environment" ? "foreign" : "safe"}`}><small>{locale === "id" ? "PENJAGA KEBUN" : "GARDEN GUARDIAN"}</small><strong>{localModelState === "loading" ? (locale === "id" ? "Jamkachu sedang melihat…" : "Jamkachu is looking…") : localModelState === "failed" ? (locale === "id" ? "Pengamatan gerak aktif" : "Motion watch is active") : localClassification ?? (locale === "id" ? "Lingkungan aman" : "Safe Environment")}</strong></div>
+          <div className={`pm-cam-result is-${isForeign ? "foreign" : "safe"}`}>
+            <small>{locale === "id" ? "PENJAGA KEBUN" : "GARDEN GUARDIAN"}</small>
+            <strong>
+              {resultView === "loading"
+                ? (locale === "id" ? "Jamkachu sedang melihat…" : "Jamkachu is looking…")
+                : resultView === "failed"
+                  ? (locale === "id" ? "AI model gagal dimuat" : "AI model failed to load")
+                  : resultView === "uncertain"
+                    ? (locale === "id" ? "Sedang dianalisis…" : "Analyzing…")
+                    : isForeign
+                      ? (locale === "id" ? "Lingkungan asing" : "Foreign Environment")
+                      : (locale === "id" ? "Lingkungan aman" : "Safe Environment")}
+            </strong>
+            {/* No role="status" here: the hint mounts and unmounts as confidence
+                crosses the floor, and this stage already carries two live regions
+                (the speech bubble and the status dot). Announcing a third one every
+                2.5s would talk over both. */}
+            {resultView === "uncertain" && (
+              <p className="pm-cam-note">
+                {locale === "id"
+                  ? "Kepercayaan rendah — arahkan kamera ke tanamannya."
+                  : "Low confidence — point the camera toward the plant/environment."}
+              </p>
+            )}
+          </div>
           <div
             key={tickle}
-            className={`pm-cam-jamkachu${tickle > 0 ? " is-tickled" : ""}${localClassification === "Foreign Environment" ? " is-alert" : ""}`}
+            className={`pm-cam-jamkachu${tickle > 0 ? " is-tickled" : ""}${isForeign ? " is-alert" : ""}`}
             aria-hidden="true"
           >
-            <span>{tickle > 0 ? "😆" : localClassification === "Foreign Environment" ? "😮" : "🌱"}</span>
+            <span>{tickle > 0 ? "😆" : isForeign ? "😮" : "🌱"}</span>
           </div>
           <CameraSparkles locale={locale} />
         </div>
