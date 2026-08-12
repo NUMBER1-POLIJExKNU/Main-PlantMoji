@@ -2113,7 +2113,7 @@ body.env-hot .env-haze { opacity: 1; }
    unaffected — scaleX(-1) mirrors about the tag's own centre, which the
    -50% has already parked on the sprite's midline. */
 .npc-farmer.npc-facing-left .npc-ai-tag { transform:translateX(-50%) scaleX(-1); }
-body.night .npc-farmer.npc-ready {
+body.night:not(.farmer-night-awake) .npc-farmer.npc-ready {
     left: auto !important;
     right: clamp(72px, 9vw, 132px);
     top: auto !important;
@@ -2164,7 +2164,7 @@ body.night.farmer-night-awake .npc-farmer-bed { display:none; }
 }
 @media (max-width:600px) {
     .npc-farmer-bed { right:14px; bottom:102px; transform:scale(.82); transform-origin:right bottom; }
-    body.night .npc-farmer.npc-ready { right:55px; bottom:124px; transform:rotate(90deg) scale(.68) !important; }
+    body.night:not(.farmer-night-awake) .npc-farmer.npc-ready { right:55px; bottom:124px; transform:rotate(90deg) scale(.68) !important; }
     body.night.farmer-night-awake .npc-farmer.npc-ready { right:auto; bottom:auto; transform:none !important; }
 }
 .npc-farmer.npc-falling { pointer-events: none; }

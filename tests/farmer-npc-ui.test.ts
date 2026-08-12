@@ -45,7 +45,7 @@ describe("Farmer Tani living-world UI", () => {
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
-    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toMatch(/body\.night(?::not\(\.farmer-night-awake\))? \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
@@ -53,6 +53,7 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("function scheduleFarmerNightSleep()");
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
+    expect(css).toContain("body.night:not(.farmer-night-awake) .npc-farmer.npc-ready");
   });
 
   it("keeps the bed compact but still larger than Farmer Tani", () => {
