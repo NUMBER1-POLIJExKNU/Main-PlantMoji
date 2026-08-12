@@ -45,7 +45,7 @@ describe("Farmer Tani living-world UI", () => {
   it("puts the same farmer NPC to bed at night instead of hiding him", () => {
     expect(html).toContain('class="npc-farmer-bed"');
     expect(html).toContain('class="npc-sleep-zzz"');
-    expect(css).toMatch(/body\.night \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
+    expect(css).toMatch(/body\.night(?::not\(\.farmer-night-awake\))? \.npc-farmer\.npc-ready[\s\S]*?opacity:\s*1/);
     expect(css).toContain("body.night .npc-farmer-bed { display: block; }");
     expect(css).not.toMatch(/body\.night \.npc-farmer\s*\{[^}]*opacity:\s*0/);
     expect(live).toContain('farmerTag.textContent = night ? "Zzz.."');
@@ -53,6 +53,15 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("function scheduleFarmerNightSleep()");
     expect(live).toContain("}, 3000);");
     expect(css).toContain("body.night.farmer-night-awake .npc-farmer-bed { display:none; }");
+    expect(css).toContain("body.night:not(.farmer-night-awake) .npc-farmer.npc-ready");
+    expect(css).toContain("left: var(--farmer-awake-left) !important");
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-left"');
+    expect(live).toContain('farmer.style.setProperty("--farmer-awake-top"');
+    const wakeBlock = live.match(/function wakeFarmerAtNight\(\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+    expect(wakeBlock).toContain("const ground = farmerGround();");
+    expect(wakeBlock).toContain("Math.min(ground.right");
+    expect(wakeBlock).toContain("ground?.top ?? rect.top");
+    expect(wakeBlock).not.toContain('farmer.style.top = `${rect.top}px`');
   });
 
   it("keeps the bed compact but still larger than Farmer Tani", () => {
@@ -172,6 +181,7 @@ describe("Farmer Tani living-world UI", () => {
     expect(live).toContain("Math.min(ground.right, currentLeft)");
     expect(live).toContain('!farmer.classList.contains("npc-ready")');
     expect(live).toContain("Math.min(ground.right, startLeft)");
+    expect(live).toMatch(/if \(!drag\.moved\) \{[\s\S]*?if \(isNightWIB\(\)\) \{[\s\S]*?scheduleFarmerNightSleep\(\);[\s\S]*?\} else \{[\s\S]*?restartFarmerMotion\(\);/);
     expect(css).toMatch(/\.npc-farmer\.npc-grabbed[\s\S]*?cursor:\s*grabbing/);
     expect(css).toMatch(/\.npc-farmer\s*\{[\s\S]*?touch-action:\s*none/);
   });

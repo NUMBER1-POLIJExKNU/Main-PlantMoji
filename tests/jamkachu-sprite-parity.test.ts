@@ -101,15 +101,13 @@ describe("React sprite mapping pins the decided design tables", () => {
     const bodyCounts = new Map<string, number>();
     for (const mood of PLANT_MOODS) bodyCounts.set(MOOD_SPRITE[mood], (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) + 1);
     for (const mood of PLANT_MOODS) {
-      // Happy is the unbadged baseline. Care states sharing that friendly
-      // body must carry the chip that identifies their sensor condition.
       if (mood !== "Happy" && (bodyCounts.get(MOOD_SPRITE[mood]) ?? 0) > 1) {
         expect(MOOD_STATUS_CHIP[mood], `${mood} shares a face but has no chip`).toBeTruthy();
       }
     }
   });
 
-  it("night sleep overrides any live mood with the peaceful smiling sprite", () => {
+  it("night sleep keeps the peaceful happy sprite", () => {
     for (const mood of PLANT_MOODS) {
       expect(spriteMood(mood, true)).toBe("happy");
     }
@@ -117,24 +115,24 @@ describe("React sprite mapping pins the decided design tables", () => {
 
   it("awards accessory tiers at the band thresholds with phase clamps", () => {
     // The two thresholds ARE the `from` levels of the bands that introduce an
-    // ornament (LEVEL_BANDS 4 and 6); tests/level-bands.test.ts owns the table.
-    expect(TIER_THRESHOLDS).toEqual({ bow: 9, ribbon: 24 });
+    // ornament (LEVEL_BANDS 8 and 14); tests/level-bands.test.ts owns the table.
+    expect(TIER_THRESHOLDS).toEqual({ bow: 15, ribbon: 27 });
     expect(PHASE_TIER_CAP).toEqual({ 1: "", 2: "", 3: "bow", 4: "ribbon" });
 
     // Thresholds on the uncapped phase.
     expect(accessoryTier(0, 4)).toBe("");
-    expect(accessoryTier(8, 4)).toBe("");
-    expect(accessoryTier(9, 4)).toBe("bow");
-    expect(accessoryTier(23, 4)).toBe("bow");
-    expect(accessoryTier(24, 4)).toBe("ribbon");
+    expect(accessoryTier(14, 4)).toBe("");
+    expect(accessoryTier(15, 4)).toBe("bow");
+    expect(accessoryTier(26, 4)).toBe("bow");
+    expect(accessoryTier(27, 4)).toBe("ribbon");
     expect(accessoryTier(30, 4)).toBe("ribbon");
 
     // Phase clamps: p1/p2 always bare, p3 caps at bow.
     expect(accessoryTier(30, 1)).toBe("");
     expect(accessoryTier(30, 2)).toBe("");
     expect(accessoryTier(30, 3)).toBe("bow");
-    expect(accessoryTier(9, 3)).toBe("bow");
-    expect(accessoryTier(8, 3)).toBe("");
+    expect(accessoryTier(15, 3)).toBe("bow");
+    expect(accessoryTier(14, 3)).toBe("");
 
     // Garbage bond levels degrade to bare, never throw.
     expect(accessoryTier(Number.NaN, 4)).toBe("");
@@ -144,15 +142,15 @@ describe("React sprite mapping pins the decided design tables", () => {
   it("builds sprite paths matching the committed asset naming", () => {
     // Bond level picks the look now — `stage` is passed by some callers and
     // deliberately ignored, so these cases vary the level, not the stage.
-    expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 3 })).toBe(
+    expect(spriteSrc({ stage: "Seedling", mood: "DryAir", bondLevel: 5 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p2-sprout-happy.png",
     );
-    expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 24 })).toBe(
+    expect(spriteSrc({ stage: "Legend", mood: "Happy", bondLevel: 29 })).toBe(
       "/farm/assets/jamkachu/4x/plant-p4-fruit-happy-ribbon.png",
     );
-    // Lv.9 is band 4 (p3 + bow); care states keep the cheerful full body and
-    // use their badge plus text to communicate the sensor condition.
-    expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 9, scale: "2x" })).toBe(
+    // Lv.15 is band 8 (p3 + bow); TooCold draws the sleepy body — the pack's
+    // "plain" file is the faceless decorative body and never renders a mood.
+    expect(spriteSrc({ stage: "Bud", mood: "TooCold", bondLevel: 15, scale: "2x" })).toBe(
       "/farm/assets/jamkachu/2x/plant-p3-flower-happy-bow.png",
     );
     expect(spriteSrc({ stage: "Seed", mood: "Overheating", bondLevel: 1 })).toBe(
@@ -331,17 +329,23 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     }
   });
 
-  // Pot palette ramps (seed-shop try-on preview, Phase 1): src/lib/
-  // sprite-palette.ts ports the farm's canvas swap algorithm client-side —
-  // this pins its POT_RAMP/SKIN_RAMPS tables byte-identical
-  // to public/farm/jamkachu-sprite.js's, same guard as every other table in
-  // this file, so a recolored pot in the shop preview always matches what
-  // the farm would show once the item is actually equipped.
-  it("pot ramp tables (React sprite-palette mirror) are byte-identical to the farm's", () => {
+  // Default-pot palette ramps still cover skins and the automatic gold
+  // keepsake. Purchased pots are full catalog images and never enter this
+  // color-only path.
+  it("default-pot ramp tables (React sprite-palette mirror) are byte-identical to the farm's", () => {
     const farm = loadFarmSprite();
     const tables = (farm.pmSprite.tables ?? farm.pmSprite.TABLES) as AnyRecord;
     expect(tables.POT_RAMP, "PMSprite.tables must expose POT_RAMP").toEqual(POT_RAMP);
     expect(tables.SKIN_RAMPS, "PMSprite.tables must expose SKIN_RAMPS").toEqual(SKIN_RAMPS);
+    expect(tables.POT_ITEM_RAMPS).toBeUndefined();
+    expect(tables.POT_ITEM_ART).toEqual({
+      pot_terracotta: "/icons/shop/pot_terracotta.png",
+      pot_batik: "/icons/shop/pot_batik.png",
+      pot_tincan: "/icons/shop/pot_tincan.png",
+      pot_coffee_sack: "/icons/shop/pot_coffee_sack.png",
+      pot_bamboo: "/icons/shop/pot_bamboo.png",
+      pot_jember_mosaic: "/icons/shop/pot_jember_mosaic.png",
+    });
   });
 
   it("the React swap constrains to the same pot-row fraction the farm layer uses (row 40 of 64)", () => {
@@ -377,12 +381,11 @@ describe.skipIf(!existsSync(farmSpritePath))("farm jamkachu-sprite mirror parity
     // now what you wear when you have chosen nothing — take the pot off and
     // the gold comes back.
     const source = readFileSync(farmSpritePath, "utf8");
-    expect(source).toMatch(
-      /function activeRamp\(\) \{\s*if \(state\.potItemKey && POT_ITEM_ART\[state\.potItemKey\]\) return null;/,
-    );
-    // …and the keepsake still applies, just later, and still ahead of a skin.
+    expect(source).toMatch(/function activeRamp\(\) \{\s*if \(state\.potItemKey && POT_ITEM_ART\[state\.potItemKey\]\) return null;/);
+    // …and the keepsake still applies only after that replacement guard, and
+    // still ahead of a cosmetic skin on the default pot.
     const body = source.slice(source.indexOf("function activeRamp()"));
-    const potAt = body.indexOf("state.potItemKey");
+    const potAt = body.indexOf("POT_ITEM_ART[state.potItemKey]");
     const goldAt = body.indexOf("GOLD_POT_LEVEL");
     const skinAt = body.indexOf("SKIN_RAMPS");
     expect(potAt).toBeGreaterThanOrEqual(0);

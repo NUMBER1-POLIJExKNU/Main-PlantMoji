@@ -1,21 +1,9 @@
-// The bond level → what Jamkachu looks like. One table, seven bands.
-//
-// The designer drew three packs (images/plant-bare, plant-noribbon, plant) of
-// four growth phases each. Opening them shows the packs differ by one hair
-// ornament, and that p1 (seed) and p2 (sprout) are byte-identical across all
-// three — the ornament is only drawn from p3. So there are seven distinct
-// looks, not twelve, and the shipped sprite set says the same thing: 35 files
-// = 20 bare + 10 bow (p3, p4) + 5 ribbon (p4 only).
-//
-// The bands ARE those seven looks. Nothing here invents a combination the
-// designer did not draw.
-//
-// Bands are front-loaded on purpose, and steeply: 2, 3, 3, 4, 5, 6, 7 levels
-// wide. One class period is 20–30 minutes and buys roughly 150–200 XP, so the
-// first change has to land within a single quest (Lv.3 = 30 XP) or a student
-// never sees the plant grow at all. A 200-XP session reaches Lv.14 — four
-// changes. The wide late bands are the long tail for a garden that runs across
-// several sessions.
+// The bond level → what Jamkachu looks like. Thirty levels form fifteen
+// two-level growth bands: 1–2, 3–4, …, 29–30. The designer's four body phases
+// and three ornament tiers stay the source artwork; `scale` supplies the small
+// in-between growth steps, and the last four stages progressively reveal the
+// lush strawberry canopy on the farm. Every odd level starts a visibly new
+// form, while the even level completes that form's two-level interval.
 
 import { MAX_BOND_LEVEL, XP_PER_LEVEL } from "@/types/game";
 import type { SpritePhase, SpriteTier } from "@/lib/jamkachu-sprite";
@@ -29,18 +17,28 @@ export interface LevelBand {
   phase: SpritePhase;
   /** Hair ornament: "" bare · "bow" · "ribbon". */
   tier: SpriteTier;
+  /** Subtle in-phase size step; the farm stamps it as visual-stage-N. */
+  scale: number;
   /** Short label, used in the level-up toast and the status card. */
   name: { en: string; id: string };
 }
 
 export const LEVEL_BANDS: readonly LevelBand[] = [
-  { band: 1, from: 1, phase: 1, tier: "", name: { en: "Seed", id: "Benih" } },
-  { band: 2, from: 3, phase: 2, tier: "", name: { en: "Sprout", id: "Tunas" } },
-  { band: 3, from: 6, phase: 3, tier: "", name: { en: "Flower", id: "Bunga" } },
-  { band: 4, from: 9, phase: 3, tier: "bow", name: { en: "Ribboned Flower", id: "Bunga Berpita" } },
-  { band: 5, from: 13, phase: 4, tier: "", name: { en: "Fruit", id: "Buah" } },
-  { band: 6, from: 18, phase: 4, tier: "bow", name: { en: "Ribboned Fruit", id: "Buah Berpita" } },
-  { band: 7, from: 24, phase: 4, tier: "ribbon", name: { en: "Legend", id: "Legenda" } },
+  { band: 1, from: 1, phase: 1, tier: "", scale: 0.9, name: { en: "Seed", id: "Benih" } },
+  { band: 2, from: 3, phase: 1, tier: "", scale: 1, name: { en: "Rooted Seed", id: "Benih Berakar" } },
+  { band: 3, from: 5, phase: 2, tier: "", scale: 0.9, name: { en: "Tiny Sprout", id: "Tunas Kecil" } },
+  { band: 4, from: 7, phase: 2, tier: "", scale: 0.95, name: { en: "Bright Sprout", id: "Tunas Cerah" } },
+  { band: 5, from: 9, phase: 2, tier: "", scale: 1, name: { en: "Young Leaves", id: "Daun Muda" } },
+  { band: 6, from: 11, phase: 3, tier: "", scale: 0.9, name: { en: "Leafy Stem", id: "Batang Berdaun" } },
+  { band: 7, from: 13, phase: 3, tier: "", scale: 0.95, name: { en: "First Bud", id: "Kuncup Pertama" } },
+  { band: 8, from: 15, phase: 3, tier: "bow", scale: 0.96, name: { en: "Strawberry Bloom", id: "Bunga Stroberi" } },
+  { band: 9, from: 17, phase: 3, tier: "bow", scale: 1, name: { en: "Flower Crown", id: "Mahkota Bunga" } },
+  { band: 10, from: 19, phase: 4, tier: "", scale: 0.9, name: { en: "First Berry", id: "Buah Pertama" } },
+  { band: 11, from: 21, phase: 4, tier: "", scale: 0.95, name: { en: "Berry Cluster", id: "Rumpun Buah" } },
+  { band: 12, from: 23, phase: 4, tier: "bow", scale: 0.96, name: { en: "Strawberry Plant", id: "Tanaman Stroberi" } },
+  { band: 13, from: 25, phase: 4, tier: "bow", scale: 1, name: { en: "Abundant Harvest", id: "Panen Melimpah" } },
+  { band: 14, from: 27, phase: 4, tier: "ribbon", scale: 1, name: { en: "Flourishing Strawberry", id: "Stroberi Subur" } },
+  { band: 15, from: 29, phase: 4, tier: "ribbon", scale: 1, name: { en: "Strawberry Legend", id: "Legenda Stroberi" } },
 ] as const;
 
 /** The band a level falls in. Levels below 1 read as 1; above the cap, as the cap. */

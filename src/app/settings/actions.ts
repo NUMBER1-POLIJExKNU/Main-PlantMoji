@@ -242,6 +242,75 @@ export async function addGrowthRecordFromForm(formData: FormData): Promise<void>
   await addGrowthRecord(formData);
 }
 
+export interface DeleteGrowthPhotoResult {
+  ok: boolean;
+  error?: string;
+}
+
+/** Removes only the captured photo from a Growth Diary record. The written
+ * growth note stays intact; the storage object is removed before its database
+ * references are cleared so a failed storage operation cannot silently leave
+ * the UI claiming the photo is gone. */
+export async function deleteGrowthPhoto(
+  recordId: string,
+  plantId: string,
+): Promise<DeleteGrowthPhotoResult> {
+  const supabase = getServerSupabase();
+  if (!supabase || !recordId || !plantId) return { ok: false, error: "Diary is unavailable." };
+
+  const { data: record, error: readError } = await supabase
+    .from("growth_records")
+    .select("id, plant_id, photo_path")
+    .eq("id", recordId)
+    .eq("plant_id", plantId)
+    .maybeSingle();
+  if (readError || !record) return { ok: false, error: "Growth photo was not found." };
+
+  if (record.photo_path) {
+    const { error: storageError } = await supabase.storage
+      .from("growth-snapshots")
+      .remove([record.photo_path]);
+    if (storageError) {
+      console.error(`deleteGrowthPhoto(${recordId}) storage removal failed:`, storageError.message);
+      return { ok: false, error: "The photo could not be deleted. Please try again." };
+    }
+  }
+
+  const { error: pathError } = await supabase
+    .from("growth_records")
+    .update({ photo_path: null })
+    .eq("id", recordId)
+    .eq("plant_id", plantId);
+  if (pathError) {
+    console.error(`deleteGrowthPhoto(${recordId}) record cleanup failed:`, pathError.message);
+    return { ok: false, error: "The photo reference could not be cleared. Please try again." };
+  }
+
+  // These columns belong to optional/legacy photo-diary migrations. Clear them
+  // independently so an older schema cannot prevent photo_path cleanup.
+  await clearOptionalGrowthPhotoColumn(supabase, recordId, plantId, "photo_url");
+  await clearOptionalGrowthPhotoColumn(supabase, recordId, plantId, "ai_comment");
+  revalidatePath("/diary");
+  return { ok: true };
+}
+
+async function clearOptionalGrowthPhotoColumn(
+  supabase: ReturnType<typeof getServerSupabase>,
+  recordId: string,
+  plantId: string,
+  column: "photo_url" | "ai_comment",
+) {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("growth_records")
+    .update({ [column]: null })
+    .eq("id", recordId)
+    .eq("plant_id", plantId);
+  if (error && !isMissingColumnError(error)) {
+    console.error(`deleteGrowthPhoto(${recordId}) ${column} cleanup failed:`, error.message);
+  }
+}
+
 /** milestone19 not applied: `growth_records.ai_comment` is missing — raw
  *  Postgres 42703 or a PostgREST schema-cache miss (PGRST204). Skipped
  *  silently: the record itself is already saved, the reply is optional.
