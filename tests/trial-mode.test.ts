@@ -781,9 +781,29 @@ describe("hazard events", () => {
     await run(4000);
     expect(hints).toHaveLength(1);
     expect((hints[0].actions as string[]).length).toBeGreaterThan(0);
-    // Only once — a hint repeating every tick would be nagging, not help.
-    await run(TRIAL_TIMING.hintAfterMs * 2);
-    expect(hints).toHaveLength(1);
+
+    // ...and keeps offering it while they stay stuck. Shown once it held the
+    // bubble for a few seconds and vanished, which is no safety net at all for
+    // a student who looked up a moment later.
+    await run(TRIAL_TIMING.hintRepeatMs + 2000);
+    expect(hints.length).toBeGreaterThan(1);
+    // But not every tick — that would be nagging, not help.
+    expect(hints.length).toBeLessThan(5);
+  });
+
+  it("stops offering the hint the instant the hazard is solved", async () => {
+    const sb = bootSandbox();
+    startTrial(sb);
+    const hints = sb.capture("pmtrial:hint");
+    await run(TRIAL_TIMING.firstEventDelayMs + 1000);
+    await run(TRIAL_TIMING.hintAfterMs + 1000);
+    const whileStuck = hints.length;
+    expect(whileStuck).toBeGreaterThan(0);
+
+    sb.setVitals(HAPPY);
+    await run(TRIAL_TIMING.dripIntervalMs);
+    await run(TRIAL_TIMING.hintRepeatMs * 2);
+    expect(hints).toHaveLength(whileStuck);
   });
 
   it("points every hint at buttons that are actually on screen", () => {
@@ -813,6 +833,7 @@ describe("Seed rewards", () => {
     expect(trialSource).toContain(`eventGapMinMs: ${TRIAL_TIMING.eventGapMinMs},`);
     expect(trialSource).toContain(`eventGapMaxMs: ${TRIAL_TIMING.eventGapMaxMs},`);
     expect(trialSource).toContain(`hintAfterMs: ${TRIAL_TIMING.hintAfterMs},`);
+    expect(trialSource).toContain(`hintRepeatMs: ${TRIAL_TIMING.hintRepeatMs},`);
     expect(trialSource).toContain(`var ACTIONS_PER_DAY = ${TRIAL_ACTIONS_PER_DAY};`);
     expect(trialSource).toContain(`var SOIL_SKIP_DAYS = ${TRIAL_SOIL_SKIP_DAYS};`);
   });

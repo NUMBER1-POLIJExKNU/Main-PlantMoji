@@ -58,6 +58,7 @@
     eventGapMinMs: 10000,
     eventGapMaxMs: 20000,
     hintAfterMs: 20000,
+    hintRepeatMs: 15000,
     noticeHoldMs: 3500,
   };
 
@@ -282,7 +283,8 @@
       // The hazard currently unsolved, if any.
       hazardKey: null,
       hazardAt: 0,
-      hintShown: false,
+      // When the last hint was shown; 0 = never. Drives the repeat above.
+      hintAt: 0,
       // When the next hazard may fire. Set from the moment the previous one
       // was RESOLVED, never from when it fired — a student who takes a while
       // to solve one must not be met with the next one immediately.
@@ -434,7 +436,7 @@
         // Solved. The gap to the next hazard starts counting HERE.
         var solved = hazardByKey(trial.hazardKey);
         trial.hazardKey = null;
-        trial.hintShown = false;
+        trial.hintAt = 0;
         trial.nextHazardAt = now + nextGap();
         runtime.dripAccumMs = 0;
         commit(state, trial, XP.eventResolved, SEEDS.eventResolved, t.reasonHazard);
@@ -447,8 +449,16 @@
         });
         return;
       }
-      if (!trial.hintShown && now - Number(trial.hazardAt || now) >= TIMING.hintAfterMs) {
-        trial.hintShown = true;
+      // The hint is the safety net that keeps anyone from being stranded in a
+      // live classroom, so it REPEATS while the hazard is unsolved. Shown once
+      // it held the bubble for three and a half seconds and was gone — a
+      // student who looked up a moment later got no help at all, and someone
+      // stuck at twenty seconds is usually still stuck at forty. It stops the
+      // instant they fix it, so this stays a nudge rather than nagging.
+      var waited = now - Number(trial.hazardAt || now);
+      var sinceHint = now - Number(trial.hintAt || 0);
+      if (waited >= TIMING.hintAfterMs && sinceHint >= TIMING.hintRepeatMs) {
+        trial.hintAt = now;
         var stuck = hazardByKey(trial.hazardKey);
         window.PMCheat.set({ trial: trial });
         say(EV.hint, {
@@ -515,7 +525,7 @@
 
     trial.hazardKey = hazard.key;
     trial.hazardAt = now;
-    trial.hintShown = false;
+    trial.hintAt = 0;
     trial.nextHazardAt = 0;
     runtime.dripAccumMs = 0;
     trial.recent = (trial.recent || []).concat([hazard.key]).slice(-2);

@@ -74,6 +74,12 @@ export const TRIAL_TIMING = {
   eventGapMaxMs: 20_000,
   /** An unsolved hazard this old makes Jamkachu name the button to press. */
   hintAfterMs: 20_000,
+  /** ...and say it again this often while it stays unsolved. Shown once, the
+   *  hint held the bubble for a few seconds and was gone, so a student who
+   *  looked up a moment later got no help at all — and someone stuck at twenty
+   *  seconds is usually still stuck at forty. It stops the instant they fix
+   *  it, which keeps this a nudge rather than nagging. */
+  hintRepeatMs: 15_000,
   /** How long a day-change / hazard line holds the speech bubble. */
   noticeHoldMs: 3_500,
 } as const;
