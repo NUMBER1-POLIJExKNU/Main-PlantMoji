@@ -449,14 +449,17 @@ function setMascotMood(state) {
     svg.classList.add(MOOD_FACE[state] ?? "face-happy");
   }
   window.PMSprite?.set({ mood: MOODS[state] ? state : "Happy" });
+  // Mood word goes through the active locale dictionary first; unknown
+  // states fall back to the English word (PM_STRINGS, then local table).
+  const moodWord = COPY[appLocale][`mood.${state}`] ?? PM().moods?.[state] ?? MOOD_WORDS[state] ?? String(state ?? "");
+  const moodEmoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
   const moodEl = $("#char-mood");
-  if (moodEl) {
-    // Mood word goes through the active locale dictionary first; unknown
-    // states fall back to the English word (PM_STRINGS, then local table).
-    const word = COPY[appLocale][`mood.${state}`] ?? PM().moods?.[state] ?? MOOD_WORDS[state] ?? String(state ?? "");
-    const emoji = PM().moodEmoji?.[state] ?? MOOD_EMOJI[state] ?? "😊";
-    moodEl.textContent = `${word} ${emoji}`;
-  }
+  if (moodEl) moodEl.textContent = `${moodWord} ${moodEmoji}`;
+  // The caption under the speech bubble is the one people actually read.
+  // The emoji is left off here — the bubble above already shows the face,
+  // and repeating it beside the word says the same thing twice.
+  const moodCaption = $("#mood-caption");
+  if (moodCaption) moodCaption.textContent = moodWord;
   applyMoodPulse(state);
   // Contextual care button + night sleep (spec §6.1/§6.2): every mood
   // render re-derives the one safe action and the sleep presentation —

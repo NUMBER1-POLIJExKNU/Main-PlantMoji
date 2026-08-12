@@ -348,6 +348,70 @@
     }
   }
 
+  // ── Sprite void ─────────────────────────────────────────────────────────
+  // Every frame is drawn inside the same square box, but a seed occupies only
+  // the bottom third of it while a grown plant fills it. That empty band is
+  // what pushed Jamkachu — and the captions under it — far below the speech
+  // bubble. Measuring the frame's own alpha gives the exact fraction to pull
+  // back, per frame, so it stays right as the plant grows into its frame.
+  //
+  // Same-origin art, so the canvas is never tainted; the try/catch is for the
+  // frame that fails to decode, where the answer is simply "no pull-up".
+
+  var spriteVoidCache = Object.create(null);
+
+  function applySpriteVoid(img, ratio) {
+    var wrapper = img.closest ? img.closest(".mascot-wrapper") : null;
+    if (wrapper) wrapper.style.setProperty("--pm-sprite-void-top", String(ratio));
+  }
+
+  function measureSpriteVoid(img) {
+    var key = img.currentSrc || img.src;
+    if (!key || !img.naturalWidth || !img.naturalHeight) return;
+    if (spriteVoidCache[key] != null) {
+      applySpriteVoid(img, spriteVoidCache[key]);
+      return;
+    }
+    var ratio = 0;
+    try {
+      var canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      var ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      var data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      var firstRow = canvas.height;
+      for (var y = 0; y < canvas.height && firstRow === canvas.height; y++) {
+        for (var x = 0; x < canvas.width; x++) {
+          // 12, not 0: the art carries a faint anti-aliased halo whose alpha
+          // is not quite zero, and treating that as "drawn" would report no
+          // empty band at all.
+          if (data[(y * canvas.width + x) * 4 + 3] > 12) { firstRow = y; break; }
+        }
+      }
+      ratio = firstRow / canvas.height;
+      // A frame that is entirely transparent would pull the whole box off the
+      // screen; treat it as no void at all.
+      if (!(ratio >= 0 && ratio < 0.95)) ratio = 0;
+    } catch (error) {
+      ratio = 0;
+    }
+    spriteVoidCache[key] = ratio;
+    applySpriteVoid(img, ratio);
+  }
+
+  /** One listener for the life of the element — `load` fires again on each new
+   *  src, which is exactly when the void needs re-measuring. */
+  function wireSpriteVoid(img) {
+    if (img.dataset.pmVoidWired) {
+      if (img.complete) measureSpriteVoid(img);
+      return;
+    }
+    img.dataset.pmVoidWired = "1";
+    img.addEventListener("load", function () { measureSpriteVoid(img); });
+    if (img.complete) measureSpriteVoid(img);
+  }
+
   // ── Repaint ─────────────────────────────────────────────────────────────
 
   function repaint() {
@@ -380,6 +444,7 @@
           potImg.removeAttribute("src");
         }
       }
+      wireSpriteVoid(img);
       var rampSpec = activeRamp();
       var want = rampSpec ? src + "|" + rampSpec.key : src;
       if (img.dataset.pmWant !== want) {

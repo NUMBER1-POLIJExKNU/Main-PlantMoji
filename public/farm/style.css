@@ -915,12 +915,30 @@ body.night .jember-clock-copy strong { color: #f4f1dc; }
     text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.8);
     letter-spacing: 2px;
 }
+/* The mood moved out from under the name to under the speech bubble, where
+   the face that means it already is. Kept in the DOM (live.js still fills it,
+   and screen readers get the identity line intact) but off the picture, so
+   the same word is not printed twice in two places. */
 #char-mood {
-    font-family: var(--font-heading);
-    font-size: 12px;
-    margin-top: 8px;
-    color: var(--color-text);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
+
+/* Mood in words, directly under the bubble. */
+.mood-caption {
+    margin: -2px 0 2px;
+    font-family: var(--font-heading);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-forest);
+    text-align: center;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, .85);
+}
+.mood-caption:empty { display: none; }
 .quiz-chip {
     width: 100%; min-height: 66px; border: 3px solid var(--color-yellow); cursor: pointer;
     display: flex; align-items: center; gap: 12px; padding: 11px 14px; color: var(--color-text);
@@ -1306,9 +1324,23 @@ body.evolution-active .fx-layer { z-index:1390; }
     to { transform: translateY(-8px); } 
 }
 
+/* Sprite size lives in a custom property, not in `width` directly, because the
+   pull-up below has to be a fraction of the SAME length. Percentage margins
+   resolve against the containing block's width, which is not this box — so the
+   size has to be nameable. Every breakpoint that resizes the mascot sets
+   --pm-sprite-size instead of width. */
 .mascot-wrapper {
     position: relative;
-    width: 300px;
+    --pm-sprite-size: 300px;
+    width: var(--pm-sprite-size);
+    /* Each frame is drawn inside the same square box, but a seed occupies only
+       the bottom third of it while a grown plant fills it. That empty band sat
+       between the speech bubble and the plant — measured 140px at the seed
+       stage — and read as the bubble belonging to nothing. jamkachu-sprite.js
+       measures the current frame's transparent top and writes the fraction
+       here, so Jamkachu and the captions under it come up by exactly the empty
+       space and stay correct as the plant grows into its frame. */
+    margin-top: calc(-1 * var(--pm-sprite-void-top, 0) * var(--pm-sprite-size));
     filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
     cursor: pointer;
     touch-action: manipulation;
@@ -2320,7 +2352,7 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
 
 /* Responsive adjustments */
 @media (max-width: 1100px) {
-    .mascot-wrapper { width: 260px; }
+    .mascot-wrapper { --pm-sprite-size: 260px; }
 }
 @media (max-width: 800px) {
     body { min-width: 0; height: auto; overflow-x: hidden; overflow-y: auto; }
@@ -2501,7 +2533,7 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
     /* Keep the character expressive but let the one care decision enter the
        first phone viewport instead of sitting below a presentation-scale
        mascot and several progression rows. */
-    .mascot-wrapper { width:min(210px,60vw); }
+    .mascot-wrapper { --pm-sprite-size: min(210px,60vw); }
     .speech-bubble {
         min-inline-size:160px;
         max-inline-size:calc(100vw - 36px);
@@ -2601,7 +2633,7 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
     }
 
     .mascot-container { max-height: 100%; }
-    .mascot-wrapper { width: min(300px, 34vh); }
+    .mascot-wrapper { --pm-sprite-size: min(300px, 34vh); }
     .speech-bubble {
         width: fit-content;
         min-width: 180px;
@@ -2772,7 +2804,7 @@ body:not(.night) .npc-farmer.npc-farming .npc-farm-soil { display: block; }
     /* The sidebar gap, brand padding and nav-item padding this breakpoint used
        to tighten are now the defaults — the same numbers, applied everywhere. */
     .sidebar { padding-top: 14px; padding-bottom: 14px; }
-    .mascot-wrapper { width: min(250px, 32vh); }
+    .mascot-wrapper { --pm-sprite-size: min(250px, 32vh); }
     .speech-bubble { min-height: 0; max-height: none; margin-bottom: 6px; font-size: 13px; }
     .companion-stage { margin-top: 2px; }
     /* Short screens keep the pair, and the rail's clearance for it, on a
