@@ -517,6 +517,7 @@ supabase/milestone18-growth-snapshots.sql      private growth-snapshots Storage 
 supabase/milestone19-photo-diary.sql           legacy photo-diary columns (superseded by Live Guardian)
 supabase/milestone19-camera-guardian.sql       Live Guardian camera_events + realtime (stores no images)
 supabase/milestone20-companion-skins.sql       cosmetic crop-skin key on companion_state (display-only)
+supabase/milestone21-sensor-realtime.sql        pushes sensor_readings live (drops the 15s poll wait)
 ```
 
 There is no `milestone2.sql` — `milestone1.sql` covers that ground. Every

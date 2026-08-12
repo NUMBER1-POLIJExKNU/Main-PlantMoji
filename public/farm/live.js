@@ -7389,6 +7389,33 @@ async function main() {
     // Chips stay unlabeled — never block the page over a nice-to-have.
   }
 
+  // Live sensor readings (milestone21). Its own channel for the same reason
+  // as the two below: until that migration runs, sensor_readings is not in the
+  // supabase_realtime publication and the join errors — isolating it means the
+  // page falls back to the 15s poll instead of losing plants/bond/quests too.
+  //
+  // The poll stays exactly as it was. It is the safety net: a dropped socket,
+  // a project without the migration, or a reading that arrives while the tab
+  // is hidden all still land within 15s. This only removes the wait when the
+  // socket is healthy.
+  try {
+    supabase
+      .channel(`farm-sensors-${PLANT_ID}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "sensor_readings", filter: `plant_id=eq.${PLANT_ID}` },
+        (payload) => {
+          // The sandbox owns the tiles while it is on; a real reading arriving
+          // underneath must not overwrite the numbers being demonstrated.
+          if (window.PMCheat?.isActive()) return;
+          renderSensors(payload.new);
+        },
+      )
+      .subscribe();
+  } catch {
+    // No live push — the 15s poll already covers this.
+  }
+
   // Live Guardian fan-out is isolated because milestone19 is optional. A
   // missing table/realtime publication never affects plants or quests.
   try {
