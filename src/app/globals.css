@@ -1781,7 +1781,12 @@ html[data-theme="night"] .pm-growth-postcard-copy q { color:var(--color-text); }
 @media (prefers-reduced-motion:reduce) { .pm-intelligence-console .is-running,.pm-type-caret { animation:none; }.pm-type-caret { display:none; } }
 
 .pm-crop-explorer { overflow:hidden; border:3px solid var(--color-border); border-radius:18px; color:var(--color-text); background:var(--color-surface); box-shadow:var(--pm-shadow); }
-.pm-crop-reference-tools{margin-top:16px;border:2px solid var(--color-border);border-radius:13px;background:var(--color-surface)}.pm-crop-reference-tools>summary{cursor:pointer;padding:13px 16px;color:var(--color-forest);font-weight:800}.pm-crop-reference-tools>div{padding:4px 16px 18px}.pm-crop-reference-tools .pm-panel{box-shadow:none}.pm-crop-rank-grid>button:nth-child(n+4){display:none}
+.pm-crop-reference-tools{margin-top:16px;border:2px solid var(--color-border);border-radius:13px;background:var(--color-surface)}.pm-crop-reference-tools>summary{cursor:pointer;padding:13px 16px;color:var(--color-forest);font-weight:800}.pm-crop-reference-tools>div{padding:4px 16px 18px}.pm-crop-reference-tools .pm-panel{box-shadow:none}
+/* No `:nth-child(n+4){display:none}` on .pm-crop-rank-grid. A rule like that
+   once rode along on this line and silently clipped step 2 to the top three
+   crops: the analyzer still compared all eleven Jember profiles and the
+   buttons were all in the DOM, so nothing failed and no test noticed — the
+   other eight were simply invisible. Rank the crops, show the ranking. */
 .pm-crop-scan-hero { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:18px; padding:22px; background:linear-gradient(135deg,color-mix(in srgb,var(--color-grass-light) 24%,var(--color-surface)),var(--color-surface)); }
 .pm-crop-radar { width:74px; height:74px; display:grid; place-items:center; border:3px solid var(--color-forest); border-radius:50%; background:repeating-radial-gradient(circle,transparent 0 10px,color-mix(in srgb,var(--color-forest) 24%,transparent) 11px 12px); font-size:34px; }
 .pm-crop-radar span { filter:drop-shadow(2px 3px 0 rgba(36,52,33,.18)); }
