@@ -138,7 +138,9 @@ export default function BackgroundMusic() {
         void toggleMusic();
       }}
     >
-      <img src="/audio/music-logo.png" alt="Music" className="reno-music-icon" />
+      <span className="reno-music-indicator" aria-hidden="true">
+        {isEnabled ? "♫" : "∅"}
+      </span>
     </button>
   );
 }

@@ -1591,10 +1591,10 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
     height: 52px;
     margin: 0 0 10px;
     padding: 0;
-    border: 0;
+    border: 2px solid var(--color-border);
     border-radius: 10px;
-    background: transparent;
-    box-shadow: none;
+    background: color-mix(in srgb, var(--color-surface) 96%, white 4%);
+    box-shadow: var(--pm-shadow);
     cursor: pointer;
     transition: transform 0.15s ease, opacity 0.15s ease;
   }
@@ -1604,13 +1604,13 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   }
   .reno-music-toggle:active { transform:translateY(1px); }
   .reno-music-toggle:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
-  .reno-music-icon {
-    display: block;
-    width: 42px;
-    height: 42px;
-    object-fit: contain;
-    pointer-events: none;
+  .reno-music-indicator {
+    display: inline-block;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--color-text);
     user-select: none;
+    pointer-events: none;
   }
   .reno-locale-switch button:active { transform:translateY(1px); }
   .reno-locale-switch button:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
