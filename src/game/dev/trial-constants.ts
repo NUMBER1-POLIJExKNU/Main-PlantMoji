@@ -2,7 +2,7 @@
 //
 // Trial mode is the onboarding half of the classroom sandbox: a student who
 // has never seen the app starts empty (Lv.1, nothing owned) and plays care
-// actions until Lv.7, at which point full cheat mode opens. The whole run is
+// actions until Lv.5, at which point full cheat mode opens. The whole run is
 // budgeted at under two minutes of standing on My Garden.
 //
 // The engine itself is a plain browser script (public/farm/trial.js) so it can
@@ -19,24 +19,40 @@ import { MAX_BOND_LEVEL, XP_PER_LEVEL } from "@/types/game";
 /**
  * Reaching this level opens cheat mode.
  *
- * Lv.7 (90 XP) for two reasons that finally agree with each other.
+ * Lv.5 (60 XP): the level where the DRAWING changes.
  *
- * It is a band boundary on the current fifteen-band ladder — LEVEL_BANDS steps
- * every ODD level, and Lv.7 opens "Bright Sprout" — so the unlock celebration
- * and a growth change land as one peak rather than two near-misses. (An
- * earlier Lv.6 was picked for the same reason under the old seven-band ladder,
- * where Lv.6 was the flower; the redraw moved the flower to Lv.15 and left
- * Lv.6 mid-band, changing nothing on screen.)
+ * The gate is the peak of the run, and it only reads as one if the cheat-mode
+ * celebration and Jamkachu visibly growing happen together. That is a claim
+ * about pixels, not about table rows, and it has now been got wrong twice:
  *
- * And it fits the budget: play-testing found the climb faster and more fun
- * than the paper estimate, so 90 XP still lands inside the two minutes a
- * first-time student gives us — roughly 95–125s — while buying one more hazard
- * to solve on the way. Anyone slower is covered by the escape hatch, which
- * opens cheat mode at any level (see PMCheat.switchToCheat).
+ * - Lv.6 was picked under the old seven-band ladder, where Lv.6 WAS the
+ *   flower. The fifteen-band redraw moved the flower to Lv.15 and left Lv.6
+ *   mid-band.
+ * - Lv.7 was then picked because it opens band 4, "Bright Sprout". But bands 3
+ *   and 4 draw the SAME artwork (phase 2, no ornament) and differ only in
+ *   `scale` — which nothing reads: jamkachu-sprite.js writes
+ *   --jamkachu-growth-scale and no stylesheet consumes it. The band's `name`
+ *   is not rendered anywhere either, so crossing Lv.7 changes nothing about
+ *   Jamkachu that a student can see — only the level number ticks up.
+ *
+ * Fifteen bands render as the same seven drawings the designer made. They
+ * change at Lv.1, 5, 11, 15, 19, 23 and 27, so inside a two-minute run there
+ * is exactly one real transformation to land on: Lv.5, where the seed becomes
+ * a sprout. The gate goes there.
+ *
+ * The cost is pace — 60 XP is roughly 65–85s rather than the 95–125s Lv.7
+ * bought, and one hazard fewer on the way. That is the right trade: a student
+ * who wants more presses has "Keep growing" on the gate card, while a peak
+ * nobody can see cannot be recovered later. Anyone stuck is covered by the
+ * escape hatch, which opens cheat mode at any level (see
+ * PMCheat.switchToCheat).
+ *
+ * tests/trial-mode.test.ts pins this against the drawn phase and tier, not the
+ * band index — the assertion that would have caught both mistakes.
  */
-export const TRIAL_GATE_LEVEL = 7;
+export const TRIAL_GATE_LEVEL = 5;
 
-/** Total XP the gate needs — derived, never hand-typed (90 at 15 XP/level). */
+/** Total XP the gate needs — derived, never hand-typed (60 at 15 XP/level). */
 export const TRIAL_GATE_XP = (TRIAL_GATE_LEVEL - 1) * XP_PER_LEVEL;
 
 /** Levels are derived from XP in trial mode, never stored independently. */

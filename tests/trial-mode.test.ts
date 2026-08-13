@@ -319,10 +319,10 @@ describe("a trial run starts from nothing", () => {
 
 // ── Requirement 2: the gate ─────────────────────────────────────────────
 
-describe("the Lv.6 gate", () => {
+describe("the cheat-mode gate", () => {
   it("derives its XP from the real level curve", () => {
     expect(TRIAL_GATE_XP).toBe((TRIAL_GATE_LEVEL - 1) * XP_PER_LEVEL);
-    expect(TRIAL_GATE_XP).toBe(90);
+    expect(TRIAL_GATE_XP).toBe(60);
     // Trial mode does not invent its own curve — the level a trial XP total is
     // worth must be the level the real game would give it.
     for (const xp of [0, 14, 15, 44, 74, 75, 200]) {
@@ -332,18 +332,45 @@ describe("the Lv.6 gate", () => {
     expect(trialLevelForXp(TRIAL_GATE_XP - 1)).toBe(TRIAL_GATE_LEVEL - 1);
   });
 
-  it("lands on a sprite band boundary, so the unlock coincides with a growth change", () => {
+  it("lands where the DRAWING changes, so the unlock coincides with a growth change", () => {
     // The gate is meant to be the peak of the run: the cheat-mode celebration
-    // and Jamkachu visibly growing, together. That only holds while the gate
-    // level starts a band — and it silently stopped holding once already, when
-    // LEVEL_BANDS was redrawn from seven bands to fifteen and left the old
-    // Lv.6 gate mid-band with nothing to show for it.
+    // and Jamkachu visibly growing, together. This has been got wrong twice,
+    // both times by asserting the wrong thing.
+    //
+    // Lv.6 was right under the old seven-band ladder, where Lv.6 was the
+    // flower; the fifteen-band redraw moved the flower to Lv.15 and left the
+    // gate mid-band. Lv.7 replaced it because it opens band 4 — and a band
+    // boundary is what the old version of this test checked, so it passed.
+    // But band 3 and band 4 are the SAME drawing (phase 2, no ornament) at a
+    // different `scale`, and nothing renders `scale`: jamkachu-sprite.js
+    // writes --jamkachu-growth-scale and no stylesheet reads it.
+    //
+    // So the assertion is about the drawing, not the row. `phase` picks the
+    // artwork and `tier` picks the ornament; those two are the whole of what a
+    // student sees change.
     const starts = LEVEL_BANDS.map((band) => band.from);
     expect(starts, `Lv.${TRIAL_GATE_LEVEL} must open a band`).toContain(TRIAL_GATE_LEVEL);
     expect(bandForLevel(TRIAL_GATE_LEVEL).from).toBe(TRIAL_GATE_LEVEL);
-    // ...and the level below it must be a different look, or "it changed" is
-    // not something a student could actually see.
-    expect(bandForLevel(TRIAL_GATE_LEVEL - 1).band).toBeLessThan(bandForLevel(TRIAL_GATE_LEVEL).band);
+
+    const gate = bandForLevel(TRIAL_GATE_LEVEL);
+    const before = bandForLevel(TRIAL_GATE_LEVEL - 1);
+    const drawn = (band: { phase: number; tier: string }) => `p${band.phase}${band.tier || "-bare"}`;
+    expect(
+      drawn(gate),
+      `Lv.${TRIAL_GATE_LEVEL} draws ${drawn(gate)}, same as Lv.${TRIAL_GATE_LEVEL - 1} — ` +
+        "the gate would celebrate a growth nobody can see",
+    ).not.toBe(drawn(before));
+  });
+
+  it("is the earliest drawing change the two-minute budget can reach", () => {
+    // Why the gate cannot simply be moved later for a longer run: the fifteen
+    // bands render as only seven drawings, and after Lv.5 the next one is
+    // Lv.11 (150 XP) — far outside two minutes. If a future redraw adds an
+    // earlier change, this fails and the gate should move down to meet it.
+    const changes = LEVEL_BANDS.filter(
+      (band, i) => i > 0 && (band.phase !== LEVEL_BANDS[i - 1].phase || band.tier !== LEVEL_BANDS[i - 1].tier),
+    ).map((band) => band.from);
+    expect(changes[0], "the first drawing change is where the gate belongs").toBe(TRIAL_GATE_LEVEL);
   });
 
   it("is mirrored identically into both browser scripts", () => {
@@ -797,13 +824,19 @@ describe("hazard events", () => {
     const hints = sb.capture("pmtrial:hint");
     await run(TRIAL_TIMING.firstEventDelayMs + 1000);
     await run(TRIAL_TIMING.hintAfterMs + 1000);
-    const whileStuck = hints.length;
+    const solvedKey = hints[0]?.key;
+    const forSolved = () => hints.filter((h) => h.key === solvedKey).length;
+    const whileStuck = forSolved();
     expect(whileStuck).toBeGreaterThan(0);
 
     sb.setVitals(HAPPY);
     await run(TRIAL_TIMING.dripIntervalMs);
     await run(TRIAL_TIMING.hintRepeatMs * 2);
-    expect(hints).toHaveLength(whileStuck);
+    // Counted per hazard KEY, not in total: the gap to the next hazard is
+    // 10–20s random, so waiting two repeat windows here sometimes fires the
+    // NEXT hazard and earns a hint of its own. That is the feature working —
+    // what must never happen is another nudge about the one already fixed.
+    expect(forSolved()).toBe(whileStuck);
   });
 
   it("points every hint at buttons that are actually on screen", () => {

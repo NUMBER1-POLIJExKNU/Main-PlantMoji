@@ -7364,8 +7364,8 @@ function flashDayChange() {
  * The gate card: the peak of the whole trial run.
  *
  * Two ways out, because both are legitimate: keep playing, or take the cheat
- * wheel. (See TRIAL_GATE_LEVEL for why Lv.6, and for the sprite-band redraw
- * that has since decoupled the gate from a growth change.)
+ * wheel. (See TRIAL_GATE_LEVEL for why the gate sits at Lv.5 — it is the only
+ * level inside the two-minute budget where the drawing actually changes.)
  */
 function showTrialGate(text) {
   if (document.getElementById("pm-trial-gate")) return;

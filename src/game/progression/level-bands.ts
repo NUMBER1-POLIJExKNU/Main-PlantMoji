@@ -17,7 +17,14 @@ export interface LevelBand {
   phase: SpritePhase;
   /** Hair ornament: "" bare · "bow" · "ribbon". */
   tier: SpriteTier;
-  /** Subtle in-phase size step; the farm stamps it as visual-stage-N. */
+  /**
+   * Intended as a subtle in-phase size step. Nothing draws it today:
+   * jamkachu-sprite.js writes it to --jamkachu-growth-scale (and stamps
+   * visual-stage-N alongside) but no stylesheet reads either. So two bands
+   * that share `phase` and `tier` are the SAME picture — `scale` alone is not
+   * a growth the player can see. TRIAL_GATE_LEVEL was mis-placed on that
+   * assumption once; check phase/tier, not the band index.
+   */
   scale: number;
   /** Short label, used in the level-up toast and the status card. */
   name: { en: string; id: string };
