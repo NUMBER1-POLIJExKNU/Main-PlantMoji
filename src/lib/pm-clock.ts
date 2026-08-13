@@ -53,6 +53,21 @@ export function devNow(): Date {
   }
 }
 
+/**
+ * The raw shift, for the rare caller that already holds a timestamp and needs
+ * the wall-clock version of it. Prefer devNow(); this exists because some
+ * components derive BOTH an elapsed-time value and a time-of-day value from a
+ * single `now` state, and only the second one may be shifted.
+ */
+export function devClockOffsetMs(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    return window.PMClock?.offsetMs() ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Live view of the override for panels that display or edit it. */
 export function useDevClock(): { active: boolean; api: PMClockApi | null; tick: number } {
   const [tick, setTick] = useState(0);

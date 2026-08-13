@@ -15,6 +15,8 @@ const guardian = readFileSync("src/components/camera-guardian.tsx", "utf8");
 const panel = readFileSync("src/components/dev-mode-panel.tsx", "utf8");
 const clockLib = readFileSync("src/lib/pm-clock.ts", "utf8");
 const motion = readFileSync("src/lib/motion-detect.ts", "utf8");
+const appearance = readFileSync("src/components/appearance-controls.tsx", "utf8");
+const plantHome = readFileSync("src/components/plant-home.tsx", "utf8");
 
 describe("developer WIB clock override", () => {
   it("loads on both entry points, before live.js", () => {
@@ -128,6 +130,29 @@ describe("developer WIB clock override", () => {
     // Single-line substring on purpose — this repo's sources are CRLF, so a
     // multi-line literal with bare \n silently matches nothing.
     expect(panel).toContain("NOT patch Date.now()");
+  });
+
+  it("moves the day/night SKIN with the override, not just the behaviour", () => {
+    // Shipped broken once: the guardian and the farm shell ran on the shifted
+    // clock while every React route painted a night sky from resolveTheme's
+    // own separate clock read. The app disagreeing with itself reads as "the
+    // override did nothing", which is worse than no override at all.
+    expect(appearance).toContain("resolveTheme(theme, devNow())");
+    expect(appearance).not.toMatch(/resolveTheme\(theme\)/);
+    // The shell does not remount on client navigation, so a subscription —
+    // not just the 60s tick — is what makes the sky follow immediately.
+    expect(appearance).toContain("window.PMClock?.onChange(");
+  });
+
+  it("shifts plant-home's WIB clock without touching its quest timers", () => {
+    // One nowMs feeds both. The countdown is elapsed time and must stay real;
+    // only the wall-clock branch may move.
+    expect(plantHome).toContain("const clockMs = nowMs === null ? null : nowMs + devClockOffsetMs();");
+    expect(plantHome).toContain("setNowMs(Date.now())");
+    expect(plantHome).not.toContain("setNowMs(devNow()");
+    // The clock readout and the farmer's night flag both read the shifted
+    // value; nothing else may.
+    expect(plantHome.split("clockMs").length - 1).toBe(5);
   });
 });
 

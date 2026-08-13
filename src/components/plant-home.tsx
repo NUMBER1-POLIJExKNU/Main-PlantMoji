@@ -13,6 +13,7 @@ import LevelUpOverlay from "@/components/level-up-overlay";
 import Mascot from "@/components/mascot";
 import HomeEnvironmentGlance from "@/components/home-environment-glance";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
+import { devClockOffsetMs } from "@/lib/pm-clock";
 import type { AppLocale } from "@/lib/i18n";
 import { TypewriterText } from "@/components/intelligence-console";
 import FarmerNpc from "@/components/farmer-npc";
@@ -232,8 +233,14 @@ export default function PlantHome({
     plant.current_state === initialPlant.current_state && initialMoodMessage
       ? initialMoodMessage
       : getMoodMessage(personality, plant.current_state);
-  const jemberTime = nowMs === null ? "--:--" : new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date(nowMs));
-  const jemberHour = nowMs === null ? 12 : Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date(nowMs)));
+  // Wall-clock branch of nowMs, and ONLY this branch. The same nowMs drives
+  // the quest countdown and elapsed timers above, which measure real elapsed
+  // time and must never move — so the developer clock override is added here
+  // rather than to the state itself. Re-read every render, so the 15s tick
+  // above carries a changed override into the clock and the farmer's sky.
+  const clockMs = nowMs === null ? null : nowMs + devClockOffsetMs();
+  const jemberTime = clockMs === null ? "--:--" : new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta" }).format(new Date(clockMs));
+  const jemberHour = clockMs === null ? 12 : Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hour12: false, hourCycle: "h23", timeZone: "Asia/Jakarta" }).format(new Date(clockMs)));
 
   return (
     <main className={`pm-scene relative flex min-h-screen flex-col overflow-x-clip ${mood.scene}`}>

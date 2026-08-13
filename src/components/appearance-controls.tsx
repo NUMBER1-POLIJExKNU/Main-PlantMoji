@@ -12,12 +12,18 @@ import {
   type AppTheme,
   type FarmSkin,
 } from "@/lib/appearance";
+import { devNow } from "@/lib/pm-clock";
 import type { AppLocale } from "@/lib/i18n";
 
 const MAX_AGE = 31_536_000;
 
 function applyAppearance(theme: AppTheme, skin: FarmSkin) {
-  const resolved = resolveTheme(theme);
+  // devNow, not new Date: on "auto" this is a time-of-day question, so the
+  // developer clock override has to reach it. Without this the React routes
+  // paint a night sky while the guardian camera and the farm shell are both
+  // running on the shifted (day) clock — the app disagreeing with itself,
+  // which reads as a broken override rather than a cosmetic gap.
+  const resolved = resolveTheme(theme, devNow());
   const root = document.documentElement;
   root.dataset.themePreference = theme;
   root.dataset.theme = resolved;
@@ -39,7 +45,24 @@ export default function AppearanceControls({ locale, initialTheme, initialSkin }
   useEffect(() => {
     applyAppearance(theme, skin);
     const timer = theme === "auto" ? window.setInterval(() => applyAppearance(theme, skin), 60_000) : undefined;
-    return () => { if (timer !== undefined) window.clearInterval(timer); };
+    // This component lives in the shared shell and does NOT remount on client
+    // navigation, so without a subscription the sky would only catch up on the
+    // next 60s tick — long enough to look like the override did nothing.
+    // (A full page load still paints the server's real-clock theme for one
+    // frame before this corrects it: the override is localStorage, so the
+    // server cannot know about it. Deliberate — putting the fake clock in a
+    // cookie would ship it to every API route, where it could reach real
+    // logic instead of the CSS hook it is meant for.)
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = window.PMClock?.onChange(() => applyAppearance(theme, skin));
+    } catch {
+      // No devclock.js on this page — nothing to follow.
+    }
+    return () => {
+      if (timer !== undefined) window.clearInterval(timer);
+      unsubscribe?.();
+    };
   }, [theme, skin]);
 
   const changeTheme = (value: string) => {
