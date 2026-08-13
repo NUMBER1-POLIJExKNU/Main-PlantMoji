@@ -7,8 +7,7 @@
 // callbacks), and "last updated" is client-only state so hydration matches.
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import dynamic from "next/dynamic";
-import type { LightMode, LightPoint } from "@/components/light-chart";
+import SensorHistoryCharts, { type HistorySample, type SeriesKey } from "@/components/sensor-history-charts";
 import type { AppLocale } from "@/lib/i18n";
 import { hasSufficientLight, LIGHT_PERCENT_MAX } from "@/lib/light-sensor";
 import type { CropProfile } from "@/lib/crop-profiles";
@@ -16,23 +15,9 @@ import { useCheat } from "@/lib/pm-cheat";
 
 const REFRESH_MS = 10_000;
 
-// recharts is the heaviest dependency in the app; light-chart.tsx pulls it
-// in, so it's loaded on demand (client-only, no SSR) instead of shipping in
-// the initial /monitoring bundle. Only type-only imports of light-chart.tsx
-// remain above — those are erased at compile time and carry no runtime cost,
-// so this file has no static value import of the recharts-bearing module.
-const LightChart = dynamic(() => import("@/components/light-chart"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[260px] w-full motion-safe:animate-pulse items-center justify-center text-sm text-[#57684F]">
-      …
-    </div>
-  ),
-});
-
-// Local copy of light-chart's formatTime: keeping this here (instead of a
-// static import from light-chart.tsx) means "Last updated" formatting never
-// pulls the recharts-bearing module into this file's static import graph.
+// The history charts are plain SVG (see sensor-history-charts.tsx) — small
+// enough to import statically, and with no recharts there is no longer a
+// heavyweight module to keep out of this route's bundle.
 const timeFormat = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
   minute: "2-digit",
@@ -57,6 +42,9 @@ interface LatestReading {
 
 interface HistoryRow {
   recorded_at: string;
+  temperature: number | null;
+  humidity: number | null;
+  soil_ph: number | null;
   light: number | null;
   light_lux: number | null;
 }
@@ -74,8 +62,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat cahaya · 1 jam", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
-  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Light history · 1 hour", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat sensor · 1 jam", trendNote: "Arahkan kursor untuk melihat nilai pada waktu tertentu", airGroup: "Udara", soilLightGroup: "Tanah & cahaya", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Sensor history · 1 hour", trendNote: "Hover to read the values at any moment", airGroup: "Air", soilLightGroup: "Soil & light", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note, liveNote }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string }) {
@@ -252,26 +240,26 @@ export default function MonitoringLive({
   const latest = payload?.latest ?? null;
   const history = useMemo(() => payload?.history ?? [], [payload]);
 
-  // Prefer real lux history when supplied; otherwise plot Node-RED's relative
-  // 0–100% light value without relabeling it as lux.
-  const hasLux = useMemo(
-    () => history.some((row) => typeof row.light_lux === "number"),
-    [history],
-  );
-  const points = useMemo<LightPoint[]>(() => {
-    const out: LightPoint[] = [];
+  // One sample per row carrying all four sensors, so both panels share an
+  // x-axis and a hover index. light stays the calibrated 0–100% value
+  // (milestone15); light_lux is deliberately not plotted here — it is null in
+  // every row this kit has ever recorded, and a second scale for an empty
+  // column would only add an axis nobody can read.
+  const samples = useMemo<HistorySample[]>(() => {
+    const out: HistorySample[] = [];
     for (const row of history) {
       const t = Date.parse(row.recorded_at);
       if (!Number.isFinite(t)) continue;
-      if (hasLux) {
-        if (typeof row.light_lux === "number") out.push({ t, value: row.light_lux });
-      } else if (typeof row.light === "number") {
-        out.push({ t, value: row.light });
-      }
+      out.push({
+        t,
+        temperature: num(row.temperature),
+        humidity: num(row.humidity),
+        soilPh: num(row.soil_ph),
+        light: num(row.light),
+      });
     }
     return out;
-  }, [history, hasLux]);
-  const mode: LightMode = hasLux ? "lux" : "percent";
+  }, [history]);
   // The newest reading of any age, for telling "never arrived" apart from
   // "arrived, but older than this chart's window".
   const lastReadingAt = useMemo(() => {
@@ -283,6 +271,16 @@ export default function MonitoringLive({
   const ranges = useMemo(
     () => (cropProfile ? comfortRangesFromProfile(cropProfile) : null),
     [cropProfile],
+  );
+  // Same object, keyed the way the charts index their series. Derived from
+  // `ranges` rather than the profile again, so the bands behind the lines and
+  // the numbers in the legend card can never drift apart.
+  const historyBands = useMemo<Record<SeriesKey, { min: number; max: number }> | null>(
+    () =>
+      ranges
+        ? { temperature: ranges.temperature, humidity: ranges.humidity, soilPh: ranges.soilPh, light: ranges.light }
+        : null,
+    [ranges],
   );
   const c = COPY[locale];
   // Classroom sandbox: the editor above this panel was writing to the store
@@ -336,12 +334,13 @@ export default function MonitoringLive({
       )}
 
       <section className="pm-panel pm-monitor-chart">
-        <div className="pm-monitor-chart-head"><div><span>☀️</span><div><h2>{c.trend}</h2><p>{mode === "lux" ? "Lux" : "0–100%"}</p></div></div></div>
-        {points.length > 0 ? (
-          // The comfort band only overlays the calibrated 0–100% percent
-          // scale (milestone15) — a "lux" chart has no matching profile
-          // range, so no band is passed and LightChart draws unchanged.
-          <LightChart points={points} mode={mode} band={mode === "percent" ? ranges?.light : undefined} />
+        <div className="pm-monitor-chart-head"><div><span>📈</span><div><h2>{c.trend}</h2><p>{c.trendNote}</p></div></div></div>
+        {samples.length > 0 ? (
+          <SensorHistoryCharts
+            samples={samples}
+            bands={historyBands}
+            copy={{ airGroup: c.airGroup, soilLightGroup: c.soilLightGroup, temperature: c.temperature, humidity: c.humidity, soilPh: c.soilPh, light: c.light }}
+          />
         ) : (
           // Two different empty states, because they have different answers.
           // The gauges above read `latest`, which has no age limit and will

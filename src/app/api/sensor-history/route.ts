@@ -18,9 +18,17 @@ const FETCH_LIMIT = 1000;
 
 interface HistoryRow {
   recorded_at: string;
+  temperature: number | null;
+  humidity: number | null;
+  soil_ph: number | null;
   light: number | null;
   light_lux: number | null;
 }
+
+// Every column the /monitoring history charts plot. light_lux is the only one
+// that may be absent from the schema (milestone6-monitoring.sql) — the others
+// are v5 base columns, so the fallback below drops light_lux alone.
+const HISTORY_COLUMNS = "recorded_at, temperature, humidity, soil_ph, light";
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
@@ -61,7 +69,7 @@ export async function GET(request: Request) {
       .order("recorded_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    historyQuery("recorded_at, light, light_lux"),
+    historyQuery(`${HISTORY_COLUMNS}, light_lux`),
   ]);
 
   // The two reads are independent, so one failing must not throw the other
@@ -83,7 +91,7 @@ export async function GET(request: Request) {
   if (!withLux.error) {
     rows = (withLux.data ?? []) as unknown as HistoryRow[];
   } else if (isMissingColumnError(withLux.error)) {
-    const withoutLux = await historyQuery("recorded_at, light");
+    const withoutLux = await historyQuery(HISTORY_COLUMNS);
     if (withoutLux.error) {
       console.error("sensor-history fallback failed:", withoutLux.error.message);
     } else {
