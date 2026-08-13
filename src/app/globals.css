@@ -1275,6 +1275,10 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
 .pm-monitor-status strong { font: 8px/1.4 var(--pm-font-pixel); }
 .pm-monitor-status-dot,.pm-monitor-reading-foot > span { width: 8px; height: 8px; border-radius: 50%; background: #d49a3a; box-shadow: 0 0 0 3px color-mix(in srgb,#d49a3a 20%,transparent); }
 .pm-monitor-status-dot.is-live,.pm-monitor-reading-foot > span.is-live { background: #55ad47; box-shadow: 0 0 0 3px color-mix(in srgb,#55ad47 20%,transparent); }
+/* Sensors reachable but silent past SENSOR_STALE_AFTER_MS. Red rather than the
+   amber base: amber reads as "connecting/retrying", i.e. the app is still
+   working on it, while a dead feed is a settled state the viewer must act on. */
+.pm-monitor-status-dot.is-stale,.pm-monitor-reading-foot > span.is-stale { background: #c0504d; box-shadow: 0 0 0 3px color-mix(in srgb,#c0504d 22%,transparent); }
 .pm-monitor-intro { padding: 14px 16px; border-left: 5px solid var(--color-forest); border-radius: 12px; background: color-mix(in srgb, var(--color-bg) 88%, transparent); }
 .pm-monitor-intro > div,.pm-monitor-chart-head > div { display: flex; align-items: center; gap: 11px; }
 .pm-monitor-intro > div > span,.pm-monitor-chart-head > div > span { font: 23px/1 sans-serif; }

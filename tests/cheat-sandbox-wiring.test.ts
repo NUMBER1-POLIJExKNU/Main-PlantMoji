@@ -74,9 +74,14 @@ describe("the sandbox never shows demo and real numbers at once", () => {
     ]) {
       expect(monitoringLive).toContain(line);
     }
-    // ...and stops calling them live readings.
-    expect(monitoringLive).toContain("const readingNote = demo ? c.demoNote : undefined");
-    expect(monitoringLive).toContain("const statusLabel = demo");
+    // ...and stops calling them live readings. Trailing branches are
+    // deliberately unpinned — a stale-feed note joined this line later. What
+    // must hold is that `demo` is tested FIRST, so a sandbox card can never be
+    // labelled live, nor (now) marked stale by a real feed that has died.
+    expect(monitoringLive).toContain("const readingNote = demo ? c.demoNote :");
+    // Same guarantee for the status bar, which now routes through one derived
+    // state; sensorStatus returns "demo" before it looks at anything else.
+    expect(monitoringLive).toContain('if (demo) return "demo";');
   });
 
   it("mirrors the sandbox in the activity strip above every React route", () => {

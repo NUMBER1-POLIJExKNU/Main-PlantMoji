@@ -15,6 +15,24 @@ import { useCheat } from "@/lib/pm-cheat";
 
 const REFRESH_MS = 10_000;
 
+/**
+ * How old the newest reading may be before the kit counts as offline.
+ *
+ * `state === "ok"` only ever meant "the HTTP request succeeded". The history
+ * route answers 200 with the last stored row no matter how old it is, so a
+ * kit that stopped pushing hours ago still lit the green "SENSORS LIVE" dot
+ * over its own final numbers — and the "Updated" stamp beside it showed the
+ * time of the FETCH, which made a dead feed look freshly delivered.
+ *
+ * Measured against this kit: 1000 consecutive rows push at a 2.0s median,
+ * worst observed gap 3.5s, and zero gaps over 60s. Three minutes is ~90x the
+ * median and ~50x the worst real gap, so a Wi-Fi blip or a Node-RED restart
+ * cannot trip it, while a genuinely dead device is admitted within one demo
+ * breath. Also comfortably longer than REFRESH_MS, so the label cannot
+ * flicker between two polls.
+ */
+export const SENSOR_STALE_AFTER_MS = 3 * 60_000;
+
 // The history charts are plain SVG (see sensor-history-charts.tsx) — small
 // enough to import statically, and with no recharts there is no longer a
 // heavyweight module to keep out of this route's bundle.
@@ -56,22 +74,54 @@ interface SensorHistoryPayload {
 
 type FetchState = "loading" | "ok" | "no-env" | "error";
 
+export type SensorStatus = "demo" | "connecting" | "retrying" | "offline" | "live";
+
+/**
+ * ONE derived state feeds the status dot, the status label, the timestamp
+ * beside it, and all four reading cards.
+ *
+ * Deriving them separately is exactly what produced the bug this replaces:
+ * the dot read `state === "ok"` (the HTTP call worked) and lit green, the
+ * timestamp printed the poll clock, and the four cards printed their numbers
+ * with a "Live" note — all sitting above a history chart that correctly said
+ * "no readings in the last hour". Same shape as camera-guardian's resultView,
+ * and for the same reason.
+ *
+ * Pure and exported so the threshold is testable without a DOM.
+ */
+export function sensorStatus({ state, lastReadingMs, nowMs, demo }: {
+  state: FetchState;
+  /** epoch ms of the newest stored reading; null = none, or unparseable. */
+  lastReadingMs: number | null;
+  nowMs: number;
+  demo: boolean;
+}): SensorStatus {
+  if (demo) return "demo"; // sandbox values have no recorded_at and never go stale
+  if (state === "loading") return "connecting";
+  if (state !== "ok") return "retrying"; // error + no-env keep their own banners
+  // Unknown age is never reported as fresh.
+  if (lastReadingMs === null) return "offline";
+  return nowMs - lastReadingMs > SENSOR_STALE_AFTER_MS ? "offline" : "live";
+}
+
 /** Supabase numerics arrive as JSON numbers; anything else → null. */
 function num(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 const COPY = {
-  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat sensor · 1 jam", trendNote: "Arahkan kursor untuk melihat nilai pada waktu tertentu", airGroup: "Udara", soilLightGroup: "Tanah & cahaya", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung" },
-  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Sensor history · 1 hour", trendNote: "Hover to read the values at any moment", airGroup: "Air", soilLightGroup: "Soil & light", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live" },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat sensor · 1 jam", trendNote: "Arahkan kursor untuk melihat nilai pada waktu tertentu", airGroup: "Udara", soilLightGroup: "Tanah & cahaya", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung", offline: "SENSOR TERPUTUS", staleWord: "Data lama", staleBanner: (at: string) => `Tidak ada pembacaan baru. Angka di bawah ini adalah yang terakhir diterima, pukul ${at}.` },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Sensor history · 1 hour", trendNote: "Hover to read the values at any moment", airGroup: "Air", soilLightGroup: "Soil & light", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live", offline: "SENSORS OFFLINE", staleWord: "Stale", staleBanner: (at: string) => `No new readings arriving. The numbers below are the last ones received, at ${at}.` },
 } as const;
 
-function ReadingCard({ icon, label, value, unit, accent, note, liveNote }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string }) {
+function ReadingCard({ icon, label, value, unit, accent, note, liveNote, stale }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string; stale?: boolean }) {
   return (
     <article className="pm-panel pm-monitor-reading" style={{ "--sensor-accent": accent } as CSSProperties}>
       <div className="pm-monitor-reading-head"><span aria-hidden="true">{icon}</span><h2>{label}</h2></div>
       <div className="pm-monitor-reading-value">{value == null ? "—" : value}<small>{value == null ? "" : unit}</small></div>
-      <div className="pm-monitor-reading-foot"><span className={value == null ? "is-waiting" : "is-live"} />{note ?? liveNote}</div>
+      {/* A stale card keeps its number — the last known reading is still the
+          most useful thing to show — but must never wear the live dot. */}
+      <div className="pm-monitor-reading-foot"><span className={value == null ? "is-waiting" : stale ? "is-stale" : "is-live"} />{note ?? liveNote}</div>
     </article>
   );
 }
@@ -180,6 +230,7 @@ export default function MonitoringLive({
   const [payload, setPayload] = useState<SensorHistoryPayload | null>(null);
   const [state, setState] = useState<FetchState>("loading");
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+  const [polledAt, setPolledAt] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,7 +259,13 @@ export default function MonitoringLive({
         // flash on refetch.
         setPayload(data);
         setState("ok");
-        setUpdatedAt(formatTime(Date.now()));
+        const at = Date.now();
+        setUpdatedAt(formatTime(at));
+        // Reading age is measured against the poll clock rather than a
+        // Date.now() during render: render must stay pure (react-hooks/purity),
+        // and every poll refreshes this anyway, so the age can never be more
+        // than REFRESH_MS behind while the page is actually updating.
+        setPolledAt(at);
       } catch {
         if (!cancelled) setState("error");
       } finally {
@@ -262,12 +319,13 @@ export default function MonitoringLive({
   }, [history]);
   // The newest reading of any age, for telling "never arrived" apart from
   // "arrived, but older than this chart's window".
-  const lastReadingAt = useMemo(() => {
+  const lastReadingMs = useMemo(() => {
     const raw = latest?.recorded_at;
     if (!raw) return null;
     const t = Date.parse(raw);
-    return Number.isFinite(t) ? formatTime(t) : null;
+    return Number.isFinite(t) ? t : null;
   }, [latest]);
+  const lastReadingAt = lastReadingMs === null ? null : formatTime(lastReadingMs);
   const ranges = useMemo(
     () => (cropProfile ? comfortRangesFromProfile(cropProfile) : null),
     [cropProfile],
@@ -295,16 +353,32 @@ export default function MonitoringLive({
   const humidity = demo ? demo.humidity : num(latest?.humidity);
   const soilPh = demo ? demo.soilPh : num(latest?.soil_ph);
   const light = demo ? demo.light : num(latest?.light);
-  const readingNote = demo ? c.demoNote : undefined;
-  const statusLabel = demo
-    ? c.demo
-    : state === "ok" ? c.live : state === "loading" ? c.connecting : c.retrying;
+  // polledAt is null on the server and until the first response lands, and
+  // `state` is "loading" for exactly that window, so the first pass is
+  // "connecting" on both sides and hydration matches.
+  const status = sensorStatus({ state, lastReadingMs, nowMs: polledAt ?? 0, demo: demo !== null });
+  const staleReal = status === "offline";
+  const readingNote = demo ? c.demoNote : staleReal ? c.staleWord : undefined;
+  const statusLabel = {
+    demo: c.demo,
+    connecting: c.connecting,
+    retrying: c.retrying,
+    offline: c.offline,
+    live: c.live,
+  }[status];
 
   return (
     <div className="pm-monitor-dashboard">
       <section className="pm-monitor-status" aria-live="polite">
-        <div><span className={`pm-monitor-status-dot ${state === "ok" ? "is-live" : ""}`} /><strong>{statusLabel}</strong></div>
-        <span className="tabular-nums">{updatedAt ? `${c.updated} ${updatedAt}` : c.connecting}</span>
+        <div><span className={`pm-monitor-status-dot ${status === "live" ? "is-live" : status === "offline" ? "is-stale" : ""}`} /><strong>{statusLabel}</strong></div>
+        {/* While the feed is dead, the poll clock is the wrong number to show:
+            it reports when the app last ASKED, which is exactly what made a
+            three-hour-old reading look current. Show when the data was made. */}
+        <span className="tabular-nums">
+          {staleReal && lastReadingAt
+            ? `${c.lastSeen} ${lastReadingAt}`
+            : updatedAt ? `${c.updated} ${updatedAt}` : c.connecting}
+        </span>
       </section>
 
       {state === "no-env" && (
@@ -317,16 +391,24 @@ export default function MonitoringLive({
           {c.error}
         </p>
       )}
+      {/* The cards below keep their last known numbers, so the page has to say
+          out loud that they are old — a marked dot alone is too quiet to undo
+          the impression four big fresh-looking values give. */}
+      {staleReal && lastReadingAt && (
+        <p className="mb-3 rounded-xl border-2 border-[#E0A0A0] bg-[#FDF0F0] px-3 py-2 text-xs leading-5 text-[#8A3A3A]">
+          {c.staleBanner(lastReadingAt)}
+        </p>
+      )}
 
       <div className="pm-monitor-reading-grid">
         {/* liveNote is the short dedicated "live" word (id "Langsung" / en
             "Live") — the status bar above already says sensors are live, so
             the cards no longer repeat the "Current environment" sentence.
             readingNote overrides it with the demo-data note in demo mode. */}
-        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" liveNote={c.liveWord} note={temperature == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" liveNote={c.liveWord} note={humidity == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" liveNote={c.liveWord} note={soilPh == null ? c.noSensor : readingNote} />
-        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" liveNote={c.liveWord} note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
+        <ReadingCard icon="🌡️" label={c.temperature} value={temperature} unit="°C" accent="#EF8B6C" liveNote={c.liveWord} stale={staleReal} note={temperature == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="💧" label={c.humidity} value={humidity} unit="%" accent="#4DA1ED" liveNote={c.liveWord} stale={staleReal} note={humidity == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="🧪" label={c.soilPh} value={soilPh} unit="" accent="#AA7E55" liveNote={c.liveWord} stale={staleReal} note={soilPh == null ? c.noSensor : readingNote} />
+        <ReadingCard icon="☀️" label={c.light} value={light} unit="%" accent="#F2C84B" liveNote={c.liveWord} stale={staleReal} note={light == null ? c.noSensor : readingNote ?? (hasSufficientLight(light) ? c.sufficient : c.low)} />
       </div>
 
       {ranges && cropProfile && (
