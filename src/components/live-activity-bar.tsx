@@ -12,12 +12,40 @@ interface Reading {
   light?: number | null;
 }
 
-interface Payload { latest: Reading | null; history: unknown[] }
+interface Payload { latest: Reading | null; history: { recorded_at?: string | null }[] }
 type StreamState = "connecting" | "live" | "stale" | "offline";
 
 function shown(value: number | null | undefined, unit: string) {
   if (typeof value !== "number" || !Number.isFinite(value)) return `—${unit}`;
   return `${value.toFixed(1)}${unit}`;
+}
+
+/**
+ * How long ago the newest reading arrived, in units a person can read.
+ *
+ * This printed `${seconds.toFixed(1)}s` at every scale, so a kit switched off
+ * overnight reported "56430.0s" — a number nobody converts in their head, in
+ * the one strip whose whole job is answering "is the garden talking to us?"
+ * at a glance.
+ *
+ * Tenths of a second survive under a minute and only there: that range is the
+ * live heartbeat, where 0.4s and 12s are meaningfully different. Past a
+ * minute this is a duration, and two units is all a duration needs — "4h 37m",
+ * never "4h 37m 12s".
+ */
+export function formatSensorAge(seconds: number, locale: AppLocale): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "—";
+  // Indonesian: detik / menit / jam / hari. "h" is hari here rather than
+  // hours — unambiguous because a reader only sees one locale's ladder.
+  const u = locale === "id"
+    ? { s: "dt", m: "mnt", h: "j", d: "h" }
+    : { s: "s", m: "m", h: "h", d: "d" };
+  if (seconds < 60) return `${seconds.toFixed(1)}${u.s}`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}${u.m} ${Math.floor(seconds % 60)}${u.s}`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}${u.h} ${minutes % 60}${u.m}`;
+  return `${Math.floor(hours / 24)}${u.d} ${hours % 24}${u.h}`;
 }
 
 export default function LiveActivityBar({ locale, plantId = "plant-01" }: { locale: AppLocale; plantId?: string }) {
@@ -77,6 +105,14 @@ export default function LiveActivityBar({ locale, plantId = "plant-01" }: { loca
     const ms = Date.parse(stamp);
     return Number.isFinite(ms) ? Math.max(0, (now - ms) / 1000) : null;
   }, [now, payload?.latest?.recorded_at]);
+  const spanMinutes = useMemo(() => {
+    const rows = payload?.history ?? [];
+    if (rows.length < 2) return 0;
+    const first = Date.parse(rows[0].recorded_at ?? "");
+    const last = Date.parse(rows[rows.length - 1].recorded_at ?? "");
+    if (!Number.isFinite(first) || !Number.isFinite(last)) return 0;
+    return Math.max(1, Math.round(Math.abs(last - first) / 60_000));
+  }, [payload?.history]);
   const streamState: StreamState = requestOk === null ? "connecting" : !requestOk || ageSeconds == null ? "offline" : ageSeconds <= 30 ? "live" : ageSeconds <= 120 ? "stale" : "offline";
   // This strip sits above every React route, so during a classroom demo it was
   // reporting the real hardware feed a few pixels above the sandbox values —
@@ -94,10 +130,13 @@ export default function LiveActivityBar({ locale, plantId = "plant-01" }: { loca
       : { connecting: "CONNECTING", live: "LIVE SENSOR", stale: "STALE DATA", offline: "SENSOR OFFLINE" }[streamState];
 
   return <aside className={`pm-live-activity is-${state}`} aria-label={locale === "id" ? "Aktivitas sensor langsung" : "Live sensor activity"}>
-    <div className="pm-live-source"><i key={pulse} aria-hidden="true" /><strong>{label}</strong><span>{demo ? (locale === "id" ? "demo" : "demo") : ageSeconds == null ? "—" : `${ageSeconds.toFixed(1)}s`}</span></div>
+    <div className="pm-live-source"><i key={pulse} aria-hidden="true" /><strong>{label}</strong><span>{demo ? (locale === "id" ? "demo" : "demo") : ageSeconds == null ? "—" : formatSensorAge(ageSeconds, locale)}</span></div>
     <div className="pm-live-values" aria-live="polite">
       <span>🌡 {shown(demo ? demo.temperature : latest?.temperature, "°")}</span><span>💧 {shown(demo ? demo.humidity : latest?.humidity, "%")}</span><span>🧪 {shown(demo ? demo.soilPh : latest?.soil_ph, "")}</span><span>☀ {shown(demo ? demo.light : latest?.light, "%")}</span>
     </div>
-    <small>{demo ? (locale === "id" ? "nilai demo" : "demo values") : locale === "id" ? `${payload?.history?.length ?? 0} sampel · 60 mnt` : `${payload?.history?.length ?? 0} samples · 60 min`}</small>
+    {/* "60 mnt" was hardcoded and wrong: the route caps at 1000 rows, which at
+        a 2s cadence is ~34 minutes, and while the kit is off the window is
+        anchored on the last reading instead of on now. Measure it. */}
+    <small>{demo ? (locale === "id" ? "nilai demo" : "demo values") : locale === "id" ? `${payload?.history?.length ?? 0} sampel · ${spanMinutes} mnt` : `${payload?.history?.length ?? 0} samples · ${spanMinutes} min`}</small>
   </aside>;
 }

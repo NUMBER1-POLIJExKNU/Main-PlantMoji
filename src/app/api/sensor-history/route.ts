@@ -1,6 +1,7 @@
 import { getServerSupabaseForBulkRead } from "@/lib/supabase/server";
 import { isMissingColumnError, isMissingTableError } from "@/lib/supabase-errors";
 import { clampMinutes, downsample } from "@/components/sensor-gauge";
+import { windowFromNewest } from "@/lib/sensor-history-window";
 
 /**
  * GET /api/sensor-history?plantId=&minutes= — feeds the /monitoring
@@ -46,13 +47,18 @@ export async function GET(request: Request) {
 
   // History is fetched newest-first so the row limit keeps the MOST RECENT
   // readings, then reversed to ascending for the chart.
-  const sinceIso = new Date(Date.now() - minutes * 60_000).toISOString();
+  //
+  // NO `gte(now - minutes)` here, deliberately. That filter tied the chart to
+  // the wall clock: switch the kit off and the window slid away from the data
+  // until, an hour later, the card was an empty box — precisely when someone
+  // would want to look at what the sensors last saw. The window is applied
+  // below against the newest READING instead, so "the last hour" means the
+  // last hour of measurements, not the last hour of the viewer's day.
   const historyQuery = (columns: string) =>
     supabase
       .from("sensor_readings")
       .select(columns)
       .eq("plant_id", plantId)
-      .gte("recorded_at", sinceIso)
       .order("recorded_at", { ascending: false })
       .limit(FETCH_LIMIT);
 
@@ -111,9 +117,14 @@ export async function GET(request: Request) {
   }
   rows = rows ?? [];
 
-  rows.reverse();
+  // `rows` is newest-first. Anchor the window on the newest reading, so a kit
+  // that stopped an hour ago still answers with the hour it recorded before
+  // stopping rather than with nothing at all.
+  const windowed = windowFromNewest(rows, minutes);
+
+  windowed.reverse();
   return Response.json({
     latest,
-    history: downsample(rows, HISTORY_CAP),
+    history: downsample(windowed, HISTORY_CAP),
   });
 }

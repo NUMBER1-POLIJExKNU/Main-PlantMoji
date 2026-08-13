@@ -99,8 +99,27 @@ function useMeasuredWidth() {
   return [ref, width] as const;
 }
 
-/** Series path, broken at gaps. A dropped reading leaves a hole rather than a
- *  straight line pretending the sensor was steady across the outage. */
+/**
+ * Silence long enough to count as the kit being offline, and therefore long
+ * enough that the line must not be carried across it.
+ *
+ * Mirrors SENSOR_STALE_AFTER_MS in monitoring-live.tsx — the same judgement
+ * ("this kit has stopped") drawn on the chart instead of in the status bar.
+ * Duplicated rather than imported because monitoring-live imports THIS file;
+ * tests/monitoring-history-window.test.ts pins the two together.
+ */
+export const GAP_BREAK_MS = 3 * 60_000;
+
+/**
+ * Series path, broken at gaps — both kinds.
+ *
+ * A dropped reading (null value) leaves a hole, and so does a long silence
+ * between two rows. The second case arrives whenever the kit is switched back
+ * on after an outage: the route splices the fresh readings onto the last
+ * known history so the card is never blank, and without this break the two
+ * sides would be joined by one long diagonal asserting a smooth drift that
+ * nothing measured.
+ */
 function linePath(
   samples: HistorySample[],
   key: SeriesKey,
@@ -109,14 +128,18 @@ function linePath(
 ) {
   let path = "";
   let open = false;
+  let previousT: number | null = null;
   for (const sample of samples) {
     const value = sample[key];
     if (typeof value !== "number") {
       open = false;
+      previousT = null;
       continue;
     }
+    if (previousT !== null && sample.t - previousT > GAP_BREAK_MS) open = false;
     path += `${open ? "L" : "M"}${x(sample.t).toFixed(1)} ${y(value).toFixed(1)}`;
     open = true;
+    previousT = sample.t;
   }
   return path;
 }

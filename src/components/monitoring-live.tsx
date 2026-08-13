@@ -110,8 +110,8 @@ function num(value: unknown): number | null {
 }
 
 const COPY = {
-  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat sensor · 1 jam", trendNote: "Arahkan kursor untuk melihat nilai pada waktu tertentu", airGroup: "Udara", soilLightGroup: "Tanah & cahaya", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung", offline: "SENSOR TERPUTUS", staleWord: "Data lama", staleBanner: (at: string) => `Tidak ada pembacaan baru. Angka di bawah ini adalah yang terakhir diterima, pukul ${at}.` },
-  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Sensor history · 1 hour", trendNote: "Hover to read the values at any moment", airGroup: "Air", soilLightGroup: "Soil & light", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live", offline: "SENSORS OFFLINE", staleWord: "Stale", staleBanner: (at: string) => `No new readings arriving. The numbers below are the last ones received, at ${at}.` },
+  id: { demo: "MODE CURANG · NILAI DEMO", demoNote: "Nilai demo", live: "SENSOR AKTIF", connecting: "MENGHUBUNGKAN SENSOR", retrying: "MENCOBA LAGI", updated: "Diperbarui", real: "Pembacaan lingkungan saat ini", intro: "Empat pengukuran yang digunakan PlantMoji untuk memahami lingkungan.", temperature: "Suhu", humidity: "Kelembapan udara", soilPh: "pH tanah", light: "Cahaya", noSensor: "Belum ada data", sufficient: "Cukup", low: "Rendah", trend: "Riwayat sensor", trendNote: (mins: number) => `${mins} mnt terakhir · arahkan kursor untuk melihat nilai pada waktu tertentu`, airGroup: "Udara", soilLightGroup: "Tanah & cahaya", waiting: "Menunggu pembacaan sensor…", noRecent: "Belum ada pembacaan dalam 1 jam terakhir.", lastSeen: "Pembacaan terakhir:", noEnv: "Kebun belum dapat menerima pembacaan langsung. Coba lagi sebentar.", error: "Sensor belum dapat dijangkau. PlantMoji akan mencoba lagi secara otomatis.", idealRanges: "Rentang ideal", liveWord: "Langsung", offline: "SENSOR TERPUTUS", staleWord: "Data lama", staleBanner: (at: string) => `Tidak ada pembacaan baru. Angka di bawah ini adalah yang terakhir diterima, pukul ${at}.`, trendFrozen: (at: string, mins: number) => `${mins} mnt terakhir sebelum sensor berhenti, pukul ${at}` },
+  en: { demo: "CHEAT MODE · DEMO VALUES", demoNote: "Demo value", live: "SENSORS LIVE", connecting: "CONNECTING SENSORS", retrying: "RETRYING", updated: "Updated", real: "Current environment", intro: "The four measurements PlantMoji uses to understand the environment.", temperature: "Temperature", humidity: "Air humidity", soilPh: "Soil pH", light: "Light", noSensor: "No data yet", sufficient: "Sufficient", low: "Low", trend: "Sensor history", trendNote: (mins: number) => `Last ${mins} min · hover to read the values at any moment`, airGroup: "Air", soilLightGroup: "Soil & light", waiting: "Waiting for sensor readings…", noRecent: "No readings in the last hour.", lastSeen: "Last reading:", noEnv: "The garden cannot receive live readings yet. Try again in a moment.", error: "The sensors cannot be reached yet. PlantMoji will retry automatically.", idealRanges: "Ideal ranges", liveWord: "Live", offline: "SENSORS OFFLINE", staleWord: "Stale", staleBanner: (at: string) => `No new readings arriving. The numbers below are the last ones received, at ${at}.`, trendFrozen: (at: string, mins: number) => `The ${mins} min before the sensors stopped, at ${at}` },
 } as const;
 
 function ReadingCard({ icon, label, value, unit, accent, note, liveNote, stale }: { icon: string; label: string; value: number | null; unit: string; accent: string; note?: string; liveNote: string; stale?: boolean }) {
@@ -326,6 +326,13 @@ export default function MonitoringLive({
     return Number.isFinite(t) ? t : null;
   }, [latest]);
   const lastReadingAt = lastReadingMs === null ? null : formatTime(lastReadingMs);
+  // The span the chart ACTUALLY covers, not the hour that was asked for. At a
+  // 2s cadence an hour is ~1800 rows and PostgREST hands back at most 1000, so
+  // the window has always been the newest ~34 minutes — labelling it "1 hour"
+  // was off by half. Read from the samples so it stays honest at any cadence.
+  const spanMinutes = samples.length > 1
+    ? Math.max(1, Math.round((samples[samples.length - 1].t - samples[0].t) / 60_000))
+    : 0;
   const ranges = useMemo(
     () => (cropProfile ? comfortRangesFromProfile(cropProfile) : null),
     [cropProfile],
@@ -416,7 +423,12 @@ export default function MonitoringLive({
       )}
 
       <section className="pm-panel pm-monitor-chart">
-        <div className="pm-monitor-chart-head"><div><span>📈</span><div><h2>{c.trend}</h2><p>{c.trendNote}</p></div></div></div>
+        {/* The window is anchored on the newest READING, so while the kit is
+            off this chart keeps showing the hour before it stopped instead of
+            emptying out. Say so — data on screen with a "· 1 hour" heading
+            reads as the current hour, which is the same lie the status bar
+            above used to tell. */}
+        <div className="pm-monitor-chart-head"><div><span>📈</span><div><h2>{c.trend}</h2><p>{staleReal && lastReadingAt ? c.trendFrozen(lastReadingAt, spanMinutes) : c.trendNote(spanMinutes)}</p></div></div></div>
         {samples.length > 0 ? (
           <SensorHistoryCharts
             samples={samples}
