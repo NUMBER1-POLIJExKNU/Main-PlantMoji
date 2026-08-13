@@ -7,6 +7,9 @@ function source(path: string) {
 }
 
 const reactShell = source("src/components/reno-app-shell.tsx");
+const rootLayout = source("src/app/layout.tsx");
+const farmHtml = source("public/farm/index.html");
+const farmMusic = source("public/farm/background-music.js");
 // The destination table moved out of the shell so the board headers could read
 // the same one (lib/nav-destinations.ts). Both files together are still "what
 // the React side declares", which is what these assertions are about.
@@ -28,6 +31,17 @@ const TAB_HREFS = [
 ] as const;
 
 describe("shared PlantMoji application shell", () => {
+  it("loads one persistent background music controller on both app shells", () => {
+    expect(rootLayout).toContain('<Script src="/farm/background-music.js" strategy="beforeInteractive" />');
+    expect(farmHtml).toContain('<script defer src="/farm/background-music.js"></script>');
+    expect(reactShell).not.toContain("<BackgroundMusic");
+    expect(farmMusic).toContain("window.PMBackgroundMusic");
+    expect(farmMusic).toContain('"/audio/music-logo.png"');
+    for (const track of ["/audio/1.mp3", "/audio/2.mp3", "/audio/3.mp3"]) {
+      expect(farmMusic).toContain(`"${track}"`);
+    }
+  });
+
   it("exposes the game destinations and three utility destinations", () => {
     for (const href of TAB_HREFS) {
       expect(reactNav).toContain(`href: "${href}"`);

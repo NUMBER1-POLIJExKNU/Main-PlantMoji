@@ -57,6 +57,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             window.PMSfx for React pages too. Plain sync tags trip the
             no-sync-scripts lint rule, so next/script with beforeInteractive
             keeps the same load-before-hydration semantics. */}
+        <Script src="/farm/background-music.js" strategy="beforeInteractive" />
         <Script src="/farm/strings.js" strategy="beforeInteractive" />
         <Script src="/farm/sfx.js" strategy="beforeInteractive" />
         {/* Classroom-demo sandbox (window.PMCheat): client-only, never writes
