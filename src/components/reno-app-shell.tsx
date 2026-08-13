@@ -9,6 +9,7 @@ import { NAV_DESTINATIONS, NAV_TOOLS } from "@/lib/nav-destinations";
 import type { AppTheme, FarmSkin } from "@/lib/appearance";
 import AppearanceControls from "@/components/appearance-controls";
 import AppGuide from "@/components/app-guide";
+import BackgroundMusic from "@/components/background-music";
 import LiveActivityBar from "@/components/live-activity-bar";
 import NetworkStatus from "@/components/network-status";
 import DestinationIcon from "@/components/destination-icon";
@@ -145,6 +146,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
               </button>
             ))}
           </div>
+          <BackgroundMusic />
           <AppearanceControls locale={locale} initialTheme={initialTheme} initialSkin={initialSkin} />
         </aside>
 
