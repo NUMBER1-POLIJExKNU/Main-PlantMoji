@@ -72,6 +72,7 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
   return (
     <div className="reno-app-shell">
       <NetworkStatus locale={locale} />
+      <BackgroundMusic />
       <div className="reno-env-background" aria-hidden="true">
         <div className="reno-env-sun" />
         <div className="reno-env-cloud reno-env-cloud-1" />
@@ -146,7 +147,6 @@ export default function RenoAppShell({ children, locale, initialTheme, initialSk
               </button>
             ))}
           </div>
-          <BackgroundMusic />
           <AppearanceControls locale={locale} initialTheme={initialTheme} initialSkin={initialSkin} />
         </aside>
 

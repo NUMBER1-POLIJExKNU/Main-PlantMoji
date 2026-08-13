@@ -1584,14 +1584,17 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   }
   #sound-toggle { top:13px !important; right:116px !important; }
   .reno-music-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 12000;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 52px;
-    height: 52px;
-    margin: 0 0 10px;
+    width: 44px;
+    height: 44px;
     padding: 0;
-    border: 2px solid var(--color-border);
+    border: 3px solid var(--color-border);
     border-radius: 10px;
     background: color-mix(in srgb, var(--color-surface) 96%, white 4%);
     box-shadow: var(--pm-shadow);
@@ -1606,7 +1609,7 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
   .reno-music-toggle:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
   .reno-music-indicator {
     display: inline-block;
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
     color: var(--color-text);
     user-select: none;

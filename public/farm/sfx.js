@@ -800,35 +800,10 @@
   }
 
   function injectButton() {
-    if (!document.body || document.getElementById("sound-toggle")) return;
-    const btn = document.createElement("button");
-    btn.id = "sound-toggle";
-    btn.type = "button";
-    const s = btn.style;
-    s.position = "fixed";
-    s.top = "12px";
-    s.right = "12px";
-    s.zIndex = "9999";
-    s.width = "44px"; // comfortable tap target
-    s.height = "44px";
-    s.padding = "0";
-    s.display = "flex";
-    s.alignItems = "center";
-    s.justifyContent = "center";
-    s.fontFamily = "'Press Start 2P', monospace"; // pixel glyph if loaded
-    s.fontSize = "18px";
-    s.lineHeight = "1";
-    s.background = "#FFFFFF"; // surface token (spec §2.5)
-    s.border = "3px solid #BCD3B4"; // border token
-    s.borderRadius = "6px";
-    s.boxShadow = "0 4px 0 rgba(36,52,33,.15)"; // pixel shadow
-    s.color = "#243421"; // dark-text token
-    s.cursor = "pointer";
-    btn.addEventListener("click", () => {
-      toggle();
-    });
-    document.body.appendChild(btn);
-    updateButton();
+    // The dashboard has its own dedicated music toggle. The global speaker
+    // button is intentionally disabled to avoid duplicate controls in the
+    // top-right area and keep the settings/action UI uncluttered.
+    return;
   }
 
   function toggle() {
