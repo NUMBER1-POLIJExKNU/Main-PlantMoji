@@ -1587,19 +1587,31 @@ html[data-theme="night"] .pm-home-clock { border-color:var(--color-border); back
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     margin: 0 0 10px;
-    border: 3px solid var(--color-border);
+    padding: 0;
+    border: 0;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--color-surface) 90%, white 10%);
-    box-shadow: var(--pm-shadow);
-    color: var(--color-text);
-    font-size: 18px;
+    background: transparent;
+    box-shadow: none;
     cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .reno-music-toggle.is-off {
+    opacity: 0.5;
+    filter: grayscale(1);
   }
   .reno-music-toggle:active { transform:translateY(1px); }
   .reno-music-toggle:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
+  .reno-music-icon {
+    display: block;
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
   .reno-locale-switch button:active { transform:translateY(1px); }
   .reno-locale-switch button:focus-visible { outline:3px solid var(--color-water); outline-offset:2px; }
 

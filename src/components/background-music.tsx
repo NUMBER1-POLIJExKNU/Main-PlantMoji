@@ -42,10 +42,11 @@ export default function BackgroundMusic() {
     }
 
     try {
+      audio.autoplay = true;
       await audio.play();
     } catch {
-      // Autoplay is blocked until the first user gesture; the next pointerdown
-      // will re-trigger playback for a smooth, browser-safe unlock.
+      // Browser autoplay is still blocked until the first real interaction.
+      // We retry on the next click or keyboard action below.
     }
   };
 
@@ -68,6 +69,7 @@ export default function BackgroundMusic() {
     audio.volume = 0.45;
     audio.preload = "auto";
     audio.loop = false;
+    audio.autoplay = true;
     audio.dataset.index = "0";
     audio.src = PLAYLIST[0];
     audioRef.current = audio;
@@ -82,15 +84,16 @@ export default function BackgroundMusic() {
       advanceToNextTrack();
     };
 
-    const onPointerUnlock = () => {
+    const onInteractionUnlock = () => {
       if (!isEnabled) return;
       void playCurrentTrack();
     };
 
     audio.addEventListener("ended", onEnded);
     audio.addEventListener("error", onError);
-    window.addEventListener("pointerdown", onPointerUnlock, { capture: true });
-    window.addEventListener("keydown", onPointerUnlock, { capture: true });
+    window.addEventListener("pointerdown", onInteractionUnlock, { capture: true });
+    window.addEventListener("keydown", onInteractionUnlock, { capture: true });
+    window.addEventListener("touchstart", onInteractionUnlock, { capture: true });
 
     if (isEnabled) {
       void playCurrentTrack();
@@ -100,8 +103,9 @@ export default function BackgroundMusic() {
       audio.pause();
       audio.removeEventListener("ended", onEnded);
       audio.removeEventListener("error", onError);
-      window.removeEventListener("pointerdown", onPointerUnlock, { capture: true });
-      window.removeEventListener("keydown", onPointerUnlock, { capture: true });
+      window.removeEventListener("pointerdown", onInteractionUnlock, { capture: true });
+      window.removeEventListener("keydown", onInteractionUnlock, { capture: true });
+      window.removeEventListener("touchstart", onInteractionUnlock, { capture: true });
     };
   }, [isEnabled]);
 
@@ -126,7 +130,7 @@ export default function BackgroundMusic() {
   return (
     <button
       type="button"
-      className="reno-music-toggle"
+      className={`reno-music-toggle${isEnabled ? " is-on" : " is-off"}`}
       aria-label={isEnabled ? "Matikan musik latar" : "Nyalakan musik latar"}
       aria-pressed={isEnabled}
       title={isEnabled ? "Music on" : "Music off"}
@@ -134,7 +138,7 @@ export default function BackgroundMusic() {
         void toggleMusic();
       }}
     >
-      {isEnabled ? "🎵" : "🔇"}
+      <img src="/audio/music-logo.png" alt="Music" className="reno-music-icon" />
     </button>
   );
 }
