@@ -5498,7 +5498,24 @@ let flamePressCooldownUntil = 0;
 /** Current WIB (Asia/Jakarta) calendar date + hour — the same calendar the
  *  server's streak engine counts in. Null when Intl/timezone data is
  *  unavailable (the keeper then simply stays silent). */
+/** The instant every WIB readout is derived from. Normally just now, but
+ *  developer mode (public/farm/devclock.js) can shift it so the night-only
+ *  world — sleep face, dusk sky, the camera_events gate — is reachable from
+ *  a timezone where it is the wrong time of day. Read defensively: a missing
+ *  or throwing PMClock simply means no override.
+ *
+ *  The override moves the WALL CLOCK only. Everything below that measures
+ *  elapsed time still calls Date.now() directly, and must keep doing so. */
+function clockNow() {
+  try {
+    return window.PMClock?.now() ?? new Date();
+  } catch {
+    return new Date();
+  }
+}
+
 function wibNow() {
+  const source = clockNow();
   try {
     const parts = new Intl.DateTimeFormat("en-GB", {
       timeZone: "Asia/Jakarta",
@@ -5508,7 +5525,7 @@ function wibNow() {
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
-    }).formatToParts(new Date());
+    }).formatToParts(source);
     const get = (type) => parts.find((part) => part.type === type)?.value ?? "";
     const date = `${get("year")}-${get("month")}-${get("day")}`;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
@@ -5516,7 +5533,7 @@ function wibNow() {
   } catch {
     // Fixed UTC+7 fallback keeps a classroom demo useful even in a browser
     // whose Intl build omitted IANA timezone data. Jember/WIB has no DST.
-    const shifted = new Date(Date.now() + 7 * 60 * 60_000);
+    const shifted = new Date(source.getTime() + 7 * 60 * 60_000);
     const year = shifted.getUTCFullYear();
     const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
     const day = String(shifted.getUTCDate()).padStart(2, "0");
@@ -5543,6 +5560,20 @@ window.setInterval(renderJemberClock, 30_000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") renderJemberClock();
 });
+
+// Developer clock override changed (this tab or another one on this device):
+// repaint everything the WIB wall clock drives, instead of leaving the sky
+// and the sleep face on the old time until the next 60s tick. updateCareUi
+// is idempotent per state and calls applyNightUi itself, so this is safe to
+// fire on every change. No-op when devclock.js is absent.
+try {
+  window.PMClock?.onChange(() => {
+    renderJemberClock();
+    updateCareUi();
+  });
+} catch {
+  // The 60s care clock and the 30s clock tick still catch up on their own.
+}
 
 /** Anchor for streak copy: the flame badge, else the bond panel. */
 function streakAnchorRect() {

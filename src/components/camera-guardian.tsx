@@ -29,6 +29,7 @@ import {
   toGrayscale,
   type MotionEvent,
 } from "@/lib/motion-detect";
+import { devNow } from "@/lib/pm-clock";
 import { npcNameLabel, type AppLocale } from "@/lib/i18n";
 import type { SensorSnapshot } from "@/lib/crop-profiles";
 
@@ -60,6 +61,19 @@ const FEED_LIMIT = 12;
 // Below this the two-class softmax is not saying anything worth showing, so the
 // panel reports "analyzing" rather than committing to either label.
 const CONFIDENCE_FLOOR = 0.7;
+
+/**
+ * The 18:00–06:00 WIB night gate, honouring the developer clock override.
+ *
+ * isGuardianSuspendedWIB stays a pure function of a Date — motion-detect.ts
+ * has zero imports and zero DOM by contract, and reading localStorage from
+ * inside it would end that. So the override is injected HERE, at the only
+ * place in this component that asks what time of day it is. Everything else
+ * in this file (the 10s touch gap, the 10min scan gate, the motion cooldown)
+ * measures elapsed time and keeps calling Date.now(), which the override
+ * deliberately never touches.
+ */
+const guardianAsleep = () => isGuardianSuspendedWIB(devNow());
 
 interface WakeLockSentinel {
   release: () => Promise<void>;
@@ -290,7 +304,7 @@ export default function CameraGuardian({
 
     const sample = () => {
       if (document.hidden) return;
-      if (isGuardianSuspendedWIB()) {
+      if (guardianAsleep()) {
         // Night window (18:00–06:00 WIB): dark frames are noise; Jamkachu sleeps.
         wasSuspended = true;
         setStatus((prev) =>
@@ -338,7 +352,7 @@ export default function CameraGuardian({
         video.srcObject = stream;
         await video.play();
         await acquireWakeLock();
-        setStatus(isGuardianSuspendedWIB() ? "suspended" : "watching");
+        setStatus(guardianAsleep() ? "suspended" : "watching");
         intervalId = window.setInterval(sample, SAMPLE_MS);
       } catch (cause) {
         const name = cause instanceof DOMException ? cause.name : "";
@@ -358,7 +372,7 @@ export default function CameraGuardian({
       setStatus((prev) =>
         prev === "denied" || prev === "nocamera"
           ? prev
-          : isGuardianSuspendedWIB()
+          : guardianAsleep()
             ? "suspended"
             : "watching",
       );
@@ -391,7 +405,7 @@ export default function CameraGuardian({
     let running = false;
     const classify = async () => {
       const video = videoRef.current;
-      if (running || document.hidden || isGuardianSuspendedWIB() || !video || video.readyState < 2) return;
+      if (running || document.hidden || guardianAsleep() || !video || video.readyState < 2) return;
       running = true;
       try {
         const { classifyCameraFrame } = await import("@/lib/local-camera-model");
@@ -418,7 +432,7 @@ export default function CameraGuardian({
   // Periodic pest check (spec: motion-triggered + periodic 10 min).
   useEffect(() => {
     const id = window.setInterval(() => {
-      if (document.hidden || isGuardianSuspendedWIB()) return;
+      if (document.hidden || guardianAsleep()) return;
       void runScanRef.current();
     }, 60_000);
     return () => window.clearInterval(id);

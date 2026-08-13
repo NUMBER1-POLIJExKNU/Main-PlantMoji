@@ -21,7 +21,11 @@ describe("farm home Jember clock", () => {
     expect(script).not.toContain("jember-clock-icon");
     expect(script).toContain("window.setInterval(renderJemberClock, 30_000)");
     expect(script).toContain('document.addEventListener("visibilitychange"');
-    expect(script).toContain("Date.now() + 7 * 60 * 60_000");
+    // Fixed UTC+7 fallback for an Intl build with no IANA data. It reads the
+    // instant from clockNow(), not Date.now(), so the developer clock
+    // override reaches this path too — otherwise a browser without timezone
+    // data would silently ignore the override and stay on real time.
+    expect(script).toContain("new Date(source.getTime() + 7 * 60 * 60_000)");
   });
 
   it("supports Indonesian and English labels", () => {

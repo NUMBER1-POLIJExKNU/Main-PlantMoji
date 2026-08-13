@@ -579,6 +579,13 @@
          queue runs these in document order. Like cheat.js it is client-only —
          every write it makes goes through PMCheat into localStorage. -->
     <script defer src="/farm/trial.js"></script>
+    <!-- Developer clock override (window.PMClock). Must run before live.js,
+         whose wibNow() reads it on the very first paint — a tag after the
+         module would leave the sky, the sleep face and the camera_events
+         night gate on the real clock until something happened to repaint
+         them. Client-only: one integer in localStorage, and it deliberately
+         does NOT patch Date.now(), so every cooldown here stays real. -->
+    <script defer src="/farm/devclock.js"></script>
     <script defer src="/farm/strings.js"></script>
     <!-- Unified one-time seen-store (window.PMSeen, pm_seen_v3): migrates the
          legacy hatch/tour/guide flags on its first read. Classic script so it

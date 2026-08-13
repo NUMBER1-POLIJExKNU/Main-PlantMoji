@@ -69,6 +69,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             and the hazard schedule running while a student explores
             Collection or Shop. */}
         <Script src="/farm/trial.js" strategy="beforeInteractive" />
+        {/* Developer clock override (window.PMClock): shifts only the WIB
+            wall clock the app reads, never Date.now(). Same both-entry-points
+            rule as cheat.js — the guardian camera lives on a React route and
+            the sleep gate it has to clear lives in the static shell, so a tag
+            in one place only would move half the app's clock. */}
+        <Script src="/farm/devclock.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

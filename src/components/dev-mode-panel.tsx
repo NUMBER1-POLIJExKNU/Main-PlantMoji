@@ -11,6 +11,11 @@
 // Sensors are absent on purpose. They belong to the hardware and to the cheat
 // sandbox; a developer editing them here would be writing fake readings into
 // the real history.
+//
+// One control breaks the "writes real data" rule and says so on screen: the
+// WIB clock override, which is client-only (localStorage, this device) and
+// exists so the night-gated half of the app can be tested from a timezone
+// where WIB night falls in the middle of the working day.
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
@@ -28,6 +33,8 @@ import { DEV_CODE_STORAGE_KEY } from "@/components/dev-mode-toggle";
 import { xpForLevel } from "@/game/progression/level-bands";
 import { levelForXp } from "@/types/game";
 import "@/lib/pm-cheat"; // window.PMCheat global typing
+import { useDevClock } from "@/lib/pm-clock";
+import { GUARDIAN_SUSPEND_END_HOUR, GUARDIAN_SUSPEND_START_HOUR } from "@/lib/motion-detect";
 import type { AppLocale } from "@/lib/i18n";
 
 const INITIAL: DevActionState = { status: "idle", message: "" };
@@ -98,6 +105,111 @@ function ToggleRow({
       <button type="submit" name={onName} value="1" className={`${BTN} border-green-600 text-green-700`} disabled={!code}>ON</button>
       <button type="submit" name={onName} value="0" className={`${BTN} border-zinc-400 text-zinc-600`} disabled={!code}>OFF</button>
     </form>
+  );
+}
+
+/**
+ * WIB clock override (window.PMClock, public/farm/devclock.js).
+ *
+ * The odd one out in this panel, and labelled as such: every other control
+ * here writes real rows through a server action, while this one is a single
+ * integer in localStorage on THIS DEVICE. It exists because the night-only
+ * half of the app (Jamkachu asleep, the guardian camera suspending its
+ * sampling, live.js dropping camera_events, the dusk sky) is unreachable
+ * from Korea at a sane hour: WIB 06:00–18:00 is KST 08:00–20:00.
+ *
+ * Being per-device is the sharp edge worth repeating on screen — a
+ * tablet/desktop fan-out test needs the override set on both, or the tablet
+ * will happily post touches that the desktop then drops for being "night".
+ */
+function ClockSection() {
+  const { api, active } = useDevClock();
+  // Rendered blank until mounted: window.PMClock does not exist during the
+  // server render, so painting real times on the first pass would hand React
+  // two different trees to reconcile.
+  const [mounted, setMounted] = useState(false);
+  const [hhmm, setHhmm] = useState("10:00");
+  // Deferred out of the effect body, the same convention the panel below
+  // follows — a synchronous setState here cascades an extra render pass and
+  // trips react-hooks/set-state-in-effect.
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setMounted(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const wib = mounted ? api?.wib() ?? null : null;
+  const realWib = mounted ? api?.realWib() ?? null : null;
+  const offsetHours = mounted && api ? api.offsetMs() / 3_600_000 : 0;
+  const asleep =
+    wib === null
+      ? null
+      : wib.hour >= GUARDIAN_SUSPEND_START_HOUR || wib.hour < GUARDIAN_SUSPEND_END_HOUR;
+
+  function applyHhmm() {
+    const [hour, minute] = hhmm.split(":").map(Number);
+    if (!Number.isFinite(hour)) return;
+    api?.setWibTime(hour, Number.isFinite(minute) ? minute : 0);
+  }
+
+  return (
+    <>
+      <h3 className="pm-heading mt-5 text-[10px]">CLOCK · WIB OVERRIDE</h3>
+      <p className="font-mono text-[10px] leading-4 text-zinc-500">
+        client-only — one integer in localStorage, <b>this device only</b>. Writes nothing, and does
+        NOT patch Date.now(): cooldowns, rate limits and the 10-min scan gate all stay real.
+        Shifts only what reads the Jember wall clock — sleep, dusk sky, and the
+        {" "}{GUARDIAN_SUSPEND_START_HOUR}:00–0{GUARDIAN_SUSPEND_END_HOUR}:00 WIB gate on both the
+        guardian camera and the camera_events fan-out.
+        <br />
+        Testing tablet → desktop? Set it on <b>both devices</b> — the tablet posts, the desktop
+        decides whether to react.
+      </p>
+
+      <div className="mt-2 rounded-lg border-2 border-zinc-300 bg-white p-2 font-mono text-[11px] dark:border-zinc-700 dark:bg-zinc-900">
+        {!mounted ? (
+          <span className="text-zinc-500">reading clock…</span>
+        ) : !api ? (
+          <span className="text-red-700 dark:text-red-400">
+            window.PMClock missing — /farm/devclock.js did not load. Hard-reload this page.
+          </span>
+        ) : (
+          <>
+            <div>
+              app WIB <b className="text-base">{api.label()}</b>
+              {active && <span className="ml-1 text-blue-700 dark:text-blue-400">(shifted {offsetHours > 0 ? "+" : ""}{offsetHours.toFixed(2).replace(/\.?0+$/, "")}h)</span>}
+            </div>
+            <div className="text-zinc-500">
+              real WIB {api.realLabel()}
+              {realWib ? ` · ${realWib.date}` : ""}
+              {wib && realWib && wib.date !== realWib.date ? ` → app date ${wib.date}` : ""}
+            </div>
+            <div className={asleep ? "text-red-700 dark:text-red-400" : "text-green-700 dark:text-green-400"}>
+              {asleep
+                ? "🌙 NIGHT — guardian suspended, farm drops camera events"
+                : "☀️ DAY — guardian samples, farm reacts to camera events"}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-end gap-2">
+        <button type="button" onClick={() => api?.setWibTime(10, 0)} className={`${BTN} border-amber-600 text-amber-700`} disabled={!api}>☀️ Day 10:00</button>
+        <button type="button" onClick={() => api?.setWibTime(21, 0)} className={`${BTN} border-indigo-600 text-indigo-700`} disabled={!api}>🌙 Night 21:00</button>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] font-bold uppercase">set WIB to</span>
+          <input type="time" value={hhmm} onChange={(event) => setHhmm(event.target.value)} className={FIELD} />
+        </label>
+        <button type="button" onClick={applyHhmm} className={`${BTN} border-zinc-700`} disabled={!api}>Apply</button>
+        <button type="button" onClick={() => api?.clear()} className={`${BTN} border-zinc-400 text-zinc-600`} disabled={!api || !active}>Reset to real time</button>
+      </div>
+      <p className="mt-1 font-mono text-[10px] text-zinc-500">
+        the clock keeps running at 1× from whatever you set — it is shifted, not frozen. While
+        shifted, a blue badge sits bottom-left on every page so it cannot be forgotten.
+      </p>
+    </>
   );
 }
 
@@ -174,12 +286,19 @@ export default function DevModePanel({
       <p className="mt-1 text-[11px] leading-4 text-red-700 dark:text-red-400">
         Writes real data. Changes persist into normal mode. Sensor values are not editable here.
         Cheat Mode is switched off while this is open — one mode at a time.
+        The one exception is the WIB clock below: it is local to this device and stores nothing
+        server-side.
       </p>
 
       <label className="mt-3 flex flex-col gap-1">
         <span className="text-[10px] font-bold uppercase tracking-wide">Developer code</span>
         <input type="password" value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" maxLength={128} className={FIELD} />
       </label>
+
+      {/* First, and above the code field's reach on purpose: it is the only
+          control here that needs no code because it writes nothing, and it
+          is the one you come looking for when the app insists it is night. */}
+      <ClockSection />
 
       {/* ── My Garden ─────────────────────────────────────────────── */}
       <h3 className="pm-heading mt-5 text-[10px]">MY GARDEN</h3>
