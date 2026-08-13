@@ -64,7 +64,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             the cheat banner and shared sandbox state follow the presenter. */}
         <Script src="/farm/cheat.js" strategy="beforeInteractive" />
         {/* Trial mode's rules engine (window.PMTrial) — the student onboarding
-            game that opens cheat mode at Lv.6. Must load after cheat.js, whose
+            game that opens cheat mode at TRIAL_GATE_LEVEL. Must load after cheat.js, whose
             store it drives; loading it on the React routes too keeps the drip
             and the hazard schedule running while a student explores
             Collection or Shop. */}

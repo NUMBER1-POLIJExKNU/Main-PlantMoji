@@ -227,10 +227,10 @@ describe("evolution ceremony trigger + sequencer", () => {
   });
 
   it("keeps the ceremony button out of trial mode", () => {
-    // Trial mode is the student onboarding game, and its Lv.7 gate is timed to
-    // land on the sprite band change so the unlock and the growth read as one
-    // peak (implementation.md §4.1). A button that replays evolutions on demand
-    // would spend that peak before the gate reaches it. buildCheatPanel hands
+    // Trial mode is the student onboarding game, and its gate is timed to land
+    // on the level where the drawing changes, so the unlock and the growth read
+    // as one peak (implementation.md §4.1). A button that replays evolutions on
+    // demand would spend that peak before the gate reaches it. buildCheatPanel hands
     // trial mode off to buildTrialPanel BEFORE any of this markup exists, so the
     // exclusion is structural — assert that order, not a second condition.
     const build = live.slice(live.indexOf("function buildCheatPanel"));

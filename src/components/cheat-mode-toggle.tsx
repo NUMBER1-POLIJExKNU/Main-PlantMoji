@@ -74,7 +74,7 @@ export default function CheatModeToggle({
     try { sessionStorage.removeItem("pm_dev_code"); } catch {}
     // THE CLASSROOM ESCAPE HATCH. A trial run is promoted in place, keeping
     // the level, XP, Seeds and readings the student earned — and it works
-    // whether or not they reached Lv.6. A school demo goes wrong in a hundred
+    // whether or not they reached the gate. A school demo goes wrong in a hundred
     // ways (the period runs short, a student gets stuck, the projector dies),
     // so the presenter must always be able to take the wheel. The gate is a
     // celebration, not a lock.

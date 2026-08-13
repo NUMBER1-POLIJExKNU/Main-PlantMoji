@@ -52,7 +52,7 @@ export default function CheatQuestPanel({
   const { active, api, state } = useCheat();
 
   // Forcing a quest to any stage is a presenter tool, not a game move: in
-  // trial mode it would hand a student the finish line the Lv.6 gate exists to
+  // trial mode it would hand a student the finish line the trial gate exists to
   // make them walk to. Stays hidden until the sandbox is in cheat mode.
   if (!active || !api || state?.mode === "trial") return null;
   const t = COPY[locale] ?? COPY.en;

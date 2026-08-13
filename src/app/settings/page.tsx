@@ -250,7 +250,7 @@ export default async function SettingsPage({
 
       {/* Trial mode sits ABOVE the cheat sandbox because that is the order the
           two are meant to be met in: a student plays the intro game first and
-          the cheat controls open out of it at Lv.6. Same containment as the
+          the cheat controls open out of it at the gate. Same containment as the
           sandbox below — client-only, never Supabase and never hardware. */}
       <TrialModeToggle locale={locale} />
 

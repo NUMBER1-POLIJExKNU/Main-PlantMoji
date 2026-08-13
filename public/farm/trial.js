@@ -489,8 +489,8 @@
       // uncapped, a student could put the pot right once and then watch levels
       // arrive for doing nothing, which is the opposite of what the two
       // minutes are for. So every level is crossed by an ACT — a care press, a
-      // hazard solved — and since the gate sits on a level floor (90 XP), it
-      // can never be opened by idling either.
+      // hazard solved — and since the gate sits on a level floor (GATE_XP), it
+      // can never be opened by idling either: the drip stops one XP short.
       var banked = Math.max(0, Math.floor(Number(state.status.totalXp) || 0));
       var room = Math.max(0, dripCeiling(levelForXp(banked)) - banked);
       var pay = Math.min(payouts * XP.dripPerTick, room);

@@ -155,7 +155,7 @@ export default function CheatSensorPanel({
 
       {/* Trial mode keeps the care buttons — a student should be able to look
           after the plant from Monitoring too — but never the number boxes.
-          Typing 34 into a field is exactly the cheat the Lv.6 gate exists to
+          Typing 34 into a field is exactly the cheat the trial gate exists to
           withhold, and it would also let a hazard be dismissed without
           learning which action answers it. */}
       {!trial && (
