@@ -13,9 +13,46 @@ import type { EnvironmentDemoPreset } from "@/lib/environment-demo";
 interface ScanPayload { ok: true; source: "sensor" | "demo"; snapshot: SensorSnapshot; crops: ExplorerCrop[]; results: EnvironmentAnalysis[] }
 
 const COPY = {
-  id: { title: "Penjelajah Tanaman Jember", intro: "Ukur tempatmu, pilih tanaman, lalu lihat kondisi apa yang sudah cocok.", step1: "1 · PINDAI LINGKUNGAN", step2: "2 · PILIH TANAMAN", step3: "3 · CEK KONDISI", scan: "PINDAI LINGKUNGANKU", scanAgain: "PINDAI ULANG", scanning: "Membaca sensor…", ready: "Lingkungan siap ✓", demoMode: "Sensor belum tersambung? Pakai data demo", demoBadge: "DEMO", matches: "PALING DEKAT DENGAN LINGKUNGANMU", measured: "kondisi cocok", change: "Apa yang harus saya ubah?", whyMatch: "Mengapa semua cocok?", noData: "Belum ada pembacaan sensor nyata. Periksa sambungan sensor atau aktifkan data demo.", authorityNote: "Urutan ini dihitung dari kondisi terukur oleh aturan tetap; AI hanya membantu menjelaskan, bukan meramal hasil panen.", notEval: "Belum diukur", match: "Sudah cocok", mismatch: "Perlu perhatian", current: "Terukur", range: "Acuan", excellent: "Sangat dekat", good: "Cukup dekat", partial: "Sebagian cocok", challenging: "Banyak perbedaan", notEnough: "Data belum cukup", selected: "DIPILIH", rank: "peringkat", mainMismatch: "Perbedaan utama" },
-  en: { title: "Jember Crop Explorer", intro: "Measure your place, choose a crop, and see which conditions already match.", step1: "1 · SCAN ENVIRONMENT", step2: "2 · CHOOSE A CROP", step3: "3 · CHECK CONDITIONS", scan: "SCAN MY ENVIRONMENT", scanAgain: "SCAN AGAIN", scanning: "Reading sensors…", ready: "Environment ready ✓", demoMode: "No sensor connected? Use demo data", demoBadge: "DEMO", matches: "CLOSEST TO YOUR ENVIRONMENT", measured: "conditions match", change: "What should I change?", whyMatch: "Why do they all match?", noData: "No real sensor reading is available yet. Check the sensor connection or enable demo data.", authorityNote: "This ranking is calculated from measured conditions by fixed rules; AI only helps explain it, not predict your harvest.", notEval: "Not measured", match: "Matches", mismatch: "Needs attention", current: "Measured", range: "Reference", excellent: "Very close", good: "Close", partial: "Some match", challenging: "Many differences", notEnough: "Not enough data", selected: "SELECTED", rank: "rank", mainMismatch: "Main difference" },
+  id: { title: "Penjelajah Tanaman Jember", intro: "Ukur tempatmu, pilih tanaman, lalu lihat kondisi apa yang sudah cocok.", step1: "1 · PINDAI LINGKUNGAN", step2: "2 · PILIH TANAMAN", step3: "3 · CEK KONDISI", scan: "PINDAI LINGKUNGANKU", scanAgain: "PINDAI ULANG", scanning: "Membaca sensor…", ready: "Lingkungan siap ✓", demoMode: "Sensor belum tersambung? Pakai data demo", demoBadge: "DEMO", matches: "PALING DEKAT DENGAN LINGKUNGANMU", measured: "kondisi cocok", change: "Apa yang harus saya ubah?", whyMatch: "Mengapa semua cocok?", noData: "Belum ada pembacaan sensor nyata. Periksa sambungan sensor atau aktifkan data demo.", authorityNote: "Urutan ini dihitung dari kondisi terukur oleh aturan tetap; AI hanya membantu menjelaskan, bukan meramal hasil panen.", notEval: "Belum diukur", match: "Sudah cocok", mismatch: "Perlu perhatian", current: "Terukur", range: "Acuan", excellent: "Sangat dekat", good: "Cukup dekat", partial: "Sebagian cocok", challenging: "Banyak perbedaan", notEnough: "Data belum cukup", selected: "DIPILIH", rank: "peringkat", mainMismatch: "Perbedaan utama", topMatch: "PALING COCOK" },
+  en: { title: "Jember Crop Explorer", intro: "Measure your place, choose a crop, and see which conditions already match.", step1: "1 · SCAN ENVIRONMENT", step2: "2 · CHOOSE A CROP", step3: "3 · CHECK CONDITIONS", scan: "SCAN MY ENVIRONMENT", scanAgain: "SCAN AGAIN", scanning: "Reading sensors…", ready: "Environment ready ✓", demoMode: "No sensor connected? Use demo data", demoBadge: "DEMO", matches: "CLOSEST TO YOUR ENVIRONMENT", measured: "conditions match", change: "What should I change?", whyMatch: "Why do they all match?", noData: "No real sensor reading is available yet. Check the sensor connection or enable demo data.", authorityNote: "This ranking is calculated from measured conditions by fixed rules; AI only helps explain it, not predict your harvest.", notEval: "Not measured", match: "Matches", mismatch: "Needs attention", current: "Measured", range: "Reference", excellent: "Very close", good: "Close", partial: "Some match", challenging: "Many differences", notEnough: "Not enough data", selected: "SELECTED", rank: "rank", mainMismatch: "Main difference", topMatch: "BEST MATCH" },
 } as const;
+
+/** How many crops the scan result puts on the podium. */
+export const TOP_MATCH_COUNT = 3;
+
+/**
+ * Which crop keys step 2 should highlight after a scan. `results` arrives
+ * already ranked by compareEnvironmentToCrops.
+ *
+ * Deliberately the first three, ties and all. compareEnvironmentToCrops sorts
+ * on (matchedConditions, evaluatedConditions) and then falls back to
+ * catalogOrder and the crop key, so a tie is resolved by something with no
+ * measurement meaning — and ties are the norm, not the exception: a real
+ * Jember scan ranks Coconut 3/3 and then SEVEN crops level at 2/3.
+ *
+ * Extending the highlight through those ties was tried and is worse. It gilds
+ * eight of the eleven cards, which reads as noise, and it contradicts the
+ * `#1…#11` badges the grid already prints using that very tie-break. The
+ * ordering is asserted on screen either way; highlighting the top of it adds
+ * no claim that the numbering has not already made, and each card shows its
+ * own "2/3 conditions match" score so a tie stays visible to anyone reading.
+ *
+ * The one case that returns nothing is a scan where no crop had a single
+ * condition evaluated — sensors off, every crop 0/0. The order there is pure
+ * tie-break, so a podium would be alphabetical dressed up as a
+ * recommendation.
+ */
+export function topMatchKeys(results: readonly EnvironmentAnalysis[]): Set<string> {
+  if (!results.some((item) => item.evaluatedConditions > 0)) return new Set<string>();
+  return new Set(
+    results
+      .slice(0, TOP_MATCH_COUNT)
+      // An unmeasured crop can still float into the first three when the
+      // catalog is small; it has earned no podium place.
+      .filter((item) => item.evaluatedConditions > 0)
+      .map((item) => item.cropKey),
+  );
+}
 
 // [emoji, id, en, art]. The drawn icons are the same four the farm home's
 // Garden Vitals cards use, so a reading means the same picture on both screens;
@@ -80,6 +117,8 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
     finally { window.setTimeout(() => setScanning(false), 450); }
   };
   const selected = data?.results.find((item) => item.cropKey === selectedKey) ?? data?.results[0];
+  // Recomputed per scan result, never per render — a scan replaces `data`.
+  const topKeys = useMemo(() => topMatchKeys(data?.results ?? []), [data]);
   const crop = data?.crops.find((item) => item.key === selected?.cropKey);
   const explain = async () => {
     if (!selected) return;
@@ -147,7 +186,7 @@ export default function CropExplorer({ locale, initialSnapshot, initialCrops, in
     {(scanning || data) && <div className="m-4"><ProcessRail steps={processSteps} label="Environment analysis stages" /><div className="pm-analysis-authority"><span><b>ANALYSIS</b> Rule-based Environment Analyzer</span><span><b>EXPLANATION</b> Gemini Flash / Deterministic fallback</span></div><IntelligenceConsole title="PLANTMOJI ENVIRONMENT CORE" lines={scanLines} running={scanning} /></div>}
     {error && <p role="alert" className="mt-4 rounded-xl border-2 border-[#E8C46B] bg-[#FFF7DF] p-3 text-sm">{c.noData}</p>}
     {data && !scanning && <div className="pm-crop-results"><div className="pm-crop-snapshot-head"><strong>✅ {c.ready}</strong>{data.source === "demo" && <b>{c.demoBadge}</b>}</div><div className="pm-crop-snapshot">{Object.entries(PARAMS).map(([key, p]) => { const value = key === "airHumidity" ? data.snapshot.humidity : data.snapshot[key as "temperature" | "light" | "soilPh"]; return <span key={key}><i><ParamIcon src={p[3]} /></i><small>{locale === "id" ? p[1] : p[2]}</small><strong>{valueWithUnit(key as keyof typeof PARAMS, value ?? null)}</strong></span>; })}</div>
-      <div className="pm-crop-section-head"><p className="pm-crop-step">{c.step2}</p><h3>{c.matches}</h3></div><div className="pm-crop-rank-grid">{data.results.map((item, index) => <button type="button" key={item.cropKey} onClick={() => chooseCrop(item.cropKey)} aria-pressed={selected?.cropKey === item.cropKey} className={selected?.cropKey === item.cropKey ? "is-selected" : ""}><span className="pm-crop-rank">#{index + 1}</span><strong>{item.cropName}</strong><span className="pm-crop-score"><b>{item.matchedConditions}/{item.evaluatedConditions}</b> {c.measured}</span><span className="pm-crop-label">{item.label === "excellent" ? c.excellent : item.label === "good" ? c.good : item.label === "partial" ? c.partial : item.label === "challenging" ? c.challenging : c.notEnough}</span>{item.largestMismatch && <small>{c.mainMismatch}: {locale === "id" ? PARAMS[item.largestMismatch.parameter][1] : PARAMS[item.largestMismatch.parameter][2]} {item.largestMismatch.direction === "high" ? "↑" : "↓"}</small>}{selected?.cropKey === item.cropKey && <i className="pm-crop-selected">✓ {c.selected}</i>}</button>)}</div>
+      <div className="pm-crop-section-head"><p className="pm-crop-step">{c.step2}</p><h3>{c.matches}</h3></div><div className="pm-crop-rank-grid">{data.results.map((item, index) => <button type="button" key={item.cropKey} onClick={() => chooseCrop(item.cropKey)} aria-pressed={selected?.cropKey === item.cropKey} className={`${topKeys.has(item.cropKey) ? "is-top" : ""}${selected?.cropKey === item.cropKey ? " is-selected" : ""}`.trim()}><span className="pm-crop-rank">#{index + 1}</span>{topKeys.has(item.cropKey) && <i className="pm-crop-top">★ {c.topMatch}</i>}<strong>{item.cropName}</strong><span className="pm-crop-score"><b>{item.matchedConditions}/{item.evaluatedConditions}</b> {c.measured}</span><span className="pm-crop-label">{item.label === "excellent" ? c.excellent : item.label === "good" ? c.good : item.label === "partial" ? c.partial : item.label === "challenging" ? c.challenging : c.notEnough}</span>{item.largestMismatch && <small>{c.mainMismatch}: {locale === "id" ? PARAMS[item.largestMismatch.parameter][1] : PARAMS[item.largestMismatch.parameter][2]} {item.largestMismatch.direction === "high" ? "↑" : "↓"}</small>}{selected?.cropKey === item.cropKey && <i className="pm-crop-selected">✓ {c.selected}</i>}</button>)}</div>
       {selected && crop && <article ref={detailRef} className="pm-crop-detail"><div className="pm-crop-section-head"><p className="pm-crop-step">{c.step3}</p><div className="flex flex-wrap items-baseline justify-between gap-2"><h3>{selected.cropName}</h3><i>{crop.scientificName}</i></div></div><p className="pm-crop-education">{crop.educationNote}</p><div className="pm-crop-condition-grid">{Object.entries(selected.conditions).map(([key, condition]) => { const parameter = key as keyof typeof PARAMS; const p = PARAMS[parameter]; const range = condition.preferredMin === null && condition.preferredMax === null ? "—" : `${valueWithUnit(parameter, condition.preferredMin)}–${valueWithUnit(parameter, condition.preferredMax)}`; return <div key={key} className={`pm-crop-condition is-${condition.status}`}><div><span><ParamIcon src={p[3]} /></span><strong>{locale === "id" ? p[1] : p[2]}</strong><b>{condition.status === "match" ? `✅ ${c.match}` : condition.status === "mismatch" ? `⚠️ ${c.mismatch}` : `➖ ${c.notEval}`}</b></div><p><span>{c.current}: <strong>{valueWithUnit(parameter, condition.current)}</strong></span><span>{c.range}: <strong>{range}</strong></span></p></div>; })}</div>{(explaining || explanation) && <div className="mt-3"><IntelligenceConsole title="GROUNDED EXPLANATION LAYER" lines={explanationLines} running={explaining} compact /></div>}<button type="button" className="pm-btn pm-btn-primary pm-crop-advice-button" onClick={explain} disabled={explaining}>{explaining ? "…" : selected.largestMismatch ? c.change : c.whyMatch}</button>{explanation && <div className="pm-crop-explanation"><span aria-hidden="true">👨‍🌾</span><div><p><TypewriterText text={explanation} /></p></div></div>}</article>}
       <p className="mt-4 text-xs opacity-65">{c.authorityNote}</p></div>}
   </section>;
