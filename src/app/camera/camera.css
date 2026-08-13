@@ -130,6 +130,16 @@
    own colours instead. */
 .pm-cam-result .pm-cam-note { margin:6px 0 0; padding:6px 9px; border-width:2px; border-color:rgba(255,255,255,.55); border-radius:8px; color:#fff; background:rgba(0,0,0,.3); font-size:11px; }
 
+/* Confidence readout. The chip's own `small { display:block }` rule would
+   stack these three onto separate lines, so the flex row re-inlines them.
+   White on both panel colours (green and rust), so no is-foreign variant. */
+.pm-cam-confidence { display:flex; align-items:center; gap:7px; margin-top:6px; }
+.pm-cam-result .pm-cam-confidence small { display:inline; flex:none; opacity:.8; letter-spacing:.06em; }
+.pm-cam-confidence-bar { flex:1; min-width:28px; height:6px; border:1px solid rgba(255,255,255,.55); border-radius:4px; background:rgba(0,0,0,.3); overflow:hidden; }
+.pm-cam-confidence-bar i { display:block; height:100%; background:#fff; transition:width .25s ease-out; }
+.pm-cam-confidence b { flex:none; font-size:12px; font-variant-numeric:tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .pm-cam-confidence-bar i { transition:none; } }
+
 
 .pm-cam-blocked { padding: 18px; text-align: center; }
 .pm-cam-blocked h2 { font-size: 14px; margin-bottom: 6px; }

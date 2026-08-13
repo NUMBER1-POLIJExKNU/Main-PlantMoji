@@ -39,4 +39,26 @@ describe("existing Teachable Machine camera model", () => {
     expect(source.split('localLabel === "Foreign Environment"').length - 1).toBe(1);
     expect(source.split("isForeign").length - 1).toBeGreaterThanOrEqual(4);
   });
+
+  it("shows how sure the model is, not just what it decided", () => {
+    // A model trained on one specific scene rejects every other scene at high
+    // confidence; a genuinely ambiguous frame sits just past the floor. The
+    // panel used to render both as the identical words "Foreign Environment",
+    // which made the two indistinguishable from the screen — and they need
+    // opposite fixes (retrain vs. re-aim the camera).
+    const source = readFileSync("src/components/camera-guardian.tsx", "utf8");
+    // `;\r?\n` — this repo's sources are CRLF, so anchoring on a bare \n
+    // silently matches nothing and the whole assertion block goes vacuous.
+    const derivation = source.match(/const confidencePercent =[\s\S]*?;\r?\n/);
+    expect(derivation).not.toBeNull();
+    // Only a live reading may be reported. A stale confidence left over from
+    // before a failed load would be worse than showing nothing.
+    expect(derivation?.[0]).toContain('localModelState === "ready"');
+    expect(derivation?.[0]).toContain("localLabel !== null");
+    expect(derivation?.[0]).toContain("Math.round(localConfidence * 100)");
+    expect(source).toContain("pm-cam-confidence");
+    // Rendered for the uncertain state too, where the number is the whole
+    // explanation for why no verdict is committed.
+    expect(source).toContain("{confidencePercent !== null && (");
+  });
 });

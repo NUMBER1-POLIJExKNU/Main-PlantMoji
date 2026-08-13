@@ -440,6 +440,14 @@ export default function CameraGuardian({
             ? "foreign"
             : "safe";
   const isForeign = resultView === "foreign";
+  // How sure the two-class softmax is, as a percent. Shown for every state
+  // that HAS a reading — including "uncertain", where the number IS the
+  // explanation for why no verdict is committed. Without it a confident
+  // "Foreign Environment" (a model trained on one specific scene rejecting
+  // every other scene) looks identical to a 71% coin-flip, and the two need
+  // completely different fixes. Display only: nothing reads it back.
+  const confidencePercent =
+    localModelState === "ready" && localLabel !== null ? Math.round(localConfidence * 100) : null;
   const statusLabel: Record<GuardianStatus, string> = {
     starting: copy.statusStarting,
     watching: copy.statusWatching,
@@ -453,8 +461,10 @@ export default function CameraGuardian({
   const visionSteps = useMemo<ProcessStep[]>(() => [
     { key: "camera", label: "CAMERA", summary: status === "watching" || status === "motion" || status === "checking" ? "READY" : status.toUpperCase(), state: status === "denied" || status === "nocamera" ? "error" : status === "starting" ? "running" : "complete" },
     { key: "model", label: "LOCAL MODEL", summary: localModelState === "ready" ? "READY" : localModelState.toUpperCase(), state: localModelState === "ready" ? "complete" : localModelState === "failed" ? "fallback" : "running" },
-    { key: "result", label: "RESULT", summary: resultView === "failed" ? "ERROR" : resultView === "uncertain" ? "ANALYZING" : resultView === "loading" ? "WAITING" : localLabel ?? "WAITING", state: resultView === "failed" ? "error" : resultView === "loading" ? "waiting" : resultView === "uncertain" ? "running" : "complete" },
-  ], [localLabel, localModelState, resultView, status]);
+    // The percent rides along here too: the rail is the diagnostic strip, and
+    // "ANALYZING" alone never said whether the model was at 68% or 20%.
+    { key: "result", label: "RESULT", summary: resultView === "failed" ? "ERROR" : resultView === "loading" ? "WAITING" : `${resultView === "uncertain" ? "ANALYZING" : localLabel ?? "WAITING"}${confidencePercent === null ? "" : ` · ${confidencePercent}%`}`, state: resultView === "failed" ? "error" : resultView === "loading" ? "waiting" : resultView === "uncertain" ? "running" : "complete" },
+  ], [confidencePercent, localLabel, localModelState, resultView, status]);
 
   // The real plant in the video is Jamkachu on this screen. Keep its voice
   // in the same short, friendly speech-bubble language as the farm view;
@@ -516,6 +526,17 @@ export default function CameraGuardian({
                       ? (locale === "id" ? "Lingkungan asing" : "Foreign Environment")
                       : (locale === "id" ? "Lingkungan aman" : "Safe Environment")}
             </strong>
+            {/* aria-hidden: the bar is a redraw of the number beside it, and
+                this card sits between two live regions that already talk. */}
+            {confidencePercent !== null && (
+              <span className="pm-cam-confidence">
+                <small>{locale === "id" ? "YAKIN" : "CONFIDENCE"}</small>
+                <span className="pm-cam-confidence-bar" aria-hidden="true">
+                  <i style={{ width: `${confidencePercent}%` }} />
+                </span>
+                <b>{confidencePercent}%</b>
+              </span>
+            )}
             {/* No role="status" here: the hint mounts and unmounts as confidence
                 crosses the floor, and this stage already carries two live regions
                 (the speech bubble and the status dot). Announcing a third one every
