@@ -12,21 +12,13 @@ import { getPlant, normalizeGrowthStage } from "@/lib/queries";
  * note, so the plant's CURRENT growth_stage (from `plants`) is used
  * automatically. height_cm / leaf_count are left null (web-only fields).
  *
- * Shared-token auth, same pattern as /api/device-events: enforced only when
- * DEVICE_API_TOKEN is set, so local/dev stays friction-free.
+ * This demo endpoint is intentionally public so the Flutter Web build can add
+ * notes without exposing the device-ingest token in browser JavaScript.
  */
 
 const MAX_NOTE_LENGTH = 200;
 
 export async function POST(request: Request) {
-  const requiredToken = process.env.DEVICE_API_TOKEN;
-  if (requiredToken) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${requiredToken}`) {
-      return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-    }
-  }
-
   let body: unknown;
   try {
     body = await request.json();
