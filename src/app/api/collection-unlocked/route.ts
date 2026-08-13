@@ -10,7 +10,8 @@ import type { PlantMood } from "@/types/events";
  * mobile app polls this alongside sensor-history, so keeping it to a single
  * round trip matters).
  *
- * Response: { unlockedIds: string[], level: number }
+ * Response: { unlockedIds: string[], level: number, totalXp: number,
+ *             currentStreak: number }
  *
  * `unlockedIds` mixes four kinds of progress, all read from tables the WEB
  * app already writes to — nothing here is mobile-only state:
@@ -60,7 +61,11 @@ export async function GET(request: Request) {
     getPlant(supabase, plantId),
     getSeenMoods(supabase, plantId),
     getUnlockedBadges(supabase, plantId),
-    supabase.from("bond_state").select("bond_level, current_chapter").eq("plant_id", plantId).maybeSingle(),
+    supabase
+      .from("bond_state")
+      .select("bond_level, total_xp, current_streak, current_chapter")
+      .eq("plant_id", plantId)
+      .maybeSingle(),
   ]);
 
   if (bondResult.error && !isMissingTableError(bondResult.error)) {
@@ -82,6 +87,13 @@ export async function GET(request: Request) {
   }
 
   const level = bondResult.data?.bond_level ?? 1;
+  const totalXp = bondResult.data?.total_xp ?? 0;
+  const currentStreak = bondResult.data?.current_streak ?? 0;
 
-  return Response.json({ unlockedIds: Array.from(unlockedIds), level });
+  return Response.json({
+    unlockedIds: Array.from(unlockedIds),
+    level,
+    totalXp,
+    currentStreak,
+  });
 }
